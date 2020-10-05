@@ -37,6 +37,9 @@ import mechanicalsoup
 
 
 def main():
+    """Coordinate retrieval of links to CAZy website pages, 
+    required for retrieval of protein data.
+    """
     # page to start browser at: the CAZy homepage
     base_url = "http://www.cazy.org"
 
@@ -45,7 +48,6 @@ def main():
 
     # Retrieve all links from the CAZy homepage
     links_dict = get_links(browser, base_url)
-    print("got links dictionary")
 
     # tuple of CAZy classes and abbrievations
     cazy_classes = [
@@ -65,13 +67,14 @@ def main():
         # retrieve full CAZy class name
         cazy_class = cazy_classes[index][0]
         # create url for CAZy class main page
-        class_url = base_url + "/" + links_dict[cazy_class]
+        class_url = base_url + "/" + links_dict[cazy_classes[index][0]]
+        print(class_url)
 
-        # retrieve all links to CAZy familes for given CAZy class
-        get_family_links(browser, class_url, cazy_classes[index][1])
-        index += 1
+    #     # retrieve all links to CAZy familes for given CAZy class
+    #     get_family_links(browser, class_url, cazy_classes[index][1])
+    #     index += 1
     # url = "http://www.cazy.org/Glycoside-Hydrolases.html"
-    # get_family_links(browser, url)
+    # get_family_links(browser, url, "GH")
 
 
 def get_links(browser, base_url):
@@ -106,23 +109,57 @@ def get_family_links(browser, class_url, class_abbreviation):
 
     # obtain links on class main page
     all_links = class_page.soup.select("a")
-    # empty to store all links from CAZy class main page
+
+    # empty lists to store links to family pages
     family_links = []
+    sub_family_links = []
+    # empty list to store the names of families with subfamilies
+    sub_family_numbers = []
     # search pattern to determine if link is for CAZy family or not
     pattern = re.compile(rf"{class_abbreviation}\d+?.*?\.html")
 
     # retieve all links from CAZy class main page
     for link in all_links:
+        # retrieve the link from the bs4 object
         try:
             address = link["href"]
         except KeyError:
             pass
+
         # check if link is for CAZy family page
         search_result = re.match(pattern, address)
-        if search_result:
-            family_links.append(address)
 
-    print(len(family_links))
+        if search_result:  # link is a CAZy family page link
+            # check if subfamily (subfamilies containing '_' in their name)
+            subfam_index = address.find("_")
+
+            if subfam_index == -1:
+                # if link is for a subfamily page
+                family_links.append(address)
+
+            else:
+                # if link is for a subfamily page
+                # retrieve number of the main family
+                # e.g. retrieve 'GH13' from 'GH13_1.html'
+                family_number = address[:subfam_index]
+                sub_family_numbers.append(family_number)
+                sub_family_links.append(address)
+
+    # Remove the links to families which appear in the subfamilies
+    # Otherwise would collect proteins within the subfamilies twice,
+    # once in when going through the family pages, and second when
+    # going through the subfamily pages
+
+    # remove duplicates
+    sub_family_numbers = list(dict.fromkeys(sub_family_numbers))
+
+    for number in sub_family_numbers:
+        for link in family_links:
+            if link.startswith("link"):
+                family_links.remove(link)
+
+    # combine the sub_family and family lists into a single list
+    family_links += sub_family_links
 
     return family_links
 
