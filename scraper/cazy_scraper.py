@@ -64,17 +64,8 @@ def main():
     index = 0
 
     for index in range(len(cazy_classes)):
-        # retrieve full CAZy class name
-        cazy_class = cazy_classes[index][0]
-        # create url for CAZy class main page
         class_url = base_url + "/" + links_dict[cazy_classes[index][0]]
-        print(class_url)
-
-    #     # retrieve all links to CAZy familes for given CAZy class
-    #     get_family_links(browser, class_url, cazy_classes[index][1])
-    #     index += 1
-    # url = "http://www.cazy.org/Glycoside-Hydrolases.html"
-    # get_family_links(browser, url, "GH")
+        family_links = get_family_links(browser, class_url, cazy_classes[1])
 
 
 def get_links(browser, base_url):
