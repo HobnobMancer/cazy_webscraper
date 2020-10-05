@@ -27,6 +27,8 @@ Produces a dataframe containing protein data and write protein
 sequences to FASTA files.
 """
 
+import re
+
 import pandas as pd
 
 from urllib.request import urlopen
@@ -45,23 +47,31 @@ def main():
     links_dict = get_links(browser, base_url)
     print("got links dictionary")
 
-    # list of CAZy classes
+    # tuple of CAZy classes and abbrievations
     cazy_classes = [
-        "Glycoside Hydrolases",
-        "GlycosylTransferases",
-        "Polysaccharide Lyases",
-        "Carbohydrate Esterases",
-        "Auxiliary Activities",
-        "Carbohydrate-Binding Modules",
+        ["Glycoside Hydrolases", "GH"],
+        ["GlycosylTransferases", "GT"],
+        ["Polysaccharide Lyases", "PL"],
+        ["Carbohydrate Esterases", "CE"],
+        ["Auxiliary Activities", "AA"],
+        ["Carbohydrate-Binding Modules", "CBM"],
     ]
 
     # Navigate through each CAZy class pages
     # iterating through all pages listing all CAZymes for each CAZy class
-    for cazy_class in cazy_classes:
+    index = 0
+
+    for index in range(len(cazy_classes)):
+        # retrieve full CAZy class name
+        cazy_class = cazy_classes[index][0]
         # create url for CAZy class main page
         class_url = base_url + "/" + links_dict[cazy_class]
-        # navigate through pages associated for each CAZy class
-        navigate_class_page(browser, class_url)
+
+        # retrieve all links to CAZy familes for given CAZy class
+        get_family_links(browser, class_url, cazy_classes[index][1])
+        index += 1
+    # url = "http://www.cazy.org/Glycoside-Hydrolases.html"
+    # get_family_links(browser, url)
 
 
 def get_links(browser, base_url):
@@ -87,23 +97,34 @@ def get_links(browser, base_url):
     return link_dict
 
 
-def navigate_class_page(browser, class_url):
-    """Navigate CAZy class page, iterating through pages listing CAZymes."""
+def get_family_links(browser, class_url, class_abbreviation):
+    """Navigate CAZy class page, iterating through pages listing CAZymes.
+    
+    Return list of links to CAZy family pages for given class.
+    """
     class_page = browser.get(class_url)
 
     # obtain links on class main page
     all_links = class_page.soup.select("a")
     # empty to store all links from CAZy class main page
     family_links = []
+    # search pattern to determine if link is for CAZy family or not
+    pattern = re.compile(rf"{class_abbreviation}\d+?.*?\.html")
 
     # retieve all links from CAZy class main page
     for link in all_links:
         try:
-            family_links.append(link)
+            address = link["href"]
         except KeyError:
             pass
+        # check if link is for CAZy family page
+        search_result = re.match(pattern, address)
+        if search_result:
+            family_links.append(address)
 
     print(len(family_links))
+
+    return family_links
 
 
 if __name__ == "__main__":
