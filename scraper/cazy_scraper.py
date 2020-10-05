@@ -57,12 +57,11 @@ def main():
 
     # Navigate through each CAZy class pages
     # iterating through all pages listing all CAZymes for each CAZy class
-    # for cazy_class in cazy_classes:
-    # create url for CAZy class main page
-    # class_url = base_url + "/" + links_dict[cazy_class]
-    # navigate through pages associated for each CAZy class
-    class_url = "http://www.cazy.org/Glycoside-Hydrolases.html"
-    navigate_class_page(browser, class_url)
+    for cazy_class in cazy_classes:
+        # create url for CAZy class main page
+        class_url = base_url + "/" + links_dict[cazy_class]
+        # navigate through pages associated for each CAZy class
+        navigate_class_page(browser, class_url)
 
 
 def get_links(browser, base_url):
@@ -95,7 +94,7 @@ def navigate_class_page(browser, class_url):
     # obtain links on class main page
     all_links = class_page.soup.select("a")
     # empty to store all links from CAZy class main page
-    all_links = []
+    family_links = []
 
     # retieve all links from CAZy class main page
     for link in all_links:
@@ -103,6 +102,8 @@ def navigate_class_page(browser, class_url):
             family_links.append(link)
         except KeyError:
             pass
+
+    print(len(family_links))
 
 
 if __name__ == "__main__":
