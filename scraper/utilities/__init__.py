@@ -141,7 +141,8 @@ def build_parser(argv: Optional[List] = None):
 def build_logger(script_name, args) -> logging.Logger:
     """Return a logger for this script.
 
-    Enables logger for script, sets parameters and creates new file to store log.
+    Enables logger for script, sets parameters
+    and creates new file to store log.
 
     :param script_name: str, name of script
     :param args: parser argument
