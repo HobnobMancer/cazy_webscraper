@@ -44,7 +44,7 @@ from scraper.utilities import build_parser, build_logger
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
-    """Coordinate retrieval of links to CAZy website pages, 
+    """Coordinate retrieval of links to CAZy website pages,
     required for retrieval of protein data.
 
     :param argv: (optional) args_parser.Namespace object
@@ -103,7 +103,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # call functions from pyrewton.cazymes.prediction.parse submodule
 
     class_url = "www.cazy.org/Glycoside-Hydrolases.html"
-    family_links = get_family_links(browser, class_url, "GH")
+    family_links = get_family_links(browser, class_url, "GH", args)
 
     family_url = base_url + "/" + family_links[0]
     protein_table_links = get_family_table_links(browser, family_url, base_url)
@@ -134,7 +134,7 @@ def get_all_homepage_links(browser, base_url):
 
 def get_family_links(browser, class_url, class_abbreviation, args):
     """Navigate CAZy class page, iterating through pages listing CAZymes.
-    
+
     Return list of links to CAZy family pages for given class.
     """
     class_page = browser.get(class_url)
