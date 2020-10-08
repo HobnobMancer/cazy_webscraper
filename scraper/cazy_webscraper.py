@@ -34,7 +34,7 @@ from typing import List, Optional
 
 import mechanicalsoup
 
-from scraper.utilities import build_parser, build_logger
+# from scraper.utilities import build_parser, build_logger
 
 # add in option to configure:
 # specify which classes to scrape
@@ -53,18 +53,18 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # Build args parser
     # Check if Namespace is passed, if not parse cmd-line
-    if argv is None:
-        # parse cmd-line
-        parser = build_parser()
-        args = parser.parse_args()
-    else:
-        args = build_parser(argv).parse_args()
+    # if argv is None:
+    #     # parse cmd-line
+    #     parser = build_parser()
+    #     args = parser.parse_args()
+    # else:
+    #     args = build_parser(argv).parse_args()
 
     # Build logger
     # Log file only created if specified at cmd-line
-    if logger is None:
-        logger = build_logger("cazy_webscraper", args)
-    logger.info("Run initated")
+    # if logger is None:
+    #     logger = build_logger("cazy_webscraper", args)
+    # logger.info("Run initated")
 
     # page to start browser at: the CAZy homepage
     base_url = "http://www.cazy.org"
@@ -88,25 +88,43 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # Navigate through each CAZy class main page
     index = 0
 
+    # empty dictionary to store all URLs from CAZy
+    # { class : { family : { protein_table_links } } }
+    url_cache = {} 
+
     for index in range(len(cazy_classes)):  # for each specificed class
         # compile URL for the class main page
         class_url = base_url + "/" + links_dict[cazy_classes[index][0]]
-        # retrieve URLs for each family's main page
-        family_links = get_family_links(browser, class_url, cazy_classes[1], args)
 
-        for family in family_links:
+        # retrieve URLs for each family's main page; stored in dict, family : url
+        family_links = get_family_links(browser, class_url, cazy_classes[index][1], args)
+
+        # empty dictionary to store all protein_table_urls for class
+        # { family : {dict of protein table links} }
+        class_protein_dict = {}
+
+        for family, fam_url in family_links:
+            # compile url to family summary/main page
             family_url = base_url + "/" + family
-            # get the link to the page for 'all' proteins catalogued in the family
-            protein_table_links = get_family_table_links(browser, family_url, base_url)
-            # parse CAZy protein tables
 
-    # call functions from pyrewton.cazymes.prediction.parse submodule
+            # get URLs to all pages containing protein tables
+            # stored as dict, { page_number : url }
+            protein_table_dict = get_family_table_links(browser, family_url, base_url)
 
-    class_url = "www.cazy.org/Glycoside-Hydrolases.html"
-    family_links = get_family_links(browser, class_url, "GH", args)
+            # Add protain table links to dict of all protein tables for class
+            # { fam_1 : { protein_table_dict},  fam_2 : { protein_table_dict } }
+            class_protein_dict[family] = protein_table_dict
 
-    family_url = base_url + "/" + family_links[0]
-    protein_table_links = get_family_table_links(browser, family_url, base_url)
+            # Parse the protein table pages for each family
+            for family, protein_tables in class_protein_dict:
+                # PARSE
+                # PARSE
+                # PARSE
+                # PARSE
+
+    # Add the class_protein_dict (containing all families and protein table dict)
+    # to all the url_cache; e.g. { GH : {GH1 : {}, GH2 : {} } }
+    url_cache[cazy_classes[index][1]] = class_protein_dict
 
 
 def get_all_homepage_links(browser, base_url):
@@ -142,8 +160,8 @@ def get_family_links(browser, class_url, class_abbreviation, args):
     # obtain links on class main page
     all_links = class_page.soup.select("a")
 
-    # empty lists to store links to family pages
-    family_links = []
+    # empty dictionary to store links to family pages
+    family_links = {}
 
     # search pattern to determine if link is for CAZy family or not
     pattern = re.compile(rf"{class_abbreviation}\d+?.*?\.html")
@@ -161,10 +179,10 @@ def get_family_links(browser, class_url, class_abbreviation, args):
                     # subfamily names contain '_'
                     subfam_index = address.find("_")
                     if subfam_index != -1:  # link is for family page
-                        family_links.append(address)
+                        family_links[link.text] = address
 
                 else:  # retrieve all family and subfamily page links
-                    family_links.append(address)
+                    family_links[link.text] = address
                     # duplicate protein results caused by retrieving family and
                     # subfamily data are removed when parsing the pages
                     # becuase some proteins catalogued under the family with
