@@ -229,7 +229,7 @@ def main():
         # retrieve list of urls to all family pages for given class
         families = site.get_family_urls(cazy_class)
 
-        for family in families:
+        for family in tqdm(families, desc=f"{cazy_class} families"):
             # compile full url for CAZy family page
             family_url = base_url + "/" + str(family)
 
