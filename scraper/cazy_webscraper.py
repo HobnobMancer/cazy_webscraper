@@ -232,11 +232,15 @@ def main():
         for family in families:
             # compile full url for CAZy family page
             family_url = base_url + "/" + str(family)
+
             # populate site with the protein pages for each CAZy family
             get_links_from_familypage(family_url, cazy_class, base_url, site)
             print(
                 f"**number of protein table pages for {family}:", len(site.table_pages),
             )
+
+            # parse protein tables for CAZy family
+            # ...
 
 
 def get_links_from_hompage(base_url, classes, site):
@@ -267,12 +271,10 @@ def get_links_from_hompage(base_url, classes, site):
     for link in all_links:
         try:
             if link.text in classes:
-                # if the link is for a CAZy class summary page
-                # create a ClassPage class object
+                # if link is for a CAZy class summary page, create a ClassPage class object
                 pages.append(ClassPage(link["href"], link.text))
             else:
-                # if links is not for a CAZy class page
-                # create general Page class object
+                # if links is not for a CAZy class page, create general Page class object
                 pages.append(Page(link["href"]))
         except KeyError:
             pass
