@@ -235,8 +235,10 @@ def main():
 
             # populate site with the protein pages for each CAZy family
             get_links_from_familypage(family_url, cazy_class, base_url, site)
+            cazy_family = family_url[20:-5]
             print(
-                f"**number of protein table pages for {family}:", len(site.table_pages),
+                f"**number of protein table pages for {family}:",
+                len(site.get_table_urls(cazy_family)),
             )
 
             # parse protein tables for CAZy family
@@ -456,12 +458,12 @@ def get_protein_table_pages(first_page_url, cazy_family, cazy_class, site):
         except KeyError:
             pass
 
-    print("length of page before adding protein table pages:", len(pages))
+    print("Number of pages before adding protein table pages:", len(pages))
     if len(protein_table_numbers) == 0:
         # no links to other protein table pages retrieved, only one protein table page
         pages.append(ProteinTablePage(first_page_url, cazy_class, cazy_family, "1"))
         print(
-            "Only 1 protein table page\nlength of page after adding protein table pages:",
+            "Only 1 protein table page\nNumber of pages after adding protein table pages:",
             len(pages),
         )
 
@@ -535,15 +537,10 @@ def get_protein_table_pages(first_page_url, cazy_family, cazy_class, site):
 
                 page_count += 1
 
-        print(f"page count= {page_count}, length of pages=", len(pages))
+        print(f"page count= {page_count}, number of pages=", len(pages))
 
     for page in pages:
         site.add_page(page)
-
-    list_a = site.table_pages
-    for item in list_a:
-        print(item)
-    print(f"number of protein table pages for {cazy_family}:", len(site.table_pages))
 
     return
 
