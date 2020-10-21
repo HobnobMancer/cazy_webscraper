@@ -229,7 +229,7 @@ def main():
         # retrieve list of urls to all family pages for given class
         families = site.get_family_urls(cazy_class)
 
-        for family in tqdm(families, desc=f"{cazy_class} families"):
+        for family in families:  # make tqdm progress bar
             # compile full url for CAZy family page
             family_url = base_url + "/" + str(family)
 
@@ -419,6 +419,7 @@ def get_protein_table_pages(first_page_url, cazy_family, cazy_class, site):
 
     Return nothing.
     """
+    print(f"getting protein table pages for {cazy_family}")
     # scrape the first protein table page
     first_table_page = get_page(first_page_url)
     if first_table_page is None:
@@ -455,15 +456,21 @@ def get_protein_table_pages(first_page_url, cazy_family, cazy_class, site):
         except KeyError:
             pass
 
+    print("length of page before adding protein table pages:", len(pages))
     if len(protein_table_numbers) == 0:
         # no links to other protein table pages retrieved, only one protein table page
         pages.append(ProteinTablePage(first_page_url, cazy_class, cazy_family, "1"))
+        print(
+            "Only 1 protein table page\nlength of page after adding protein table pages:",
+            len(pages),
+        )
 
     else:
         # Retrieve the highest protein table page number, finding the total number of protein table
         # pages for given protein family
         protein_table_numbers.sort(reverse=True)
         total = protein_table_numbers[0]
+        print("total number of protein table pages=", total)
         protein_table_total = int(total) + 1  # ensure capturing final table page
 
         page_count = 1  # the number of the protein table page of interest
@@ -514,7 +521,10 @@ def get_protein_table_pages(first_page_url, cazy_family, cazy_class, site):
                                 )  # compile full URL for page
                                 pages.append(
                                     ProteinTablePage(
-                                        url, cazy_class, cazy_family, str(page_count)
+                                        page_url,
+                                        cazy_class,
+                                        cazy_family,
+                                        str(page_count),
                                     )
                                 )
                         except ValueError:
@@ -525,10 +535,15 @@ def get_protein_table_pages(first_page_url, cazy_family, cazy_class, site):
 
                 page_count += 1
 
+        print(f"page count= {page_count}, length of pages=", len(pages))
+
     for page in pages:
         site.add_page(page)
 
-    print(f"number of protein table pages for {cazy_family}:", site.table_pages)
+    list_a = site.table_pages
+    for item in list_a:
+        print(item)
+    print(f"number of protein table pages for {cazy_family}:", len(site.table_pages))
 
     return
 
