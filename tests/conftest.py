@@ -33,6 +33,12 @@ def test_dir():
 
 
 @pytest.fixture
+def test_input_dir(test_dir):
+    dir_path = test_dir / "test_inputs"
+    return dir_path
+
+
+@pytest.fixture
 def null_logger():
     logger = logging.getLogger("Test_ac_number_retrieval logger")
     logger.addHandler(logging.NullHandler())
