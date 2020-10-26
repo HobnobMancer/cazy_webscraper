@@ -30,6 +30,8 @@ sequences to FASTA files.
 import logging
 import re
 
+import pandas as pd
+
 from typing import List, Optional
 
 import mechanicalsoup
@@ -98,7 +100,18 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             family_url = base_url + "/" + family
             # get the link to the page for 'all' proteins catalogued in the family
             protein_table_links = get_family_table_links(browser, family_url, base_url)
+
             # parse CAZy protein tables
+            # create empty df to add all protein tables to
+            family_protein_df = pd.DataFrame(columns=["Protein Name", "EC#", "Organism", "GenBank", "Uniprot", "PDB/3D", "Unnamed: 6"])
+
+            # for table_page in protein_table_links:
+                # protein_df = parse_protein_df()
+                # append df to family_df
+                # family_protein_df = family_protein_df.append(protein_df, ignre_index=True)
+
+            # write out df to .csv file
+            write_out_df(family_protein_df, family[:-5])
 
     # call functions from pyrewton.cazymes.prediction.parse submodule
 
