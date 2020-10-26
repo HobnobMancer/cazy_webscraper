@@ -20,6 +20,87 @@
 
 import pandas as pd
 
+from datetime import datetime
+
+
+def parse_cazy_protein_data(site, cazy_classes, args, logger):
+    """Coordinate parsing protein tables from CAZy, and spliting data.
+
+    Data can no be split (option 'all') so a single dataframe containing
+    all protein data is created.
+
+    Data can be split by class (option 'class') creating a single dataframe
+    per CAZy class, or be split by family (option 'family') creating a single
+    dataframe per CAZy family.
+
+    :param site: site class object, contains links to all CAZy pages
+    :param cazy_classes: tuple, each list containing the full length and abbreviated class name
+    :param args: parser object
+    :param logger: logger object
+
+    Return nothing.
+    """
+    if args.data_split == "all":  # create a single dataframe containing ALL data
+        # retrieve the urls to all protein tables pages in site
+        all_protein_table_page_urls = 
+
+        # build empty df to store all protein data from CAZy
+        all_protein_df = pd.DataFrame(columns=["Protein Name", "EC#", "Organism", "GenBank", "Uniprot", "PDB/3D", "Unnamed: 6"])
+
+        for url in all_protein_table_pages:
+            new_protein_df = parse_protein_table(url)
+            all_protein_df = all_protein_df.append(new_protein_df, ignore_index=True)
+        
+        # create time stamp
+        time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+        
+        # write out protein dataframe to user specified output directory
+        write_out_df(all_protein_df, f"cazy_scrape_{time_stamp}.csv", args.output)
+    
+    elif args.data_split == "class":  # create a dataframe PER CAZy CLASS
+        for class_list in cazy_classes:
+            cazy_class = class_list[0]
+            class_abbrev = class_list[1]
+
+            # retrieve urls to all protein tables pages for given CAZy class
+            class_urls = 
+        
+            # build empty dataframe to store protein data for CAZy class
+            class_protein_df = pd.DataFrame(columns=["Protein Name", "EC#", "Organism", "GenBank", "Uniprot", "PDB/3D", "Unnamed: 6"])
+            for url in class_urls:
+                new_protein_df = parse_protein_table(url)
+                class_protein_df = all_protein_df.append(new_protein_df, ignore_index=True)
+
+            # create time stamp
+            time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+
+            # write out dataframe for given CAZy class to user output directory
+            write_out_df(class_protein_df, f"cazy_scrape_{cazy_class}_{time_stamp}.csv", args.output)
+        
+    elif args.data_split == "family":  # create a dataframe PER CAZy FAMILY
+        for class_list in cazy_classes:
+            cazy_class = class_list[0]
+            class_abbrev = class_list[1]
+
+            # retrieve all Family pages for given class
+            families = 
+
+            for family in families:
+                # retrieve urls to all protein tables for given CAZy family
+                family_urls = 
+
+                # create empty df to store protein data from family
+                family_protein_df = pd.DataFrame(columns=["Protein Name", "EC#", "Organism", "GenBank", "Uniprot", "PDB/3D", "Unnamed: 6"])
+                
+                for url in family_urls:
+                    new_protein_df = parse_protein_table(url)
+                    family_protein_df = all_protein_df.append(new_protein_df, ignore_index=True)
+
+                # create time stamp
+                time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+                # write out dataframe for CAZy Family
+                write_out_df(class_protein_df, f"cazy_scrape_{cazy_family}_{time_stamp}.csv", args.output)
+        
 
 def parse_protein_table(url):
     """Parses protein table from CAZy family page.
