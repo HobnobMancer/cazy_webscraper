@@ -20,6 +20,7 @@
 
 import pandas as pd
 
+
 def parse_protein_table(url):
     """Parses protein table from CAZy family page.
 
@@ -35,7 +36,7 @@ def parse_protein_table(url):
     # 2 dataframes are returned
     # The first is the summary table at the top of page when viewed in a browser
     # The second df is the protein table of interest
-    protein_df= list_of_dfs[1]
+    protein_df = list_of_dfs[1]
 
     # final row contains links to the top of the webpage
     # remove final row
@@ -48,10 +49,10 @@ def parse_protein_table(url):
     for row_index in range(len(protein_df["Organism"])):
         if pd.isnull(protein_df["Unnamed: 6"].iloc[row_index]) is False:
             # 'Unnamed: 6' cell contains data
-            # remove this row nad row below containing 
+            # remove this row nad row below containing repeated column headings
             protein_df.drop(row_index)
             protein_df.drop((row_index + 1))
-    
+
     # remove column 'unnamed: 6'
     protein_df.drop("Unnamed: 6", axis=1)
 
