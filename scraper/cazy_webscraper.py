@@ -29,6 +29,7 @@ sequences to FASTA files.
 
 import logging
 import re
+import sys
 
 import pandas as pd
 
@@ -36,13 +37,9 @@ from typing import List, Optional
 
 import mechanicalsoup
 
+from scraper.file_io import make_output_directory, write_out_df
+from scraper.parse import parse_cazy_protein_data
 from scraper.utilities import build_parser, build_logger
-
-# add in option to configure:
-# specify which classes to scrape
-# specify if subfamilies wanted or not
-
-# should I rename this directory crawler as this only crawls through the pages
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -68,6 +65,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger = build_logger("cazy_webscraper", args)
     logger.info("Run initated")
 
+    # If specified output directory, create output directory
+    if args.outdir is not sys.stdout:
+        make_output_directory(args.outdir, logger, args.force, args.nodelete)
+
     # page to start browser at: the CAZy homepage
     base_url = "http://www.cazy.org"
 
@@ -79,11 +80,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # tuple of CAZy classes and abbrievations
     cazy_classes = [
-        ["Glycoside Hydrolases", "GH"],
+        ["Glycoside-Hydrolases", "GH"],
         ["GlycosylTransferases", "GT"],
-        ["Polysaccharide Lyases", "PL"],
-        ["Carbohydrate Esterases", "CE"],
-        ["Auxiliary Activities", "AA"],
+        ["Polysaccharide-Lyases", "PL"],
+        ["Carbohydrate-Esterases", "CE"],
+        ["Auxiliary-Activities", "AA"],
         ["Carbohydrate-Binding Modules", "CBM"],
     ]
 
@@ -91,27 +92,40 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     index = 0
 
     for index in range(len(cazy_classes)):  # for each specificed class
+        cazy_class = cazy_classes[index][0]
+        class_abbrev = cazy_classes[index][1]
+
         # compile URL for the class main page
-        class_url = base_url + "/" + links_dict[cazy_classes[index][0]]
-        # retrieve URLs for each family's main page
-        family_links = get_family_links(browser, class_url, cazy_classes[1], args)
+        class_url = base_url + "/" + links_dict[cazy_class]
+        # retrieve URLs for each family's main/summary page
+        family_links = get_family_links(browser, class_url, class_abbrev, args)
 
         for family in family_links:
             family_url = base_url + "/" + family
             # get the link to the page for 'all' proteins catalogued in the family
             protein_table_links = get_family_table_links(browser, family_url, base_url)
 
+    # site is now populated with class, family and protein_table pages
+    # parse protein tables and write to .csv files, with data separation specified by user
+    # handled by parse module
+    parse_cazy_protein_data(site, cazy_classes, args, logger)
+ 
+            
+
             # parse CAZy protein tables
             # create empty df to add all protein tables to
-            family_protein_df = pd.DataFrame(columns=["Protein Name", "EC#", "Organism", "GenBank", "Uniprot", "PDB/3D", "Unnamed: 6"])
+            # family_protein_df = pd.DataFrame(columns=["Protein Name", "EC#", "Organism", "GenBank", "Uniprot", "PDB/3D", "Unnamed: 6"])
 
             # for table_page in protein_table_links:
                 # protein_df = parse_protein_df()
                 # append df to family_df
                 # family_protein_df = family_protein_df.append(protein_df, ignre_index=True)
 
-            # write out df to .csv file
-            write_out_df(family_protein_df, family[:-5])
+            # if args.data_split == "family"
+                # write out dataframe for family
+                # write_out_df(family_protein_df, family[:-5])
+            # else:
+
 
     # call functions from pyrewton.cazymes.prediction.parse submodule
 
