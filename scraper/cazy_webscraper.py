@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author:
 # Emma E. M. Hobbs
@@ -31,14 +31,12 @@ import logging
 import re
 import sys
 
-import pandas as pd
-
 from typing import List, Optional
 
 import mechanicalsoup
 
-from scraper.file_io import make_output_directory, write_out_df
 from scraper.parse import parse_cazy_protein_data
+from scraper.file_io import make_output_directory
 from scraper.utilities import build_parser, build_logger
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author:
 # Emma E. M. Hobbs
@@ -16,4 +16,4 @@
 # UK
 
 # The MIT License
-"""Web scraper to scrape the entire CAZy website."""
+"""Programme to scrape the CAZy database and retrieve protein data."""

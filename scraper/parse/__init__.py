@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author:
 # Emma E. M. Hobbs
@@ -21,6 +21,8 @@
 import pandas as pd
 
 from datetime import datetime
+
+from scraper.file_io import write_out_df
 
 
 def parse_cazy_protein_data(site, cazy_classes, args, logger):
