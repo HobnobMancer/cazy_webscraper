@@ -124,32 +124,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         for family in family_links:
             family_url = base_url + "/" + family
             # get the link to the page for 'all' proteins catalogued in the family
-            protein_table_links = get_family_table_links(browser, family_url, base_url)
+            get_family_table_links(browser, family_url, base_url)
 
-            # parse CAZy protein tables
-            # create empty df to add all protein tables to
-            family_protein_df = pd.DataFrame(columns=["Protein Name", "EC#", "Organism", "GenBank", "Uniprot", "PDB/3D", "Unnamed: 6"])
-
-            # for table_page in protein_table_links:
-                # protein_df = parse_protein_df()
-                # append df to family_df
-                # family_protein_df = family_protein_df.append(protein_df, ignre_index=True)
-
-            # write out df to .csv file
-            write_out_df(family_protein_df, family[:-5])
-
-        if args.data_split == "class":
-            # Write dataframe for CAZy class
-            parse.proteins_to_dataframe(families)
-        else:
-            all_data.append(family)
-
-    if all_data is not None:
-        # Write dataframe containing all data from CAZy
-        parse.proteins_to_dataframe(all_data)
-
-    logger.info("Program finished")
-
+    # site is now populated with class, family and protein_table pages
+    # parse protein tables and write to .csv files, with data separation specified by user
+    # handled by parse module
+    parse_cazy_protein_data(site, cazy_classes, args, logger)
 
 def get_cazy_class_pages(cazy_home):
     """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
