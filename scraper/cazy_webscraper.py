@@ -103,37 +103,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         for family in family_links:
             family_url = base_url + "/" + family
             # get the link to the page for 'all' proteins catalogued in the family
-            protein_table_links = get_family_table_links(browser, family_url, base_url)
+            get_family_table_links(browser, family_url, base_url)
 
     # site is now populated with class, family and protein_table pages
     # parse protein tables and write to .csv files, with data separation specified by user
     # handled by parse module
     parse_cazy_protein_data(site, cazy_classes, args, logger)
- 
-            
-
-            # parse CAZy protein tables
-            # create empty df to add all protein tables to
-            # family_protein_df = pd.DataFrame(columns=["Protein Name", "EC#", "Organism", "GenBank", "Uniprot", "PDB/3D", "Unnamed: 6"])
-
-            # for table_page in protein_table_links:
-                # protein_df = parse_protein_df()
-                # append df to family_df
-                # family_protein_df = family_protein_df.append(protein_df, ignre_index=True)
-
-            # if args.data_split == "family"
-                # write out dataframe for family
-                # write_out_df(family_protein_df, family[:-5])
-            # else:
-
-
-    # call functions from pyrewton.cazymes.prediction.parse submodule
-
-    class_url = "www.cazy.org/Glycoside-Hydrolases.html"
-    family_links = get_family_links(browser, class_url, "GH", args)
-
-    family_url = base_url + "/" + family_links[0]
-    protein_table_links = get_family_table_links(browser, family_url, base_url)
 
 
 def get_all_homepage_links(browser, base_url):
