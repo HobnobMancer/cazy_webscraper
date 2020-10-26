@@ -30,7 +30,7 @@ def parse_protein_table(url):
     Return parsed dataframe.
     """
     # scrape the protien table page and retrieve all dataframes
-    list_of_dfs = pd.read_html(url, header=2, index_col=0, encoding="utf-8")
+    list_of_dfs = pd.read_html(url, header=2, encoding="utf-8")
 
     # 2 dataframes are returned
     # The first is the summary table at the top of page when viewed in a browser
