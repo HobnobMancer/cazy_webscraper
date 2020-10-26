@@ -28,12 +28,8 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 import logging
 import re
 
-<<<<<<< HEAD
-from collections import defaultdict
-=======
 import pandas as pd
 
->>>>>>> add call to func parsing protein table
 from typing import List, Optional
 
 import mechanicalsoup
@@ -125,13 +121,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         for family_url in family_urls:
             family = parse_family(family_url, cazy_home)
 
-<<<<<<< HEAD
-            if args.data_split == "family":
-                # Write dataframe for CAZy family
-                parse.proteins_to_dataframe(family)
-            else:
-                families.append(family)
-=======
         for family in family_links:
             family_url = base_url + "/" + family
             # get the link to the page for 'all' proteins catalogued in the family
@@ -148,7 +137,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
             # write out df to .csv file
             write_out_df(family_protein_df, family[:-5])
->>>>>>> add call to func parsing protein table
 
         if args.data_split == "class":
             # Write dataframe for CAZy class
