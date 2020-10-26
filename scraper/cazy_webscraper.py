@@ -28,8 +28,6 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 import logging
 import re
 
-import pandas as pd
-
 from typing import List, Optional
 
 import mechanicalsoup
