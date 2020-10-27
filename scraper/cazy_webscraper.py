@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author:
 # Emma E. M. Hobbs
@@ -35,6 +35,7 @@ import mechanicalsoup
 
 from tqdm import tqdm
 
+from scraper.utilities import build_logger
 
 class Site:
     """A single website, parent to multiple Pages."""
@@ -185,6 +186,9 @@ class ProteinTablePage(FamilyPage):
 
 def main():
     """Coordinate scraping of CAZy website."""
+    # build logger
+    logger = build_logger()
+
     # page to start browsing from: the CAZy homepage
     base_url = "http://www.cazy.org"
 
