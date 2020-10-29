@@ -35,9 +35,9 @@ from tqdm.notebook import tqdm
 class Protein:
     """A single protein.
 
-    Each protein has a name, source organism (source), and links to external databases.
-    The links to external databases are stored in a dictionary, keyed by the external database
-    name ('str') with 'list' values becuase there may be multiple links per database.
+    Each protein has a name, source organism (source), and links to external databases. The links to
+    external databases are stored in a dictionary, keyed by the external database name ('str') with
+    'list' values becuase there may be multiple links per database.
     """
 
     def __init__(self, name, source, links=None):
@@ -47,7 +47,7 @@ class Protein:
             self.links = defaultdict(list)
         else:
             self.links = links
-    
+
     def __str__(self):
         """Create representative string of class object"""
         return f"{self.name} ({self.source}): links to {self.links.keys()}"
@@ -64,10 +64,10 @@ class Protein:
 
 class Family:
     """A single CAZy family.
-    
-    Each family has a name and a set of proteins that are members of
-    the family."""
-    
+
+    Each family has a name and a set of proteins that are members of the family.
+    """
+
     members = set()  # holds Protein instances
 
     def __init__(self, name):
@@ -75,7 +75,7 @@ class Family:
 
     def __str__(self):
         return f"CAZy family {self.name}: {len(self.members)} protein members"
-    
+
     def __repr__(self):
         return f"<Family: {id(self)}: {self.name}, {len(self.members)} protein members"
 
@@ -90,6 +90,7 @@ def main():
     # retrieve links to CAZy family pages
     for class_url in class_pages:
         family_urls = get_cazy_family_pages(class_url, cazy_home, subfam_retrieval)
+        for family in family_urls:
 
 
 def get_cazy_class_pages(cazy_home):
@@ -108,6 +109,36 @@ def get_cazy_class_pages(cazy_home):
 
     return [f"{cazy_home}/{_['href']}" for _ in home_page.soup.find_all("a", {"class": "spip_out"})
             if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)]
+
+
+def get_cazy_family_pages(class_url, cazy_home, subfam_retrieval):
+    """Retrieve all protein members of each CAZy family within the given CAZy class.
+
+    :param class_url: str, URL to the CAZy class
+    :param cazy_home: str, URL to CAZy home page
+    :param subfam_retrieval: bool, enables subfamily retrieval if true
+
+    Returns list of URLs to family pages.
+    """
+    # scrape the class page
+    class_page = get_page(class_url)
+
+    # retrieve the <h3> element that titles the div section containing the tables of family links
+    family_h3_element = [_ for _ in class_page.soup.find_all("h3"), {"class": "spip"} if
+                         str(_.contents[0]) == "Tables for Direct Access"][0]
+
+    # retrieve all tables within the parent div section of the <h3> element
+    tables = family_h3_element.parent.find_all("table")
+
+    # tables[0] is the table containing links to CAZy families
+    # tables[1] is the table containing the link to unclassified proteins
+
+    family_urls = family_urls = [f"{cazy_home}/{_[;'href']}" for _ in tables[0].find_all("a")]
+    family_urls.append(f"{cazy_home}/{tables[1].a['href']}")
+    if subfam_retrieval:
+        family_urls.append(get_subfamily_links(family_h3_element, cazy_home))
+
+    return family_urls
 
 
 def browser_decorator(func):
