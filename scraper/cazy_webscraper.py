@@ -70,8 +70,9 @@ class Family:
 
     members = set()  # holds Protein instances
 
-    def __init__(self, name):
+    def __init__(self, name, cazy_class):
         self.name = name
+        self.cazy_class = cazy_class
 
     def __str__(self):
         return f"CAZy family {self.name}: {len(self.members)} protein members"
@@ -90,7 +91,16 @@ def main():
     # retrieve links to CAZy family pages
     for class_url in class_pages:
         family_urls = get_cazy_family_pages(class_url, cazy_home, subfam_retrieval)
+
+        families = []  # store Family class objects
         for family_url in family_urls:
+            families.append(parse_family(family_url, cazy_home))
+        print(families)
+    # need to write out dataframes, either by family, by class or all as one
+    # if args.data_split is None:
+    # all_families = []
+    # all_families.append(families)
+
 
 
 def get_cazy_class_pages(cazy_home):
@@ -101,7 +111,7 @@ def get_cazy_class_pages(cazy_home):
     Return list of URLs.
     """
     # define items to be excluded from returned class list, ALWAYS exlide links to genomes
-    exclusions = ("<strong>Genomes</strong>")    
+    exclusions = ("<strong>Genomes</strong>")
     # exclusions.append(config file input)
 
     # scrape the home page
@@ -167,7 +177,32 @@ def get_subfamily_links(family_h3_element, cazy_home):
     return urls
 
 
-def parse_family_page(family_url, cazy_home):
+def parse_family(family_url, cazy_home):
+    """Returns a Family object with Protein members, scraped from CAZy.
+
+    :param family_url: str, URL to CAZy family summary page
+    :param cazy_home: str, URL to CAZy home page
+
+    Return Family object.
+    """
+    # retrieve family name from URL
+    family_name = family_url[(len(cazy_home) + 1): -5]
+
+    # retrieve class from family name
+    pattern = re.compile(r"\D+")
+    search_result = re.match(pattern, family_name)
+    cazy_class = search_result.group()
+
+    family = Family(family_name, cazy_class)
+
+    for protein in tqdm(parse_family_pages(family_url, cazy_home),
+                        desc=f"Parsing {cazy_class} families"):
+        family.members.add(protein)
+
+    return family
+
+
+def parse_family_pages(family_url, cazy_home):
     """Retrieve all protein records for given CAZy family.
 
     Protein records are listed in a pagination method, with 1000 proteins per page.
@@ -181,22 +216,29 @@ def parse_family_page(family_url, cazy_home):
     first_pagniation_url = family_url.replace(".html", "_all.html")
     first_pagination_page = get_page(first_pagniation_url)
 
+    protein_page_urls = [first_pagination_page]
+
     # retrieve the URL to the final page of protein records in the pagination listing
-    last_pagination_url = first_pagination_page.find_all("a", {"class": "lien_pagination", "rel": "nofollow"})[-1]
+    try:
+        last_pagination_url = first_pagination_page.find_all(
+            (
+                ("a", {"class": "lien_pagination", "rel": "nofollow"})[-1]
+            )
+        )
+    except IndexError:  # there is no pagination; a single-query entry
+        last_pagination_url = None
 
-    url_prefix = last_pagination_url["href"].split("PRINC=")[0] + "PRINC="
-    last_princ_num = int(last_pagination_url["href"].split("PRINC=")[-1].split("#pagination")[0])
-    url_suffix = "#pagination" + last_pagination_url["href"].split("#pagination")[-1]
+    if last_pagination_url is not None:
+        url_prefix = last_pagination_url["href"].split("PRINC=")[0] + "PRINC="
+        last_princ_no = int(last_pagination_url["href"].split("PRINC=")[-1].split("#pagination")[0])
+        url_suffix = "#pagination" + last_pagination_url["href"].split("#pagination")[-1]
 
-    # Build list of urls to all pages in the pagination listing, increasing the PRINC increment
-    protein_page_urls = [f"{cazy_home}/{prefix}{_}{suffix}" for _ in range(1000, last_princ_num + 1000, 1000)"]
-    protein_page_urls.insert(0, first_pagniation_url)
+        # Build list of urls to all pages in the pagination listing, increasing the PRINC increment
+        protein_page_urls.extend([f"{cazy_home}/{prefix}{_}{suffix}" for _ in
+                                  range(1000, last_princ_no + 1000, 1000)])
 
-    proteins = []
-    for url in protein_page_urls:
-        proteins.append(parse_proteins(url))
-    
-    # MISSING RETURN -- DON'T FORGET TO ADD LATER!!
+    # Process all URLs into a single collection - a generator
+    return (y for x in (parse_proteins(url) for url in protein_page_urls) for y in x)
 
 
 def parse_proteins(protein_page_url):
@@ -220,7 +262,7 @@ def parse_proteins(protein_page_url):
 def row_to_protein(row):
     """Returns a Protein object representing a single protein row from a CAZy family protein page.
 
-    Each row, in order, contains the protein name, EC number, source organism, GenBank ID(s), 
+    Each row, in order, contains the protein name, EC number, source organism, GenBank ID(s),
     UniProt ID(s), and PDB accession(s).
 
     :param row: tr element from CAZy family protein page
@@ -238,9 +280,11 @@ def row_to_protein(row):
     # test for len(tds[x].contents) in case there is no link,
     # the check of .name then ensures link is captured
     if len(tds[3].contents) and tds[3].contents[0].name == "a":
-        links["GenBank"] = [f"{_.get_text()}: {_['href']}" for _ in tds[3].contents if _.name == "a"]
+        links["GenBank"] = [f"{_.get_text()}: {_['href']}" for _ in tds[3].contents if
+                             _.name == "a"]
     if len(tds[4].contents) and tds[4].contents[0].name == "a":
-        links["UniProt"] = [f"{_.get_text()}: {_['href']}" for _ in tds[4].contents if _.name == "a"]
+        links["UniProt"] = [f"{_.get_text()}: {_['href']}" for _ in tds[4].contents if
+                             _.name == "a"]
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
         links["PDB"] = [f"{_.get_text()}: {_['href']}" for _ in tds[5].contents if _.name == "a"]
 
