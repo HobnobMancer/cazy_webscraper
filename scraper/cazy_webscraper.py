@@ -234,7 +234,7 @@ def row_to_protein(row):
     ec_number = tds[1].contents[0].strip()
     source_organism = tds[2].a.get_text()
     links = {}
-    
+
     # test for len(tds[x].contents) in case there is no link,
     # the check of .name then ensures link is captured
     if len(tds[3].contents) and tds[3].contents[0].name == "a":
@@ -243,9 +243,9 @@ def row_to_protein(row):
         links["UniProt"] = [f"{_.get_text()}: {_['href']}" for _ in tds[4].contents if _.name == "a"]
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
         links["PDB"] = [f"{_.get_text()}: {_['href']}" for _ in tds[5].contents if _.name == "a"]
-    
+
     return Protein
-    
+
 
 def browser_decorator(func):
     """Decorator to retry the wrapped function up to 'retries' times."""
