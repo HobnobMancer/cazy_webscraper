@@ -198,6 +198,55 @@ def parse_family_page(family_url, cazy_home):
     
     # MISSING RETURN -- DON'T FORGET TO ADD LATER!!
 
+
+def parse_proteins(protein_page_url):
+    """Returns generator of Protein objects for all protein rows on a single CAZy family page.
+
+    :param protein_page_url, str, URL to the CAZy family page containing protein records
+
+    Return generator object.
+    """
+    protein_page = get_page(url)
+
+    # retrieve protein record table
+    protein_table = protein_page.soup.find_all("table", {"class": "listing"})[0]
+    protein_rows = [_ for _ in protein_table.descendants if (_.name == "tr") and
+                    ("id" not in _.attrs) and ("class" not in _.attrs)]
+
+    for row in rows:
+        yield row_to_protein(row)
+
+
+def row_to_protein(row):
+    """Returns a Protein object representing a single protein row from a CAZy family protein page.
+
+    Each row, in order, contains the protein name, EC number, source organism, GenBank ID(s), 
+    UniProt ID(s), and PDB accession(s).
+
+    :param row: tr element from CAZy family protein page
+
+    Return Protein instance.
+    """
+    # retrieve list of cells ('td' elements) in row
+    tds = list(row.find_all("td"))
+
+    protein_name = tds[0].contents[0].strip()
+    ec_number = tds[1].contents[0].strip()
+    source_organism = tds[2].a.get_text()
+    links = {}
+    
+    # test for len(tds[x].contents) in case there is no link,
+    # the check of .name then ensures link is captured
+    if len(tds[3].contents) and tds[3].contents[0].name == "a":
+        links["GenBank"] = [f"{_.get_text()}: {_['href']}" for _ in tds[3].contents if _.name == "a"]
+    if len(tds[4].contents) and tds[4].contents[0].name == "a":
+        links["UniProt"] = [f"{_.get_text()}: {_['href']}" for _ in tds[4].contents if _.name == "a"]
+    if len(tds[5].contents) and tds[5].contents[0].name == "a":
+        links["PDB"] = [f"{_.get_text()}: {_['href']}" for _ in tds[5].contents if _.name == "a"]
+    
+    return Protein
+    
+
 def browser_decorator(func):
     """Decorator to retry the wrapped function up to 'retries' times."""
 
