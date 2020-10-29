@@ -141,6 +141,32 @@ def get_cazy_family_pages(class_url, cazy_home, subfam_retrieval):
     return family_urls
 
 
+def get_subfamily_links(family_h3_element, cazy_home):
+    """Retrieve URL links to CAZy subfamilies.
+
+    :param family_h3_element: bs4.element.Tag, h3 element titling the page div
+    :param cazy_home: str, URL to CAZy home_page
+
+    Return list of URLs to subfamilies.
+    """
+    all_links = family_h3_element.find_all("a")
+
+    pattern = re.compile(rf"\D+?\d+?_\d+?\.html")
+
+    urls = []  # empty list to store subfamily URLs
+
+    for link in all_links:
+        try:
+            search_result = re.search(pattern, link["href"])
+            urls.append(f"{cazy_home}/{link['href']}")
+        except KeyError, AttributeError as error:
+            # KeyError raised if link does not have ['href']
+            # AttributeError error raised search_result is None becuase not subfam link
+            pass
+
+    return urls
+
+
 def browser_decorator(func):
     """Decorator to retry the wrapped function up to 'retries' times."""
 
