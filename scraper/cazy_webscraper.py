@@ -80,5 +80,42 @@ class Family:
         return f"<Family: {id(self)}: {self.name}, {len(self.members)} protein members"
 
 
+def browser_decorator(func):
+    """Decorator to retry the wrapped function up to 'retries' times."""
+
+    def wrapper(*args, retries=10, **kwargs):
+        tries, success = 0, False
+        while not success and (tries < retries):
+            response = func(*args, **kwargs)
+            if str(response) == "<Response [200]>":  # response was successful
+                success = True
+            # if response from webpage was not successful
+            tries += 1
+        if not success:
+            print("Ran out of connection retries, and was unable to connect")
+            return None
+        else:
+            return response
+
+    return wrapper
+
+
+@browser_decorator
+def get_page(url):
+    """Create browser and use browser to retrieve page for given URL.
+
+    :param url: str, url to webpage
+
+    Return browser response object (the page).
+    """
+    # create browser object
+    browser = mechanicalsoup.Browser()
+
+    # create response object
+    page = browser.get(url)
+
+    return page
+
+
 if __name__ == "__main__":
     main()
