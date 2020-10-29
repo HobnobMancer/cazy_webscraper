@@ -92,6 +92,24 @@ def main():
         family_urls = get_cazy_family_pages(class_url, cazy_home, subfam_retrieval)
 
 
+def get_cazy_class_pages(cazy_home):
+    """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
+
+    :param cazy_url: str, URL to the CAZy home page.
+
+    Return list of URLs.
+    """
+    # define items to be excluded from returned class list, ALWAYS exlide links to genomes
+    exclusions = ("<strong>Genomes</strong>")    
+    # exclusions.append(config file input)
+
+    # scrape the home page
+    home_page = get_page(cazy_home)
+
+    return [f"{cazy_home}/{_['href']}" for _ in home_page.soup.find_all("a", {"class": "spip_out"})
+            if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)]
+
+
 def browser_decorator(func):
     """Decorator to retry the wrapped function up to 'retries' times."""
 
