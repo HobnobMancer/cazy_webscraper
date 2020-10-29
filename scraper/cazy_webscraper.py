@@ -90,7 +90,7 @@ def main():
     # retrieve links to CAZy family pages
     for class_url in class_pages:
         family_urls = get_cazy_family_pages(class_url, cazy_home, subfam_retrieval)
-        for family in family_urls:
+        for family_url in family_urls:
 
 
 def get_cazy_class_pages(cazy_home):
@@ -166,6 +166,37 @@ def get_subfamily_links(family_h3_element, cazy_home):
 
     return urls
 
+
+def parse_family_page(family_url, cazy_home):
+    """Retrieve all protein records for given CAZy family.
+
+    Protein records are listed in a pagination method, with 1000 proteins per page.
+
+    :param family_url: str, URL to CAZy family main page
+    :param cazy_home: str, URL to CAZy home page
+
+    Return list of protein records.
+    """
+    # compile URL to first family page of protein records
+    first_pagniation_url = family_url.replace(".html", "_all.html")
+    first_pagination_page = get_page(first_pagniation_url)
+
+    # retrieve the URL to the final page of protein records in the pagination listing
+    last_pagination_url = first_pagination_page.find_all("a", {"class": "lien_pagination", "rel": "nofollow"})[-1]
+
+    url_prefix = last_pagination_url["href"].split("PRINC=")[0] + "PRINC="
+    last_princ_num = int(last_pagination_url["href"].split("PRINC=")[-1].split("#pagination")[0])
+    url_suffix = "#pagination" + last_pagination_url["href"].split("#pagination")[-1]
+
+    # Build list of urls to all pages in the pagination listing, increasing the PRINC increment
+    protein_page_urls = [f"{cazy_home}/{prefix}{_}{suffix}" for _ in range(1000, last_princ_num + 1000, 1000)"]
+    protein_page_urls.insert(0, first_pagniation_url)
+
+    proteins = []
+    for url in protein_page_urls:
+        proteins.append(parse_proteins(url))
+    
+    # MISSING RETURN -- DON'T FORGET TO ADD LATER!!
 
 def browser_decorator(func):
     """Decorator to retry the wrapped function up to 'retries' times."""
