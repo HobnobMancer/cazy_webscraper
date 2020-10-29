@@ -80,6 +80,18 @@ class Family:
         return f"<Family: {id(self)}: {self.name}, {len(self.members)} protein members"
 
 
+def main():
+    """Set up parser, logger and coordinate overal scrapping of CAZy."""
+    cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
+
+    # retrieve links to CAZy class pages
+    class_pages = get_cazy_class_pages(cazy_home)
+
+    # retrieve links to CAZy family pages
+    for class_url in class_pages:
+        family_urls = get_cazy_family_pages(class_url, cazy_home, subfam_retrieval)
+
+
 def browser_decorator(func):
     """Decorator to retry the wrapped function up to 'retries' times."""
 
