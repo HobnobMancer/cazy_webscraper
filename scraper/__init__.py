@@ -16,4 +16,4 @@
 # UK
 
 # The MIT License
-"""Web scraper to scrape the entire CAZy website."""
+"""Web scraper to scrape the CAZy website."""

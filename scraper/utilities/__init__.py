@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author:
 # Emma E. M. Hobbs
@@ -16,7 +16,7 @@
 # UK
 
 # The MIT License
-"""Module for building a logger and argument parser."""
+"""Build cmd-line parser and logger."""
 
 import argparse
 import logging
@@ -31,11 +31,11 @@ def build_parser(argv: Optional[List] = None):
     # Create parser object
     parser = argparse.ArgumentParser(
         prog="cazy_webscraper.py",
-        description="Programme to scrape the CAZy database",
+        description="Scrapes the CAZy database",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    # Add arguments to parser
+    # Add optional arguments to parser
 
     # Add option to specify path to configuration file
     parser.add_argument(
@@ -44,21 +44,17 @@ def build_parser(argv: Optional[List] = None):
         type=Path,
         metavar="config file",
         default=None,
-        help="Path to configuration file. Default: scrape entire database",
+        help="Path to configuration file. Default: None, scrapes entire database",
     )
 
-    # Add option specify how data is split
+    # Add option on how to split data
     parser.add_argument(
         "-d",
         "--data_split",
-        choices=["class", "family"],
+        choices=[None, "class", "family"],
+        type=str,
         default=None,
-        help=(
-            (
-                "Define if and how data is split."
-                "Default: single dataframe and FASTA file"
-            )
-        ),
+        help="How data is to be split. Not split=all, split by class=class, split by family=family",
     )
 
     # Add option to force file over writting
@@ -68,12 +64,7 @@ def build_parser(argv: Optional[List] = None):
         dest="force",
         action="store_true",
         default=False,
-        help=(
-            (
-                "Force writing in existing output directory."
-                "Default: do not write in existing directory"
-            )
-        ),
+        help="Force file over writting",
     )
 
     # Add log file name option
@@ -84,7 +75,7 @@ def build_parser(argv: Optional[List] = None):
         type=Path,
         metavar="log file name",
         default=None,
-        help="Defines log file name and/or path. Default: no log file written",
+        help="Defines log file name and/or path",
     )
 
     # Add option to prevent over writing of existing files
@@ -95,39 +86,27 @@ def build_parser(argv: Optional[List] = None):
         dest="nodelete",
         action="store_true",
         default=False,
-        help=(
-            (
-                "Enable deleting files already present"
-                "in the output directory."
-                "Default: disabled"
-            )
-        ),
+        help="enable/disable deletion of exisiting files",
     )
 
-    # Add option to specify output directory
+    # Add option to specific output directory to write scraped data to
     parser.add_argument(
         "-o",
         "--output",
         type=Path,
-        metavar="output directory name",
+        metavar="output file name",
         default=sys.stdout,
-        help="Path to output directory",
+        help="Output filename",
     )
 
-    # Add option to specify if retrieving subfamily data
+    # Add option for more detail (verbose) logging
     parser.add_argument(
-        "-s",
-        "--subfamily",
-        dest="subfamily",
+        "-v",
+        "--verbose",
+        dest="verbose",
         action="store_true",
         default=False,
-        help=(
-            (
-                "Enable retrieval of subfamily number."
-                "Default: annotate proteins with their"
-                "family not subfamily number"
-            )
-        ),
+        help="Set logger level to 'INFO'",
     )
 
     if argv is None:
@@ -140,13 +119,9 @@ def build_parser(argv: Optional[List] = None):
 
 def build_logger(script_name, args) -> logging.Logger:
     """Return a logger for this script.
-
-    Enables logger for script, sets parameters
-    and creates new file to store log.
-
+    Enables logger for script, sets parameters and creates new file to store log.
     :param script_name: str, name of script
     :param args: parser argument
-
     Return logger object.
     """
     logger = logging.getLogger(script_name)

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author:
 # Emma E. M. Hobbs
@@ -23,230 +23,344 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 
 :func ...:...
 
-Produces a dataframe containing protein data and write protein
-sequences to FASTA files.
 """
 
 import logging
 import re
 
+from collections import defaultdict
 from typing import List, Optional
 
 import mechanicalsoup
 
-from scraper.utilities import build_parser, build_logger
+from tqdm import tqdm
 
-# add in option to configure:
-# specify which classes to scrape
-# specify if subfamilies wanted or not
+from scraper import utilities, file_io, parse
 
-# should I rename this directory crawler as this only crawls through the pages
+
+class Protein:
+    """A single protein.
+
+    Each protein has a name, source organism (source), and links to external databases. The links to
+    external databases are stored in a dictionary, keyed by the external database name ('str') with
+    'list' values becuase there may be multiple links per database.
+    """
+
+    def __init__(self, name, source, ec, links=None):
+        self.name = name
+        self.source = source
+        self.ec = ec
+        if links is None:
+            self.links = defaultdict(list)
+        else:
+            self.links = links
+
+    def __str__(self):
+        """Create representative string of class object"""
+        return f"{self.name} ({self.source}): links to {self.links.keys()}"
+
+    def __repr__(self):
+        """Create representative object"""
+        return(
+            (
+                f"<Protein: {id(self)}: {self.name}, "
+                f"({self.source}), {len(self.links)} to external databases>"
+            )
+        )
+
+
+class Family:
+    """A single CAZy family.
+
+    Each family has a name and a set of proteins that are members of the family.
+    """
+
+    members = set()  # holds Protein instances
+
+    def __init__(self, name, cazy_class):
+        self.name = name
+        self.cazy_class = cazy_class
+
+    def __str__(self):
+        return f"CAZy family {self.name}: {len(self.members)} protein members"
+
+    def __repr__(self):
+        return f"<Family: {id(self)}: {self.name}, {len(self.members)} protein members"
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
-    """Coordinate retrieval of links to CAZy website pages,
-    required for retrieval of protein data.
-
-    :param argv: (optional) args_parser.Namespace object
+    """Set up parser, logger and coordinate overal scrapping of CAZy.
+    
+    The collected data can be stored as a singel dataframe containing (not split), split into
+    separate dataframes by class or by family.
     """
-    # Program preparation
-
-    # Build args parser
-    # Check if Namespace is passed, if not parse cmd-line
     if argv is None:
-        # parse cmd-line
-        parser = build_parser()
+        parser = utilities.build_parser()
         args = parser.parse_args()
     else:
-        args = build_parser(argv).parse_args()
+        args = utilities.build_parser(argv).parse_args()
 
-    # Build logger
-    # Log file only created if specified at cmd-line
     if logger is None:
-        logger = build_logger("cazy_webscraper", args)
-    logger.info("Run initated")
+        logger = utilities.build_logger("cazy_webscraper", args)
+    logger.info("Run initiated")
 
-    # page to start browser at: the CAZy homepage
-    base_url = "http://www.cazy.org"
+    cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
 
+    # retrieve links to CAZy class pages
+    class_pages = get_cazy_class_pages(cazy_home)
+
+    all_data = []  # stores Family class objects if not splitting the data
+
+    # retrieve links to CAZy family pages
+    for class_url in class_pages:
+        family_urls = get_cazy_family_pages(class_url, cazy_home, False)
+
+        families = []  # store Family class objects if splitting data be class
+
+        for family_url in family_urls:
+            family = parse_family(family_url, cazy_home)
+
+            if args.data_split == "family":
+                # Write dataframe for CAZy family
+                parse.proteins_to_dataframe(family)
+            else:
+                families.append(family)
+
+        if args.data_split == "class":
+            # Write dataframe for CAZy class
+            parse.proteins_to_dataframe(families)
+        else:
+            all_data.append(family)
+
+    if all_data is not None:
+        # Write dataframe containing all data from CAZy
+        parse.proteins_to_dataframe(all_data)
+
+    logger.info("Program finished")
+
+
+def get_cazy_class_pages(cazy_home):
+    """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
+
+    :param cazy_url: str, URL to the CAZy home page.
+
+    Return list of URLs.
+    """
+    # define items to be excluded from returned class list, ALWAYS exlide links to genomes
+    exclusions = ("<strong>Genomes</strong>")
+    # exclusions.append(config file input)
+
+    # scrape the home page
+    home_page = get_page(cazy_home)
+
+    return [f"{cazy_home}/{_['href']}" for _ in home_page.soup.find_all("a", {"class": "spip_out"})
+            if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)]
+
+
+def get_cazy_family_pages(class_url, cazy_home, subfam_retrieval):
+    """Retrieve all protein members of each CAZy family within the given CAZy class.
+
+    :param class_url: str, URL to the CAZy class
+    :param cazy_home: str, URL to CAZy home page
+    :param subfam_retrieval: bool, enables subfamily retrieval if true
+
+    Returns list of URLs to family pages.
+    """
+    # scrape the class page
+    class_page = get_page(class_url)
+
+    # retrieve the <h3> element that titles the div section containing the tables of family links
+    family_h3_element = [_ for _ in class_page.soup.find_all("h3", {"class": "spip"}) if
+                         str(_.contents[0]) == "Tables for Direct Access"][0]
+
+    # retrieve all tables within the parent div section of the <h3> element
+    tables = family_h3_element.parent.find_all("table")
+
+    # tables[0] is the table containing links to CAZy families
+    # tables[1] is the table containing the link to unclassified proteins
+
+    family_urls = family_urls = [f"{cazy_home}/{_['href']}" for _ in tables[0].find_all("a")]
+    family_urls.append(f"{cazy_home}/{tables[1].a['href']}")
+    if subfam_retrieval:
+        family_urls.append(get_subfamily_links(family_h3_element, cazy_home))
+
+    return family_urls
+
+
+def get_subfamily_links(family_h3_element, cazy_home):
+    """Retrieve URL links to CAZy subfamilies.
+
+    :param family_h3_element: bs4.element.Tag, h3 element titling the page div
+    :param cazy_home: str, URL to CAZy home_page
+
+    Return list of URLs to subfamilies.
+    """
+    all_links = family_h3_element.find_all("a")
+
+    pattern = re.compile(r"\D+?\d+?_\d+?\.html")
+
+    urls = []  # empty list to store subfamily URLs
+
+    for link in all_links:
+        try:
+            search_result = re.search(pattern, link["href"])
+            urls.append(f"{cazy_home}/{search_result.group()}")
+        except (KeyError, AttributeError) as error:
+            # KeyError raised if link does not have ['href']
+            # AttributeError error raised if search_result is None becuase not subfam link
+            pass
+
+    return urls
+
+
+def parse_family(family_url, cazy_home):
+    """Returns a Family object with Protein members, scraped from CAZy.
+
+    :param family_url: str, URL to CAZy family summary page
+    :param cazy_home: str, URL to CAZy home page
+
+    Return Family object.
+    """
+    # retrieve family name from URL
+    family_name = family_url[(len(cazy_home) + 1): -5]
+
+    # retrieve class from family name
+    pattern = re.compile(r"\D+")
+    search_result = re.match(pattern, family_name)
+    cazy_class = search_result.group()
+
+    family = Family(family_name, cazy_class)
+
+    for protein in tqdm(parse_family_pages(family_url, cazy_home), desc=f"Parsing {family_name}"):
+        family.members.add(protein)
+
+    return family
+
+
+def parse_family_pages(family_url, cazy_home):
+    """Retrieve all protein records for given CAZy family.
+
+    Protein records are listed in a pagination method, with 1000 proteins per page.
+
+    :param family_url: str, URL to CAZy family main page
+    :param cazy_home: str, URL to CAZy home page
+
+    Return list of protein records.
+    """
+    # compile URL to first family page of protein records
+    first_pagination_url = family_url.replace(".html", "_all.html")
+    first_pagination_page = get_page(first_pagination_url)
+
+    protein_page_urls = [first_pagination_url]
+
+    # retrieve the URL to the final page of protein records in the pagination listing
+    try:
+        last_pagination_url = first_pagination_page.soup.find_all(
+            "a", {"class": "lien_pagination", "rel": "nofollow"})[-1]
+    except IndexError:  # there is no pagination; a single-query entry
+        last_pagination_url = None
+
+    if last_pagination_url is not None:
+        url_prefix = last_pagination_url["href"].split("PRINC=")[0] + "PRINC="
+        last_princ_no = int(last_pagination_url["href"].split("PRINC=")[-1].split("#pagination")[0])
+        url_suffix = "#pagination" + last_pagination_url["href"].split("#pagination")[-1]
+
+        # Build list of urls to all pages in the pagination listing, increasing the PRINC increment
+        protein_page_urls.extend([f"{cazy_home}/{url_prefix}{_}{url_suffix}" for _ in
+                                  range(1000, last_princ_no + 1000, 1000)])
+
+    # Process all URLs into a single collection - a generator
+    return (y for x in (parse_proteins(url) for url in protein_page_urls) for y in x)
+
+
+def parse_proteins(protein_page_url):
+    """Returns generator of Protein objects for all protein rows on a single CAZy family page.
+
+    :param protein_page_url, str, URL to the CAZy family page containing protein records
+
+    Return generator object.
+    """
+    protein_page = get_page(protein_page_url)
+
+    # retrieve protein record table
+    protein_table = protein_page.soup.find_all("table", {"class": "listing"})[0]
+    protein_rows = [_ for _ in protein_table.descendants if (_.name == "tr") and
+                    ("id" not in _.attrs) and ("class" not in _.attrs)]
+
+    for row in protein_rows:
+        yield row_to_protein(row)
+
+
+def row_to_protein(row):
+    """Returns a Protein object representing a single protein row from a CAZy family protein page.
+
+    Each row, in order, contains the protein name, EC number, source organism, GenBank ID(s),
+    UniProt ID(s), and PDB accession(s).
+
+    :param row: tr element from CAZy family protein page
+
+    Return Protein instance.
+    """
+    # retrieve list of cells ('td' elements) in row
+    tds = list(row.find_all("td"))
+
+    protein_name = tds[0].contents[0].strip()
+    source_organism = tds[2].a.get_text()
+    links = {}
+    try:
+        ec_number = tds[1].contents[0].strip()
+    except TypeError:  # raised if protein is not annotated with an EC number
+        ec_number = "N/A"
+
+    # test for len(tds[x].contents) in case there is no link,
+    # the check of .name then ensures link is captured
+    if len(tds[3].contents) and tds[3].contents[0].name == "a":
+        links["GenBank"] = [f"{_.get_text()}: {_['href']}" for _ in tds[3].contents if
+                            _.name == "a"]
+    if len(tds[4].contents) and tds[4].contents[0].name == "a":
+        links["UniProt"] = [f"{_.get_text()}: {_['href']}" for _ in tds[4].contents if
+                            _.name == "a"]
+    if len(tds[5].contents) and tds[5].contents[0].name == "a":
+        links["PDB"] = [f"{_.get_text()}: {_['href']}" for _ in tds[5].contents if _.name == "a"]
+
+    return Protein(protein_name, source_organism, ec_number, links)
+
+
+def browser_decorator(func):
+    """Decorator to retry the wrapped function up to 'retries' times."""
+
+    def wrapper(*args, retries=10, **kwargs):
+        tries, success = 0, False
+        while not success and (tries < retries):
+            response = func(*args, **kwargs)
+            if str(response) == "<Response [200]>":  # response was successful
+                success = True
+            # if response from webpage was not successful
+            tries += 1
+        if not success:
+            print("Ran out of connection retries, and was unable to connect")
+            return None
+        else:
+            return response
+
+    return wrapper
+
+
+@browser_decorator
+def get_page(url):
+    """Create browser and use browser to retrieve page for given URL.
+
+    :param url: str, url to webpage
+
+    Return browser response object (the page).
+    """
     # create browser object
     browser = mechanicalsoup.Browser()
 
-    # Retrieve all links from the CAZy homepage
-    links_dict = get_all_homepage_links(browser, base_url)
+    # create response object
+    page = browser.get(url)
 
-    # tuple of CAZy classes and abbrievations
-    cazy_classes = [
-        ["Glycoside Hydrolases", "GH"],
-        ["GlycosylTransferases", "GT"],
-        ["Polysaccharide Lyases", "PL"],
-        ["Carbohydrate Esterases", "CE"],
-        ["Auxiliary Activities", "AA"],
-        ["Carbohydrate-Binding Modules", "CBM"],
-    ]
-
-    # Navigate through each CAZy class main page
-    index = 0
-
-    for index in range(len(cazy_classes)):  # for each specificed class
-        # compile URL for the class main page
-        class_url = base_url + "/" + links_dict[cazy_classes[index][0]]
-        # retrieve URLs for each family's main page
-        family_links = get_family_links(browser, class_url, cazy_classes[1], args)
-
-        for family in family_links:
-            family_url = base_url + "/" + family
-            # get the link to the page for 'all' proteins catalogued in the family
-            protein_table_links = get_family_table_links(browser, family_url, base_url)
-            # parse CAZy protein tables
-
-    # call functions from pyrewton.cazymes.prediction.parse submodule
-
-    class_url = "www.cazy.org/Glycoside-Hydrolases.html"
-    family_links = get_family_links(browser, class_url, "GH", args)
-
-    family_url = base_url + "/" + family_links[0]
-    protein_table_links = get_family_table_links(browser, family_url, base_url)
-
-
-def get_all_homepage_links(browser, base_url):
-    """Retrieve all links from the homepage.
-
-    Return dictionary of link.text : link key/value pairs.
-    """
-    # create response object, <Response [200]> is a successful connection
-    home_page = browser.get(base_url)
-
-    # obtain links on homepage
-    all_links = home_page.soup.select("a")
-    # empty dictionary to store links in
-    # as text : url_address key/value pairs
-    link_dict = {}
-
-    for link in all_links:
-        try:
-            link_dict[link.text] = link["href"]
-        except KeyError:
-            pass
-
-    return link_dict
-
-
-def get_family_links(browser, class_url, class_abbreviation, args):
-    """Navigate CAZy class page, iterating through pages listing CAZymes.
-
-    Return list of links to CAZy family pages for given class.
-    """
-    class_page = browser.get(class_url)
-
-    # obtain links on class main page
-    all_links = class_page.soup.select("a")
-
-    # empty lists to store links to family pages
-    family_links = []
-
-    # search pattern to determine if link is for CAZy family or not
-    pattern = re.compile(rf"{class_abbreviation}\d+?.*?\.html")
-
-    # retieve all links from CAZy class main page
-    for link in all_links:
-        # retrieve the link from the bs4 object
-        try:
-            # check link is for a family/subfamily page
-            address = link["href"]
-            search_result = re.match(pattern, link.text)
-            if search_result is True:  # link is a CAZy family/subfamily page link
-
-                if args.subfamily is False:  # do not retrieve subfamily links
-                    # subfamily names contain '_'
-                    subfam_index = address.find("_")
-                    if subfam_index != -1:  # link is for family page
-                        family_links.append(address)
-
-                else:  # retrieve all family and subfamily page links
-                    family_links.append(address)
-                    # duplicate protein results caused by retrieving family and
-                    # subfamily data are removed when parsing the pages
-                    # becuase some proteins catalogued under the family with
-                    # no subfamily
-        except KeyError:
-            pass
-
-    return family_links
-
-
-def get_family_table_links(browser, family_url, base_url):
-    """Retrieves the links for all tables containing proteins for the family.
-
-    :param browser: Beautifulsoup browser objecct
-    :param family_link: Beautifulsoup link object
-
-    Return a list of urls for all pages containing protein data.
-    """
-    family_page = browser.get(family_url)
-
-    # obtain all links on family main/summary page
-    all_links = family_page.soup.select("a")
-
-    # empty dictionary to store links:
-    all_links_dict = {}
-
-    for link in all_links:
-        try:
-            all_links_dict[link.text] = link["href"]
-        except KeyError:
-            pass
-
-    # retrieves full url not only the suffix
-    family_all_url = all_links_dict["All"]
-
-    # navigate to family 'all' page
-    family_all_page = browser.get(family_all_url)
-
-    # obtain all links on family 'all' page
-    all_links = family_all_page.soup.select("a")
-
-    all_link_dict = {}
-    for link in all_links:
-        try:
-            all_link_dict[link.text] = link["href"]
-        except KeyError:
-            pass
-
-    # retrieve all links to the pages containing protein tables/data
-    # for the family
-    table_pages_urls = []
-    table_pages_urls.append(family_all_url)  # contains first table
-
-    # iterate through the page numbers to retrieve the links
-    # of all the pages containing protein tables for the family
-    # These cannot be retrieved in on go as each page contains
-    # a limited number of links to the other table pages.
-    page_count = 2
-    error_check = 0
-    while error_check == 0:
-        try:
-            new_url = base_url + "/" + all_link_dict[str(page_count)]
-            table_pages_urls.append(new_url)
-
-            # open new url to retrieve next page and
-            # retrieve all links from next page
-            # so can repeat and retrieve link for next page
-            new_page = browser.get(new_url)
-            all_links = new_page.soup.select("a")
-
-            all_link_dict = {}
-            for link in all_links:
-                try:
-                    all_link_dict[link.text] = link["href"]
-                except KeyError:
-                    pass
-
-            page_count += 1
-
-        except KeyError as error:
-            error_check = -1
-    return table_pages_urls
+    return page
 
 
 if __name__ == "__main__":
