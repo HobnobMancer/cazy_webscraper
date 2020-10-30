@@ -25,13 +25,17 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 
 """
 
+import logging
 import re
 
 from collections import defaultdict
+from typing import List, Optional
 
 import mechanicalsoup
 
 from tqdm import tqdm
+
+from scraper import utilities, file_io, parse
 
 
 class Protein:
@@ -84,8 +88,18 @@ class Family:
         return f"<Family: {id(self)}: {self.name}, {len(self.members)} protein members"
 
 
-def main():
+def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
     """Set up parser, logger and coordinate overal scrapping of CAZy."""
+    if argv is None:
+        parser = utilities.build_parser()
+        args = parser.parse_args()
+    else:
+        args = utilities.build_parser(argv).parse_args()
+
+    if logger is None:
+        logger = utilities.build_logger("cazy_webscraper", args)
+    logger.info("Run initiated")
+
     cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
 
     # retrieve links to CAZy class pages
