@@ -1,2 +1,2 @@
-classes:  # classes to be fully scraped
-families:  # families to be scraped
+classes:  # classes from which all proteins will be retrieved
+families:  # families to be scraped, DO NOT specify the family's class as well
