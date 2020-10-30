@@ -91,6 +91,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     The collected data can be stored as a singel dataframe containing (not split), split into
     separate dataframes by class or by family.
     """
+    # Program preparation
     if argv is None:
         parser = utilities.build_parser()
         args = parser.parse_args()
@@ -101,6 +102,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger = utilities.build_logger("cazy_webscraper", args)
     logger.info("Run initiated")
 
+    if args.output is not sys.stdout:
+        file_io.make_output_directory(args.output, logger, args.force, args.nodelete)
+
+    if args.config is not None:
+        excluded_classes, user_cazy_families = file_io.parse_configuration(args, logger)
+    else:
+        excluded_classes, user_cazy_families = None, None
+
+    # Crawl through and scrape CAZy website/database
     cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
 
     # retrieve links to CAZy class pages
