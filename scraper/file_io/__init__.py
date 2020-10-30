@@ -81,7 +81,6 @@ def parse_configuration(args, logger):
     index = 0
     for index in range(len(cazy_classes)):
         if cazy_classes[index] not in class_names:
-            # find standardised class name by looking in dictionary
             for key in cazy_dict:
                 if cazy_classes[index] in cazy_dict[key]:
                     cazy_classes[index] = key
