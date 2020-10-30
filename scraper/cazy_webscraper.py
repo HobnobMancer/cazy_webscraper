@@ -146,16 +146,22 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info("Program finished")
 
 
-def get_cazy_class_pages(cazy_home):
+def get_cazy_class_pages(cazy_home, excluded_classes, logger):
     """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
 
     :param cazy_url: str, URL to the CAZy home page.
+    :param excluded_classes: list, list of CAZy classes not to be scraped
+    :param logger: logger object
 
     Return list of URLs.
     """
+    logger.info("Retrieving URLs to summary CAZy class pages")
+
     # define items to be excluded from returned class list, ALWAYS exlide links to genomes
-    exclusions = ("<strong>Genomes</strong>")
-    # exclusions.append(config file input)
+    if excluded_classes is not None:
+        exclusions = tuple(["<strong>Genomes</strong>"] + excluded_classes)
+    else:
+        exclusions = ("<strong>Genomes</strong>")
 
     # scrape the home page
     home_page = get_page(cazy_home)
