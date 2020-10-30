@@ -89,7 +89,11 @@ class Family:
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
-    """Set up parser, logger and coordinate overal scrapping of CAZy."""
+    """Set up parser, logger and coordinate overal scrapping of CAZy.
+    
+    The collected data can be stored as a singel dataframe containing (not split), split into
+    separate dataframes by class or by family.
+    """
     if argv is None:
         parser = utilities.build_parser()
         args = parser.parse_args()
@@ -105,18 +109,34 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # retrieve links to CAZy class pages
     class_pages = get_cazy_class_pages(cazy_home)
 
+    all_data = []  # stores Family class objects if not splitting the data
+
     # retrieve links to CAZy family pages
     for class_url in class_pages:
         family_urls = get_cazy_family_pages(class_url, cazy_home, False)
 
-        families = []  # store Family class objects
-        for family_url in family_urls:
-            families.append(parse_family(family_url, cazy_home))
+        families = []  # store Family class objects if splitting data be class
 
-    # need to write out dataframes, either by family, by class or all as one
-    # if args.data_split is None:
-    # all_families = []
-    # all_families.append(families)
+        for family_url in family_urls:
+            family = parse_family(family_url, cazy_home)
+
+            if args.data_split == "family":
+                # Write dataframe for CAZy family
+                parse.proteins_to_dataframe(family)
+            else:
+                families.append(family)
+
+        if args.data_split == "class":
+            # Write dataframe for CAZy class
+            parse.proteins_to_dataframe(families)
+        else:
+            all_data.append(family)
+
+    if all_data is not None:
+        # Write dataframe containing all data from CAZy
+        parse.proteins_to_dataframe(all_data)
+
+    logger.info("Program finished")
 
 
 def get_cazy_class_pages(cazy_home):
