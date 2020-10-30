@@ -85,10 +85,25 @@ def parse_configuration(args, logger):
             for key in cazy_dict:
                 if cazy_classes[index] in cazy_dict[key]:
                     cazy_classes[index] = key
+        # check all names are standardised, remove names that could not be standardised
+        if cazy_classes[index] not in class_names:
+            logger.warning(
+                (
+                    f"'{cazy_classes[index]}' could not be standardised.\n"
+                    "Please use a synonym in the file_io/cazy_dictionary.json.\n"
+                    f"'{cazy_classes[index]}' will NOT be scraped."
+                )
+            )
+            del cazy_classes[index]
 
     # create list of CAZy classes to not be retrieved from CAZy
     excluded_classes = class_names
     excluded_classes = list(set(excluded_classes).difference(cazy_classes))
+
+    # change names of CAZy classes to not be scraped into format for excluding classes during scrape
+    index = 0
+    for index in range(len(excluded_classes)):
+        excluded_classes[index] = f"<strong>{excluded_classes[index]}</strong>"
 
     return excluded_classes, cazy_families
 
@@ -131,8 +146,7 @@ def get_config_data(args, logger):
     return cazy_classes, cazy_families
 
 
-
-def write_out_df(dataframe, df_name, out_dir, logger, force):
+def write_out_df(dataframe, df_name, outdir, logger, force):
     """Write out dataframe to output directory.
 
     :param dataframe: pandas dataframe
