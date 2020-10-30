@@ -66,6 +66,7 @@ def build_parser(argv: Optional[List] = None):
         default=False,
         help="Force file over writting",
     )
+
     # Add log file name option
     # If not given, no log file will be written out
     parser.add_argument(
@@ -76,6 +77,7 @@ def build_parser(argv: Optional[List] = None):
         default=None,
         help="Defines log file name and/or path",
     )
+
     # Add option to prevent over writing of existing files
     # and cause addition of files to output directory
     parser.add_argument(
@@ -86,6 +88,7 @@ def build_parser(argv: Optional[List] = None):
         default=False,
         help="enable/disable deletion of exisiting files",
     )
+
     # Add option to specific output directory to write scraped data to
     parser.add_argument(
         "-o",
@@ -95,6 +98,7 @@ def build_parser(argv: Optional[List] = None):
         default=sys.stdout,
         help="Output filename",
     )
+
     # Add option for more detail (verbose) logging
     parser.add_argument(
         "-v",
