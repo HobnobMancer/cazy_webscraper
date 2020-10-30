@@ -114,7 +114,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
 
     # retrieve links to CAZy class pages
-    class_pages = get_cazy_class_pages(cazy_home)
+    class_pages = get_cazy_class_urls(cazy_home, excluded_classes, logger)
 
     all_data = []  # stores Family class objects if not splitting the data
 
@@ -146,7 +146,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info("Program finished")
 
 
-def get_cazy_class_pages(cazy_home, excluded_classes, logger):
+def get_cazy_class_urls(cazy_home, excluded_classes, logger):
     """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
 
     :param cazy_url: str, URL to the CAZy home page.
