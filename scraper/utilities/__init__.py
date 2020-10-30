@@ -37,6 +37,16 @@ def build_parser(argv: Optional[List] = None):
 
     # Add optional arguments to parser
 
+    # Add option to specify path to configuration file
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=Path,
+        metavar="config file",
+        default=None,
+        help="Path to configuration file. Default: None, scrapes entire database",
+    )
+
     # Add option on how to split data
     parser.add_argument(
         "-s",
