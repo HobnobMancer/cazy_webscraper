@@ -20,14 +20,13 @@
 Web scraper to scrape CAZy website and retrieve all protein data.
 
 :cmd_args:...
-
 :func ...:...
-
 """
 
 import logging
 import re
 
+from collections import defaultdict
 from typing import List, Optional
 
 import mechanicalsoup
@@ -39,7 +38,6 @@ from scraper import utilities, file_io, parse
 
 class Protein:
     """A single protein.
-
     Each protein has a name, source organism (source), and links to external databases. The links to
     external databases are stored in a dictionary, keyed by the external database name ('str') with
     'list' values becuase there may be multiple links per database.
@@ -70,7 +68,6 @@ class Protein:
 
 class Family:
     """A single CAZy family.
-
     Each family has a name and a set of proteins that are members of the family.
     """
 
@@ -119,15 +116,24 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         for family_url in family_urls:
             family = parse_family(family_url, cazy_home)
 
-        for family in family_links:
-            family_url = base_url + "/" + family
-            # get the link to the page for 'all' proteins catalogued in the family
-            get_family_table_links(browser, family_url, base_url)
+            if args.data_split == "family":
+                # Write dataframe for CAZy family
+                parse.proteins_to_dataframe(family)
+            else:
+                families.append(family)
 
-    # site is now populated with class, family and protein_table pages
-    # parse protein tables and write to .csv files, with data separation specified by user
-    # handled by parse module
-    parse_cazy_protein_data(site, cazy_classes, args, logger)
+        if args.data_split == "class":
+            # Write dataframe for CAZy class
+            parse.proteins_to_dataframe(families)
+        else:
+            all_data.append(family)
+
+    if all_data is not None:
+        # Write dataframe containing all data from CAZy
+        parse.proteins_to_dataframe(all_data)
+
+    logger.info("Program finished")
+
 
 def get_cazy_class_pages(cazy_home):
     """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
@@ -229,7 +235,6 @@ def parse_family(family_url, cazy_home):
 
 def parse_family_pages(family_url, cazy_home):
     """Retrieve all protein records for given CAZy family.
-
     Protein records are listed in a pagination method, with 1000 proteins per page.
 
     :param family_url: str, URL to CAZy family main page
