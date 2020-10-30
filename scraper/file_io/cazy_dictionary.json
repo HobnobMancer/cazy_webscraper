@@ -1,0 +1,7 @@
+{
+    "Glycoside-Hydrolases": ["Glycoside Hydrolases", "Glycoside_Hydrolases", "GH"],
+    "GlycosylTransferases": ["Glycosyl-Transferases", "Glycosyl_Transferases", "Glycosyl Transferases", "GT"],
+    "Polysaccharide-Lyases": ["Polysaccharide Lyases", "Polysaccharide_Lyases", "PL"],
+    "Carbohydrate-Esterases": ["Carbohydrate Esterases", "Carbohydrate_Esterases", "CE"],
+    "Auxiliary-Activities": ["Auxiliary Activities", "Auxiliary_Activities", "AA"]
+}
