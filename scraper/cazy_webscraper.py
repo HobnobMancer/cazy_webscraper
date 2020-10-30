@@ -89,7 +89,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     """Set up parser, logger and coordinate overal scrapping of CAZy.
     
     The collected data can be stored as a singel dataframe containing (not split), split into
-    separate dataframes by class or by family.
+    separate dataframes by class or by family. Excluded classes are CAZy classes not specified in
+    the configuration file and thus, will not be scraped. User_cazy_families is the list of CAZy
+    families specified to be scraped in the configration file.
     """
     # Program preparation
     if argv is None:
@@ -137,7 +139,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             # Write dataframe for CAZy class
             parse.proteins_to_dataframe(families)
         else:
-            all_data.append(family)
+            all_data += families
 
     if all_data is not None:
         # Write dataframe containing all data from CAZy
