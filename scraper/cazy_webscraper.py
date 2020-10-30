@@ -25,6 +25,7 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 
 import logging
 import re
+import sys
 
 from collections import defaultdict
 from typing import List, Optional
