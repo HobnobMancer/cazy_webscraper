@@ -49,13 +49,14 @@ def build_parser(argv: Optional[List] = None):
 
     # Add option on how to split data
     parser.add_argument(
-        "-s",
+        "-d",
         "--data_split",
-        choices=["all", "class", "family"],
+        choices=[None, "class", "family"],
         type=str,
-        default="all",
+        default=None,
         help="How data is to be split. Not split=all, split by class=class, split by family=family",
     )
+
     # Add option to force file over writting
     parser.add_argument(
         "-f",
