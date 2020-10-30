@@ -31,7 +31,7 @@ from collections import defaultdict
 
 import mechanicalsoup
 
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 
 
 class Protein:
@@ -42,9 +42,10 @@ class Protein:
     'list' values becuase there may be multiple links per database.
     """
 
-    def __init__(self, name, source, links=None):
+    def __init__(self, name, source, ec, links=None):
         self.name = name
         self.source = source
+        self.ec = ec
         if links is None:
             self.links = defaultdict(list)
         else:
@@ -97,9 +98,7 @@ def main():
         families = []  # store Family class objects
         for family_url in family_urls:
             families.append(parse_family(family_url, cazy_home))
-        print(families)
 
-    print("DONE")
     # need to write out dataframes, either by family, by class or all as one
     # if args.data_split is None:
     # all_families = []
@@ -198,8 +197,7 @@ def parse_family(family_url, cazy_home):
 
     family = Family(family_name, cazy_class)
 
-    for protein in tqdm(parse_family_pages(family_url, cazy_home),
-                        desc=f"Parsing {cazy_class} families"):
+    for protein in tqdm(parse_family_pages(family_url, cazy_home), desc=f"Parsing {family_name}"):
         family.members.add(protein)
 
     return family
@@ -224,10 +222,7 @@ def parse_family_pages(family_url, cazy_home):
     # retrieve the URL to the final page of protein records in the pagination listing
     try:
         last_pagination_url = first_pagination_page.soup.find_all(
-            (
-                ("a", {"class": "lien_pagination", "rel": "nofollow"})[-1]
-            )
-        )
+            "a", {"class": "lien_pagination", "rel": "nofollow"})[-1]
     except IndexError:  # there is no pagination; a single-query entry
         last_pagination_url = None
 
@@ -276,9 +271,12 @@ def row_to_protein(row):
     tds = list(row.find_all("td"))
 
     protein_name = tds[0].contents[0].strip()
-    ec_number = tds[1].contents[0].strip()
     source_organism = tds[2].a.get_text()
     links = {}
+    try:
+        ec_number = tds[1].contents[0].strip()
+    except TypeError:  # raised if protein is not annotated with an EC number
+        ec_number = "N/A"
 
     # test for len(tds[x].contents) in case there is no link,
     # the check of .name then ensures link is captured
@@ -291,7 +289,7 @@ def row_to_protein(row):
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
         links["PDB"] = [f"{_.get_text()}: {_['href']}" for _ in tds[5].contents if _.name == "a"]
 
-    return Protein
+    return Protein(protein_name, source_organism, ec_number, links)
 
 
 def browser_decorator(func):
