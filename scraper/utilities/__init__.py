@@ -150,6 +150,4 @@ def build_logger(script_name, args) -> logging.Logger:
         file_log_handler.setFormatter(log_formatter)
         logger.addHandler(file_log_handler)
 
-    print("BUILD LOGGER!")
-
     return logger
