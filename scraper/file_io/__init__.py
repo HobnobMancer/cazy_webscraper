@@ -18,6 +18,10 @@
 # The MIT License
 """Module for handling input and output files and directories."""
 
+import json
+import shutil
+import yaml
+
 import pandas as pd
 
 
@@ -54,6 +58,78 @@ def make_output_directory(output, logger, force, nodelete):
                 "New directory not made, writing to existing directory."
             )
         )
+
+
+def parse_configuration(args, logger):
+    """Parse configuration data, and retrieve user specified CAZy classes and families.
+
+    :param args: parser arguments
+    :param logger: logger object
+
+    Return two lists, [0] CAZy classes not to be scraped, [1] CAZy families to be scraped.
+    """
+    # Retrieve data from configuration file
+    cazy_classes, cazy_families = get_config_data(args, logger)
+
+    # convert user naming of classes into standardised format
+    # e.g. change 'GH' to 'Glycoside-Hydrolase'
+    with open("cazy_dictionary.json", "r") as fh:
+        cazy_dict = json.load(fh)  # standardised name: list(synonyms)
+        class_names = list(cazy_dict.keys())
+
+    # identify user defined CAZy classes not written in standardised format
+    index = 0
+    for index in range(len(cazy_classes)):
+        if cazy_classes[index] not in class_names:
+            # find standardised class name by looking in dictionary
+            for key in cazy_dict:
+                if cazy_classes[index] in cazy_dict[key]:
+                    cazy_classes[index] = key
+
+    # create list of CAZy classes to not be retrieved from CAZy
+    excluded_classes = class_names
+    excluded_classes = list(set(excluded_classes).difference(cazy_classes))
+
+    return excluded_classes, cazy_families
+
+
+def get_config_data(args, logger):
+    """Retrieve data from configuration file.
+
+    :param args: parser arguments
+    :param logger: logger object
+
+    Return two lists, [0] CAZy classes, [1] CAZy families.
+    """
+    logger.info("Retrieving classes and families from configuration file")
+
+    with open(args.config) as fh:
+        config_dict = yaml.full_load(fh)
+
+    # Retrieve CAZy classes
+    try:
+        cazy_classes = config_dict["classes"]
+    except (KeyError, TypeError) as e:
+        logger.info("No CAZy classes specified in configuration file")
+        cazy_classes = None
+
+    if (cazy_classes is not None) and (len(cazy_classes) == 0):
+        logger.info("No CAZy classes specified in configuration file")
+        cazy_classes = None
+
+    # Retrieve CAZy families
+    try:
+        cazy_families = config_dict["families"]
+    except (KeyError, TypeError) as e:
+        logger.info("No CAZy families specified in configuration file")
+        cazy_families = None
+
+    if (cazy_families is not None) and (len(cazy_families) == 0):
+        logger.info("No CAZy families specified in configuration file")
+        cazy_families = None
+
+    return cazy_classes, cazy_families
+
 
 
 def write_out_df(dataframe, df_name, out_dir, logger, force):
