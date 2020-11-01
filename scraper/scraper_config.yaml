@@ -1,8 +1,6 @@
 # Under 'classes' list class from which all proteins will retrieved
 # Under each families respective name, list the specific families/subfamilies to be scraped
-# If you want specific families from a class and not the entire class, list the families
-# under the respective family name ONLY - DO NOT also list the class as this will cause
-# all proteins under the given class to be retrieved as well
+# List the full family name, e.g. 'GH1', NOT only the number, e.g. '1'
 classes:  # classes from which all proteins will be retrieved
 Glycoside Hydrolases (GHs): # specific families to scrape from GH
 GlycosylTransferases (GTs): # define the only families to be scraped from GT CAZy class
