@@ -140,7 +140,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                     parse.proteins_to_dataframe(family)
                 else:
                     families.append(family)
-    
+
         else:
             # scrape only (sub)families specified in config file
             for family_url in family_urls:
