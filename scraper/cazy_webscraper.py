@@ -39,6 +39,7 @@ from scraper import utilities, file_io, parse
 
 class Protein:
     """A single protein.
+
     Each protein has a name, source organism (source), and links to external databases. The links to
     external databases are stored in a dictionary, keyed by the external database name ('str') with
     'list' values becuase there may be multiple links per database.
@@ -46,8 +47,8 @@ class Protein:
 
     def __init__(self, name, source, ec, links=None):
         self.name = name
-        self.source = source
         self.ec = ec
+        self.source = source
         if links is None:
             self.links = defaultdict(list)
         else:
@@ -69,9 +70,9 @@ class Protein:
     def get_protein_dict(self):
         """Return a dictionary containing all the data of the protein."""
         protein_dict = {
-            ["Protein_name"]: self.name,
-            ["EC#"]: self.ec,
-            ["Source_organism"]: self.source,
+            "Protein_name": [self.name],
+            "EC#": [self.ec],
+            "Source_organism": [self.source],
         }
         if type(self.links) is dict:
             for database in ["GenBank", "UniProt", "PDB/3D"]:
@@ -86,9 +87,7 @@ class Protein:
 
 
 class Family:
-    """A single CAZy family.
-    Each family has a name and a set of proteins that are members of the family.
-    """
+    """A single CAZy family."""
 
     members = set()  # holds Protein instances
 
@@ -105,6 +104,10 @@ class Family:
     def get_proteins(self):
         """Return a list of all protein members of the CAZy family."""
         return self.members
+    
+    def get_family_name(self):
+        """Return family name"""
+        return self.name
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -173,7 +176,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                     family = parse_family(family_url, family_name, cazy_home)
 
                     if args.data_split == "family":
-                        parse.proteins_to_dataframe(family)
+                        parse.proteins_to_dataframe([family])
                     else:
                         families.append(family)
 
