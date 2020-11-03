@@ -102,8 +102,8 @@ def build_parser(argv: Optional[List] = None):
     # Add option to enable retrieval of subfamilies
     parser.add_argument(
         "-s",
-        "--subfamily",
-        dest="subfamily",
+        "--subfamilies",
+        dest="subfamilies",
         action="store_true",
         default=False,
         help="Enable retrieval of subfamilies from CAZy"
