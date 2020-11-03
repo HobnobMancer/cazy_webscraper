@@ -104,7 +104,7 @@ class Family:
     def get_proteins(self):
         """Return a list of all protein members of the CAZy family."""
         return self.members
-    
+
     def get_family_name(self):
         """Return family name"""
         return self.name
