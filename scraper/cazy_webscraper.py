@@ -164,7 +164,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 family = parse_family(family_url, family_name, cazy_home)
 
                 if args.data_split == "family":
-                    parse.proteins_to_dataframe(family)
+                    parse.proteins_to_dataframe([family], args, logger)
                 else:
                     families.append(family)
 
@@ -176,7 +176,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                     family = parse_family(family_url, family_name, cazy_home)
 
                     if args.data_split == "family":
-                        parse.proteins_to_dataframe([family])
+                        parse.proteins_to_dataframe([family], args, logger)
                     else:
                         families.append(family)
 
