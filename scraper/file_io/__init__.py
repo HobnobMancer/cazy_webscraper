@@ -85,18 +85,18 @@ def parse_configuration(args, logger):
     with open(args.config) as fh:
         config_dict = yaml.full_load(fh)
 
-    # Retrieve CAZy classes
+    # Retrieve CAZy classes listed in config file
     try:
         cazy_classes = config_dict["classes"]
         # standardise CAZy class names
         cazy_classes = parse_user_cazy_classes(cazy_classes, cazy_dict, class_names, logger)
     except (KeyError, TypeError) as e:
         logger.info("No CAZy classes specified in configuration file")
-        cazy_classes = []
+        cazy_classes = None
 
     if len(cazy_classes) == 0:
         logger.info("No CAZy classes specified in configuration file")
-        cazy_classes = []
+        cazy_classes = None
 
     # retrieve classes of families/subfamilies specified in configuration file
     for key in config_dict:
@@ -107,16 +107,19 @@ def parse_configuration(args, logger):
                     cazy_classes.append(config_dict[key])
                 except TypeError:
                     # raised if cazy_classes is None
-                    pass
+                    cazy_classes = [config_dict[key]]
 
     # create list of CAZy classes not to be scraped
-    excluded_classes = class_names
-    excluded_classes = list(set(excluded_classes).difference(cazy_classes))
-
-    # change names of CAZy classes to not be scraped into format for excluding classes during scrape
-    index = 0
-    for index in range(len(excluded_classes)):
-        excluded_classes[index] = f"<strong>{excluded_classes[index]}</strong>"
+    try:
+        excluded_classes = class_names
+        excluded_classes = list(set(excluded_classes).difference(cazy_classes))
+        # change names of classes into format for excluding classes during scrape
+        index = 0
+        for index in range(len(excluded_classes)):
+            excluded_classes[index] = f"<strong>{excluded_classes[index]}</strong>"
+    except TypeError:
+        # raised if CAZy classes is None
+        excluded_classes = None
 
     return excluded_classes, config_dict, cazy_dict
 
