@@ -182,13 +182,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
         if args.data_split == "class":
             # Write dataframe for CAZy class
-            parse.proteins_to_dataframe(families)
+            parse.proteins_to_dataframe(families, args, logger)
         else:
             all_data += families
 
     if args.data_split is None:
         # Write dataframe containing all data from CAZy
-        parse.proteins_to_dataframe(all_data)
+        parse.proteins_to_dataframe(all_data, args, logger)
 
     logger.info("Program finished")
 
