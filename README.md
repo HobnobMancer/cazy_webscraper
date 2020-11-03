@@ -26,6 +26,12 @@ Then install remaining requirements:
 
 In both commands to not forget the additional pips options (`-e` and `-r`)!
 
+## Best practise
+
+When performing a series of automated, repeated calls to a server, such as is performed by the `cazy_webscraper`, it is best practise to do this during the period of the day when traffic is lowest. This typically includes over the weekend and overnight.
+
+The webscraper can appear to run slowly but this is due to the limited access speed of the CAZy server. When a CAZy family is being parsed by the scraper, and protein records are being retrieved for the CAZy family a progress bar is produced in the terminal to provide an indicator the webscraper is working. However, expect an entire scrape of the CAZy database to take severak hours.
+
 ## Configuration
 
 The operation of the `cazy_webscraper` is configured by command-line arguments and a Yaml configuration file.
