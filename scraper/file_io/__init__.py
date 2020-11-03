@@ -22,8 +22,6 @@ import json
 import shutil
 import yaml
 
-import pandas as pd
-
 
 def make_output_directory(output, logger, force, nodelete):
     """Create output directory for genomic files.
