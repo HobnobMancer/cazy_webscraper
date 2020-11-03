@@ -41,6 +41,7 @@ For the basic invoking of the `cazy_webscraper` use:
 - `-l`, `--log`: Path to write out a logger file. Default: None. Logger messages will be written out to the terminal and out to the specified file.
 - `-n`, `--nodelete`: (True or False). Do not delete content in already exisiting output directory. Default: False, will delete content in already existing output directory. If set to true then the content in the output directory will not be deleted first before writing out output from the scrape.
 - `-o`, `--output`: Path to output DIRECTORY for all output to be written to. Default: STDOUT. The dataframe names are pre-formated by the scraper so only pass the path to the directory into which the output data is to be written. If the directory does not already exist the `cazy_webscraper` will create the output dataframe.
+- `-s`, `--subfamilies`: (True or False) Enable retrieval of subfamilies from CAZy. Default: false. If subfamilies are specified in the configuration file ensure `-s` is enabled.
 - `-v`, `--verbose`: (True or False) Change the logger level from Warning to Info, resulting in logging of the scrapers progress. Default: false.
 
 ### Configuration files
@@ -53,7 +54,9 @@ A `cazy_dictionary.json` has been created and packaged within the `cazy_webscrap
 
 Under the each of the specific class names listed in the configuration file list the names of specific **families** to be scraped from that class. You do not have to list the class of the families to be scraped under 'classes' as well, this is handled by the web scraper.
 
-Write the true name of the family not only it's number, for example **GH1** is excepted by **1** is not. Each family must be listed on a separate line and the name surrounded by double or single quotation marks. For example:
+Write the true name of the family not only it's number, for example **GH1** is excepted by **1** is not. Additionally, use the standard CAZy notation for subfamilies (**GH3_1**). If subfamilies are specified in the configuration file `--subfamilies` **must be enabled when invoking the cazy_webscraper.**
+
+Each family must be listed on a separate line and the name surrounded by double or single quotation marks. For example:
 
 ```
 Glycoside Hydrolases (GHs):
