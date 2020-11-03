@@ -19,8 +19,29 @@
 """
 Web scraper to scrape CAZy website and retrieve all protein data.
 
-:cmd_args:...
-:func ...:...
+:cmd_args --config: path to configruration file
+:cmd args --data_split: [None, class, family] how data is to be split/separated into dataframes
+:cmd_args --force: force overwriting content in exisiting output directory
+:cmd_args --log: path to log file, enables writing out log messages to a log file
+:cmd_args --nodelete: if true does not delete content in pre-existing output directory
+:cmd_args --output: path to output directory
+:cmd_args --retries: number of times connection to CAZy can be retried if fails, default=10
+:cmd_args --subfamily: enable retrieval of subfamilies from CAZy
+:cmd_args --verbose: change logger level from warning to info, verbose logging
+
+:func main: coordinate scraping of CAZy database
+:func get_cazy_class_urls: retrieve URLs to CAZy class summary pages from CAZy homepage
+:func get_cazy_family_urls: retrieve URLs to families on CAZy class summary page
+:func get_subfamily_links: retrieve URLs to subfamilies on CAZy class summary page
+:func parse_family: build Family class object to represent CAZy family
+:func parse_family_pages: retrieve all URLs to pages containing protein records for CAZy family
+:func parse_proteins: retrieve protein records from protein table page
+:func row_to_protein: parse the protein record to build a Protein class object
+:func browser_decorator: decorator for get_page() to coordinate retrying failed connections
+:func get_page: connect to webpage and retrieval page as BeautifulSoup4 object
+
+:class Protein: A single protein from CAZy database
+:class Family: A single family from CAZy containing proteins
 """
 
 import logging
@@ -153,7 +174,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 class_name = key
 
         # retrieve URLs to families under current working CAZy class
-        family_urls = get_cazy_family_pages(class_url, cazy_home, False)
+        family_urls = get_cazy_family_urls(class_url, cazy_home, args.subfamily, logger)
 
         families = []  # store Family class objects if splitting data be class
 
@@ -193,11 +214,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info("Program finished")
 
 
-def get_cazy_class_urls(cazy_home, excluded_classes, logger):
+def get_cazy_class_urls(cazy_home, excluded_classes, subfam_retrieval, logger):
     """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
 
     :param cazy_url: str, URL to the CAZy home page.
     :param excluded_classes: list, list of CAZy classes not to be scraped
+    :param subfam_retrieval: bool, if true enable retrieval of CAZy subfamilies
     :param logger: logger object
 
     Return list of URLs.
@@ -217,7 +239,7 @@ def get_cazy_class_urls(cazy_home, excluded_classes, logger):
             if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)]
 
 
-def get_cazy_family_pages(class_url, cazy_home, subfam_retrieval):
+def get_cazy_family_urls(class_url, cazy_home, subfam_retrieval):
     """Retrieve all protein members of each CAZy family within the given CAZy class.
 
     :param class_url: str, URL to the CAZy class
