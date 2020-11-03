@@ -47,11 +47,13 @@ For the basic invoking of the `cazy_webscraper` use:
 
 The configuration file is for specifying specific CAZy classes and families to be scraped.
 
-Under the **classes** heading list any classes to be scrapped.
+Under the **classes** heading list any classes to be scrapped. For classes listed under 'classes', all proteins catalgoued under that class will be retrieved, unless specific families have been listed under the respective classes heading in the configuration file. Then scraping only the specific classes takes precident and the entire class is not scraped. _If you believe this should be changed please raise an issue. It is invisioned that very few users would want to scrape an entire class an also scrape only specific families from that class simultanious._
 
 A `cazy_dictionary.json` has been created and packaged within the `cazy_webscraper`. This allows users to use a variety of synonoms for the CAZy classes, for example both "GH" and "Glycoside-Hydrolases" are accepted as synonoms for "Glycoside Hydrolases (GHs)". This dictionary is packaged within the `scraper/file_io` directory. If you having issues with the scraper retrieving the list of CAZy classes that are written under 'classes' in the configuration file please check the dictionary first to see the full list of accepted synonoms. If you are comfortable modifying json files then feel free to add your own synonoms to the dictionary.
 
-Under the each of the specific class names listed in the configuration file list the names of specific **families** to be scraped from that class. Write the true name of the family not only it's number, for example **GH1** is excepted by **1** is not. Each family must be listed on a separate line and the name surrounded by double or single quotation marks. For example:
+Under the each of the specific class names listed in the configuration file list the names of specific **families** to be scraped from that class. You do not have to list the class of the families to be scraped under 'classes' as well, this is handled by the web scraper.
+
+Write the true name of the family not only it's number, for example **GH1** is excepted by **1** is not. Each family must be listed on a separate line and the name surrounded by double or single quotation marks. For example:
 
 ```
 Glycoside Hydrolases (GHs):
