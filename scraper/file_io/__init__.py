@@ -63,14 +63,14 @@ def make_output_directory(output, logger, force, nodelete):
 def parse_configuration(args, logger):
     """Parse configuration data, and retrieve user specified CAZy classes and families.
 
-    Return nothing if a path to a configuration file was not given. Cases default behaviour of the
-    scrapper to be performed. Return list CAZy classes not to be scraped, list CAZy families to be
-    scraped and dictionary of CAZy synonoms.
+    Return only the CAZy class synonoms dictionary if a path to a configuration file was not given.
+    This results in the default behaviour of the webscraper to scrape the entirty of CAZy to be
+    invoked.
 
     :param args: parser arguments
     :param logger: logger object
 
-    Return two lists and a dictionary.
+    Return list of classes not to scrape, dict of families to scrape, and dict of class synonoms.
     """
     # open dictionary of accepted CAZy class synonyms)
     with open("cazy_dictionary.json", "r") as fh:
@@ -91,23 +91,23 @@ def parse_configuration(args, logger):
         # standardise CAZy class names
         cazy_classes = parse_user_cazy_classes(cazy_classes, cazy_dict, class_names, logger)
     except (KeyError, TypeError) as e:
-        logger.info("No CAZy classes specified in configuration file")
-        cazy_classes = None
+        logger.info(
+            (
+                "Did not retrieve any CAZy classes from configuration file.\n"
+                f"Raised {e}"
+            )
+        )
+        cazy_classes = []
 
     if len(cazy_classes) == 0:
         logger.info("No CAZy classes specified in configuration file")
-        cazy_classes = None
 
     # retrieve classes of families/subfamilies specified in configuration file
     for key in config_dict:
         if (key != "classes") and (len(config_dict[key]) > 0):
             # add the class of families to be scraped to the list of CAZy classes to be scraped
             if key not in cazy_classes:
-                try:
-                    cazy_classes.append(config_dict[key])
-                except TypeError:
-                    # raised if cazy_classes is None
-                    cazy_classes = [config_dict[key]]
+                cazy_classes.append(key)
 
     # create list of CAZy classes not to be scraped
     try:
