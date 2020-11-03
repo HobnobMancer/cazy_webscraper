@@ -1,9 +1,11 @@
 # Under 'classes' list class from which all proteins will retrieved
 # Under each families respective name, list the specific families/subfamilies to be scraped
-# List the full family name, e.g. 'GH1', NOT only the number, e.g. '1'
+# Write the FULL family name, e.g. 'GH1', NOT only its number, e.g. '1'
+# Each family MUST be written inside double or single quotation marks, and each MUST family
+# separated by a comma
 classes:  # classes from which all proteins will be retrieved
-Glycoside Hydrolases (GHs): # specific families to scrape from GH
-GlycosylTransferases (GTs): # define the only families to be scraped from GT CAZy class
+Glycoside Hydrolases (GHs): # "GH1", "GH2"
+GlycosylTransferases (GTs): # "PL10", "PL15"
 Polysaccharide Lyases (PLs):
 Carbohydrate Esterases (CEs):
 Auxiliary Activities (AAs):
