@@ -84,6 +84,10 @@ class Family:
     def __repr__(self):
         return f"<Family: {id(self)}: {self.name}, {len(self.members)} protein members"
 
+    def get_proteins(self):
+        """Return a list of all protein members of the CAZy family."""
+        return [_ for _ in self.members]
+
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
     """Set up parser, logger and coordinate overal scrapping of CAZy.
@@ -116,26 +120,28 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # retrieve links to CAZy class pages
     class_pages = get_cazy_class_urls(cazy_home, excluded_classes, logger)
 
-    all_data = []  # stores Family class objects if not splitting the data
+    all_data = []  # stores all Family class objects if not splitting the data
 
     # retrieve links to CAZy family pages
     for class_url in class_pages:
+
+        # retrieve class name from url and convert to synonym used in configuration file
         class_name = class_url[20: -5]
-        # convert name to synonym used in configuration file
         for key in cazy_dict:
             if class_name in cazy_dict[key]:
                 class_name = key
 
-        # retrieve URLs to families under working CAZy class
+        # retrieve URLs to families under current working CAZy class
         family_urls = get_cazy_family_pages(class_url, cazy_home, False)
 
         families = []  # store Family class objects if splitting data be class
 
-        if (config_dict is not None) or (len(config_dict[class_name]) == 0):
+        if (config_dict is None) or (len(config_dict[class_name]) == 0):
             # no (sub)families specified. Scrape all families in CAZy class
             for family_url in family_urls:
                 family_name = family_url[(len(cazy_home) + 1): -5]
                 family = parse_family(family_url, family_name, cazy_home)
+
                 if args.data_split == "family":
                     parse.proteins_to_dataframe(family)
                 else:
@@ -147,6 +153,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 family_name = family_url[(len(cazy_home) + 1): -5]
                 if family_name in config_dict[class_name]:
                     family = parse_family(family_url, family_name, cazy_home)
+
                     if args.data_split == "family":
                         parse.proteins_to_dataframe(family)
                     else:
@@ -158,7 +165,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         else:
             all_data += families
 
-    if all_data is not None:
+    if args.data_split is None:
         # Write dataframe containing all data from CAZy
         parse.proteins_to_dataframe(all_data)
 
