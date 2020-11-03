@@ -99,6 +99,16 @@ def build_parser(argv: Optional[List] = None):
         help="Output filename",
     )
 
+    # Add option to enable retrieval of subfamilies
+    parser.add_argument(
+        "-s",
+        "--subfamily",
+        dest="subfamily",
+        action="store_true",
+        default=False,
+        help="Enable retrieval of subfamilies from CAZy"
+    )
+
     # Add option for more detail (verbose) logging
     parser.add_argument(
         "-v",

@@ -25,7 +25,6 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 :cmd_args --log: path to log file, enables writing out log messages to a log file
 :cmd_args --nodelete: if true does not delete content in pre-existing output directory
 :cmd_args --output: path to output directory
-:cmd_args --retries: number of times connection to CAZy can be retried if fails, default=10
 :cmd_args --subfamily: enable retrieval of subfamilies from CAZy
 :cmd_args --verbose: change logger level from warning to info, verbose logging
 
@@ -160,7 +159,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
 
     # retrieve links to CAZy class pages
-    class_pages = get_cazy_class_urls(cazy_home, excluded_classes, logger)
+    class_pages = get_cazy_class_urls(cazy_home, excluded_classes, args.subfamily, logger)
 
     all_data = []  # stores all Family class objects if not splitting the data
 
@@ -429,7 +428,7 @@ def browser_decorator(func):
 
 
 @browser_decorator
-def get_page(url):
+def get_page(url, retries):
     """Create browser and use browser to retrieve page for given URL.
 
     :param url: str, url to webpage
