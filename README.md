@@ -9,6 +9,13 @@ The `cazy_webscraper` is configurable to scrape specific CAZy classes and/or fam
 - Per class: a singel datafarme is created per scraped CAZy family
 - Not split: a single dataframe containing all data scrapend from CAZy is created
 
+## Requirements
+
+POISx or Mac OS, or a Linux emulator
+Python version 3.8+
+Internet access
+The python libraries listed within `requirements.txt`, packaged within the `cazy_webscraper`
+
 ## Installation
 
 The easiest method for install the `cazy_webscraper` is to use pips.  
@@ -55,6 +62,30 @@ Glycoside Hydrolases (GHs):
 Please find more information on writing lists in Yaml files [here](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html).
 
 A blank configuration file is packaged within `cazy_webscraper`, within the `scraper` directory, called `scraper_config.yaml`. This configuration file contains comments to assit filling in the file correctly. If a new configuration file is created it **must** be a Yaml file and it **must** use the same headings as used in the configuration file `scraper_config.yaml`.
+
+## Directories
+
+Below is a directory plan of this repository, followed by a brief overview of each directories role , to facilitate navigation through the repository. This structure is the same structre found within the `cazy_webscraper` program.
+
+### root directory
+
+This contains the README and files necessary for installing `cazy_webscraper`.
+
+### scraper
+
+This directory houses all modules and Python scripts of the webscraper.
+
+`cazy_webscraper.py` is the entry point of the program.
+
+`utilties` contains functions for building cmd-line args parsers and loggers.
+
+`file_io` contains all functions related to handingling input/ouput files and directories, this includes creating the output directory, parsing configuraiton files and writing the output dataframes.
+
+`parse` contains functions related to parsing the protein data retrieved from CAZy into Pandas dataframes.
+
+### tests
+
+This directory contains all the unit tests for the webscraper. These tests are designed to be invoked from the root directory of the repository.
 
 ## Development and issues
 
