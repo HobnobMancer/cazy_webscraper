@@ -3,11 +3,63 @@ The `cazy_webscraper` is a Python3 package for the automated retrieval of protei
 
 The CAZy database is one of the largest databases for cataloging Carbohydrate Active enZymes, and is one of the most frequently visited protein data bases for researchers in this field. However, CAZy provides not method of automated retrieval of data, especially for large dataset requests. The `cazy_webscraper` provides a way for the automated retrieval of large datasets from the CAZy database. The retrieved protein data is written out into dataframes, and protein sequences written out to FASTA files.
 
-Although it has not been finalised, the way protein data is grouped into the output files will be determined by the user selecting one of three options:
-1. One output: All data retrieved from CAZy is written out to a singel dataframe, and all protein sequences written out to one FASTA file
-2. One per class: A dataframe and FASTA file is written out for each CAZy class, for example one dataframe and FASTA file is written out for glycoside hydrolases and another written out for polysaccharide lyases.
-3. One per family: 
+The `cazy_webscraper` is configurable to scrape specific CAZy classes and/or families, and determine how the data split when written out. The data can be split:
 
-**Note:** This webscraper is still in early development and is not fully opperational yet. Furthermore, additional features may be added later, such as ability to configure the webscraper to only scrape the data for a single CAZy class instead of scraping the entire database.
+- Per family: a single dataframe is created per scraped CAZy family
+- Per class: a singel datafarme is created per scraped CAZy family
+- Not split: a single dataframe containing all data scrapend from CAZy is created
+
+## Installation
+
+The easiest method for install the `cazy_webscraper` is to use pips.  
+`pip3 install -e <path_to_dir_containing_the_setup.py_file>`  
+
+Then install remaining requirements:  
+`pip3 install -r <path_to_requirements.txt_file>`  
+
+In both commands to not forget the additional pips options (`-e` and `-r`)!
+
+## Configuration
+
+The operation of the `cazy_webscraper` is configured by command-line arguments and a Yaml configuration file.
+
+For the basic invoking of the `cazy_webscraper` use:  
+`python3 cazy_webscraper.py`
+
+### Command line arguments and operation
+
+- `-c`, `--config`: Path to the configuration file. Default: None, scrapes entire CAZy database
+- `-d`, `--data_split`: Choices: None, class, family. Default: None, not to split data when written out
+- `-f`, `--force`: (True/False). Force over writing in output directory if specified output directory already exists. Default: False, does not over write in already exising output dictory. 
+- `-l`, `--log`: Path to write out a logger file. Default: None. Logger messages will be written out to the terminal and out to the specified file.
+- `-n`, `--nodelete`: (True or False). Do not delete content in already exisiting output directory. Default: False, will delete content in already existing output directory. If set to true then the content in the output directory will not be deleted first before writing out output from the scrape.
+- `-o`, `--output`: Path to output DIRECTORY for all output to be written to. Default: STDOUT. The dataframe names are pre-formated by the scraper so only pass the path to the directory into which the output data is to be written. If the directory does not already exist the `cazy_webscraper` will create the output dataframe.
+- `-v`, `--verbose`: (True or False) Change the logger level from Warning to Info, resulting in logging of the scrapers progress. Default: false.
+
+### Configuration files
+
+The configuration file is for specifying specific CAZy classes and families to be scraped.
+
+Under the **classes** heading list any classes to be scrapped.
+
+A `cazy_dictionary.json` has been created and packaged within the `cazy_webscraper`. This allows users to use a variety of synonoms for the CAZy classes, for example both "GH" and "Glycoside-Hydrolases" are accepted as synonoms for "Glycoside Hydrolases (GHs)". This dictionary is packaged within the `scraper/file_io` directory. If you having issues with the scraper retrieving the list of CAZy classes that are written under 'classes' in the configuration file please check the dictionary first to see the full list of accepted synonoms. If you are comfortable modifying json files then feel free to add your own synonoms to the dictionary.
+
+Under the each of the specific class names listed in the configuration file list the names of specific **families** to be scraped from that class. Write the true name of the family not only it's number, for example **GH1** is excepted by **1** is not. Each family must be listed on a separate line and the name surrounded by double or single quotation marks. For example:
+
+```
+Glycoside Hydrolases (GHs):
+    - "GH1"
+    - "GH2"
+```
+
+Please find more information on writing lists in Yaml files [here](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html).
+
+A blank configuration file is packaged within `cazy_webscraper`, within the `scraper` directory, called `scraper_config.yaml`. This configuration file contains comments to assit filling in the file correctly. If a new configuration file is created it **must** be a Yaml file and it **must** use the same headings as used in the configuration file `scraper_config.yaml`.
+
+## Development and issues
+
+This webscraper is still in early development and is not fully opperational yet. Furthermore, additional features may be added later, such as ability to configure the webscraper to only scrape the data for a single CAZy class instead of scraping the entire database.
 
 For more information on planning/development please see the Wiki.
+
+If you have additional features wish to be added or any other issues please raise and issue in this repoistory.
