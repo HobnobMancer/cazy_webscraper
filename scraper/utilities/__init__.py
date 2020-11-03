@@ -89,7 +89,7 @@ def build_parser(argv: Optional[List] = None):
         help="enable/disable deletion of exisiting files",
     )
 
-    # Add option to specific output directory to write scraped data to
+    # Add option to specify output directory to write scraped data to
     parser.add_argument(
         "-o",
         "--output",
@@ -97,6 +97,16 @@ def build_parser(argv: Optional[List] = None):
         metavar="output file name",
         default=sys.stdout,
         help="Output filename",
+    )
+
+    # Add option to specify the number of retries when conenction failes
+    parser.add_argument(
+        "-r",
+        "--retries",
+        type=int,
+        metavar="maximum number of retries",
+        default=10,
+        help="Maximum number of time to retry connection if network errors are encountered",
     )
 
     # Add option to enable retrieval of subfamilies
