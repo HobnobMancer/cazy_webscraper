@@ -66,6 +66,24 @@ class Protein:
             )
         )
 
+    def get_protein_dict(self):
+        """Return a dictionary containing all the data of the protein."""
+        protein_dict = {
+            ["Protein_name"]: self.name,
+            ["EC#"]: self.ec,
+            ["Source_organism"]: self.source,
+        }
+        if type(self.links) is dict:
+            for database in ["GenBank", "UniProt", "PDB/3D"]:
+                try:
+                    protein_dict[database] = self.links[database]
+                except KeyError:
+                    protein_dict[database] = []
+        else:
+            for database in ["GenBank", "UniProt", "PDB/3D"]:
+                protein_dict[database] = []
+        return protein_dict
+
 
 class Family:
     """A single CAZy family.
@@ -86,7 +104,7 @@ class Family:
 
     def get_proteins(self):
         """Return a list of all protein members of the CAZy family."""
-        return [_ for _ in self.members]
+        return self.members
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
