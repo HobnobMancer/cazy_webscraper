@@ -236,7 +236,7 @@ def get_cazy_class_urls(cazy_home, excluded_classes, args, logger):
         exclusions = ("<strong>Genomes</strong>")
 
     # scrape the home page
-    home_page = get_page(cazy_home, args.retries, logger)
+    home_page = get_page(cazy_home, args.retries)
 
     return [f"{cazy_home}/{_['href']}" for _ in home_page.soup.find_all("a", {"class": "spip_out"})
             if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)]
@@ -256,7 +256,7 @@ def get_cazy_family_urls(class_url, cazy_home, args, logger):
     logger.info(f"Retrieving URLs to families at {class_url}")
 
     # scrape the class page
-    class_page = get_page(class_url, args.retries, logger)
+    class_page = get_page(class_url, args.retries)
 
     # retrieve the <h3> element that titles the div section containing the tables of family links
     family_h3_element = [_ for _ in class_page.soup.find_all("h3", {"class": "spip"}) if str(_.contents[0]) == "Tables for Direct Access"][0]
@@ -346,7 +346,7 @@ def parse_family_pages(family_url, cazy_home, args, logger):
     logger.info(f"Retrieving URLs to all pages containing proteins for {family_url}")
     # compile URL to first family page of protein records
     first_pagination_url = family_url.replace(".html", "_all.html")
-    first_pagination_page = get_page(first_pagination_url, args.retries, logger)
+    first_pagination_page = get_page(first_pagination_url, args.retries)
 
     protein_page_urls = [first_pagination_url]
 
@@ -381,7 +381,7 @@ def parse_proteins(protein_page_url, args, logger):
     """
     logger.info(f"Retrieving proteins from {protein_page_url}")
 
-    protein_page = get_page(protein_page_url, args.retries, logger)
+    protein_page = get_page(protein_page_url, args.retries)
 
     # retrieve protein record table
     protein_table = protein_page.soup.find_all("table", {"class": "listing"})[0]
@@ -436,14 +436,12 @@ def browser_decorator(func, logger):
             try:
                 response = func(*args, **kwargs)
             except ConnectionError:
-                logger.warning(f"Failed to make connection to CAZy on try {tries} of {retries}")
                 response = None
             if str(response) == "<Response [200]>":  # response was successful
                 success = True
             # if response from webpage was not successful
             tries += 1
         if not success:
-            logging.warning("Ran out of connection retries, and was unable to connect to CAZy")
             return None
         else:
             return response
@@ -452,12 +450,11 @@ def browser_decorator(func, logger):
 
 
 @browser_decorator
-def get_page(url, retries, logger):
+def get_page(url, retries):
     """Create browser and use browser to retrieve page for given URL.
 
     :param url: str, url to webpage
     :param retries: int, number of times to retry connection
-    :param logger: logger object
 
     Return browser response object (the page).
     """
