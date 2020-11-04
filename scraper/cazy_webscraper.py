@@ -169,7 +169,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # retrieve links to CAZy family pages
     for class_url in tqdm(class_pages, desc="Parsing CAZy classes"):
-
         # retrieve class name from url and convert to synonym used in configuration file
         class_name = class_url[20: -5]
         for key in cazy_dict:
@@ -177,7 +176,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 class_name = key
 
         # retrieve URLs to families under current working CAZy class
-        family_urls = get_cazy_family_urls(class_url, cazy_home, args, logger)
+        family_urls = get_cazy_family_urls(class_url, cazy_home, class_name, args, logger)
+
+        if family_urls is not None:  # couldn't conenct to CAZy, logged in get_cazy_family_urls()
+            continue
 
         families = []  # store Family class objects if splitting data be class
 
@@ -204,8 +206,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                     else:
                         families.append(family)
 
-        if args.data_split == "class":
-            # Write dataframe for CAZy class
+        if (args.data_split == "class"):
             parse.proteins_to_dataframe(families, args, logger)
         else:
             all_data += families
@@ -237,26 +238,45 @@ def get_cazy_class_urls(cazy_home, excluded_classes, args, logger):
 
     # scrape the home page
     home_page = get_page(cazy_home, args.retries)
+    if home_page is None:
+        logger.error(
+            (
+                "Failed to connect to CAZy home-page after 10 attempts.\n"
+                "Could not retrieve URLs to CAZy classes.\n"
+                "Check the network connection. Terminating program."
+            )
+        )
+        sys.exit(1)
 
     return [f"{cazy_home}/{_['href']}" for _ in home_page.soup.find_all("a", {"class": "spip_out"})
             if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)]
 
 
-def get_cazy_family_urls(class_url, cazy_home, args, logger):
+def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
     """Retrieve all protein members of each CAZy family within the given CAZy class.
 
     :param class_url: str, URL to the CAZy class
     :param cazy_home: str, URL to CAZy home page
-    :param subfam_retrieval: bool, enables subfamily retrieval if true
+    :param class_name: str, name of CAZy class
     :param args: cmd-line args parser
     :param logger: logger object
 
     Returns list of URLs to family pages.
     """
-    logger.info(f"Retrieving URLs to families at {class_url}")
+    logger.info(f"Retrieving URLs to families at {class_name}")
 
     # scrape the class page
     class_page = get_page(class_url, args.retries)
+
+    if class_page is None:
+        logger.error(
+            (
+                f"Failed to connect to {class_url} after 10 attempts.\n"
+                "Could not retrieve URLs to CAZy famileis for this class.\n"
+                "This class will be skipped during the scraping process."
+            )
+        )
+        return None
 
     # retrieve the <h3> element that titles the div section containing the tables of family links
     family_h3_element = [_ for _ in class_page.soup.find_all("h3", {"class": "spip"}) if str(_.contents[0]) == "Tables for Direct Access"][0]
@@ -325,18 +345,20 @@ def parse_family(family_url, family_name, cazy_home, args, logger):
     family = Family(family_name, cazy_class)
 
     for protein in tqdm(
-        parse_family_pages(family_url, cazy_home, args, logger), desc=f"Retrieving proteins from {family_name}"
+        parse_family_pages(family_url, family_name, cazy_home, args, logger),
+        desc=f"Retrieving proteins from {family_name}"
     ):
         family.members.add(protein)
 
     return family
 
 
-def parse_family_pages(family_url, cazy_home, args, logger):
+def parse_family_pages(family_url, family_name, cazy_home, args, logger):
     """Retrieve all protein records for given CAZy family.
     Protein records are listed in a pagination method, with 1000 proteins per page.
 
     :param family_url: str, URL to CAZy family main page
+    :param family_name: str, name of CAZy famile
     :param cazy_home: str, URL to CAZy home page
     :param args: cmd-line args parser
     :param logger: logger object
@@ -347,6 +369,15 @@ def parse_family_pages(family_url, cazy_home, args, logger):
     # compile URL to first family page of protein records
     first_pagination_url = family_url.replace(".html", "_all.html")
     first_pagination_page = get_page(first_pagination_url, args.retries)
+
+    if first_pagination_page is None:
+        logger.warning(
+            (
+                f"Could not connect to {family_url}\n"
+                f"No protein records for CAZy family {family_name} will be retried."
+            )
+        )
+        return None
 
     protein_page_urls = [first_pagination_url]
 
@@ -382,6 +413,15 @@ def parse_proteins(protein_page_url, args, logger):
     logger.info(f"Retrieving proteins from {protein_page_url}")
 
     protein_page = get_page(protein_page_url, args.retries)
+    
+    if protein_page is None:
+        logger.warning(
+            (
+                f"Could not connect to {protein_page_url}\n"
+                f"No protein records from this page will be retried."
+            )
+        )
+        return None
 
     # retrieve protein record table
     protein_table = protein_page.soup.find_all("table", {"class": "listing"})[0]
@@ -427,7 +467,7 @@ def row_to_protein(row):
     return Protein(protein_name, source_organism, ec_number, links)
 
 
-def browser_decorator(func, logger):
+def browser_decorator(func):
     """Decorator to retry the wrapped function up to 'retries' times."""
 
     def wrapper(*args, retries=10, **kwargs):

@@ -51,9 +51,10 @@ def proteins_to_dataframe(families, args, logger):
     for family in families:
         proteins = family.get_proteins()
         for protein in proteins:
-            protein_dict = protein.get_protein_dict()
-            df = pd.DataFrame(protein_dict)
-            protein_dataframe = protein_dataframe.append(df)
+            if protein is not None:
+                protein_dict = protein.get_protein_dict()
+                df = pd.DataFrame(protein_dict)
+                protein_dataframe = protein_dataframe.append(df)
 
     time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
