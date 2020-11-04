@@ -65,6 +65,11 @@ def proteins_to_dataframe(families, args, logger):
         df_name = f"cazy_{families[0].cazy_class}_{time_stamp}.csv"
     else:
         df_name = f"cazy_scrape_{time_stamp}.csv"
+    
+    # Remove duplicate
+    # This can arise when scraping subfamilies and families within a class
+    # The proteins within the subfamilies will also be listed under their parent family
+    protein_dataframe = protein_dataframe.drop_duplicates()
 
     # write out dataframe
     write_out_df(protein_dataframe, df_name, args.output, logger, args.force)
