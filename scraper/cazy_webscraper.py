@@ -413,7 +413,7 @@ def parse_proteins(protein_page_url, args, logger):
     logger.info(f"Retrieving proteins from {protein_page_url}")
 
     protein_page = get_page(protein_page_url, args.retries)
-    
+
     if protein_page is None:
         logger.warning(
             (
