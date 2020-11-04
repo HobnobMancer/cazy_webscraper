@@ -28,6 +28,10 @@ from scraper.file_io import write_out_df
 def proteins_to_dataframe(families, args, logger):
     """Write protein members of CAZy families to a pandas dataframe.
 
+    Duplicate rows are removed. These rows must be identical across the entire row, not only share
+    the same protein name. Duplicates are mostly likely to arise when scraping families and
+    subfamilies becuase proteins under the subfamily are also catalogued under the parent family.
+
     :param families: list, list of CAZy families containing protein members
     :param args: args parser
     :param logger: logger object
