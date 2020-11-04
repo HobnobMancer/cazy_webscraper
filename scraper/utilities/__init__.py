@@ -99,16 +99,6 @@ def build_parser(argv: Optional[List] = None):
         help="Output filename",
     )
 
-    # Add option to specify the number of retries when conenction failes
-    parser.add_argument(
-        "-r",
-        "--retries",
-        type=int,
-        metavar="maximum number of retries",
-        default=10,
-        help="Maximum number of time to retry connection if network errors are encountered",
-    )
-
     # Add option to enable retrieval of subfamilies
     parser.add_argument(
         "-s",

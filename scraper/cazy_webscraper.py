@@ -25,7 +25,6 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 :cmd_args --log: path to log file, enables writing out log messages to a log file
 :cmd_args --nodelete: if true does not delete content in pre-existing output directory
 :cmd_args --output: path to output directory
-:cmd_args --retries: the maxmimum number of times to retry connection if network error raised
 :cmd_args --subfamily: enable retrieval of subfamilies from CAZy
 :cmd_args --verbose: change logger level from warning to info, verbose logging
 
