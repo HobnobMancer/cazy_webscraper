@@ -178,12 +178,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         # retrieve URLs to families under current working CAZy class
         family_urls = get_cazy_family_urls(class_url, cazy_home, class_name, args, logger)
 
-        if family_urls is not None:  # couldn't conenct to CAZy, logged in get_cazy_family_urls()
+        if family_urls is None:  # couldn't conenct to CAZy, logged in get_cazy_family_urls()
             continue
 
         families = []  # store Family class objects if splitting data be class
 
-        if (config_dict is None) or (len(config_dict[class_name]) == 0):
+        if (config_dict is None) or (config_dict[class_name] is None):
             # no (sub)families specified. Scrape all families in CAZy class
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
                 family_name = family_url[(len(cazy_home) + 1): -5]
