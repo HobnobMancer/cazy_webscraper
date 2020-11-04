@@ -162,7 +162,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
 
     # retrieve links to CAZy class pages
-    class_pages = get_cazy_class_urls(cazy_home, excluded_classes, args, logger)
+    class_pages = get_cazy_class_urls(cazy_home, excluded_classes, logger)
 
     all_data = []  # stores all Family class objects if not splitting the data
 
@@ -186,7 +186,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             # no (sub)families specified. Scrape all families in CAZy class
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
                 family_name = family_url[(len(cazy_home) + 1): -5]
-                family = parse_family(family_url, family_name, cazy_home, args, logger)
+                family = parse_family(family_url, family_name, cazy_home, logger)
 
                 if args.data_split == "family":
                     parse.proteins_to_dataframe([family], args, logger)
@@ -198,7 +198,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
                 family_name = family_url[(len(cazy_home) + 1): -5]
                 if family_name in config_dict[class_name]:
-                    family = parse_family(family_url, family_name, cazy_home, args, logger)
+                    family = parse_family(family_url, family_name, cazy_home, logger)
 
                     if args.data_split == "family":
                         parse.proteins_to_dataframe([family], args, logger)
@@ -217,12 +217,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info("Program finished")
 
 
-def get_cazy_class_urls(cazy_home, excluded_classes, args, logger):
+def get_cazy_class_urls(cazy_home, excluded_classes, logger):
     """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
 
     :param cazy_url: str, URL to the CAZy home page.
     :param excluded_classes: list, list of CAZy classes not to be scraped
-    :param args: cmd-line args parser
     :param logger: logger object
 
     Return list of URLs.
@@ -236,7 +235,7 @@ def get_cazy_class_urls(cazy_home, excluded_classes, args, logger):
         exclusions = ("<strong>Genomes</strong>")
 
     # scrape the home page
-    home_page = get_page(cazy_home, args.retries)
+    home_page = get_page(cazy_home)
     if home_page is None:
         logger.error(
             (
@@ -257,7 +256,7 @@ def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
     :param class_url: str, URL to the CAZy class
     :param cazy_home: str, URL to CAZy home page
     :param class_name: str, name of CAZy class
-    :param args: cmd-line args parser
+    :param args: args parser object
     :param logger: logger object
 
     Returns list of URLs to family pages.
@@ -265,7 +264,7 @@ def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
     logger.info(f"Retrieving URLs to families at {class_name}")
 
     # scrape the class page
-    class_page = get_page(class_url, args.retries)
+    class_page = get_page(class_url)
 
     if class_page is None:
         logger.error(
@@ -321,13 +320,12 @@ def get_subfamily_links(family_h3_element, cazy_home, logger):
     return urls
 
 
-def parse_family(family_url, family_name, cazy_home, args, logger):
+def parse_family(family_url, family_name, cazy_home, logger):
     """Returns a Family object with Protein members, scraped from CAZy.
 
     :param family_url: str, URL to CAZy family summary page
     :param family_name: str, name of CAZy family
     :param cazy_home: str, URL to CAZy home page
-    :param args: cmd-line args parser
     :param logger: logger object
 
     Return Family object.
@@ -344,7 +342,7 @@ def parse_family(family_url, family_name, cazy_home, args, logger):
     family = Family(family_name, cazy_class)
 
     for protein in tqdm(
-        parse_family_pages(family_url, family_name, cazy_home, args, logger),
+        parse_family_pages(family_url, family_name, cazy_home, logger),
         desc=f"Retrieving proteins from {family_name}"
     ):
         family.members.add(protein)
@@ -352,14 +350,13 @@ def parse_family(family_url, family_name, cazy_home, args, logger):
     return family
 
 
-def parse_family_pages(family_url, family_name, cazy_home, args, logger):
+def parse_family_pages(family_url, family_name, cazy_home, logger):
     """Retrieve all protein records for given CAZy family.
     Protein records are listed in a pagination method, with 1000 proteins per page.
 
     :param family_url: str, URL to CAZy family main page
     :param family_name: str, name of CAZy famile
     :param cazy_home: str, URL to CAZy home page
-    :param args: cmd-line args parser
     :param logger: logger object
 
     Return list of protein records.
@@ -367,7 +364,7 @@ def parse_family_pages(family_url, family_name, cazy_home, args, logger):
     logger.info(f"Retrieving URLs to all pages containing proteins for {family_url}")
     # compile URL to first family page of protein records
     first_pagination_url = family_url.replace(".html", "_all.html")
-    first_pagination_page = get_page(first_pagination_url, args.retries)
+    first_pagination_page = get_page(first_pagination_url)
 
     if first_pagination_page is None:
         logger.warning(
@@ -397,21 +394,20 @@ def parse_family_pages(family_url, family_name, cazy_home, args, logger):
                                   range(1000, last_princ_no + 1000, 1000)])
 
     # Process all URLs into a single collection - a generator
-    return (y for x in (parse_proteins(url, args, logger) for url in protein_page_urls) for y in x)
+    return (y for x in (parse_proteins(url, logger) for url in protein_page_urls) for y in x)
 
 
-def parse_proteins(protein_page_url, args, logger):
+def parse_proteins(protein_page_url, logger):
     """Returns generator of Protein objects for all protein rows on a single CAZy family page.
 
     :param protein_page_url, str, URL to the CAZy family page containing protein records
-    :param args: cmd-line args parser
     :param logger: logger object
 
     Return generator object.
     """
     logger.info(f"Retrieving proteins from {protein_page_url}")
 
-    protein_page = get_page(protein_page_url, args.retries)
+    protein_page = get_page(protein_page_url)
 
     if protein_page is None:
         logger.warning(
@@ -489,11 +485,10 @@ def browser_decorator(func):
 
 
 @browser_decorator
-def get_page(url, retries):
+def get_page(url):
     """Create browser and use browser to retrieve page for given URL.
 
     :param url: str, url to webpage
-    :param retries: int, number of times to retry connection
 
     Return browser response object (the page).
     """

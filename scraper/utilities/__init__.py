@@ -141,22 +141,19 @@ def build_logger(script_name, args) -> logging.Logger:
         script_name + ": {} - {}".format("%(asctime)s", "%(message)s")
     )
 
+    if args.verbose is True:
+        logger.setLevel(logging.INFO)
+    else:
+        logger.setLevel(logging.WARNING)
+
     # Setup console handler to log to terminal
     console_log_handler = logging.StreamHandler()
-    if args.verbose is True:
-        console_log_handler.setLevel(logging.INFO)
-    else:
-        console_log_handler.setLevel(logging.WARNING)
     console_log_handler.setFormatter(log_formatter)
     logger.addHandler(console_log_handler)
 
     # Setup file handler to log to a file
     if args.log is not None:
         file_log_handler = logging.FileHandler(args.log)
-        if args.verbose is True:
-            file_log_handler.setLevel(logging.INFO)
-        else:
-            file_log_handler.setLevel(logging.WARNING)
         file_log_handler.setFormatter(log_formatter)
         logger.addHandler(file_log_handler)
 
