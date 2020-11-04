@@ -157,6 +157,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # retrieve configuration data
     excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(args, logger)
 
+    logger.info("Finished program preparation")
+
     # Crawl through and scrape CAZy website/database
     cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
 
@@ -166,7 +168,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     all_data = []  # stores all Family class objects if not splitting the data
 
     # retrieve links to CAZy family pages
-    for class_url in class_pages:
+    for class_url in tqdm(class_pages, desc="Parsing CAZy classes"):
 
         # retrieve class name from url and convert to synonym used in configuration file
         class_name = class_url[20: -5]
@@ -181,7 +183,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
         if (config_dict is None) or (len(config_dict[class_name]) == 0):
             # no (sub)families specified. Scrape all families in CAZy class
-            for family_url in family_urls:
+            for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
                 family_name = family_url[(len(cazy_home) + 1): -5]
                 family = parse_family(family_url, family_name, cazy_home, args, logger)
 
@@ -192,7 +194,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
         else:
             # scrape only (sub)families specified in config file
-            for family_url in family_urls:
+            for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
                 family_name = family_url[(len(cazy_home) + 1): -5]
                 if family_name in config_dict[class_name]:
                     family = parse_family(family_url, family_name, cazy_home, args, logger)
@@ -323,7 +325,7 @@ def parse_family(family_url, family_name, cazy_home, args, logger):
     family = Family(family_name, cazy_class)
 
     for protein in tqdm(
-        parse_family_pages(family_url, cazy_home, args, logger), desc=f"Parsing {family_name}"
+        parse_family_pages(family_url, cazy_home, args, logger), desc=f"Retrieving proteins from {family_name}"
     ):
         family.members.add(protein)
 
@@ -425,7 +427,7 @@ def row_to_protein(row):
     return Protein(protein_name, source_organism, ec_number, links)
 
 
-def browser_decorator(func):
+def browser_decorator(func, logger):
     """Decorator to retry the wrapped function up to 'retries' times."""
 
     def wrapper(*args, retries=10, **kwargs):
