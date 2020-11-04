@@ -50,6 +50,7 @@ import sys
 
 from collections import defaultdict
 from typing import List, Optional
+from requests.exceptions import ConnectionError
 
 import mechanicalsoup
 
@@ -182,7 +183,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             # no (sub)families specified. Scrape all families in CAZy class
             for family_url in family_urls:
                 family_name = family_url[(len(cazy_home) + 1): -5]
-                family = parse_family(family_url, family_name, cazy_home)
+                family = parse_family(family_url, family_name, cazy_home, args, logger)
 
                 if args.data_split == "family":
                     parse.proteins_to_dataframe([family], args, logger)
@@ -194,7 +195,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             for family_url in family_urls:
                 family_name = family_url[(len(cazy_home) + 1): -5]
                 if family_name in config_dict[class_name]:
-                    family = parse_family(family_url, family_name, cazy_home)
+                    family = parse_family(family_url, family_name, cazy_home, args, logger)
 
                     if args.data_split == "family":
                         parse.proteins_to_dataframe([family], args, logger)
@@ -233,7 +234,7 @@ def get_cazy_class_urls(cazy_home, excluded_classes, args, logger):
         exclusions = ("<strong>Genomes</strong>")
 
     # scrape the home page
-    home_page = get_page(cazy_home, args.retries)
+    home_page = get_page(cazy_home, args.retries, logger)
 
     return [f"{cazy_home}/{_['href']}" for _ in home_page.soup.find_all("a", {"class": "spip_out"})
             if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)]
@@ -253,11 +254,10 @@ def get_cazy_family_urls(class_url, cazy_home, args, logger):
     logger.info(f"Retrieving URLs to families at {class_url}")
 
     # scrape the class page
-    class_page = get_page(class_url, args.retries)
+    class_page = get_page(class_url, args.retries, logger)
 
     # retrieve the <h3> element that titles the div section containing the tables of family links
-    family_h3_element = [_ for _ in class_page.soup.find_all("h3", {"class": "spip"}) if
-                         str(_.contents[0]) == "Tables for Direct Access"][0]
+    family_h3_element = [_ for _ in class_page.soup.find_all("h3", {"class": "spip"}) if str(_.contents[0]) == "Tables for Direct Access"][0]
 
     # retrieve all tables within the parent div section of the <h3> element
     tables = family_h3_element.parent.find_all("table")
@@ -322,7 +322,9 @@ def parse_family(family_url, family_name, cazy_home, args, logger):
 
     family = Family(family_name, cazy_class)
 
-    for protein in tqdm(parse_family_pages(family_url, cazy_home, args, logger), desc=f"Parsing {family_name}"):
+    for protein in tqdm(
+        parse_family_pages(family_url, cazy_home, args, logger), desc=f"Parsing {family_name}"
+    ):
         family.members.add(protein)
 
     return family
@@ -342,7 +344,7 @@ def parse_family_pages(family_url, cazy_home, args, logger):
     logger.info(f"Retrieving URLs to all pages containing proteins for {family_url}")
     # compile URL to first family page of protein records
     first_pagination_url = family_url.replace(".html", "_all.html")
-    first_pagination_page = get_page(first_pagination_url, args.retries)
+    first_pagination_page = get_page(first_pagination_url, args.retries, logger)
 
     protein_page_urls = [first_pagination_url]
 
@@ -377,7 +379,7 @@ def parse_proteins(protein_page_url, args, logger):
     """
     logger.info(f"Retrieving proteins from {protein_page_url}")
 
-    protein_page = get_page(protein_page_url, args.retries)
+    protein_page = get_page(protein_page_url, args.retries, logger)
 
     # retrieve protein record table
     protein_table = protein_page.soup.find_all("table", {"class": "listing"})[0]
@@ -429,13 +431,17 @@ def browser_decorator(func):
     def wrapper(*args, retries=10, **kwargs):
         tries, success = 0, False
         while not success and (tries < retries):
-            response = func(*args, **kwargs)
+            try:
+                response = func(*args, **kwargs)
+            except ConnectionError:
+                logger.warning(f"Failed to make connection to CAZy on try {tries} of {retries}")
+                response = None
             if str(response) == "<Response [200]>":  # response was successful
                 success = True
             # if response from webpage was not successful
             tries += 1
         if not success:
-            print("Ran out of connection retries, and was unable to connect")
+            logging.warning("Ran out of connection retries, and was unable to connect to CAZy")
             return None
         else:
             return response
@@ -444,10 +450,12 @@ def browser_decorator(func):
 
 
 @browser_decorator
-def get_page(url, retries):
+def get_page(url, retries, logger):
     """Create browser and use browser to retrieve page for given URL.
 
     :param url: str, url to webpage
+    :param retries: int, number of times to retry connection
+    :param logger: logger object
 
     Return browser response object (the page).
     """
