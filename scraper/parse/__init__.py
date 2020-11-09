@@ -65,7 +65,7 @@ def proteins_to_dataframe(families, args, logger):
 
     time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
-    if args.subfamiles is True:
+    if args.subfamilies is True:
         subfam = "_incld_subfams"
     else:
         subfam = ""
