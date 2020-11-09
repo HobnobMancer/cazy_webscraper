@@ -65,13 +65,17 @@ def proteins_to_dataframe(families, args, logger):
 
     time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
+    if args.subfamiles is True:
+        subfam = "_incld_subfams"
+    else:
+        subfam = ""
     # compile dataframe name
     if args.data_split == "family":
-        df_name = f"cazy_{families[0].name}_{time_stamp}.csv"
+        df_name = f"cazy_{families[0].name}{subfam}_{time_stamp}"
     elif args.data_split == "class":
-        df_name = f"cazy_{families[0].cazy_class}_{time_stamp}.csv"
+        df_name = f"cazy_{families[0].cazy_class}{subfam}_{time_stamp}"
     else:
-        df_name = f"cazy_scrape_{time_stamp}.csv"
+        df_name = f"cazy_scrape{subfam}_{time_stamp}"
 
     # Remove duplicate
     # This can arise when scraping subfamilies and families within a class

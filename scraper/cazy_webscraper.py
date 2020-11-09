@@ -95,7 +95,7 @@ class Protein:
         """Return a dictionary containing all the data of the protein."""
         protein_dict = {"Protein_name": [self.name], "CAZy_family": [self.family]}
 
-        elif len(self.ec) == 1:
+        if len(self.ec) == 1:
             protein_dict["EC#"] = self.ec
         else:
             ec_string = ""
