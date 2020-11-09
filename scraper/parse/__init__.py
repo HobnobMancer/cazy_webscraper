@@ -45,6 +45,7 @@ def proteins_to_dataframe(families, args, logger):
         data={},
         columns=[
             "Protein_name",
+            "CAZy_family,"
             "EC#",
             "Source_organism",
             "GenBank",

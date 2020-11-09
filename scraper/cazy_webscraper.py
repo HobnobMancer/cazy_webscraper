@@ -68,8 +68,9 @@ class Protein:
     'list' values becuase there may be multiple links per database.
     """
 
-    def __init__(self, name, source, ec, links=None):
+    def __init__(self, name, family, ec, source, links=None):
         self.name = name
+        self.family = family
         self.ec = ec
         self.source = source
         if links is None:
@@ -79,23 +80,21 @@ class Protein:
 
     def __str__(self):
         """Create representative string of class object"""
-        return f"{self.name} ({self.source}): links to {self.links.keys()}"
+        return f"{self.name} ({self.family} {self.source}): links to {self.links.keys()}"
 
     def __repr__(self):
         """Create representative object"""
         return(
             (
-                f"<Protein: {id(self)}: {self.name}, "
+                f"<Protein: {id(self)}: {self.name}, {self.family} "
                 f"({self.source}), {len(self.links)} to external databases>"
             )
         )
 
     def get_protein_dict(self):
         """Return a dictionary containing all the data of the protein."""
-        protein_dict = {"Protein_name": [self.name]}
+        protein_dict = {"Protein_name": [self.name], "CAZy_family": [self.family]}
 
-        if len(self.ec) == 0:
-            protein_dict["EC#"] = [np.nan]
         elif len(self.ec) == 1:
             protein_dict["EC#"] = self.ec
         else:
@@ -376,7 +375,7 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
     Protein records are listed in a pagination method, with 1000 proteins per page.
 
     :param family_url: str, URL to CAZy family main page
-    :param family_name: str, name of CAZy famile
+    :param family_name: str, name of CAZy family
     :param cazy_home: str, URL to CAZy home page
     :param logger: logger object
 
@@ -415,13 +414,14 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
                                   range(1000, last_princ_no + 1000, 1000)])
 
     # Process all URLs into a single collection - a generator
-    return (y for x in (parse_proteins(url, logger) for url in protein_page_urls) for y in x)
+    return (y for x in (parse_proteins(url, family_name, logger) for url in protein_page_urls) for y in x)
 
 
-def parse_proteins(protein_page_url, logger):
+def parse_proteins(protein_page_url, family_name, logger):
     """Returns generator of Protein objects for all protein rows on a single CAZy family page.
 
     :param protein_page_url, str, URL to the CAZy family page containing protein records
+    :param family_name: str, name of CAZy family
     :param logger: logger object
 
     Return generator object.
@@ -445,16 +445,17 @@ def parse_proteins(protein_page_url, logger):
                     ("id" not in _.attrs) and ("class" not in _.attrs)]
 
     for row in protein_rows:
-        yield row_to_protein(row)
+        yield row_to_protein(row, family_name)
 
 
-def row_to_protein(row):
+def row_to_protein(row, family_name):
     """Returns a Protein object representing a single protein row from a CAZy family protein page.
 
     Each row, in order, contains the protein name, EC number, source organism, GenBank ID(s),
     UniProt ID(s), and PDB accession(s).
 
     :param row: tr element from CAZy family protein page
+    :param family_name: str, name of CAZy family
 
     Return Protein instance.
     """
@@ -463,15 +464,23 @@ def row_to_protein(row):
 
     protein_name = tds[0].contents[0].strip()
     source_organism = tds[2].a.get_text()
+    ec_numbers = []
     links = {}
 
-    # test for len(tds[x].contents) in case there is no link,
-    # the check of .name then ensures link is captured
-    if len(tds[1].contents) and tds[3].contents[0].name == "a":
-        ec_numbers = [f"{_.get_text()}" for _ in tds[1].contents if _.name == "a"]
+    all_links = None
+    try:
+        all_links = tds[1].find_all("a")
+    except TypeError:  # raised when no EC numbers are listed
+        pass
+
+    if all_links is not None:
+        for link in all_links:
+            ec_numbers.append(link.text)
     else:
         ec_numbers = [np.nan]
 
+    # test for len(tds[x].contents) in case there is no link,
+    # the check of .name then ensures link is captured
     if len(tds[3].contents) and tds[3].contents[0].name == "a":
         links["GenBank"] = [f"{_.get_text()} {_['href']}" for _ in tds[3].contents if
                             _.name == "a"]
@@ -481,7 +490,7 @@ def row_to_protein(row):
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
         links["PDB"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if _.name == "a"]
 
-    return Protein(protein_name, source_organism, ec_numbers, links)
+    return Protein(protein_name, family, source_organism, ec_numbers, links)
 
 
 def browser_decorator(func):
