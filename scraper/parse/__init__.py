@@ -60,7 +60,7 @@ def proteins_to_dataframe(families, args, logger):
             if protein is not None:
                 protein_dict = protein.get_protein_dict()
                 df = pd.DataFrame(protein_dict)
-                protein_dataframe = protein_dataframe.append(df)
+                protein_dataframe = protein_dataframe.append(df, ignore_index=True)
 
     time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
