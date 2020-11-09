@@ -170,6 +170,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.output is not sys.stdout:
         file_io.make_output_directory(args.output, logger, args.force, args.nodelete)
 
+    if args.subfamilies is True:
+        logger.warning("Enabled to retrieve subfamilies")
+
     # retrieve configuration data
     excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(args, logger)
 
