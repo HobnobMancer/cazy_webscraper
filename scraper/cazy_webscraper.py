@@ -90,11 +90,19 @@ class Protein:
 
     def get_protein_dict(self):
         """Return a dictionary containing all the data of the protein."""
-        protein_dict = {
-            "Protein_name": [self.name],
-            "EC#": [self.ec],
-            "Source_organism": [self.source],
-        }
+        protein_dict = {"Protein_name": [self.name]}
+        
+        if len(self.ec) == 1:
+            protein_dict["EC#"] = self.ec
+        else:
+            ec_string = ""
+            for ec_num in self.ec[:-1]:
+                ec_string += f"{ec_num}\n"
+            ec_string += self.ec[-1]
+            protein_dict["EC#"] = [ec_string]
+        
+        protein_dict["Source_organism"] = [self.source]
+
         if type(self.links) is dict:
             for database in ["GenBank", "UniProt", "PDB/3D"]:
                 try:
@@ -452,23 +460,24 @@ def row_to_protein(row):
     protein_name = tds[0].contents[0].strip()
     source_organism = tds[2].a.get_text()
     links = {}
-    try:
-        ec_number = tds[1].contents[0].strip()
-    except TypeError:  # raised if protein is not annotated with an EC number
-        ec_number = "N/A"
 
     # test for len(tds[x].contents) in case there is no link,
     # the check of .name then ensures link is captured
+    if len(tds[1].contents) and tds[3].contents[0].name == "a":
+        ec_numbers = [f"{_.get_text()}" for _ in tds[1].contents if _.name == "a"]
+    else:
+        ec_numbers = [""]
+
     if len(tds[3].contents) and tds[3].contents[0].name == "a":
-        links["GenBank"] = [f"{_.get_text()}: {_['href']}" for _ in tds[3].contents if
+        links["GenBank"] = [f"{_.get_text()} {_['href']}" for _ in tds[3].contents if
                             _.name == "a"]
     if len(tds[4].contents) and tds[4].contents[0].name == "a":
-        links["UniProt"] = [f"{_.get_text()}: {_['href']}" for _ in tds[4].contents if
+        links["UniProt"] = [f"{_.get_text()} {_['href']}" for _ in tds[4].contents if
                             _.name == "a"]
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
-        links["PDB"] = [f"{_.get_text()}: {_['href']}" for _ in tds[5].contents if _.name == "a"]
+        links["PDB"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if _.name == "a"]
 
-    return Protein(protein_name, source_organism, ec_number, links)
+    return Protein(protein_name, source_organism, ec_numbers, links)
 
 
 def browser_decorator(func):
