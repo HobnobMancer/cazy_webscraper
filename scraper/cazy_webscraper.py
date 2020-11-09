@@ -98,7 +98,11 @@ class Protein:
         if type(self.links) is dict:
             for database in ["GenBank", "UniProt", "PDB/3D"]:
                 try:
-                    protein_dict[database] = self.links[database]
+                    if len(self.links[database]) == 1:
+                        accession_string = ""
+                        for accession in self.links[database][:-1]:
+                            accession_string += f"{accession},\n"
+                        accession_string += self.links[database][-1]
                 except KeyError:
                     protein_dict[database] = []
         else:
@@ -166,6 +170,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     all_data = []  # stores all Family class objects if not splitting the data
 
+    logger.info("Starting retrieval of CAZy families")
+
     # retrieve links to CAZy family pages
     for class_url in tqdm(class_pages, desc="Parsing CAZy classes"):
         # retrieve class name from url and convert to synonym used in configuration file
@@ -181,6 +187,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             continue
 
         families = []  # store Family class objects if splitting data be class
+        logger.info("Starting retrieval of protein records of protein records from families")
 
         if (config_dict is None) or (config_dict[class_name] is None):
             # no (sub)families specified. Scrape all families in CAZy class
@@ -261,7 +268,7 @@ def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
 
     Returns list of URLs to family pages.
     """
-    logger.info(f"Retrieving URLs to families at {class_name}")
+    logger.info(f"Retrieving URLs to families under {class_name}")
 
     # scrape the class page
     class_page = get_page(class_url)
@@ -471,12 +478,13 @@ def browser_decorator(func):
             try:
                 response = func(*args, **kwargs)
             except ConnectionError:
-                response = None
+                success = False
+                response = ""
             if str(response) == "<Response [200]>":  # response was successful
                 success = True
             # if response from webpage was not successful
             tries += 1
-        if not success:
+        if (not success) or (response == ""):
             return None
         else:
             return response
