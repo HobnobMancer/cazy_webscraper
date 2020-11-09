@@ -22,6 +22,8 @@ import pandas as pd
 
 from datetime import datetime
 
+from tqdm import tqdm
+
 from scraper.file_io import write_out_df
 
 
@@ -54,7 +56,7 @@ def proteins_to_dataframe(families, args, logger):
     # add proteins to dataframe
     for family in families:
         proteins = family.get_proteins()
-        for protein in proteins:
+        for protein in tqdm(proteins, desc=f"Writing {family.name} proteins to df"):
             if protein is not None:
                 protein_dict = protein.get_protein_dict()
                 df = pd.DataFrame(protein_dict)
@@ -69,7 +71,7 @@ def proteins_to_dataframe(families, args, logger):
         df_name = f"cazy_{families[0].cazy_class}_{time_stamp}.csv"
     else:
         df_name = f"cazy_scrape_{time_stamp}.csv"
-    
+
     # Remove duplicate
     # This can arise when scraping subfamilies and families within a class
     # The proteins within the subfamilies will also be listed under their parent family
