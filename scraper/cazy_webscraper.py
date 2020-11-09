@@ -217,7 +217,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             # scrape only (sub)families specified in config file
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
                 family_name = family_url[(len(cazy_home) + 1): -5]
-                if family_name in config_dict[class_name]:
+
+                # Allows retrieval of subfamilies when only the parent CAZy family was named in the
+                # config file
+                if (args.subfamilies is True) and (family_name.find("_") != -1):
+                    name_check = family_name[:family_name.find("_")]
+                else:
+                    name_check = family_name
+
+                if name_check in config_dict[class_name]:
                     family = parse_family(family_url, family_name, cazy_home, logger)
 
                     if args.data_split == "family":
@@ -490,7 +498,7 @@ def row_to_protein(row, family_name):
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
         links["PDB"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if _.name == "a"]
 
-    return Protein(protein_name, family, source_organism, ec_numbers, links)
+    return Protein(protein_name, family_name, source_organism, ec_numbers, links)
 
 
 def browser_decorator(func):
