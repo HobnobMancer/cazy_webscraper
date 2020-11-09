@@ -47,6 +47,8 @@ import logging
 import re
 import sys
 
+import numpy as np
+
 from collections import defaultdict
 from typing import List, Optional
 from requests.exceptions import ConnectionError
@@ -91,8 +93,10 @@ class Protein:
     def get_protein_dict(self):
         """Return a dictionary containing all the data of the protein."""
         protein_dict = {"Protein_name": [self.name]}
-        
-        if len(self.ec) == 1:
+
+        if len(self.ec) == 0:
+            protein_dict["EC#"] = [np.nan]
+        elif len(self.ec) == 1:
             protein_dict["EC#"] = self.ec
         else:
             ec_string = ""
@@ -100,7 +104,7 @@ class Protein:
                 ec_string += f"{ec_num}\n"
             ec_string += self.ec[-1]
             protein_dict["EC#"] = [ec_string]
-        
+
         protein_dict["Source_organism"] = [self.source]
 
         if type(self.links) is dict:
@@ -466,7 +470,7 @@ def row_to_protein(row):
     if len(tds[1].contents) and tds[3].contents[0].name == "a":
         ec_numbers = [f"{_.get_text()}" for _ in tds[1].contents if _.name == "a"]
     else:
-        ec_numbers = [""]
+        ec_numbers = [np.nan]
 
     if len(tds[3].contents) and tds[3].contents[0].name == "a":
         links["GenBank"] = [f"{_.get_text()} {_['href']}" for _ in tds[3].contents if
