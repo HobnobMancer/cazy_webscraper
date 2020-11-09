@@ -32,6 +32,11 @@ When performing a series of automated, repeated calls to a server, such as is pe
 
 The webscraper can appear to run slowly but this is due to the limited access speed of the CAZy server. When a CAZy family is being parsed by the scraper, and protein records are being retrieved for the CAZy family a progress bar is produced in the terminal to provide an indicator the webscraper is working. However, expect an entire scrape of the CAZy database to take severak hours.
 
+## Output
+
+At the moment the webscraper retrieves the protein data as presented in the CAZy database:
+in the table formate as viewed in a webrowser. This data is then written out a dataframe with the same headings as present in CAZy, with the exception of the additional column 'CAZy family' which lists the proteins CAZy family or subfamily as appropriate. This is in case multiple families are scraped and the proteins are stored in a single dataframe together.
+
 ## Configuration
 
 The operation of the `cazy_webscraper` is configured by command-line arguments and a Yaml configuration file.
@@ -54,13 +59,16 @@ For the basic invoking of the `cazy_webscraper` use:
 
 The configuration file is for specifying specific CAZy classes and families to be scraped.
 
-Under the **classes** heading list any classes to be scrapped. For classes listed under 'classes', all proteins catalgoued under that class will be retrieved, unless specific families have been listed under the respective classes heading in the configuration file. Then scraping only the specific classes takes precident and the entire class is not scraped. _If you believe this should be changed please raise an issue. It is invisioned that very few users would want to scrape an entire class an also scrape only specific families from that class simultanious._
+Under the **classes** heading list any classes to be scrapped. For classes listed under 'classes', all proteins catalogued under that class will be retrieved, unless specific families have been listed under the respective classes heading in the configuration file. Then scraping only the specific classes takes precident and the entire class is not scraped. _If you believe this should be changed please raise an issue. It is invisioned that very few users would want to scrape an entire class an also scrape only specific families from that class simultanious._
 
 A `cazy_dictionary.json` has been created and packaged within the `cazy_webscraper`. This allows users to use a variety of synonoms for the CAZy classes, for example both "GH" and "Glycoside-Hydrolases" are accepted as synonoms for "Glycoside Hydrolases (GHs)". This dictionary is packaged within the `scraper/file_io` directory. If you having issues with the scraper retrieving the list of CAZy classes that are written under 'classes' in the configuration file please check the dictionary first to see the full list of accepted synonoms. If you are comfortable modifying json files then feel free to add your own synonoms to the dictionary.
 
 Under the each of the specific class names listed in the configuration file list the names of specific **families** to be scraped from that class. You do not have to list the class of the families to be scraped under 'classes' as well, this is handled by the web scraper.
 
 Write the true name of the family not only it's number, for example **GH1** is excepted by **1** is not. Additionally, use the standard CAZy notation for subfamilies (**GH3_1**). If subfamilies are specified in the configuration file `--subfamilies` **must be enabled when invoking the cazy_webscraper.**
+
+If the parent family, e.g GH3, is listed in the configuration file and `--subfamilies` is enabled, all proteins catalogued under GH3 and its subfamilies will be retrieved. This is to
+save time having to write out all the subfamilies for a given CAZy family.
 
 Each family must be listed on a separate line and the name surrounded by double or single quotation marks. For example:
 
