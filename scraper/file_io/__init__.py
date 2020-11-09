@@ -22,6 +22,8 @@ import json
 import shutil
 import yaml
 
+from pathlib import Path
+
 
 def make_output_directory(output, logger, force, nodelete):
     """Create output directory for genomic files.
@@ -63,7 +65,8 @@ def parse_configuration(args, logger):
 
     Return only the CAZy class synonoms dictionary if a path to a configuration file was not given.
     This results in the default behaviour of the webscraper to scrape the entirty of CAZy to be
-    invoked.
+    invoked. If no items are listed under a heading/tag in the config file, the retrieved item will
+    be a None type object.
 
     :param args: parser arguments
     :param logger: logger object
@@ -71,7 +74,9 @@ def parse_configuration(args, logger):
     Return list of classes not to scrape, dict of families to scrape, and dict of class synonoms.
     """
     # open dictionary of accepted CAZy class synonyms)
-    with open("cazy_dictionary.json", "r") as fh:
+    dict_path = Path("file_io")
+    dict_path = dict_path / "cazy_dictionary.json"
+    with open(dict_path, "r") as fh:
         cazy_dict = json.load(fh)
         # create list of standardised CAZy classes
         class_names = list(cazy_dict.keys())
@@ -86,10 +91,8 @@ def parse_configuration(args, logger):
     # Retrieve CAZy classes listed in config file
     try:
         cazy_classes = config_dict["classes"]
-        # standardise CAZy class names
-        cazy_classes = parse_user_cazy_classes(cazy_classes, cazy_dict, class_names, logger)
     except (KeyError, TypeError) as e:
-        logger.info(
+        logger.warning(
             (
                 "Did not retrieve any CAZy classes from configuration file.\n"
                 f"Raised {e}"
@@ -97,26 +100,34 @@ def parse_configuration(args, logger):
         )
         cazy_classes = []
 
-    if len(cazy_classes) == 0:
-        logger.info("No CAZy classes specified in configuration file")
+    if cazy_classes is None:
+        logger.info("Did not retrieve any items under 'classes' in the config file.")
+        cazy_classes = []
+
+    if len(cazy_classes) != 0:
+        # standardise CAZy class names
+        cazy_classes = parse_user_cazy_classes(cazy_classes, cazy_dict, class_names, logger)
 
     # retrieve classes of families/subfamilies specified in configuration file
     for key in config_dict:
-        if (key != "classes") and (len(config_dict[key]) > 0):
+        if (key != "classes") and (key not in cazy_classes) and (config_dict[key] is not None):
             # add the class of families to be scraped to the list of CAZy classes to be scraped
-            if key not in cazy_classes:
-                cazy_classes.append(key)
+            cazy_classes.append(key)
 
     # create list of CAZy classes not to be scraped
     try:
         excluded_classes = class_names
         excluded_classes = list(set(excluded_classes).difference(cazy_classes))
+    except TypeError:
+        # raised if CAZy classes is None
+        excluded_classes = None
+
+    if len(excluded_classes) != 0:
         # change names of classes into format for excluding classes during scrape
         index = 0
         for index in range(len(excluded_classes)):
             excluded_classes[index] = f"<strong>{excluded_classes[index]}</strong>"
-    except TypeError:
-        # raised if CAZy classes is None
+    else:
         excluded_classes = None
 
     return excluded_classes, config_dict, cazy_dict
@@ -132,6 +143,7 @@ def parse_user_cazy_classes(cazy_classes, cazy_dict, class_names, logger):
 
     Return list of CAZy classes named in configuration file.
     """
+    logger.info("Standardising names of class listed in configuration file")
     # identify user defined CAZy classes not written in standardised format
     index = 0
     for index in range(len(cazy_classes)):
