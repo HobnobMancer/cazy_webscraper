@@ -95,7 +95,9 @@ class Protein:
         """Return a dictionary containing all the data of the protein."""
         protein_dict = {"Protein_name": [self.name], "CAZy_family": [self.family]}
 
-        if len(self.ec) == 1:
+        if len(self.ec) == 0:
+            protein_dict["EC#"] = [np.nan]
+        elif len(self.ec) == 1:
             protein_dict["EC#"] = self.ec
         else:
             ec_string = ""
@@ -228,7 +230,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                     name_check = family_name[:family_name.find("_")]
                 else:
                     name_check = family_name
-                print("name check=", name_check)
+
                 if name_check in config_dict[class_name]:
                     family = parse_family(family_url, family_name, cazy_home, logger)
 
@@ -508,7 +510,7 @@ def row_to_protein(row, family_name):
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
         links["PDB"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if _.name == "a"]
 
-    return Protein(protein_name, family_name, source_organism, ec_numbers, links)
+    return Protein(protein_name, family_name, ec_numbers, source_organism, links)
 
 
 def browser_decorator(func):

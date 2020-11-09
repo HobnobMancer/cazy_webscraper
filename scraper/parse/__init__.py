@@ -45,12 +45,12 @@ def proteins_to_dataframe(families, args, logger):
         data={},
         columns=[
             "Protein_name",
-            "CAZy_family,"
+            "CAZy_family",
             "EC#",
             "Source_organism",
             "GenBank",
             "UniProt",
-            "PDB/3D"
+            "PDB/3D",
         ]
     )
 
@@ -60,6 +60,7 @@ def proteins_to_dataframe(families, args, logger):
         for protein in tqdm(proteins, desc=f"Writing {family.name} proteins to df"):
             if protein is not None:
                 protein_dict = protein.get_protein_dict()
+                print(protein_dict["CAZy_family"], protein_dict["EC#"])
                 df = pd.DataFrame(protein_dict)
                 protein_dataframe = protein_dataframe.append(df, ignore_index=True)
 
@@ -84,5 +85,5 @@ def proteins_to_dataframe(families, args, logger):
 
     # write out dataframe
     write_out_df(protein_dataframe, df_name, args.output, logger, args.force)
-
+    print(protein_dataframe)
     return
