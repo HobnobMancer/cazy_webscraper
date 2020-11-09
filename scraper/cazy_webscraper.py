@@ -227,7 +227,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                     name_check = family_name[:family_name.find("_")]
                 else:
                     name_check = family_name
-
+                print("name check=", name_check)
                 if name_check in config_dict[class_name]:
                     family = parse_family(family_url, family_name, cazy_home, logger)
 
@@ -319,7 +319,9 @@ def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
     family_urls = family_urls = [f"{cazy_home}/{_['href']}" for _ in tables[0].find_all("a")]
     family_urls.append(f"{cazy_home}/{tables[1].a['href']}")
     if args.subfamilies is True:
-        family_urls.append(get_subfamily_links(family_h3_element, cazy_home, logger))
+        subfam_urls = get_subfamily_links(family_h3_element, cazy_home, logger)
+        if subfam_urls is not None:
+            family_urls += subfam_urls
 
     return family_urls
 
@@ -333,7 +335,8 @@ def get_subfamily_links(family_h3_element, cazy_home, logger):
 
     Return list of URLs to subfamilies.
     """
-    all_links = family_h3_element.find_all("a")
+    parent_div = family_h3_element.parent
+    all_links = parent_div.find_all("a")
 
     pattern = re.compile(r"\D+?\d+?_\d+?\.html")
 
@@ -347,8 +350,11 @@ def get_subfamily_links(family_h3_element, cazy_home, logger):
             # KeyError raised if link does not have ['href']
             # AttributeError error raised if search_result is None becuase not subfam link
             pass
-
-    return urls
+    
+    if len(urls) == 0:
+        return
+    else:
+        return urls
 
 
 def parse_family(family_url, family_name, cazy_home, logger):
