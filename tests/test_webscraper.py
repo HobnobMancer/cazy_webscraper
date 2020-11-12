@@ -41,6 +41,18 @@ def cazy_dictionary(test_input_dir):
     return cazy_dict
 
 
+@pytest.fixture
+def args_datasplit_none():
+    argsdict = {
+        "args": Namespace(
+            data_split=None
+        )
+    }
+
+
+# test main()
+
+
 def test_main_one(test_dir, null_logger, cazy_dictionary, monkeypatch):
     """Test function main().
 
@@ -131,3 +143,31 @@ def test_main_two(null_logger, cazy_dictionary, monkeypatch):
     monkeypatch.setattr(cazy_webscraper, "get_cazy_data", mock_retrieving_cazy_data)
 
     cazy_webscraper.main(["argv"], null_logger)
+
+
+# test get_cazy_data
+
+
+def test_get_cazy_data_class_urls_none(cazy_home_url, null_logger, monkeypatch):
+    """Test get_cazy_data, checking that when no class page urls are returned the program exits."""
+
+    def mock_failed_class_pages(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(cazy_webscraper, "get_cazy_class_urls", mock_failed_class_pages)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        cazy_webscraper.get_cazy_data(cazy_home_url, None, None, None, null_logger, None)
+    assert pytest_wrapped_e.type == SystemExit
+
+
+# def test_get_cazy_family_urls_none(cazy_home_url, args_datasplit_none, null_logger, monkeypatch):
+#     """Test get_cazy_data when nothing returned from get_cazy_family_urls."""
+
+#     def mock_class_pages(*args, **kwargs):
+#         return ["http://www.cazy.org/Glycoside-Hydrolases.html"]
+    
+#     def mock_family_urls_none(*args, **kwargs):
+#         return
+    
+#     monkeypatch.setattr(cazy_webscraper, "get")
