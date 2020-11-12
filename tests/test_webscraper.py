@@ -35,10 +35,8 @@ from scraper import cazy_webscraper, file_io, utilities
 
 @pytest.fixture
 def cazy_dictionary(test_input_dir):
-    dict_path = test_input_dir / "test_inputs_crawler" / "cazy_dictionary.json"
-    with open(dict_path, "r") as fh:
-        cazy_dict = json.load(fh)
-    return cazy_dict
+    dict_path = test_input_dir / "test_inputs_webscraper" / "cazy_dictionary.json"
+    return dict_path
 
 
 @pytest.fixture
@@ -48,6 +46,7 @@ def args_datasplit_none():
             data_split=None
         )
     }
+    return argsdict
 
 
 # test main()
@@ -58,6 +57,9 @@ def test_main_one(test_dir, null_logger, cazy_dictionary, monkeypatch):
 
     Argv is None, logger is None, args.output is not sys.stdout, args.subfamilies is True.
     """
+    with open(cazy_dictionary, "r") as fh:
+        cazy_dict = json.load(fh)
+
     def mock_building_parser(*args, **kwargs):
         parser_args = ArgumentParser(
             prog="cazy_webscraper.py",
@@ -84,7 +86,7 @@ def test_main_one(test_dir, null_logger, cazy_dictionary, monkeypatch):
         return
 
     def mock_retrieving_configuration(*args, **kwargs):
-        return None, None, cazy_dictionary
+        return None, None, cazy_dict
 
     def mock_retrieving_cazy_data(*args, **kwargs):
         return
@@ -104,6 +106,9 @@ def test_main_two(null_logger, cazy_dictionary, monkeypatch):
 
     Argv is not None, logger is not None, args.output is sys.stdout, args.subfamilies is False.
     """
+    with open(cazy_dictionary, "r") as fh:
+        cazy_dict = json.load(fh)
+
     def mock_building_parser(*args, **kwargs):
         parser_args = ArgumentParser(
             prog="cazy_webscraper.py",
@@ -130,7 +135,7 @@ def test_main_two(null_logger, cazy_dictionary, monkeypatch):
         return
 
     def mock_retrieving_configuration(*args, **kwargs):
-        return None, None, cazy_dictionary
+        return None, None, cazy_dict
 
     def mock_retrieving_cazy_data(*args, **kwargs):
         return
@@ -161,13 +166,44 @@ def test_get_cazy_data_class_urls_none(cazy_home_url, null_logger, monkeypatch):
     assert pytest_wrapped_e.type == SystemExit
 
 
-# def test_get_cazy_family_urls_none(cazy_home_url, args_datasplit_none, null_logger, monkeypatch):
-#     """Test get_cazy_data when nothing returned from get_cazy_family_urls."""
+def test_get_cazy_data_class_urls_empty_list(cazy_home_url, null_logger, monkeypatch):
+    """Test get_cazy_data, checking that when no class page urls are returned the program exits."""
 
-#     def mock_class_pages(*args, **kwargs):
-#         return ["http://www.cazy.org/Glycoside-Hydrolases.html"]
-    
-#     def mock_family_urls_none(*args, **kwargs):
-#         return
-    
-#     monkeypatch.setattr(cazy_webscraper, "get")
+    def mock_failed_class_pages(*args, **kwargs):
+        return []
+
+    monkeypatch.setattr(cazy_webscraper, "get_cazy_class_urls", mock_failed_class_pages)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        cazy_webscraper.get_cazy_data(cazy_home_url, None, None, None, null_logger, None)
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_get_cazy_family_urls_none(
+    cazy_home_url,
+    cazy_dictionary,
+    args_datasplit_none,
+    null_logger,
+    monkeypatch,
+    ):
+    """Test get_cazy_data when nothing returned from get_cazy_family_urls."""
+    with open(cazy_dictionary, "r") as fh:
+        cazy_dict = json.load(fh)
+
+    def mock_class_pages(*args, **kwargs):
+        return ["http://www.cazy.org/Glycoside-Hydrolases.html"]
+
+    def mock_family_urls_none(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(cazy_webscraper, "get_cazy_class_urls", mock_class_pages)
+    monkeypatch.setattr(cazy_webscraper, "get_cazy_family_urls", mock_family_urls_none)
+
+    cazy_webscraper.get_cazy_data(
+        cazy_home_url,
+        None,
+        None,
+        cazy_dict,
+        null_logger,
+        args_datasplit_none["args"]
+    )
