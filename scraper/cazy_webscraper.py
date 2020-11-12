@@ -327,8 +327,11 @@ def get_cazy_class_urls(cazy_home, excluded_classes, logger):
         )
         sys.exit(1)
 
-    return [f"{cazy_home}/{_['href']}" for _ in home_page.soup.find_all("a", {"class": "spip_out"})
-            if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)]
+    try:
+        return [f"{cazy_home}/{_['href']}" for _ in home_page.soup.find_all("a", {"class": "spip_out"})
+                if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)]
+    except AttributeError:  # raise if can't find results with find_all("a", {"class": "spip_out"})
+        return None
 
 
 def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
