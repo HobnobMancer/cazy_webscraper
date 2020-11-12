@@ -240,13 +240,19 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                         families.append(family)
 
         if (args.data_split == "class"):
-            parse.proteins_to_dataframe(families, args, logger)
+            if len(families) != 0:
+                parse.proteins_to_dataframe(families, args, logger)
+            else:
+                logger.warning(f"Didn't retrieve any families for {class_name}")
         else:
             all_data += families
 
     if args.data_split is None:
-        # Write dataframe containing all data from CAZy
-        parse.proteins_to_dataframe(all_data, args, logger)
+        if len(all_data) != 0:
+            # Write dataframe containing all data from CAZy
+            parse.proteins_to_dataframe(all_data, args, logger)
+        else:
+            logger.warning("Didn't retrieve any protein data from CAZy")
 
     logger.info("Program finished")
 
