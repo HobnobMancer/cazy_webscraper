@@ -30,7 +30,7 @@ import sys
 
 from argparse import Namespace, ArgumentParser
 
-from scraper import cazy_webscraper, file_io, utilities
+from scraper import cazy_webscraper, file_io, parse, utilities
 
 
 @pytest.fixture
@@ -44,6 +44,16 @@ def args_datasplit_none():
     argsdict = {
         "args": Namespace(
             data_split=None
+        )
+    }
+    return argsdict
+
+
+@pytest.fixture
+def args_datasplit_family():
+    argsdict = {
+        "args": Namespace(
+            data_split="family"
         )
     }
     return argsdict
@@ -179,13 +189,13 @@ def test_get_cazy_data_class_urls_empty_list(cazy_home_url, null_logger, monkeyp
     assert pytest_wrapped_e.type == SystemExit
 
 
-def test_get_cazy_family_urls_none(
+def test_get_cazy_data_family_urls_none(
     cazy_home_url,
     cazy_dictionary,
     args_datasplit_none,
     null_logger,
     monkeypatch,
-    ):
+):
     """Test get_cazy_data when nothing returned from get_cazy_family_urls."""
     with open(cazy_dictionary, "r") as fh:
         cazy_dict = json.load(fh)
@@ -206,4 +216,47 @@ def test_get_cazy_family_urls_none(
         cazy_dict,
         null_logger,
         args_datasplit_none["args"]
+    )
+
+
+def test_get_cazy_data_no_config_ds_family(
+    cazy_home_url,
+    cazy_dictionary,
+    args_datasplit_family,
+    null_logger,
+    monkeypatch,
+):
+    """Test get_cazy_data wit no config dict and data split is 'family'"""
+    with open(cazy_dictionary, "r") as fh:
+        cazy_dict = json.load(fh)
+
+    def mock_class_pages(*args, **kwargs):
+        return ["http://www.cazy.org/Glycoside-Hydrolases.html"]
+
+    def mock_family_urls(*args, **kwargs):
+        return ["http://www.cazy.org/GH1.html"]
+
+    def mock_parsing_family(*args, **kwargs):
+        family = Namespace(
+            name="cazy fam",
+            cazy_class="cazy_class",
+            members=set([1, 2, 3])
+        )
+        return family
+
+    def mock_building_dataframe(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(cazy_webscraper, "get_cazy_class_urls", mock_class_pages)
+    monkeypatch.setattr(cazy_webscraper, "get_cazy_family_urls", mock_family_urls)
+    monkeypatch.setattr(cazy_webscraper, "parse_family", mock_parsing_family)
+    monkeypatch.setattr(parse, "proteins_to_dataframe", mock_building_dataframe)
+
+    cazy_webscraper.get_cazy_data(
+        cazy_home_url,
+        None,
+        None,
+        cazy_dict,
+        null_logger,
+        args_datasplit_family["args"]
     )
