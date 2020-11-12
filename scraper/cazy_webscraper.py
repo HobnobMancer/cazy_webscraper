@@ -180,10 +180,35 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(args, logger)
 
     logger.info("Finished program preparation")
+    logger.info("Starting retrieval of data from CAZy")
 
     # Crawl through and scrape CAZy website/database
     cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
 
+    # Retrieve data from CAZy database
+    get_cazy_data(cazy_home, logger, args)
+
+    logger.info(
+        (
+            "Finished scraping the CAZy website.\n"
+            "Thank you for using the cazy_webscraper.py\n"
+            "Terminating program"
+        )
+    )
+
+
+def get_cazy_data(cazy_home, logger, args):
+    """Coordinate retrieval of data from the CAZy website.
+
+    This function coordinates the crawling through the CAZy website by calling the appropriate
+    functions, and then retrieving the protein data by calling to the appropriate data again.
+
+    :param cazy_home: str, url of CAZy home page
+    :param logger: logger object
+    :param args: cmd args parser
+
+    Return nothing.
+    """
     # retrieve links to CAZy class pages
     class_pages = get_cazy_class_urls(cazy_home, excluded_classes, logger)
 
@@ -254,7 +279,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         else:
             logger.warning("Didn't retrieve any protein data from CAZy")
 
-    logger.info("Program finished")
+    return
 
 
 def get_cazy_class_urls(cazy_home, excluded_classes, logger):
