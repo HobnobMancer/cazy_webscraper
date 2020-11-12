@@ -228,7 +228,6 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
             )
         sys.exit(1)
 
-
     all_data = []  # stores all Family class objects if not splitting the data
 
     logger.info("Starting retrieval of CAZy families")
