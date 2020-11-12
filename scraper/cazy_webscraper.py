@@ -197,13 +197,16 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
 
 
-def get_cazy_data(cazy_home, logger, args):
+def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, args):
     """Coordinate retrieval of data from the CAZy website.
 
     This function coordinates the crawling through the CAZy website by calling the appropriate
     functions, and then retrieving the protein data by calling to the appropriate data again.
 
     :param cazy_home: str, url of CAZy home page
+    :param excluded_classes: list, list of classes to not scrape from CAZy
+    :param config_dict: dict, user defined configuration of the scraper
+    :param cazy_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
     :param logger: logger object
     :param args: cmd args parser
 
