@@ -400,7 +400,7 @@ def get_subfamily_links(family_h3_element, cazy_home, logger):
             # KeyError raised if link does not have ['href']
             # AttributeError error raised if search_result is None becuase not subfam link
             pass
-    
+
     if len(urls) == 0:
         return
     else:
