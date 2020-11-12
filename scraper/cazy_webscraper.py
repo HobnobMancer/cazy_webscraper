@@ -214,6 +214,12 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
     """
     # retrieve links to CAZy class pages
     class_pages = get_cazy_class_urls(cazy_home, excluded_classes, logger)
+    if (len(class_pages) == 0) or (class_pages is None):
+        logger.error(
+            "Failed to retrieval URLs to CAZy class pages\n"
+            "Terminating program"
+            )
+        sys.exit(1)
 
     all_data = []  # stores all Family class objects if not splitting the data
 
