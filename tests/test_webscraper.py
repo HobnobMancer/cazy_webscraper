@@ -75,6 +75,7 @@ def config_dict():
     configuration_dict = {
         "Glycoside Hydrolases (GHs)": ["GH1"]
     }
+    return configuration_dict
 
 
 @pytest.fixture
