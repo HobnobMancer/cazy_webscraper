@@ -60,7 +60,7 @@ def make_output_directory(output, logger, force, nodelete):
         )
 
 
-def parse_configuration(args, logger):
+def parse_configuration(file_io_path, args, logger):
     """Parse configuration data, and retrieve user specified CAZy classes and families.
 
     Return only the CAZy class synonoms dictionary if a path to a configuration file was not given.
@@ -68,13 +68,14 @@ def parse_configuration(args, logger):
     invoked. If no items are listed under a heading/tag in the config file, the retrieved item will
     be a None type object.
 
+    :param file_io_path: str, path to directory where file_io is installed
     :param args: parser arguments
     :param logger: logger object
 
     Return list of classes not to scrape, dict of families to scrape, and dict of class synonoms.
     """
     # open dictionary of accepted CAZy class synonyms)
-    dict_path = Path("file_io")
+    dict_path = Path(file_io_path)
     dict_path = dict_path / "cazy_dictionary.json"
     with open(dict_path, "r") as fh:
         cazy_dict = json.load(fh)

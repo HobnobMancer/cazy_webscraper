@@ -45,7 +45,6 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 
 import logging
 import re
-import socket  # do I need this?
 import sys
 
 import numpy as np
@@ -185,7 +184,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info("Starting retrieval of data from CAZy")
 
     # Crawl through and scrape CAZy website/database
-    cazy_home = "http://www.caz!!!!!!!!y.org"  # the CAZy homepage URL
+    cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
 
     # Retrieve data from CAZy database
     get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, args)
@@ -327,14 +326,16 @@ def get_cazy_class_urls(cazy_home, excluded_classes, logger):
                 "The following error was raised:\n"
                 f"{home_page[1]}"
                 "Could not retrieve URLs to CAZy classes.\n"
-                "Check the network connection. Terminating program."
+                "Check the network connection.\bTerminating program."
             )
         )
         sys.exit(1)
 
     try:
-        return [f"{cazy_home}/{_['href']}" for _ in home_page[0].find_all("a", {"class": "spip_out"})
-                if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)]
+        return [f"{cazy_home}/{_['href']}" for _ in
+                home_page[0].find_all("a", {"class": "spip_out"}) if
+                (not _["href"].startswith("http")) and
+                (str(_.contents[0]) not in exclusions)]
     except AttributeError:  # raise if can't find results with find_all("a", {"class": "spip_out"})
         return None
 
@@ -368,7 +369,9 @@ def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
         return None
 
     # retrieve the <h3> element that titles the div section containing the tables of family links
-    family_h3_element = [_ for _ in class_page[0].find_all("h3", {"class": "spip"}) if str(_.contents[0]) == "Tables for Direct Access"][0]
+    family_h3_element = [_ for _ in
+                         class_page[0].find_all("h3", {"class": "spip"}) if
+                         str(_.contents[0]) == "Tables for Direct Access"][0]
 
     # retrieve all tables within the parent div section of the <h3> element
     tables = family_h3_element.parent.find_all("table")
@@ -478,7 +481,7 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
 
     # retrieve the URL to the final page of protein records in the pagination listing
     try:
-        last_pagination_url = first_pagination_page.find_all(
+        last_pagination_url = first_pagination_page[0].find_all(
             "a", {"class": "lien_pagination", "rel": "nofollow"})[-1]
     except IndexError:  # there is no pagination; a single-query entry
         last_pagination_url = None
@@ -493,7 +496,13 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
                                   range(1000, last_princ_no + 1000, 1000)])
 
     # Process all URLs into a single collection - a generator
-    return (y for x in (parse_proteins(url, family_name, logger) for url in protein_page_urls) for y in x)
+    # return (y for x in (parse_proteins(url, family_name, logger)
+    # for url in protein_page_urls) for y in x)
+    return (
+        y for x in (
+            parse_proteins(url, family_name, logger) for url in protein_page_urls
+        ) for y in x
+    )
 
 
 def parse_proteins(protein_page_url, family_name, logger):
@@ -586,7 +595,7 @@ def browser_decorator(func):
                 success = False
                 response = None
                 err = err_message
-            if response is not None: # response was successful
+            if response is not None:  # response was successful
                 success = True
             # if response from webpage was not successful
             tries += 1
