@@ -51,7 +51,7 @@ import numpy as np
 
 from collections import defaultdict
 from typing import List, Optional
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, MissingSchema
 from urllib3.exceptions import HTTPError, RequestError
 
 import mechanicalsoup
@@ -501,6 +501,7 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
     # Process all URLs into a single collection - a generator
     # return (y for x in (parse_proteins(url, family_name, logger)
     # for url in protein_page_urls) for y in x)
+
     return (
         y for x in (
             parse_proteins(url, family_name, logger) for url in protein_page_urls
@@ -530,7 +531,7 @@ def parse_proteins(protein_page_url, family_name, logger):
                 f"No protein records from this page will be retried."
             )
         )
-        return None
+        return
 
     # retrieve protein record table
     protein_table = protein_page[0].find_all("table", {"class": "listing"})[0]
@@ -594,7 +595,13 @@ def browser_decorator(func):
         while not success and (tries < retries):
             try:
                 response = func(*args, **kwargs)
-            except (ConnectionError, HTTPError, OSError, RequestError) as err_message:
+            except (
+                ConnectionError,
+                HTTPError,
+                OSError,
+                MissingSchema,
+                RequestError,
+            ) as err_message:
                 success = False
                 response = None
                 err = err_message
