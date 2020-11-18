@@ -113,6 +113,27 @@ def family_urls(test_input_dir):
     return fam_list
 
 
+@pytest.fixture
+def family_h3_element(cazy_class_page):
+    with open(cazy_class_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    return [_ for _ in
+            soup.find_all("h3", {"class": "spip"}) if
+            str(_.contents[0]) == "Tables for Direct Access"][0]
+
+
+@pytest.fixture
+def subfamily_urls(test_input_dir):
+    file_path = test_input_dir / "test_inputs_webscraper" / "subfamily_urls.txt"
+    with open(file_path, "r") as fh:
+        fam_string = fh.read()
+    fam_string = fam_string[1:-1]
+    fam_string = fam_string.replace("'", "")
+    fam_list = fam_string.split(", ")
+    return fam_list
+
+
 # test main()
 
 
@@ -691,3 +712,19 @@ def test_get_family_urls_success(cazy_class_page, args_datasplit_family, family_
         args_datasplit_family["args"],
         null_logger,
     )
+
+
+# test get_subfamily_links
+
+
+def test_get_subfam_links_len_0(family_h3_element, subfamily_urls, null_logger):
+    """Test get_subfamily_links when no links are retrieved."""
+
+    assert subfamily_urls == cazy_webscraper.get_subfamily_links(
+        family_h3_element,
+        "http://www.cazy.org",
+        null_logger,
+    )
+
+def test_get_subfam_links_urls(family_h3_element):
+    """Test get_subfamily_links when urls are retrieved."""
