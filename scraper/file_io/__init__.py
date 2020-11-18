@@ -76,8 +76,8 @@ def parse_configuration(file_io_path, args, logger):
     Return list of classes not to scrape, dict of families to scrape, and dict of class synonoms.
     """
     # open dictionary of accepted CAZy class synonyms)
-    dict_path = Path(file_io_path)
-    dict_path = dict_path / "cazy_dictionary.json"
+    dict_path = file_io_path.replace("__init__.py", "cazy_dictionary.json")
+    dict_path = Path(dict_path)
 
     try:
         with open(dict_path, "r") as fh:
