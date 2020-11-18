@@ -27,6 +27,7 @@ pytest -v
 import json
 import pytest
 import sys
+import types
 
 from argparse import Namespace, ArgumentParser
 
@@ -181,6 +182,15 @@ def protein_list():
 @pytest.fixture
 def protein_gen(protein_list):
     return (_ for _ in protein_list)
+
+
+@pytest.fixture
+def full_protein_gen(input_dir):
+    file_path = input_dir / "proteins.txt"
+    with open(file_path) as fh:
+        proteins = fh.read().splitlines()
+    gen = (x for x in proteins)
+    return gen
 
 
 # test main()
@@ -844,11 +854,16 @@ def test_parse_fam_pages_single(gh147_page, protein_gen, null_logger, monkeypatc
     monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
     monkeypatch.setattr(cazy_webscraper, "parse_proteins", mock_parse_proteins)
 
-    cazy_webscraper.parse_family_pages(
-        "http://www.cazy.org/GH1.html",
-        "GH1",
-        "http://www.cazy.org",
-        null_logger,
+    assert True is isinstance(
+        (
+            cazy_webscraper.parse_family_pages(
+                "http://www.cazy.org/GH1.html",
+                "GH1",
+                "http://www.cazy.org",
+                null_logger,
+            )
+        ),
+        types.GeneratorType,
     )
 
 
@@ -866,9 +881,44 @@ def test_parse_fam_pages_multiple(gh1_page, protein_gen, null_logger, monkeypatc
     monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
     monkeypatch.setattr(cazy_webscraper, "parse_proteins", mock_parse_proteins)
 
-    cazy_webscraper.parse_family_pages(
-        "http://www.cazy.org/GH1.html",
-        "GH1",
-        "http://www.cazy.org",
-        null_logger,
+    assert True is isinstance(
+        (
+            cazy_webscraper.parse_family_pages(
+                "http://www.cazy.org/GH1.html",
+                "GH1",
+                "http://www.cazy.org",
+                null_logger,
+            )
+        ),
+        types.GeneratorType,
+    )
+
+
+# test parse_proteins()
+
+
+def test_parse_proteins_none(null_logger, monkeypatch):
+    """Test parse_proteins when no page is returned."""
+
+    def mock_get_page(*args, **kwargs):
+        return [None, "error"]
+
+    monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
+
+    cazy_webscraper.parse_proteins("protein_url", "family", null_logger)
+
+
+def test_parse_proteins(gh147_page, null_logger, monkeypatch):
+    """Tests parse_proteins when successful."""
+    with open(gh147_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_page(*args, **kwargs):
+        return soup
+
+    monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
+
+    assert True is isinstance(
+        cazy_webscraper.parse_proteins("protein_url", "family", null_logger),
+        types.GeneratorType,
     )
