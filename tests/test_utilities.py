@@ -61,7 +61,21 @@ def test_verbose_false(args_v_false):
     logger = utilities.build_logger("test", args_v_false["args"])
     assert logger.level == 30
 
+
 def test_verbose_true(args_v_true):
     """Test build_logger when args.verbose and args.log are true"""
     logger = utilities.build_logger("test", args_v_true["args"])
     assert logger.level == 20
+
+
+# test building the parser
+
+
+def test_parser():
+    """Test building the parser when argsv is None"""
+    utilities.build_parser()
+
+
+def test_parser_arsv():
+    """Test building the parser when argsv is not None"""
+    utilities.build_parser(["-f"])
