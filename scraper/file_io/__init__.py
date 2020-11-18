@@ -20,6 +20,7 @@
 
 import json
 import shutil
+import sys
 import yaml
 
 from pathlib import Path
@@ -77,10 +78,18 @@ def parse_configuration(file_io_path, args, logger):
     # open dictionary of accepted CAZy class synonyms)
     dict_path = Path(file_io_path)
     dict_path = dict_path / "cazy_dictionary.json"
-    with open(dict_path, "r") as fh:
-        cazy_dict = json.load(fh)
-        # create list of standardised CAZy classes
-        class_names = list(cazy_dict.keys())
+
+    try:
+        with open(dict_path, "r") as fh:
+            cazy_dict = json.load(fh)
+            # create list of standardised CAZy classes
+            class_names = list(cazy_dict.keys())
+    except FileNotFoundError:
+        logger.error(
+            "Could not open the CAZy synonomn dictionary\n"
+            "Terminating programme"
+        )
+        sys.exit(1)
 
     if args.config is None:
         return None, None, cazy_dict
