@@ -590,7 +590,7 @@ def browser_decorator(func):
                 success = True
             # if response from webpage was not successful
             tries += 1
-        if (not success) or (response == None):
+        if (not success) or (response is None):
             return [None, err]
         else:
             return [response, None]
