@@ -29,8 +29,6 @@ import pytest
 import sys
 import types
 
-import numpy as np
-
 from argparse import Namespace, ArgumentParser
 from requests.exceptions import MissingSchema
 
@@ -947,7 +945,10 @@ def test_row_to_protein_no_ecs(protein_without_ec):
     with open(protein_without_ec) as fp:
         row = BeautifulSoup(fp, features="lxml")
 
-    assert cazy_webscraper.Protein is type(cazy_webscraper.row_to_protein(row, "GH147"))
+    assert True is isinstance(
+        cazy_webscraper.row_to_protein(row, "GH147"),
+        cazy_webscraper.Protein
+    )
 
 
 def test_row_to_protein_ec(protein_with_ec):
@@ -955,7 +956,10 @@ def test_row_to_protein_ec(protein_with_ec):
     with open(protein_with_ec) as fp:
         row = BeautifulSoup(fp, features="lxml")
 
-    assert cazy_webscraper.Protein == type(cazy_webscraper.row_to_protein(row, "GH147"))
+    assert True is isinstance(
+        cazy_webscraper.row_to_protein(row, "GH147"),
+        cazy_webscraper.Protein
+    )
 
 
 # test browser_decorator
