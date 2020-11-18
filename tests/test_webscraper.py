@@ -134,6 +134,18 @@ def subfamily_urls(test_input_dir):
     return fam_list
 
 
+@pytest.fixture
+def no_subfam_h3_element(test_input_dir):
+    file_path = test_input_dir / "test_inputs_webscraper" / "cazy_classpage_no_subfams.html"
+    with open(file_path) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    return [_ for _ in
+            soup.find_all("h3", {"class": "spip"}) if
+            str(_.contents[0]) == "Tables for Direct Access"][0]
+
+
+
 # test main()
 
 
@@ -726,5 +738,11 @@ def test_get_subfam_links_len_0(family_h3_element, subfamily_urls, null_logger):
         null_logger,
     )
 
-def test_get_subfam_links_urls(family_h3_element):
+def test_get_subfam_links_urls(no_subfam_h3_element, null_logger):
     """Test get_subfamily_links when urls are retrieved."""
+
+    assert None == cazy_webscraper.get_subfamily_links(
+        no_subfam_h3_element,
+        "http://www.cazy.org",
+        null_logger,
+    )
