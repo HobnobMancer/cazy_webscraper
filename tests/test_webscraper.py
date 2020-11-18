@@ -97,6 +97,22 @@ def cazy_home_page(test_input_dir):
     return file_path
 
 
+@pytest.fixture
+def cazy_class_page(test_input_dir):
+    file_path = test_input_dir / "test_inputs_webscraper" / "cazy_classpage.html"
+    return file_path
+
+@pytest.fixture
+def family_urls(test_input_dir):
+    file_path = test_input_dir / "test_inputs_webscraper" / "family_urls.txt"
+    with open(file_path, "r") as fh:
+        fam_string = fh.read()
+    fam_string = fam_string[1:-1]
+    fam_string = fam_string.replace("'", "")
+    fam_list = fam_string.split(", ")
+    return fam_list
+
+
 # test main()
 
 
@@ -642,7 +658,7 @@ def test_get_family_urls_fail(args_datasplit_family, null_logger, monkeypatch):
 
     def mock_get_page(*args, **kwargs):
         return [None, "error"]
-    
+
     monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
 
     assert None == cazy_webscraper.get_cazy_family_urls(
@@ -654,6 +670,24 @@ def test_get_family_urls_fail(args_datasplit_family, null_logger, monkeypatch):
     )
 
 
-def test_get_family_urls_success():
+def test_get_family_urls_success(cazy_class_page, args_datasplit_family, family_urls, null_logger, monkeypatch):
     """Test get_cazy_family_urls when successful, and subfamilies is True."""
-    # assert list of family urls mathces expected result
+    with open(cazy_class_page) as fp:
+        page = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_page(*args, **kwargs):
+        return [page, None]
+
+    def mock_get_subfams(*args, **kwargs):
+        return []
+
+    monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
+    monkeypatch.setattr(cazy_webscraper, "get_subfamily_links", mock_get_subfams)
+
+    assert family_urls == cazy_webscraper.get_cazy_family_urls(
+        "class_url",
+        "http://www.cazy.org",
+        "class_name",
+        args_datasplit_family["args"],
+        null_logger,
+    )
