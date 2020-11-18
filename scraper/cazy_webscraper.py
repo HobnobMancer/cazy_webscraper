@@ -45,6 +45,7 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 
 import logging
 import re
+import socket  # do I need this?
 import sys
 
 import numpy as np
@@ -52,6 +53,7 @@ import numpy as np
 from collections import defaultdict
 from typing import List, Optional
 from requests.exceptions import ConnectionError
+from urllib3.exceptions import HTTPError, RequestError
 
 import mechanicalsoup
 
@@ -183,7 +185,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info("Starting retrieval of data from CAZy")
 
     # Crawl through and scrape CAZy website/database
-    cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
+    cazy_home = "http://www.caz!!!!!!!!y.org"  # the CAZy homepage URL
 
     # Retrieve data from CAZy database
     get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, args)
@@ -214,6 +216,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
     """
     # retrieve links to CAZy class pages
     class_pages = get_cazy_class_urls(cazy_home, excluded_classes, logger)
+
     try:
         if len(class_pages) == 0:
             logger.error(
@@ -317,10 +320,12 @@ def get_cazy_class_urls(cazy_home, excluded_classes, logger):
 
     # scrape the home page
     home_page = get_page(cazy_home)
-    if home_page is None:
+    if home_page[0] is None:
         logger.error(
             (
                 "Failed to connect to CAZy home-page after 10 attempts.\n"
+                "The following error was raised:\n"
+                f"{home_page[1]}"
                 "Could not retrieve URLs to CAZy classes.\n"
                 "Check the network connection. Terminating program."
             )
@@ -328,7 +333,7 @@ def get_cazy_class_urls(cazy_home, excluded_classes, logger):
         sys.exit(1)
 
     try:
-        return [f"{cazy_home}/{_['href']}" for _ in home_page.soup.find_all("a", {"class": "spip_out"})
+        return [f"{cazy_home}/{_['href']}" for _ in home_page[0].find_all("a", {"class": "spip_out"})
                 if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)]
     except AttributeError:  # raise if can't find results with find_all("a", {"class": "spip_out"})
         return None
@@ -350,10 +355,12 @@ def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
     # scrape the class page
     class_page = get_page(class_url)
 
-    if class_page is None:
+    if class_page[0] is None:
         logger.error(
             (
                 f"Failed to connect to {class_url} after 10 attempts.\n"
+                "The following error was raised:\n"
+                f"{class_page[1]}"
                 "Could not retrieve URLs to CAZy famileis for this class.\n"
                 "This class will be skipped during the scraping process."
             )
@@ -361,7 +368,7 @@ def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
         return None
 
     # retrieve the <h3> element that titles the div section containing the tables of family links
-    family_h3_element = [_ for _ in class_page.soup.find_all("h3", {"class": "spip"}) if str(_.contents[0]) == "Tables for Direct Access"][0]
+    family_h3_element = [_ for _ in class_page[0].find_all("h3", {"class": "spip"}) if str(_.contents[0]) == "Tables for Direct Access"][0]
 
     # retrieve all tables within the parent div section of the <h3> element
     tables = family_h3_element.parent.find_all("table")
@@ -456,10 +463,12 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
     first_pagination_url = family_url.replace(".html", "_all.html")
     first_pagination_page = get_page(first_pagination_url)
 
-    if first_pagination_page is None:
+    if first_pagination_page[0] is None:
         logger.warning(
             (
                 f"Could not connect to {family_url}\n"
+                "The following error was raised:\n"
+                f"{first_pagination_page[1]}"
                 f"No protein records for CAZy family {family_name} will be retried."
             )
         )
@@ -469,7 +478,7 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
 
     # retrieve the URL to the final page of protein records in the pagination listing
     try:
-        last_pagination_url = first_pagination_page.soup.find_all(
+        last_pagination_url = first_pagination_page.find_all(
             "a", {"class": "lien_pagination", "rel": "nofollow"})[-1]
     except IndexError:  # there is no pagination; a single-query entry
         last_pagination_url = None
@@ -500,17 +509,19 @@ def parse_proteins(protein_page_url, family_name, logger):
 
     protein_page = get_page(protein_page_url)
 
-    if protein_page is None:
+    if protein_page[0] is None:
         logger.warning(
             (
                 f"Could not connect to {protein_page_url}\n"
+                "The following error was raised:\n"
+                f"{protein_page[1]}"
                 f"No protein records from this page will be retried."
             )
         )
         return None
 
     # retrieve protein record table
-    protein_table = protein_page.soup.find_all("table", {"class": "listing"})[0]
+    protein_table = protein_page[0].find_all("table", {"class": "listing"})[0]
     protein_rows = [_ for _ in protein_table.descendants if (_.name == "tr") and
                     ("id" not in _.attrs) and ("class" not in _.attrs)]
 
@@ -567,21 +578,22 @@ def browser_decorator(func):
     """Decorator to retry the wrapped function up to 'retries' times."""
 
     def wrapper(*args, retries=10, **kwargs):
-        tries, success = 0, False
+        tries, success, err = 0, False, None
         while not success and (tries < retries):
             try:
                 response = func(*args, **kwargs)
-            except ConnectionError:
+            except (ConnectionError, HTTPError, OSError, RequestError) as err_message:
                 success = False
-                response = ""
-            if str(response) == "<Response [200]>":  # response was successful
+                response = None
+                err = err_message
+            if response is not None: # response was successful
                 success = True
             # if response from webpage was not successful
             tries += 1
-        if (not success) or (response == ""):
-            return None
+        if (not success) or (response == None):
+            return [None, err]
         else:
-            return response
+            return [response, None]
 
     return wrapper
 
@@ -596,9 +608,9 @@ def get_page(url):
     """
     # create browser object
     browser = mechanicalsoup.Browser()
-
     # create response object
     page = browser.get(url)
+    page = page.soup
 
     return page
 
