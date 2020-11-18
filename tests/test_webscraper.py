@@ -30,6 +30,8 @@ import sys
 
 from argparse import Namespace, ArgumentParser
 
+from bs4 import BeautifulSoup
+
 from scraper import cazy_webscraper, file_io, parse, utilities
 
 
@@ -87,6 +89,12 @@ def args_datasplit_family_sub_false():
         )
     }
     return argsdict
+
+
+@pytest.fixture
+def cazy_home_page(test_input_dir):
+    file_path = test_input_dir / "test_inputs_webscraper" / "cazy_homepage.html"
+    return file_path
 
 
 # test main()
@@ -549,4 +557,78 @@ def test_get_cazy_data_ds_none_subfams_false(
         cazy_dict,
         null_logger,
         args_datasplit_family_sub_false["args"]
+    )
+
+
+# test get_cazy_class_urls()
+
+
+def test_get_class_urls_exclusions_none(cazy_home_url, cazy_home_page, null_logger, monkeypatch):
+    """Test get_cazy_class_urls when excluded_classess is None."""
+    with open(cazy_home_page, "r") as fp:
+        home_page = BeautifulSoup(fp, features="lxml")
+
+        def mock_get_home_page(*args, **kwargs):
+            return [home_page, None]
+
+        monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_home_page)
+
+        expected_result = [
+            'http://www.cazy.org/Glycoside-Hydrolases.html',
+            'http://www.cazy.org/GlycosylTransferases.html',
+            'http://www.cazy.org/Polysaccharide-Lyases.html',
+            'http://www.cazy.org/Carbohydrate-Esterases.html',
+            'http://www.cazy.org/Auxiliary-Activities.html',
+            'http://www.cazy.org/Carbohydrate-Binding-Modules.html',
+            ]
+
+        assert expected_result == cazy_webscraper.get_cazy_class_urls(
+            cazy_home_url,
+            None,
+            null_logger,
+        )
+
+
+def test_get_class_urls_fail(cazy_home_url, null_logger, monkeypatch):
+    """Test get_cazy_class_urls home_page not returned"""
+
+    def mock_get_home_page(*args, **kwargs):
+        return [None, "error"]
+
+    monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_home_page)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        cazy_webscraper.get_cazy_class_urls(cazy_home_url, None, null_logger)
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_get_class_urls_exclusions_given(
+    cazy_home_url,
+    cazy_home_page,
+    null_logger,
+    monkeypatch,
+):
+    """Test get_cazy_class_urls when excluded_classess is not None."""
+    with open(cazy_home_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    exclusions = ["<strong>Glycoside Hydrolases (GHs)</strong>"]
+
+    def mock_get_home_page(*args, **kwargs):
+        return [soup, None]
+
+    monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_home_page)
+
+    expected_result = [
+        'http://www.cazy.org/GlycosylTransferases.html',
+        'http://www.cazy.org/Polysaccharide-Lyases.html',
+        'http://www.cazy.org/Carbohydrate-Esterases.html',
+        'http://www.cazy.org/Auxiliary-Activities.html',
+        'http://www.cazy.org/Carbohydrate-Binding-Modules.html',
+        ]
+
+    assert expected_result == cazy_webscraper.get_cazy_class_urls(
+        cazy_home_url,
+        exclusions,
+        null_logger,
     )
