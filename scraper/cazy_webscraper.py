@@ -436,8 +436,6 @@ def parse_family(family_url, family_name, cazy_home, logger):
     Return Family object.
     """
     logger.info(f"Starting retrieval of proteins for {family_name}")
-    # retrieve family name from URL
-    family_name = family_url[(len(cazy_home) + 1): -5]
 
     # retrieve class from family name
     pattern = re.compile(r"\D+")
