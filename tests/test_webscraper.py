@@ -738,10 +738,11 @@ def test_get_subfam_links_len_0(family_h3_element, subfamily_urls, null_logger):
         null_logger,
     )
 
+
 def test_get_subfam_links_urls(no_subfam_h3_element, null_logger):
     """Test get_subfamily_links when urls are retrieved."""
 
-    assert None == cazy_webscraper.get_subfamily_links(
+    assert None is cazy_webscraper.get_subfamily_links(
         no_subfam_h3_element,
         "http://www.cazy.org",
         null_logger,
