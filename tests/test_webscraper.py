@@ -753,3 +753,32 @@ def test_get_subfam_links_urls(no_subfam_h3_element, null_logger):
         "http://www.cazy.org",
         null_logger,
     )
+
+
+# test parse_family()
+
+
+def test_parse_family(null_logger, monkeypatch):
+    """Tests parse_family()"""
+
+    def mock_parsing_family_pages(*args, **kwargs):
+        protein_list = [
+            cazy_webscraper.Protein("protein_name", "GH1", "1.2.3.4", "organism"),
+            cazy_webscraper.Protein(
+                "protein",
+                "GH1",
+                "",
+                "organism",
+                {"GenBank": ["link1"], "UniProt": ["link2"], "PDB": ["link3"]},
+            ),
+        ]
+        return protein_list
+
+    monkeypatch.setattr(cazy_webscraper, "parse_family_pages", mock_parsing_family_pages)
+
+    cazy_webscraper.parse_family(
+        "http://www.cazy.org/GH1.html",
+        "GH1",
+        "http://www.cazy.org",
+        null_logger,
+    )
