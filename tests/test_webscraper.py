@@ -32,6 +32,7 @@ import types
 import numpy as np
 
 from argparse import Namespace, ArgumentParser
+from requests.exceptions import MissingSchema
 
 from bs4 import BeautifulSoup
 
@@ -954,4 +955,14 @@ def test_row_to_protein_ec(protein_with_ec):
     with open(protein_with_ec) as fp:
         row = BeautifulSoup(fp, features="lxml")
 
-    assert cazy_webscraper.Protein is type(cazy_webscraper.row_to_protein(row, "GH147"))
+    assert cazy_webscraper.Protein == type(cazy_webscraper.row_to_protein(row, "GH147"))
+
+
+# test browser_decorator
+
+
+def test_browser_decorator():
+    """Test browser_decorator to ensure proper handling if unsuccessful."""
+
+    result = cazy_webscraper.get_page('www.caz!!!!!!!!y.org')
+    assert True == (result[0] is None) and (type(result[1]) is MissingSchema)
