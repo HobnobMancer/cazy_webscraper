@@ -102,6 +102,7 @@ def cazy_class_page(test_input_dir):
     file_path = test_input_dir / "test_inputs_webscraper" / "cazy_classpage.html"
     return file_path
 
+
 @pytest.fixture
 def family_urls(test_input_dir):
     file_path = test_input_dir / "test_inputs_webscraper" / "family_urls.txt"
@@ -143,7 +144,6 @@ def no_subfam_h3_element(test_input_dir):
     return [_ for _ in
             soup.find_all("h3", {"class": "spip"}) if
             str(_.contents[0]) == "Tables for Direct Access"][0]
-
 
 
 # test main()
@@ -694,7 +694,7 @@ def test_get_family_urls_fail(args_datasplit_family, null_logger, monkeypatch):
 
     monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
 
-    assert None == cazy_webscraper.get_cazy_family_urls(
+    assert None is cazy_webscraper.get_cazy_family_urls(
         "class_url",
         "cazy_home_url",
         "class_name",
@@ -703,7 +703,13 @@ def test_get_family_urls_fail(args_datasplit_family, null_logger, monkeypatch):
     )
 
 
-def test_get_family_urls_success(cazy_class_page, args_datasplit_family, family_urls, null_logger, monkeypatch):
+def test_get_family_urls_success(
+    cazy_class_page,
+    args_datasplit_family,
+    family_urls,
+    null_logger,
+    monkeypatch,
+):
     """Test get_cazy_family_urls when successful, and subfamilies is True."""
     with open(cazy_class_page) as fp:
         page = BeautifulSoup(fp, features="lxml")
