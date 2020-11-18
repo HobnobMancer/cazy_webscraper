@@ -29,6 +29,8 @@ import pytest
 import sys
 import types
 
+import numpy as np
+
 from argparse import Namespace, ArgumentParser
 
 from bs4 import BeautifulSoup
@@ -191,6 +193,18 @@ def full_protein_gen(input_dir):
         proteins = fh.read().splitlines()
     gen = (x for x in proteins)
     return gen
+
+
+@pytest.fixture
+def protein_without_ec(input_dir):
+    file_path = input_dir / "protein_without_ec.html"
+    return file_path
+
+
+@pytest.fixture
+def protein_with_ec(input_dir):
+    file_path = input_dir / "protein_with_ec.html"
+    return file_path
 
 
 # test main()
@@ -922,3 +936,22 @@ def test_parse_proteins(gh147_page, null_logger, monkeypatch):
         cazy_webscraper.parse_proteins("protein_url", "family", null_logger),
         types.GeneratorType,
     )
+
+
+# test row_to_protein
+
+
+def test_row_to_protein_no_ecs(protein_without_ec):
+    """Test row_to_protein when no EC#s are listed."""
+    with open(protein_without_ec) as fp:
+        row = BeautifulSoup(fp, features="lxml")
+
+    assert cazy_webscraper.Protein is type(cazy_webscraper.row_to_protein(row, "GH147"))
+
+
+def test_row_to_protein_ec(protein_with_ec):
+    """Test row_to_protein when EC#s are listed."""
+    with open(protein_with_ec) as fp:
+        row = BeautifulSoup(fp, features="lxml")
+
+    assert cazy_webscraper.Protein is type(cazy_webscraper.row_to_protein(row, "GH147"))
