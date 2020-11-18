@@ -24,7 +24,6 @@ pytest -v
 
 """
 
-import logging
 import pytest
 
 from argparse import Namespace
