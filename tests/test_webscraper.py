@@ -36,8 +36,14 @@ from scraper import cazy_webscraper, file_io, parse, utilities
 
 
 @pytest.fixture
-def cazy_dictionary(test_input_dir):
-    dict_path = test_input_dir / "test_inputs_webscraper" / "cazy_dictionary.json"
+def input_dir(test_input_dir):
+    dir_path = test_input_dir / "test_inputs_webscraper"
+    return dir_path
+
+
+@pytest.fixture
+def cazy_dictionary(input_dir):
+    dict_path = input_dir / "cazy_dictionary.json"
     return dict_path
 
 
@@ -92,20 +98,20 @@ def args_datasplit_family_sub_false():
 
 
 @pytest.fixture
-def cazy_home_page(test_input_dir):
-    file_path = test_input_dir / "test_inputs_webscraper" / "cazy_homepage.html"
+def cazy_home_page(input_dir):
+    file_path = input_dir / "cazy_homepage.html"
     return file_path
 
 
 @pytest.fixture
-def cazy_class_page(test_input_dir):
-    file_path = test_input_dir / "test_inputs_webscraper" / "cazy_classpage.html"
+def cazy_class_page(input_dir):
+    file_path = input_dir / "cazy_classpage.html"
     return file_path
 
 
 @pytest.fixture
-def family_urls(test_input_dir):
-    file_path = test_input_dir / "test_inputs_webscraper" / "family_urls.txt"
+def family_urls(input_dir):
+    file_path = input_dir / "family_urls.txt"
     with open(file_path, "r") as fh:
         fam_string = fh.read()
     fam_string = fam_string[1:-1]
@@ -125,8 +131,8 @@ def family_h3_element(cazy_class_page):
 
 
 @pytest.fixture
-def subfamily_urls(test_input_dir):
-    file_path = test_input_dir / "test_inputs_webscraper" / "subfamily_urls.txt"
+def subfamily_urls(input_dir):
+    file_path = input_dir / "subfamily_urls.txt"
     with open(file_path, "r") as fh:
         fam_string = fh.read()
     fam_string = fam_string[1:-1]
@@ -136,14 +142,45 @@ def subfamily_urls(test_input_dir):
 
 
 @pytest.fixture
-def no_subfam_h3_element(test_input_dir):
-    file_path = test_input_dir / "test_inputs_webscraper" / "cazy_classpage_no_subfams.html"
+def no_subfam_h3_element(input_dir):
+    file_path = input_dir / "cazy_classpage_no_subfams.html"
     with open(file_path) as fp:
         soup = BeautifulSoup(fp, features="lxml")
 
     return [_ for _ in
             soup.find_all("h3", {"class": "spip"}) if
             str(_.contents[0]) == "Tables for Direct Access"][0]
+
+
+@pytest.fixture
+def gh1_page(input_dir):
+    file_path = input_dir / "cazy_gh1_page.html"
+    return file_path
+
+
+@pytest.fixture
+def gh147_page(input_dir):
+    file_path = input_dir / "cazy_gh147_page.html"
+    return file_path
+
+
+@pytest.fixture
+def protein_list():
+    return [
+        cazy_webscraper.Protein("protein_name", "GH1", "1.2.3.4", "organism"),
+        cazy_webscraper.Protein(
+            "protein",
+            "GH1",
+            "",
+            "organism",
+            {"GenBank": ["link1"], "UniProt": ["link2"], "PDB": ["link3"]},
+        ),
+    ]
+
+
+@pytest.fixture
+def protein_gen(protein_list):
+    return (_ for _ in protein_list)
 
 
 # test main()
@@ -758,20 +795,10 @@ def test_get_subfam_links_urls(no_subfam_h3_element, null_logger):
 # test parse_family()
 
 
-def test_parse_family(null_logger, monkeypatch):
+def test_parse_family(protein_list, null_logger, monkeypatch):
     """Tests parse_family()"""
 
     def mock_parsing_family_pages(*args, **kwargs):
-        protein_list = [
-            cazy_webscraper.Protein("protein_name", "GH1", "1.2.3.4", "organism"),
-            cazy_webscraper.Protein(
-                "protein",
-                "GH1",
-                "",
-                "organism",
-                {"GenBank": ["link1"], "UniProt": ["link2"], "PDB": ["link3"]},
-            ),
-        ]
         return protein_list
 
     monkeypatch.setattr(cazy_webscraper, "parse_family_pages", mock_parsing_family_pages)
@@ -803,10 +830,45 @@ def test_parse_fam_pages_none(null_logger, monkeypatch):
     )
 
 
-def test_parse_fam_pages_single():
+def test_parse_fam_pages_single(gh147_page, protein_gen, null_logger, monkeypatch):
     """Test parse_family_pages when only one page, raises index error."""
-    # raises index error
+    with open(gh147_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_page(*args, **kwargs):
+        return [soup, None]
+
+    def mock_parse_proteins(*args, **kwargs):
+        return protein_gen
+
+    monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
+    monkeypatch.setattr(cazy_webscraper, "parse_proteins", mock_parse_proteins)
+
+    cazy_webscraper.parse_family_pages(
+        "http://www.cazy.org/GH1.html",
+        "GH1",
+        "http://www.cazy.org",
+        null_logger,
+    )
 
 
-def test_parse_fam_pages_multiple():
+def test_parse_fam_pages_multiple(gh1_page, protein_gen, null_logger, monkeypatch):
     """Test parse_family_pages when there are multiple pages."""
+    with open(gh1_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_page(*args, **kwargs):
+        return [soup, None]
+
+    def mock_parse_proteins(*args, **kwargs):
+        return protein_gen
+
+    monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
+    monkeypatch.setattr(cazy_webscraper, "parse_proteins", mock_parse_proteins)
+
+    cazy_webscraper.parse_family_pages(
+        "http://www.cazy.org/GH1.html",
+        "GH1",
+        "http://www.cazy.org",
+        null_logger,
+    )
