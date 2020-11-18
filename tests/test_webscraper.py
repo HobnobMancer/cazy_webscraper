@@ -632,3 +632,28 @@ def test_get_class_urls_exclusions_given(
         exclusions,
         null_logger,
     )
+
+
+# test get_cazy_family_urls
+
+
+def test_get_family_urls_fail(args_datasplit_family, null_logger, monkeypatch):
+    """Test get_cazy_family_urls when no page is returned."""
+
+    def mock_get_page(*args, **kwargs):
+        return [None, "error"]
+    
+    monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
+
+    assert None == cazy_webscraper.get_cazy_family_urls(
+        "class_url",
+        "cazy_home_url",
+        "class_name",
+        args_datasplit_family["args"],
+        null_logger,
+    )
+
+
+def test_get_family_urls_success():
+    """Test get_cazy_family_urls when successful, and subfamilies is True."""
+    # assert list of family urls mathces expected result
