@@ -26,6 +26,8 @@ pytest -v
 
 import pytest
 
+import pandas as pd
+
 from scraper import file_io
 
 
@@ -39,6 +41,21 @@ def test_output_dir(test_dir):
 def making_output_dir(test_output_dir):
     path = test_output_dir / "testing_making_dir"
     return path
+
+
+@pytest.fixture
+def testing_df():
+    df_data = [["A", "B", "C"]]
+    df = pd.DataFrame(df_data, columns=["C1", "C2", "C3"])
+    return df
+
+
+@pytest.fixture
+def df_output_file(test_dir):
+    df_output = (
+        test_dir / "test_targets" / "file_io_test_targets" / "test_writing_df.csv"
+    )
+    return df_output
 
 
 # test make_output_directory()
@@ -62,3 +79,17 @@ def test_output_dir_creation_nd_false(making_output_dir, null_logger):
 
 
 # test write_out_df()
+
+
+def test_writing_named_df_f_true(testing_df, null_logger, making_output_dir):
+    """Tests function for writing out a prenamed dataframe"""
+    file_io.write_out_df(
+        testing_df, "test_writing_df.csv", making_output_dir, null_logger, True
+    )
+
+
+def test_writing_named_df_f_false(testing_df, null_logger, making_output_dir):
+    """Tests function for writing out a prenamed dataframe"""
+    file_io.write_out_df(
+        testing_df, "test_writing_df.csv", making_output_dir, null_logger, False
+    )
