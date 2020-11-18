@@ -178,7 +178,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger.warning("Enabled to retrieve subfamilies")
 
     # retrieve configuration data
-    excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(args, logger)
+    file_io_path = file_io.__file__
+    excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
+        file_io_path,
+        args,
+        logger,
+    )
 
     logger.info("Finished program preparation")
     logger.info("Starting retrieval of data from CAZy")
