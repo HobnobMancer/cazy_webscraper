@@ -112,8 +112,8 @@ def parse_configuration(file_io_path, args, logger):
     except (KeyError, TypeError) as e:
         logger.warning(
             (
-                "Did not retrieve any CAZy classes from configuration file.\n"
-                f"Raised {e}"
+                "Did not find the 'classes' tag in the configuration files.\n"
+                "Did not retrieve any CAZy classes from configuration file."
             )
         )
         cazy_classes = []
