@@ -129,6 +129,22 @@ def args_config_no_class_tag(config_no_class_tag):
 
 
 @pytest.fixture
+def config_all_classes(input_dir):
+    path = input_dir / "config_all_classes.yaml"
+    return path
+
+
+@pytest.fixture
+def args_config_all_classes(config_all_classes):
+    args_dict = {
+        "args": Namespace(
+            config=config_all_classes,
+        )
+    }
+    return args_dict
+
+
+@pytest.fixture
 def testing_df():
     df_data = [["A", "B", "C"]]
     df = pd.DataFrame(df_data, columns=["C1", "C2", "C3"])
@@ -333,8 +349,6 @@ def test_parse_config_no_class_tag(
         null_logger,
     )
 
-    print("config_dict=", config_dict)
-
     result = None
 
     for item in excluded_classes:
@@ -345,6 +359,44 @@ def test_parse_config_no_class_tag(
             result = "fail"
 
     assert result is None
+    assert config_dict == expected_config_dict
+    assert cazy_dict == expected_cazy_dict
+
+
+def test_config_all_classes(
+    cazy_dictionary,
+    file_io_path,
+    args_config_all_classes,
+    null_logger,
+):
+    """Test parse_configuration when there are no excluded classes."""
+    with open(cazy_dictionary, "r") as fh:
+        expected_cazy_dict = json.load(fh)
+
+    expected_config_dict = {
+        'classes': [
+            'Glycoside Hydrolases (GHs)',
+            'Polysaccharide Lyases (PLs)',
+            'GlycosylTransferases (GTs)',
+            'Carbohydrate Esterases (CEs)',
+            'Auxiliary Activities (AAs)',
+            'Carbohydrate-Binding Modules (CBMs)'
+        ],
+        'Glycoside Hydrolases (GHs)': ['GH147'],
+        'GlycosylTransferases (GTs)': ['GT2'],
+        'Polysaccharide Lyases (PLs)': ['PL1'],
+        'Carbohydrate Esterases (CEs)': ['CE1'],
+        'Auxiliary Activities (AAs)': ['AA10'],
+        'Carbohydrate-Binding Modules (CBMs)': ['CBM5'],
+    }
+
+    excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
+        file_io_path,
+        args_config_all_classes["args"],
+        null_logger,
+    )
+
+    assert excluded_classes is None
     assert config_dict == expected_config_dict
     assert cazy_dict == expected_cazy_dict
 
