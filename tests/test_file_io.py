@@ -137,8 +137,12 @@ def test_output_dir_creation_nd_true(making_output_dir, null_logger):
 
 def test_output_dir_creation_nd_false(making_output_dir, null_logger):
     """Test creation of output dir when nodelete is true"""
-
     file_io.make_output_directory(making_output_dir, null_logger, True, True)
+
+
+def test_output_dir_creation_exists(test_dir, null_logger):
+    """Test creation of output dir when already exists."""
+    file_io.make_output_directory(test_dir, null_logger, False, False)
 
 
 # test parse_configuration()
