@@ -51,6 +51,6 @@ def cazy_home_url():
 
 
 @pytest.fixture
-def cazy_dictionary(input_dir):
-    dict_path = input_dir / "cazy_dictionary.json"
+def cazy_dictionary(test_input_dir):
+    dict_path = test_input_dir / "cazy_dictionary.json"
     return dict_path
