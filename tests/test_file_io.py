@@ -50,7 +50,7 @@ def making_output_dir(test_output_dir):
 @pytest.fixture
 def args_config_None():
     args_dict = {
-        "args":Namespace(
+        "args": Namespace(
             config=None
         )
     }
@@ -67,8 +67,46 @@ def file_io_path():
 def args_config_fake(test_dir):
     path = test_dir / "fake_config.yaml"
     args_dict = {
-        "args":Namespace(
+        "args": Namespace(
             config=path
+        )
+    }
+    return args_dict
+
+
+@pytest.fixture
+def input_dir(test_input_dir):
+    path = test_input_dir / "test_inputs_file_io"
+    return path
+
+
+@pytest.fixture
+def config_no_class(input_dir):
+    path = input_dir / "config_no_classes.yaml"
+    return path
+
+
+@pytest.fixture
+def args_config_no_class(config_no_class):
+    args_dict = {
+        "args": Namespace(
+            config=config_no_class,
+        )
+    }
+    return args_dict
+
+
+@pytest.fixture
+def config_with_classes(input_dir):
+    path = input_dir / "config_with_classes.yaml"
+    return path
+
+
+@pytest.fixture
+def args_config_with_classes(config_with_classes):
+    args_dict = {
+        "args": Namespace(
+            config=config_with_classes,
         )
     }
     return args_dict
@@ -118,34 +156,128 @@ def test_parse_config_sys_exit(args_config_None, null_logger):
 def test_parse_config_none(cazy_dictionary, file_io_path, args_config_None, null_logger):
     """Test parse_configuration when no configuration file provided."""
     with open(cazy_dictionary, "r") as fh:
-        cazy_dict = json.load(fh)
+        expected_cazy_dict = json.load(fh)
 
-    result_1, result_2, result_3 = file_io.parse_configuration(
+    excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
         file_io_path,
         args_config_None["args"],
         null_logger,
     )
 
-    assert result_1 is None
-    assert result_2 is None
-    assert result_3 == cazy_dict
+    assert excluded_classes is None
+    assert config_dict is None
+    assert cazy_dict == expected_cazy_dict
 
 
 def test_parse_config_cant_find(cazy_dictionary, file_io_path, args_config_fake, null_logger):
     """Test parse_configuration when the configuration file cannot be found."""
     with open(cazy_dictionary, "r") as fh:
-        cazy_dict = json.load(fh)
+        expected_cazy_dict = json.load(fh)
 
-    result_1, result_2, result_3 = file_io.parse_configuration(
+    excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
         file_io_path,
         args_config_fake["args"],
         null_logger,
     )
 
-    assert result_1 is None
-    assert result_2 is None
-    assert result_3 == cazy_dict
+    assert excluded_classes is None
+    assert config_dict is None
+    assert cazy_dict == expected_cazy_dict
 
+
+def test_parse_config_no_classes(
+    cazy_dictionary,
+    file_io_path,
+    args_config_no_class,
+    null_logger,
+):
+    """Test parse_configuration when no classes are included."""
+    with open(cazy_dictionary, "r") as fh:
+        expected_cazy_dict = json.load(fh)
+
+    expected_excluded_classes = [
+        '<strong>Auxiliary Activities (AAs)</strong>',
+        '<strong>Carbohydrate Esterases (CEs)</strong>',
+        '<strong>Polysaccharide Lyases (PLs)</strong>',
+        '<strong>Carbohydrate-Binding Modules (CBMs)</strong>',
+        '<strong>GlycosylTransferases (GTs)</strong>',
+    ]
+
+    expected_config_dict = {
+        'classes': None,
+        'Glycoside Hydrolases (GHs)': ['GH147'],
+        'GlycosylTransferases (GTs)': None,
+        'Polysaccharide Lyases (PLs)': None,
+        'Carbohydrate Esterases (CEs)': None,
+        'Auxiliary Activities (AAs)': None,
+        'Carbohydrate-Binding Modules (CBMs)': None,
+    }
+
+    excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
+        file_io_path,
+        args_config_no_class["args"],
+        null_logger,
+    )
+
+    result = None
+
+    for item in excluded_classes:
+        if item not in expected_excluded_classes:
+            result = "fail"
+    for item in expected_excluded_classes:
+        if item not in excluded_classes:
+            result = "fail"
+
+    assert result is None
+    assert config_dict == expected_config_dict
+    assert cazy_dict == expected_cazy_dict
+
+
+def test_parse_config_with_classes(
+    cazy_dictionary,
+    file_io_path,
+    args_config_with_classes,
+    null_logger,
+):
+    """Test parse_configuration when no classes are included."""
+    with open(cazy_dictionary, "r") as fh:
+        expected_cazy_dict = json.load(fh)
+
+    expected_excluded_classes = [
+        '<strong>Auxiliary Activities (AAs)</strong>',
+        '<strong>Carbohydrate-Binding Modules (CBMs)</strong>',
+        '<strong>GlycosylTransferases (GTs)</strong>',
+        '<strong>Carbohydrate Esterases (CEs)</strong>',
+    ]
+
+    expected_config_dict = {
+        'classes': ['Glycoside Hydrolases (GHs)', 'Polysaccharide Lyases (PLs)'],
+        'Glycoside Hydrolases (GHs)': ['GH147'],
+        'GlycosylTransferases (GTs)': None,
+        'Polysaccharide Lyases (PLs)': None,
+        'Carbohydrate Esterases (CEs)': None,
+        'Auxiliary Activities (AAs)': None,
+        'Carbohydrate-Binding Modules (CBMs)': None,
+    }
+
+    excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
+        file_io_path,
+        args_config_with_classes["args"],
+        null_logger,
+    )
+
+    result = None
+
+    for item in excluded_classes:
+        if item not in expected_excluded_classes:
+            result = "fail"
+    for item in expected_excluded_classes:
+        if item not in excluded_classes:
+            result = "fail"
+
+    assert result is None
+    assert config_dict == expected_config_dict
+    assert cazy_dict == expected_cazy_dict
 
 # test parse_user_cazy_classes()
 
