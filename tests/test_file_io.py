@@ -279,6 +279,7 @@ def test_parse_config_with_classes(
     assert config_dict == expected_config_dict
     assert cazy_dict == expected_cazy_dict
 
+
 # test parse_user_cazy_classes()
 
 
