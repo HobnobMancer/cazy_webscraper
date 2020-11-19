@@ -83,7 +83,7 @@ def parse_configuration(file_io_path, args, logger):
         with open(dict_path, "r") as fh:
             cazy_dict = json.load(fh)
             # create list of standardised CAZy classes
-            class_names = list(cazy_dict.keys())
+            std_class_names = list(cazy_dict.keys())
     except FileNotFoundError:
         logger.error(
             "Could not open the CAZy synonomn dictionary\n"
@@ -116,7 +116,7 @@ def parse_configuration(file_io_path, args, logger):
 
     if len(cazy_classes) != 0:
         # standardise CAZy class names
-        cazy_classes = parse_user_cazy_classes(cazy_classes, cazy_dict, class_names, logger)
+        cazy_classes = parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger)
 
     # retrieve classes of families/subfamilies specified in configuration file
     for key in config_dict:
@@ -126,7 +126,7 @@ def parse_configuration(file_io_path, args, logger):
 
     # create list of CAZy classes not to be scraped
     try:
-        excluded_classes = class_names
+        excluded_classes = std_class_names
         excluded_classes = list(set(excluded_classes).difference(cazy_classes))
     except TypeError:
         # raised if CAZy classes is None
@@ -143,26 +143,28 @@ def parse_configuration(file_io_path, args, logger):
     return excluded_classes, config_dict, cazy_dict
 
 
-def parse_user_cazy_classes(cazy_classes, cazy_dict, class_names, logger):
+def parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger):
     """Standardise the CAZy class names listed in configuration file.
 
     :param cazy_classes: list, list of CAZy classes from configuration file
     :param cazy_dict: dict, keyed by class name, keyed by list of accepted synonoms
-    :param class_names: list, list of all CAZy classes
+    :param std_class_names: list, list of all CAZy classes
     :param logger: logger object
 
-    Return list of CAZy classes named in configuration file.
+    Return list of CAZy classes listed by user in the configuration file.
     """
     logger.info("Standardising names of class listed in configuration file")
-    # identify user defined CAZy classes not written in standardised format
+
     index = 0
     for index in range(len(cazy_classes)):
-        if cazy_classes[index] not in class_names:
+        # identify user defined CAZy classes not written in standardised format
+        if cazy_classes[index] not in std_class_names:
             for key in cazy_dict:
-                if cazy_classes[index] in cazy_dict[key]:
-                    cazy_classes[index] = key
+                if cazy_classes[index] in cazy_dict[key]:  # if in synonyms in cazy_dict
+                    cazy_classes[index] = key  # standardise the class name
+
         # check all names are standardised, remove names that could not be standardised
-        if cazy_classes[index] not in class_names:
+        if cazy_classes[index] not in std_class_names:
             logger.warning(
                 (
                     f"'{cazy_classes[index]}' could not be standardised.\n"
@@ -172,7 +174,7 @@ def parse_user_cazy_classes(cazy_classes, cazy_dict, class_names, logger):
             )
             del cazy_classes[index]
 
-    return class_names, cazy_classes
+    return cazy_classes
 
 
 def write_out_df(dataframe, df_name, outdir, logger, force):
