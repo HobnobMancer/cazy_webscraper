@@ -429,6 +429,32 @@ def test_parse_user_cazy_classes(cazy_dictionary, null_logger):
     )
 
 
+def test_cannot_standardise(cazy_dictionary, null_logger):
+    """Test when cannot standardise a name listed in the configuration file."""
+    with open(cazy_dictionary, "r") as fh:
+        cazy_dict = json.load(fh)
+
+    cazy_classes = ['GH', 'pl', 'testtesttest']
+    class_name = [
+        'Glycoside Hydrolases (GHs)',
+        'GlycosylTransferases (GTs)',
+        'Polysaccharide Lyases (PLs)',
+        'Carbohydrate Esterases (CEs)',
+        'Auxiliary Activities (AAs)',
+        'Carbohydrate-Binding Modules (CBMs)',
+    ]
+
+    exepected = ['Glycoside Hydrolases (GHs)', 'Polysaccharide Lyases (PLs)']
+
+    assert exepected == file_io.parse_user_cazy_classes(
+        cazy_classes,
+        cazy_dict,
+        class_name,
+        null_logger,
+    )
+
+
+
 # test write_out_df()
 
 
