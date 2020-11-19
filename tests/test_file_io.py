@@ -26,10 +26,13 @@ pytest -v
 
 import json
 import pytest
+import sys
 
 import pandas as pd
 
-from scraper import file_io
+from argparse import Namespace
+
+from scraper import file_io, parse
 
 
 @pytest.fixture
@@ -42,6 +45,16 @@ def test_output_dir(test_dir):
 def making_output_dir(test_output_dir):
     path = test_output_dir / "testing_making_dir"
     return path
+
+
+@pytest.fixture
+def args_config_None():
+    args_dict = {
+        "args":Namespace(
+            config=None
+        )
+    }
+    return args_dict
 
 
 @pytest.fixture
@@ -76,6 +89,15 @@ def test_output_dir_creation_nd_false(making_output_dir, null_logger):
 # test parse_configuration()
 
 
+def test_parse_config_sys_exit(args_config_None, null_logger):
+    """Tests parse_configuration when cazy_dict cannot be opened and should perform sys.exit(1)."""
+    fake_path = parse.__file__
+
+    with pytest.raises(SystemExit) as pytest_wrapped_err:
+        file_io.parse_configuration(fake_path, args_config_None["args"], null_logger)
+    assert pytest_wrapped_err.type == SystemExit
+
+
 # test parse_user_cazy_classes()
 
 
@@ -102,8 +124,7 @@ def test_parse_user_cazy_classes(cazy_dictionary, null_logger):
         class_name,
         null_logger,
     )
-    
-# only one test and assert get the correct result back
+
 
 # test write_out_df()
 
