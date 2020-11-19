@@ -12,8 +12,8 @@ jobs:
 
     steps:
       - checkout
- 
-       - restore_cache:
+
+      - restore_cache:
           keys:
             - cazy_wbscrpr-{{ .Branch }}-{{ checksum "requirements.txt" }}
             - cazy_wbscrpr-
