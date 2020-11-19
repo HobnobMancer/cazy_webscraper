@@ -24,6 +24,7 @@ pytest -v
 
 """
 
+import json
 import pytest
 
 import pandas as pd
@@ -77,6 +78,32 @@ def test_output_dir_creation_nd_false(making_output_dir, null_logger):
 
 # test parse_user_cazy_classes()
 
+
+def test_parse_user_cazy_classes(cazy_dictionary, null_logger):
+    """Test parse_user_cazy_classes to standardise the CAZy classes written by the user."""
+    with open(cazy_dictionary, "r") as fh:
+        cazy_dict = json.load(fh)
+
+    cazy_classes = ['GH', 'pl']
+    class_name = [
+        'Glycoside Hydrolases (GHs)',
+        'GlycosylTransferases (GTs)',
+        'Polysaccharide Lyases (PLs)',
+        'Carbohydrate Esterases (CEs)',
+        'Auxiliary Activities (AAs)',
+        'Carbohydrate-Binding Modules (CBMs)',
+    ]
+
+    exepected = ['Glycoside Hydrolases (GHs)', 'Polysaccharide Lyases (PLs)']
+
+    assert exepected == file_io.parse_user_cazy_classes(
+        cazy_classes,
+        cazy_dict,
+        class_name,
+        null_logger,
+    )
+    
+# only one test and assert get the correct result back
 
 # test write_out_df()
 
