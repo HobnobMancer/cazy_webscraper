@@ -1,19 +1,56 @@
 version: 2.1
 
 orbs:
-  python: circleci/python@0.2.1
+  codecov: codecov/codecov@1.0.5
 
 jobs:
   build-and-test:
-    executor: python/default
+    docker:
+      - image: circleci/python:3.8.3
+      
+  working_directory: ~/cazy_webscraper
+
     steps:
       - checkout
-      - python/load-cache
-      - python/install-deps
-      - python/save-cache
+ 
+       - restore_cache:
+          keys:
+            - cazy_wbscrpr-{{ .Branch }}-{{ checksum "requirements.txt" }}
+            - cazy_wbscrpr-
+
       - run:
-          command: ./manage.py test
-          name: Test
+          name: install dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+
+      - save_cache:
+          paths:
+            - ./venv
+          key: cazy_wbscrpr-{{ .Branch }}-{{ checksum "requirements.txt" }}
+
+      - run:
+          name: install package
+          command: |
+            . venv/bin/activate
+            pip install -e .
+
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            pytest -v --cov=cazy_webscraper --cov-report xml:.coverage.xml
+
+      - store_artifacts:
+          path: tests/test_output
+          destination: tests/test_output
+      - store_artifacts:
+          path: .coverage.xml
+          destination: .coverage.xml
+
+      - codecov/upload:
+          file: .coverage.xml
 
 workflows:
   main:
