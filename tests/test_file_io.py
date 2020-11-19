@@ -58,6 +58,12 @@ def args_config_None():
 
 
 @pytest.fixture
+def file_io_path():
+    file_io_path = file_io.__file__
+    return file_io_path
+
+
+@pytest.fixture
 def testing_df():
     df_data = [["A", "B", "C"]]
     df = pd.DataFrame(df_data, columns=["C1", "C2", "C3"])
@@ -96,6 +102,22 @@ def test_parse_config_sys_exit(args_config_None, null_logger):
     with pytest.raises(SystemExit) as pytest_wrapped_err:
         file_io.parse_configuration(fake_path, args_config_None["args"], null_logger)
     assert pytest_wrapped_err.type == SystemExit
+
+
+def test_parse_config_none(cazy_dictionary, file_io_path, args_config_None, null_logger):
+    """Test parse_configuration when no configuration file provided."""
+    with open(cazy_dictionary, "r") as fh:
+        cazy_dict = json.load(fh)
+
+    result_1, result_2, result_3 = file_io.parse_configuration(
+        file_io_path,
+        args_config_None["args"],
+        null_logger,
+    )
+
+    assert result_1 is None
+    assert result_2 is None
+    assert result_3 == cazy_dict
 
 
 # test parse_user_cazy_classes()
