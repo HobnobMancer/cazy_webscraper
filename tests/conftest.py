@@ -43,3 +43,14 @@ def null_logger():
     logger = logging.getLogger("Test_ac_number_retrieval logger")
     logger.addHandler(logging.NullHandler())
     return logger
+
+
+@pytest.fixture
+def cazy_home_url():
+    return "http://www.cazy.org"
+
+
+@pytest.fixture
+def cazy_dictionary(input_dir):
+    dict_path = input_dir / "cazy_dictionary.json"
+    return dict_path
