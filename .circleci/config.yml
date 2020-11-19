@@ -40,7 +40,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            pytest -v --cov=cazy_webscraper --cov-report xml:.coverage.xml
+            pytest -v --cov=scraper --cov-report xml:.coverage.xml
 
       - store_artifacts:
           path: tests/test_output
