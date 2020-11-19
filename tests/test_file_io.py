@@ -454,7 +454,6 @@ def test_cannot_standardise(cazy_dictionary, null_logger):
     )
 
 
-
 # test write_out_df()
 
 
@@ -469,4 +468,11 @@ def test_writing_named_df_f_false(testing_df, null_logger, making_output_dir):
     """Tests function for writing out a prenamed dataframe"""
     file_io.write_out_df(
         testing_df, "test_writing_df.csv", making_output_dir, null_logger, False
+    )
+
+
+def test_writing_df_exists(testing_df, null_logger, making_output_dir):
+    """Tests function for writing out a prenamed dataframe"""
+    file_io.write_out_df(
+        testing_df, "test_writing_existing_df", making_output_dir, null_logger, True
     )
