@@ -44,12 +44,6 @@ def input_dir(test_input_dir):
 
 
 @pytest.fixture
-def cazy_dictionary(input_dir):
-    dict_path = input_dir / "cazy_dictionary.json"
-    return dict_path
-
-
-@pytest.fixture
 def args_datasplit_none():
     argsdict = {
         "args": Namespace(
