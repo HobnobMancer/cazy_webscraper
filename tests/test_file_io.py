@@ -113,6 +113,22 @@ def args_config_with_classes(config_with_classes):
 
 
 @pytest.fixture
+def config_no_class_tag(input_dir):
+    path = input_dir / "config_no_class_tag.yaml"
+    return path
+
+
+@pytest.fixture
+def args_config_no_class_tag(config_no_class_tag):
+    args_dict = {
+        "args": Namespace(
+            config=config_no_class_tag,
+        )
+    }
+    return args_dict
+
+
+@pytest.fixture
 def testing_df():
     df_data = [["A", "B", "C"]]
     df = pd.DataFrame(df_data, columns=["C1", "C2", "C3"])
@@ -269,6 +285,55 @@ def test_parse_config_with_classes(
         args_config_with_classes["args"],
         null_logger,
     )
+
+    result = None
+
+    for item in excluded_classes:
+        if item not in expected_excluded_classes:
+            result = "fail"
+    for item in expected_excluded_classes:
+        if item not in excluded_classes:
+            result = "fail"
+
+    assert result is None
+    assert config_dict == expected_config_dict
+    assert cazy_dict == expected_cazy_dict
+
+
+def test_parse_config_no_class_tag(
+    cazy_dictionary,
+    file_io_path,
+    args_config_no_class_tag,
+    null_logger,
+):
+    """Test parse_configuration when no classes are included."""
+    with open(cazy_dictionary, "r") as fh:
+        expected_cazy_dict = json.load(fh)
+
+    expected_excluded_classes = [
+        '<strong>Auxiliary Activities (AAs)</strong>',
+        '<strong>Carbohydrate Esterases (CEs)</strong>',
+        '<strong>Polysaccharide Lyases (PLs)</strong>',
+        '<strong>Carbohydrate-Binding Modules (CBMs)</strong>',
+        '<strong>GlycosylTransferases (GTs)</strong>',
+    ]
+
+    expected_config_dict = {
+        'Glycoside Hydrolases (GHs)': ['GH147'],
+        'GlycosylTransferases (GTs)': None,
+        'Polysaccharide Lyases (PLs)': None,
+        'Carbohydrate Esterases (CEs)': None,
+        'Auxiliary Activities (AAs)': None,
+        'Carbohydrate-Binding Modules (CBMs)': None,
+    }
+
+    excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
+        file_io_path,
+        args_config_no_class_tag["args"],
+        null_logger,
+    )
+
+    print("config_dict=", config_dict)
 
     result = None
 
