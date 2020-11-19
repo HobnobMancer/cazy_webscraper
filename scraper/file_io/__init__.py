@@ -86,7 +86,7 @@ def parse_configuration(file_io_path, args, logger):
             std_class_names = list(cazy_dict.keys())
     except FileNotFoundError:
         logger.error(
-            "Could not open the CAZy synonomn dictionary\n"
+            "Could not open the CAZy synonym dictionary\n"
             "Terminating programme"
         )
         sys.exit(1)
