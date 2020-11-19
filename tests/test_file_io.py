@@ -64,6 +64,17 @@ def file_io_path():
 
 
 @pytest.fixture
+def args_config_fake(test_dir):
+    path = test_dir / "fake_config.yaml"
+    args_dict = {
+        "args":Namespace(
+            config=path
+        )
+    }
+    return args_dict
+
+
+@pytest.fixture
 def testing_df():
     df_data = [["A", "B", "C"]]
     df = pd.DataFrame(df_data, columns=["C1", "C2", "C3"])
@@ -112,6 +123,22 @@ def test_parse_config_none(cazy_dictionary, file_io_path, args_config_None, null
     result_1, result_2, result_3 = file_io.parse_configuration(
         file_io_path,
         args_config_None["args"],
+        null_logger,
+    )
+
+    assert result_1 is None
+    assert result_2 is None
+    assert result_3 == cazy_dict
+
+
+def test_parse_config_cant_find(cazy_dictionary, file_io_path, args_config_fake, null_logger):
+    """Test parse_configuration when the configuration file cannot be found."""
+    with open(cazy_dictionary, "r") as fh:
+        cazy_dict = json.load(fh)
+
+    result_1, result_2, result_3 = file_io.parse_configuration(
+        file_io_path,
+        args_config_fake["args"],
         null_logger,
     )
 
