@@ -331,7 +331,7 @@ def get_cazy_class_urls(cazy_home, excluded_classes, logger):
                 "The following error was raised:\n"
                 f"{home_page[1]}"
                 "Could not retrieve URLs to CAZy classes.\n"
-                "Check the network connection.\bTerminating program."
+                "Check the network connection.\nTerminating program."
             )
         )
         sys.exit(1)
