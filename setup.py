@@ -56,7 +56,11 @@ setuptools.setup(
     install_requires=["biopython>=1.76", "pandas>=1.0.3"],
     # Include conda microenvironment
     # and template input file for Extract_genomes_NCBI.py
-    package_data={"Conda microenvironment": ["environment.yml"]},
+    package_data={
+        "Conda microenvironment": ["environment.yml"],
+        "CAZy dictionary": ["cazy_dictionary.json"],
+        "Configuration file": ["scraper_config.yaml"],
+    },
     include_package_data=True,
     classifiers=[
         "Environment :: Console",

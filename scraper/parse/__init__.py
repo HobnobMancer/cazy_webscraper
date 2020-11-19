@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author:
 # Emma E. M. Hobbs
@@ -17,3 +17,71 @@
 
 # The MIT License
 """Module for parsing the webpages from CAZy."""
+
+import pandas as pd
+
+from datetime import datetime
+
+from tqdm import tqdm
+
+from scraper.file_io import write_out_df
+
+
+def proteins_to_dataframe(families, args, logger):
+    """Write protein members of CAZy families to a pandas dataframe.
+
+    Duplicate rows are removed. These rows must be identical across the entire row, not only share
+    the same protein name. Duplicates are mostly likely to arise when scraping families and
+    subfamilies becuase proteins under the subfamily are also catalogued under the parent family.
+
+    :param families: list, list of CAZy families containing protein members
+    :param args: args parser
+    :param logger: logger object
+
+    Return nothing.
+    """
+    # Build empty dataframe to add proteins to
+    protein_dataframe = pd.DataFrame(
+        data={},
+        columns=[
+            "Protein_name",
+            "CAZy_family",
+            "EC#",
+            "Source_organism",
+            "GenBank",
+            "UniProt",
+            "PDB/3D",
+        ]
+    )
+
+    # add proteins to dataframe
+    for family in families:
+        proteins = family.get_proteins()
+        for protein in tqdm(proteins, desc=f"Writing {family.name} proteins to df"):
+            if protein is not None:
+                protein_dict = protein.get_protein_dict()
+                df = pd.DataFrame(protein_dict)
+                protein_dataframe = protein_dataframe.append(df, ignore_index=True)
+
+    time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+
+    if args.subfamilies is True:
+        subfam = "_incld_subfams"
+    else:
+        subfam = ""
+    # compile dataframe name
+    if args.data_split == "family":
+        df_name = f"cazy_{families[0].name}{subfam}_{time_stamp}"
+    elif args.data_split == "class":
+        df_name = f"cazy_{families[0].cazy_class}{subfam}_{time_stamp}"
+    else:
+        df_name = f"cazy_scrape{subfam}_{time_stamp}"
+
+    # Remove duplicate
+    # This can arise when scraping subfamilies and families within a class
+    # The proteins within the subfamilies will also be listed under their parent family
+    protein_dataframe = protein_dataframe.drop_duplicates()
+
+    # write out dataframe
+    write_out_df(protein_dataframe, df_name, args.output, logger, args.force)
+    return

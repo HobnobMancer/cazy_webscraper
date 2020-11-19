@@ -89,7 +89,7 @@ def build_parser(argv: Optional[List] = None):
         help="enable/disable deletion of exisiting files",
     )
 
-    # Add option to specific output directory to write scraped data to
+    # Add option to specify output directory to write scraped data to
     parser.add_argument(
         "-o",
         "--output",
@@ -97,6 +97,16 @@ def build_parser(argv: Optional[List] = None):
         metavar="output file name",
         default=sys.stdout,
         help="Output filename",
+    )
+
+    # Add option to enable retrieval of subfamilies
+    parser.add_argument(
+        "-s",
+        "--subfamilies",
+        dest="subfamilies",
+        action="store_true",
+        default=False,
+        help="Enable retrieval of subfamilies from CAZy"
     )
 
     # Add option for more detail (verbose) logging
@@ -131,22 +141,19 @@ def build_logger(script_name, args) -> logging.Logger:
         script_name + ": {} - {}".format("%(asctime)s", "%(message)s")
     )
 
+    if args.verbose is True:
+        logger.setLevel(logging.INFO)
+    else:
+        logger.setLevel(logging.WARNING)
+
     # Setup console handler to log to terminal
     console_log_handler = logging.StreamHandler()
-    if args.verbose is True:
-        console_log_handler.setLevel(logging.INFO)
-    else:
-        console_log_handler.setLevel(logging.WARNING)
     console_log_handler.setFormatter(log_formatter)
     logger.addHandler(console_log_handler)
 
     # Setup file handler to log to a file
     if args.log is not None:
         file_log_handler = logging.FileHandler(args.log)
-        if args.verbose is True:
-            file_log_handler.setLevel(logging.INFO)
-        else:
-            file_log_handler.setLevel(logging.WARNING)
         file_log_handler.setFormatter(log_formatter)
         logger.addHandler(file_log_handler)
 

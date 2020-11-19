@@ -19,17 +19,40 @@
 """
 Web scraper to scrape CAZy website and retrieve all protein data.
 
-:cmd_args:...
+:cmd_args --config: path to configruration file
+:cmd args --data_split: [None, class, family] how data is to be split/separated into dataframes
+:cmd_args --force: force overwriting content in exisiting output directory
+:cmd_args --log: path to log file, enables writing out log messages to a log file
+:cmd_args --nodelete: if true does not delete content in pre-existing output directory
+:cmd_args --output: path to output directory
+:cmd_args --subfamily: enable retrieval of subfamilies from CAZy
+:cmd_args --verbose: change logger level from warning to info, verbose logging
 
-:func ...:...
+:func main: coordinate scraping of CAZy database
+:func get_cazy_class_urls: retrieve URLs to CAZy class summary pages from CAZy homepage
+:func get_cazy_family_urls: retrieve URLs to families on CAZy class summary page
+:func get_subfamily_links: retrieve URLs to subfamilies on CAZy class summary page
+:func parse_family: build Family class object to represent CAZy family
+:func parse_family_pages: retrieve all URLs to pages containing protein records for CAZy family
+:func parse_proteins: retrieve protein records from protein table page
+:func row_to_protein: parse the protein record to build a Protein class object
+:func browser_decorator: decorator for get_page() to coordinate retrying failed connections
+:func get_page: connect to webpage and retrieval page as BeautifulSoup4 object
 
+:class Protein: A single protein from CAZy database
+:class Family: A single family from CAZy containing proteins
 """
 
 import logging
 import re
+import sys
+
+import numpy as np
 
 from collections import defaultdict
 from typing import List, Optional
+from requests.exceptions import ConnectionError, MissingSchema
+from urllib3.exceptions import HTTPError, RequestError
 
 import mechanicalsoup
 
@@ -46,10 +69,11 @@ class Protein:
     'list' values becuase there may be multiple links per database.
     """
 
-    def __init__(self, name, source, ec, links=None):
+    def __init__(self, name, family, ec, source, links=None):
         self.name = name
-        self.source = source
+        self.family = family
         self.ec = ec
+        self.source = source
         if links is None:
             self.links = defaultdict(list)
         else:
@@ -57,23 +81,55 @@ class Protein:
 
     def __str__(self):
         """Create representative string of class object"""
-        return f"{self.name} ({self.source}): links to {self.links.keys()}"
+        return f"{self.name} ({self.family} {self.source}): links to {self.links.keys()}"
 
     def __repr__(self):
         """Create representative object"""
         return(
             (
-                f"<Protein: {id(self)}: {self.name}, "
+                f"<Protein: {id(self)}: {self.name}, {self.family} "
                 f"({self.source}), {len(self.links)} to external databases>"
             )
         )
 
+    def get_protein_dict(self):
+        """Return a dictionary containing all the data of the protein."""
+        protein_dict = {"Protein_name": [self.name], "CAZy_family": [self.family]}
+
+        if len(self.ec) == 0:
+            protein_dict["EC#"] = [np.nan]
+        elif len(self.ec) == 1:
+            protein_dict["EC#"] = self.ec
+        else:
+            ec_string = ""
+            for ec_num in self.ec[:-1]:
+                ec_string += f"{ec_num}\n"
+            ec_string += self.ec[-1]
+            protein_dict["EC#"] = [ec_string]
+
+        protein_dict["Source_organism"] = [self.source]
+
+        if type(self.links) is dict:
+            for database in ["GenBank", "UniProt", "PDB/3D"]:
+                try:
+                    if len(self.links[database]) == 1:
+                        protein_dict[database] = self.links[database]
+                    else:
+                        accession_string = ""
+                        for accession in self.links[database][:-1]:
+                            accession_string += f"{accession},\n"
+                        accession_string += self.links[database][-1]
+                        protein_dict[database] = [accession_string]
+                except KeyError:
+                    protein_dict[database] = ['']
+        else:
+            for database in ["GenBank", "UniProt", "PDB/3D"]:
+                protein_dict[database] = ['']
+        return protein_dict
+
 
 class Family:
-    """A single CAZy family.
-
-    Each family has a name and a set of proteins that are members of the family.
-    """
+    """A single CAZy family."""
 
     members = set()  # holds Protein instances
 
@@ -87,13 +143,24 @@ class Family:
     def __repr__(self):
         return f"<Family: {id(self)}: {self.name}, {len(self.members)} protein members"
 
+    def get_proteins(self):
+        """Return a list of all protein members of the CAZy family."""
+        return self.members
+
+    def get_family_name(self):
+        """Return family name"""
+        return self.name
+
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
     """Set up parser, logger and coordinate overal scrapping of CAZy.
-    
+
     The collected data can be stored as a singel dataframe containing (not split), split into
-    separate dataframes by class or by family.
+    separate dataframes by class or by family. Excluded classes are CAZy classes not specified in
+    the configuration file and thus, will not be scraped. User_cazy_families is the list of CAZy
+    families specified to be scraped in the configration file.
     """
+    # Program preparation
     if argv is None:
         parser = utilities.build_parser()
         args = parser.parse_args()
@@ -104,73 +171,211 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger = utilities.build_logger("cazy_webscraper", args)
     logger.info("Run initiated")
 
+    if args.output is not sys.stdout:
+        file_io.make_output_directory(args.output, logger, args.force, args.nodelete)
+
+    if args.subfamilies is True:
+        logger.warning("Enabled to retrieve subfamilies")
+
+    # retrieve configuration data
+    file_io_path = file_io.__file__
+    excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
+        file_io_path,
+        args,
+        logger,
+    )
+
+    logger.info("Finished program preparation")
+    logger.info("Starting retrieval of data from CAZy")
+
+    # Crawl through and scrape CAZy website/database
     cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
 
-    # retrieve links to CAZy class pages
-    class_pages = get_cazy_class_pages(cazy_home)
+    # Retrieve data from CAZy database
+    get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, args)
 
-    all_data = []  # stores Family class objects if not splitting the data
+    logger.info(
+        (
+            "Finished scraping the CAZy website.\n"
+            "Thank you for using the cazy_webscraper.py\n"
+            "Terminating program"
+        )
+    )
+
+
+def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, args):
+    """Coordinate retrieval of data from the CAZy website.
+
+    This function coordinates the crawling through the CAZy website by calling the appropriate
+    functions, and then retrieving the protein data by calling to the appropriate data again.
+
+    :param cazy_home: str, url of CAZy home page
+    :param excluded_classes: list, list of classes to not scrape from CAZy
+    :param config_dict: dict, user defined configuration of the scraper
+    :param cazy_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
+    :param logger: logger object
+    :param args: cmd args parser
+
+    Return nothing.
+    """
+    # retrieve links to CAZy class pages
+    class_pages = get_cazy_class_urls(cazy_home, excluded_classes, logger)
+
+    try:
+        if len(class_pages) == 0:
+            logger.error(
+                "Failed to retrieval URLs to CAZy class pages\n"
+                "Terminating program"
+                )
+            sys.exit(1)
+    except TypeError:  # rased when class_pages is None
+        logger.error(
+            "Failed to retrieval URLs to CAZy class pages\n"
+            "Terminating program"
+            )
+        sys.exit(1)
+
+    all_data = []  # stores all Family class objects if not splitting the data
+
+    logger.info("Starting retrieval of CAZy families")
 
     # retrieve links to CAZy family pages
-    for class_url in class_pages:
-        family_urls = get_cazy_family_pages(class_url, cazy_home, False)
+    for class_url in tqdm(class_pages, desc="Parsing CAZy classes"):
+        # retrieve class name from url and convert to synonym used in configuration file
+        class_name = class_url[20: -5]
+        for key in cazy_dict:
+            if class_name in cazy_dict[key]:
+                class_name = key
+
+        # retrieve URLs to families under current working CAZy class
+        family_urls = get_cazy_family_urls(class_url, cazy_home, class_name, args, logger)
+
+        if family_urls is None:  # couldn't conenct to CAZy, logged in get_cazy_family_urls()
+            continue
 
         families = []  # store Family class objects if splitting data be class
+        logger.info("Starting retrieval of protein records of protein records from families")
 
-        for family_url in family_urls:
-            family = parse_family(family_url, cazy_home)
+        if (config_dict is None) or (config_dict[class_name] is None):
+            # no (sub)families specified. Scrape all families in CAZy class
+            for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
+                family_name = family_url[(len(cazy_home) + 1): -5]
+                family = parse_family(family_url, family_name, cazy_home, logger)
 
-            if args.data_split == "family":
-                # Write dataframe for CAZy family
-                parse.proteins_to_dataframe(family)
-            else:
-                families.append(family)
+                if args.data_split == "family":
+                    parse.proteins_to_dataframe([family], args, logger)
+                else:
+                    families.append(family)
 
-        if args.data_split == "class":
-            # Write dataframe for CAZy class
-            parse.proteins_to_dataframe(families)
         else:
-            all_data.append(family)
+            # scrape only (sub)families specified in config file
+            for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
+                family_name = family_url[(len(cazy_home) + 1): -5]
 
-    if all_data is not None:
-        # Write dataframe containing all data from CAZy
-        parse.proteins_to_dataframe(all_data)
+                # Allows retrieval of subfamilies when only the parent CAZy family was named in the
+                # config file
+                if (args.subfamilies is True) and (family_name.find("_") != -1):
+                    name_check = family_name[:family_name.find("_")]
+                else:
+                    name_check = family_name
 
-    logger.info("Program finished")
+                if name_check in config_dict[class_name]:
+                    family = parse_family(family_url, family_name, cazy_home, logger)
+
+                    if args.data_split == "family":
+                        parse.proteins_to_dataframe([family], args, logger)
+                    else:
+                        families.append(family)
+
+        if (args.data_split == "class"):
+            if len(families) != 0:
+                parse.proteins_to_dataframe(families, args, logger)
+            else:
+                logger.warning(f"Didn't retrieve any families for {class_name}")
+        else:
+            all_data += families
+
+    if args.data_split is None:
+        if len(all_data) != 0:
+            # Write dataframe containing all data from CAZy
+            parse.proteins_to_dataframe(all_data, args, logger)
+        else:
+            logger.warning("Didn't retrieve any protein data from CAZy")
+
+    return
 
 
-def get_cazy_class_pages(cazy_home):
+def get_cazy_class_urls(cazy_home, excluded_classes, logger):
     """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
 
     :param cazy_url: str, URL to the CAZy home page.
+    :param excluded_classes: list, list of CAZy classes not to be scraped
+    :param logger: logger object
 
     Return list of URLs.
     """
+    logger.info("Retrieving URLs to summary CAZy class pages")
+
     # define items to be excluded from returned class list, ALWAYS exlide links to genomes
-    exclusions = ("<strong>Genomes</strong>")
-    # exclusions.append(config file input)
+    if excluded_classes is not None:
+        exclusions = tuple(["<strong>Genomes</strong>"] + excluded_classes)
+    else:
+        exclusions = ("<strong>Genomes</strong>")
 
     # scrape the home page
     home_page = get_page(cazy_home)
+    if home_page[0] is None:
+        logger.error(
+            (
+                "Failed to connect to CAZy home-page after 10 attempts.\n"
+                "The following error was raised:\n"
+                f"{home_page[1]}"
+                "Could not retrieve URLs to CAZy classes.\n"
+                "Check the network connection.\nTerminating program."
+            )
+        )
+        sys.exit(1)
 
-    return [f"{cazy_home}/{_['href']}" for _ in home_page.soup.find_all("a", {"class": "spip_out"})
-            if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)]
+    try:
+        return [f"{cazy_home}/{_['href']}" for _ in
+                home_page[0].find_all("a", {"class": "spip_out"}) if
+                (not _["href"].startswith("http")) and
+                (str(_.contents[0]) not in exclusions)]
+    except AttributeError:  # raise if can't find results with find_all("a", {"class": "spip_out"})
+        return None
 
 
-def get_cazy_family_pages(class_url, cazy_home, subfam_retrieval):
+def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
     """Retrieve all protein members of each CAZy family within the given CAZy class.
 
     :param class_url: str, URL to the CAZy class
     :param cazy_home: str, URL to CAZy home page
-    :param subfam_retrieval: bool, enables subfamily retrieval if true
+    :param class_name: str, name of CAZy class
+    :param args: args parser object
+    :param logger: logger object
 
     Returns list of URLs to family pages.
     """
+    logger.info(f"Retrieving URLs to families under {class_name}")
+
     # scrape the class page
     class_page = get_page(class_url)
 
+    if class_page[0] is None:
+        logger.error(
+            (
+                f"Failed to connect to {class_url} after 10 attempts.\n"
+                "The following error was raised:\n"
+                f"{class_page[1]}"
+                "Could not retrieve URLs to CAZy famileis for this class.\n"
+                "This class will be skipped during the scraping process."
+            )
+        )
+        return None
+
     # retrieve the <h3> element that titles the div section containing the tables of family links
-    family_h3_element = [_ for _ in class_page.soup.find_all("h3", {"class": "spip"}) if
+    family_h3_element = [_ for _ in
+                         class_page[0].find_all("h3", {"class": "spip"}) if
                          str(_.contents[0]) == "Tables for Direct Access"][0]
 
     # retrieve all tables within the parent div section of the <h3> element
@@ -181,21 +386,25 @@ def get_cazy_family_pages(class_url, cazy_home, subfam_retrieval):
 
     family_urls = family_urls = [f"{cazy_home}/{_['href']}" for _ in tables[0].find_all("a")]
     family_urls.append(f"{cazy_home}/{tables[1].a['href']}")
-    if subfam_retrieval:
-        family_urls.append(get_subfamily_links(family_h3_element, cazy_home))
+    if args.subfamilies is True:
+        subfam_urls = get_subfamily_links(family_h3_element, cazy_home, logger)
+        if subfam_urls is not None:
+            family_urls += subfam_urls
 
     return family_urls
 
 
-def get_subfamily_links(family_h3_element, cazy_home):
+def get_subfamily_links(family_h3_element, cazy_home, logger):
     """Retrieve URL links to CAZy subfamilies.
 
     :param family_h3_element: bs4.element.Tag, h3 element titling the page div
     :param cazy_home: str, URL to CAZy home_page
+    :param logger: logger object
 
     Return list of URLs to subfamilies.
     """
-    all_links = family_h3_element.find_all("a")
+    parent_div = family_h3_element.parent
+    all_links = parent_div.find_all("a")
 
     pattern = re.compile(r"\D+?\d+?_\d+?\.html")
 
@@ -210,19 +419,23 @@ def get_subfamily_links(family_h3_element, cazy_home):
             # AttributeError error raised if search_result is None becuase not subfam link
             pass
 
-    return urls
+    if len(urls) == 0:
+        return
+    else:
+        return urls
 
 
-def parse_family(family_url, cazy_home):
+def parse_family(family_url, family_name, cazy_home, logger):
     """Returns a Family object with Protein members, scraped from CAZy.
 
     :param family_url: str, URL to CAZy family summary page
+    :param family_name: str, name of CAZy family
     :param cazy_home: str, URL to CAZy home page
+    :param logger: logger object
 
     Return Family object.
     """
-    # retrieve family name from URL
-    family_name = family_url[(len(cazy_home) + 1): -5]
+    logger.info(f"Starting retrieval of proteins for {family_name}")
 
     # retrieve class from family name
     pattern = re.compile(r"\D+")
@@ -231,31 +444,47 @@ def parse_family(family_url, cazy_home):
 
     family = Family(family_name, cazy_class)
 
-    for protein in tqdm(parse_family_pages(family_url, cazy_home), desc=f"Parsing {family_name}"):
+    for protein in tqdm(
+        parse_family_pages(family_url, family_name, cazy_home, logger),
+        desc=f"Retrieving proteins from {family_name}"
+    ):
         family.members.add(protein)
 
     return family
 
 
-def parse_family_pages(family_url, cazy_home):
+def parse_family_pages(family_url, family_name, cazy_home, logger):
     """Retrieve all protein records for given CAZy family.
-
     Protein records are listed in a pagination method, with 1000 proteins per page.
 
     :param family_url: str, URL to CAZy family main page
+    :param family_name: str, name of CAZy family
     :param cazy_home: str, URL to CAZy home page
+    :param logger: logger object
 
     Return list of protein records.
     """
+    logger.info(f"Retrieving URLs to all pages containing proteins for {family_url}")
     # compile URL to first family page of protein records
     first_pagination_url = family_url.replace(".html", "_all.html")
     first_pagination_page = get_page(first_pagination_url)
+
+    if first_pagination_page[0] is None:
+        logger.warning(
+            (
+                f"Could not connect to {family_url}\n"
+                "The following error was raised:\n"
+                f"{first_pagination_page[1]}"
+                f"No protein records for CAZy family {family_name} will be retried."
+            )
+        )
+        return None
 
     protein_page_urls = [first_pagination_url]
 
     # retrieve the URL to the final page of protein records in the pagination listing
     try:
-        last_pagination_url = first_pagination_page.soup.find_all(
+        last_pagination_url = first_pagination_page[0].find_all(
             "a", {"class": "lien_pagination", "rel": "nofollow"})[-1]
     except IndexError:  # there is no pagination; a single-query entry
         last_pagination_url = None
@@ -270,34 +499,57 @@ def parse_family_pages(family_url, cazy_home):
                                   range(1000, last_princ_no + 1000, 1000)])
 
     # Process all URLs into a single collection - a generator
-    return (y for x in (parse_proteins(url) for url in protein_page_urls) for y in x)
+    # return (y for x in (parse_proteins(url, family_name, logger)
+    # for url in protein_page_urls) for y in x)
+
+    return (
+        y for x in (
+            parse_proteins(url, family_name, logger) for url in protein_page_urls
+        ) for y in x
+    )
 
 
-def parse_proteins(protein_page_url):
+def parse_proteins(protein_page_url, family_name, logger):
     """Returns generator of Protein objects for all protein rows on a single CAZy family page.
 
     :param protein_page_url, str, URL to the CAZy family page containing protein records
+    :param family_name: str, name of CAZy family
+    :param logger: logger object
 
     Return generator object.
     """
+    logger.info(f"Retrieving proteins from {protein_page_url}")
+
     protein_page = get_page(protein_page_url)
 
+    if protein_page[0] is None:
+        logger.warning(
+            (
+                f"Could not connect to {protein_page_url}\n"
+                "The following error was raised:\n"
+                f"{protein_page[1]}"
+                f"No protein records from this page will be retried."
+            )
+        )
+        return
+
     # retrieve protein record table
-    protein_table = protein_page.soup.find_all("table", {"class": "listing"})[0]
+    protein_table = protein_page[0].find_all("table", {"class": "listing"})[0]
     protein_rows = [_ for _ in protein_table.descendants if (_.name == "tr") and
                     ("id" not in _.attrs) and ("class" not in _.attrs)]
 
     for row in protein_rows:
-        yield row_to_protein(row)
+        yield row_to_protein(row, family_name)
 
 
-def row_to_protein(row):
+def row_to_protein(row, family_name):
     """Returns a Protein object representing a single protein row from a CAZy family protein page.
 
     Each row, in order, contains the protein name, EC number, source organism, GenBank ID(s),
     UniProt ID(s), and PDB accession(s).
 
     :param row: tr element from CAZy family protein page
+    :param family_name: str, name of CAZy family
 
     Return Protein instance.
     """
@@ -306,42 +558,61 @@ def row_to_protein(row):
 
     protein_name = tds[0].contents[0].strip()
     source_organism = tds[2].a.get_text()
+    ec_numbers = []
     links = {}
+
+    all_links = None
     try:
-        ec_number = tds[1].contents[0].strip()
-    except TypeError:  # raised if protein is not annotated with an EC number
-        ec_number = "N/A"
+        all_links = tds[1].find_all("a")
+    except TypeError:  # raised when no EC numbers are listed
+        pass
+
+    if all_links is not None:
+        for link in all_links:
+            ec_numbers.append(link.text)
+    else:
+        ec_numbers = [np.nan]
 
     # test for len(tds[x].contents) in case there is no link,
     # the check of .name then ensures link is captured
     if len(tds[3].contents) and tds[3].contents[0].name == "a":
-        links["GenBank"] = [f"{_.get_text()}: {_['href']}" for _ in tds[3].contents if
+        links["GenBank"] = [f"{_.get_text()} {_['href']}" for _ in tds[3].contents if
                             _.name == "a"]
     if len(tds[4].contents) and tds[4].contents[0].name == "a":
-        links["UniProt"] = [f"{_.get_text()}: {_['href']}" for _ in tds[4].contents if
+        links["UniProt"] = [f"{_.get_text()} {_['href']}" for _ in tds[4].contents if
                             _.name == "a"]
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
-        links["PDB"] = [f"{_.get_text()}: {_['href']}" for _ in tds[5].contents if _.name == "a"]
+        links["PDB"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if _.name == "a"]
 
-    return Protein(protein_name, source_organism, ec_number, links)
+    return Protein(protein_name, family_name, ec_numbers, source_organism, links)
 
 
 def browser_decorator(func):
     """Decorator to retry the wrapped function up to 'retries' times."""
 
     def wrapper(*args, retries=10, **kwargs):
-        tries, success = 0, False
+        tries, success, err = 0, False, None
         while not success and (tries < retries):
-            response = func(*args, **kwargs)
-            if str(response) == "<Response [200]>":  # response was successful
+            try:
+                response = func(*args, **kwargs)
+            except (
+                ConnectionError,
+                HTTPError,
+                OSError,
+                MissingSchema,
+                RequestError,
+            ) as err_message:
+                success = False
+                response = None
+                err = err_message
+            if response is not None:  # response was successful
                 success = True
             # if response from webpage was not successful
             tries += 1
-        if not success:
-            print("Ran out of connection retries, and was unable to connect")
-            return None
+        if (not success) or (response is None):
+            return [None, err]
         else:
-            return response
+            return [response, None]
 
     return wrapper
 
@@ -356,9 +627,9 @@ def get_page(url):
     """
     # create browser object
     browser = mechanicalsoup.Browser()
-
     # create response object
     page = browser.get(url)
+    page = page.soup
 
     return page
 
