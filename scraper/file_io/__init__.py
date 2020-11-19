@@ -94,9 +94,17 @@ def parse_configuration(file_io_path, args, logger):
     if args.config is None:
         return None, None, cazy_dict
 
-    # open configuration file
-    with open(args.config) as fh:
-        config_dict = yaml.full_load(fh)
+    try:
+        # open configuration file
+        with open(args.config) as fh:
+            config_dict = yaml.full_load(fh)
+    except FileNotFoundError:
+        logger.warning(
+            "Could noot find configuration file.\n"
+            "Make sure path to the configuration file is correct\n"
+            "Scrapping will continue using defaul scraper configuration\n"
+        )
+        return None, None, cazy_dict
 
     # Retrieve CAZy classes listed in config file
     try:
