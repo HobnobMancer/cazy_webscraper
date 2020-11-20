@@ -112,6 +112,12 @@ def cazy_home_page(input_dir):
 
 
 @pytest.fixture
+def cazy_home_no_spip(input_dir):
+    file_path = input_dir / "cazy_homepage_no_spip_out.html"
+    return file_path
+
+
+@pytest.fixture
 def cazy_class_page(input_dir):
     file_path = input_dir / "cazy_classpage.html"
     return file_path
@@ -826,6 +832,30 @@ def test_get_class_urls_exclusions_given(
         ]
 
     assert expected_result == cazy_webscraper.get_cazy_class_urls(
+        cazy_home_url,
+        exclusions,
+        null_logger,
+    )
+
+
+def test_get_class_urls_attribute(
+    cazy_home_url,
+    cazy_home_no_spip,
+    null_logger,
+    monkeypatch,
+):
+    """Test get_cazy_class_urls when attribute error is raised."""
+    with open(cazy_home_no_spip) as fp:
+        soup = fp.read()
+
+    exclusions = ["<strong>Glycoside Hydrolases (GHs)</strong>"]
+
+    def mock_get_home_page(*args, **kwargs):
+        return [soup, None]
+
+    monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_home_page)
+
+    assert None is cazy_webscraper.get_cazy_class_urls(
         cazy_home_url,
         exclusions,
         null_logger,
