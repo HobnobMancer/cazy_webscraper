@@ -1,0 +1,15 @@
+classes:  # classes from which all proteins will be retrieved
+  - "GH"
+  - "PL"
+Glycoside Hydrolases (GHs):
+  - "GH147"
+GlycosylTransferases (GTs):
+  - "GT2"
+Polysaccharide Lyases (PLs):
+  - "PL1"
+Carbohydrate Esterases (CEs):
+  - "CE1"
+Auxiliary Activities (AAs):
+  - "AA10"
+Carbohydrate-Binding Modules (CBMs):
+  - "CBM5"
