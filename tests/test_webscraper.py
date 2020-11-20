@@ -228,6 +228,17 @@ def test_protein_get_protein_dict():
     assert expected_protein_dict == protein_dict
 
 
+def test_family_get_name():
+    """Tests get family name for Family."""
+    family = cazy_webscraper.Family("GH1", "Glycoside_Hydrolases(GH)")
+
+    family_name = family.get_family_name()
+
+    exepected_name = "GH1"
+
+    assert exepected_name == family_name
+
+
 # test main()
 
 
