@@ -1037,7 +1037,10 @@ def test_parse_proteins_none(null_logger, monkeypatch):
 
     monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
 
-    cazy_webscraper.parse_proteins("protein_url", "family", null_logger)
+    assert True is isinstance(
+        cazy_webscraper.parse_proteins("protein_url", "family", null_logger),
+        types.GeneratorType,
+    )
 
 
 def test_parse_proteins(gh147_page, null_logger, monkeypatch):
