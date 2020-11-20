@@ -228,7 +228,7 @@ def test_protein_get_protein_dict():
         "GH1",
         ["1.2.3.4"],
         "organism",
-        {"GenBank": ["link1"], "UniProt": ["link2"], "PDB": ["link3"]},
+        {"GenBank": ["link1", "linka", "linkb"], "UniProt": ["link2"], "PDB": ["link3"]},
     )
 
     protein_dict = protein.get_protein_dict()
@@ -238,7 +238,7 @@ def test_protein_get_protein_dict():
         'CAZy_family': ['GH1'],
         'EC#': ['1.2.3.4'],
         'Source_organism': ['organism'],
-        'GenBank': ['link1'],
+        'GenBank': ['link1,\nlinka,\nlinkb'],
         'UniProt': ['link2'],
         'PDB/3D': [''],
     }
