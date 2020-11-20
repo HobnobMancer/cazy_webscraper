@@ -44,10 +44,22 @@ def input_dir(test_input_dir):
 
 
 @pytest.fixture
-def args_datasplit_none():
+def args_datasplit_none_sub_false():
     argsdict = {
         "args": Namespace(
-            data_split=None
+            data_split=None,
+            subfamilies=False,
+        )
+    }
+    return argsdict
+
+
+@pytest.fixture
+def args_datasplit_none_sub_true():
+    argsdict = {
+        "args": Namespace(
+            data_split=None,
+            subfamilies=True,
         )
     }
     return argsdict
@@ -372,7 +384,7 @@ def test_get_cazy_data_class_urls_empty_list(cazy_home_url, null_logger, monkeyp
 def test_get_cazy_data_family_urls_none(
     cazy_home_url,
     cazy_dictionary,
-    args_datasplit_none,
+    args_datasplit_none_sub_false,
     null_logger,
     monkeypatch,
 ):
@@ -395,7 +407,7 @@ def test_get_cazy_data_family_urls_none(
         None,
         cazy_dict,
         null_logger,
-        args_datasplit_none["args"]
+        args_datasplit_none_sub_false["args"]
     )
 
 
@@ -531,7 +543,7 @@ def test_get_cazy_data_no_config_ds_class_lenfamilies_0(
 def test_get_cazy_data_no_config_ds_none_lenfamilies_0(
     cazy_home_url,
     cazy_dictionary,
-    args_datasplit_none,
+    args_datasplit_none_sub_false,
     null_logger,
     monkeypatch,
 ):
@@ -567,14 +579,14 @@ def test_get_cazy_data_no_config_ds_none_lenfamilies_0(
         None,
         cazy_dict,
         null_logger,
-        args_datasplit_none["args"]
+        args_datasplit_none_sub_false["args"]
     )
 
 
 def test_get_cazy_data_no_config_ds_none(
     cazy_home_url,
     cazy_dictionary,
-    args_datasplit_none,
+    args_datasplit_none_sub_false,
     null_logger,
     monkeypatch,
 ):
@@ -610,11 +622,11 @@ def test_get_cazy_data_no_config_ds_none(
         None,
         cazy_dict,
         null_logger,
-        args_datasplit_none["args"]
+        args_datasplit_none_sub_false["args"]
     )
 
 
-def test_get_cazy_data_ds_none(
+def test_get_cazy_data_config_ds_fam(
     cazy_home_url,
     cazy_dictionary,
     config_dict,
@@ -662,7 +674,7 @@ def test_get_cazy_data_ds_none_subfams_false(
     cazy_home_url,
     cazy_dictionary,
     config_dict,
-    args_datasplit_family_sub_false,
+    args_datasplit_none_sub_false,
     null_logger,
     monkeypatch,
 ):
@@ -698,7 +710,51 @@ def test_get_cazy_data_ds_none_subfams_false(
         config_dict,
         cazy_dict,
         null_logger,
-        args_datasplit_family_sub_false["args"]
+        args_datasplit_none_sub_false["args"],
+    )
+
+
+def test_get_cazy_data_ds_none_subfams_true(
+    cazy_home_url,
+    cazy_dictionary,
+    config_dict,
+    args_datasplit_none_sub_true,
+    null_logger,
+    monkeypatch,
+):
+    """Test get_cazy_data with a config dict and data split is 'None' and subfamilies is True"""
+    with open(cazy_dictionary, "r") as fh:
+        cazy_dict = json.load(fh)
+
+    def mock_class_pages(*args, **kwargs):
+        return ["http://www.cazy.org/Glycoside-Hydrolases.html"]
+
+    def mock_family_urls(*args, **kwargs):
+        return ["http://www.cazy.org/GH5_3.html"]
+
+    def mock_parsing_family(*args, **kwargs):
+        family = Namespace(
+            name="cazy fam",
+            cazy_class="cazy_class",
+            members=set([1, 2, 3])
+        )
+        return family
+
+    def mock_building_dataframe(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(cazy_webscraper, "get_cazy_class_urls", mock_class_pages)
+    monkeypatch.setattr(cazy_webscraper, "get_cazy_family_urls", mock_family_urls)
+    monkeypatch.setattr(cazy_webscraper, "parse_family", mock_parsing_family)
+    monkeypatch.setattr(parse, "proteins_to_dataframe", mock_building_dataframe)
+
+    cazy_webscraper.get_cazy_data(
+        cazy_home_url,
+        None,
+        config_dict,
+        cazy_dict,
+        null_logger,
+        args_datasplit_none_sub_true["args"],
     )
 
 
