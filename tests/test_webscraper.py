@@ -44,10 +44,22 @@ def input_dir(test_input_dir):
 
 
 @pytest.fixture
-def args_datasplit_none():
+def args_datasplit_none_sub_false():
     argsdict = {
         "args": Namespace(
-            data_split=None
+            data_split=None,
+            subfamilies=False,
+        )
+    }
+    return argsdict
+
+
+@pytest.fixture
+def args_datasplit_none_sub_true():
+    argsdict = {
+        "args": Namespace(
+            data_split=None,
+            subfamilies=True,
         )
     }
     return argsdict
@@ -96,6 +108,12 @@ def args_datasplit_family_sub_false():
 @pytest.fixture
 def cazy_home_page(input_dir):
     file_path = input_dir / "cazy_homepage.html"
+    return file_path
+
+
+@pytest.fixture
+def cazy_home_no_spip(input_dir):
+    file_path = input_dir / "cazy_homepage_no_spip_out.html"
     return file_path
 
 
@@ -198,6 +216,45 @@ def protein_without_ec(input_dir):
 def protein_with_ec(input_dir):
     file_path = input_dir / "protein_with_ec.html"
     return file_path
+
+
+# test classes
+
+
+def test_protein_get_protein_dict():
+    """Test the Protein class __str__ and __repr__."""
+    protein = cazy_webscraper.Protein(
+        "protein_name",
+        "GH1",
+        ["1.2.3.4"],
+        "organism",
+        {"GenBank": ["link1"], "UniProt": ["link2"], "PDB": ["link3"]},
+    )
+
+    protein_dict = protein.get_protein_dict()
+
+    expected_protein_dict = {
+        'Protein_name': ['protein_name'],
+        'CAZy_family': ['GH1'],
+        'EC#': ['1.2.3.4'],
+        'Source_organism': ['organism'],
+        'GenBank': ['link1'],
+        'UniProt': ['link2'],
+        'PDB/3D': [''],
+    }
+
+    assert expected_protein_dict == protein_dict
+
+
+def test_family_get_name():
+    """Tests get family name for Family."""
+    family = cazy_webscraper.Family("GH1", "Glycoside_Hydrolases(GH)")
+
+    family_name = family.get_family_name()
+
+    exepected_name = "GH1"
+
+    assert exepected_name == family_name
 
 
 # test main()
@@ -333,7 +390,7 @@ def test_get_cazy_data_class_urls_empty_list(cazy_home_url, null_logger, monkeyp
 def test_get_cazy_data_family_urls_none(
     cazy_home_url,
     cazy_dictionary,
-    args_datasplit_none,
+    args_datasplit_none_sub_false,
     null_logger,
     monkeypatch,
 ):
@@ -356,7 +413,7 @@ def test_get_cazy_data_family_urls_none(
         None,
         cazy_dict,
         null_logger,
-        args_datasplit_none["args"]
+        args_datasplit_none_sub_false["args"]
     )
 
 
@@ -492,7 +549,7 @@ def test_get_cazy_data_no_config_ds_class_lenfamilies_0(
 def test_get_cazy_data_no_config_ds_none_lenfamilies_0(
     cazy_home_url,
     cazy_dictionary,
-    args_datasplit_none,
+    args_datasplit_none_sub_false,
     null_logger,
     monkeypatch,
 ):
@@ -528,14 +585,14 @@ def test_get_cazy_data_no_config_ds_none_lenfamilies_0(
         None,
         cazy_dict,
         null_logger,
-        args_datasplit_none["args"]
+        args_datasplit_none_sub_false["args"]
     )
 
 
 def test_get_cazy_data_no_config_ds_none(
     cazy_home_url,
     cazy_dictionary,
-    args_datasplit_none,
+    args_datasplit_none_sub_false,
     null_logger,
     monkeypatch,
 ):
@@ -571,11 +628,11 @@ def test_get_cazy_data_no_config_ds_none(
         None,
         cazy_dict,
         null_logger,
-        args_datasplit_none["args"]
+        args_datasplit_none_sub_false["args"]
     )
 
 
-def test_get_cazy_data_ds_none(
+def test_get_cazy_data_config_ds_fam(
     cazy_home_url,
     cazy_dictionary,
     config_dict,
@@ -623,7 +680,7 @@ def test_get_cazy_data_ds_none_subfams_false(
     cazy_home_url,
     cazy_dictionary,
     config_dict,
-    args_datasplit_family_sub_false,
+    args_datasplit_none_sub_false,
     null_logger,
     monkeypatch,
 ):
@@ -659,7 +716,51 @@ def test_get_cazy_data_ds_none_subfams_false(
         config_dict,
         cazy_dict,
         null_logger,
-        args_datasplit_family_sub_false["args"]
+        args_datasplit_none_sub_false["args"],
+    )
+
+
+def test_get_cazy_data_ds_none_subfams_true(
+    cazy_home_url,
+    cazy_dictionary,
+    config_dict,
+    args_datasplit_none_sub_true,
+    null_logger,
+    monkeypatch,
+):
+    """Test get_cazy_data with a config dict and data split is 'None' and subfamilies is True"""
+    with open(cazy_dictionary, "r") as fh:
+        cazy_dict = json.load(fh)
+
+    def mock_class_pages(*args, **kwargs):
+        return ["http://www.cazy.org/Glycoside-Hydrolases.html"]
+
+    def mock_family_urls(*args, **kwargs):
+        return ["http://www.cazy.org/GH5_3.html"]
+
+    def mock_parsing_family(*args, **kwargs):
+        family = Namespace(
+            name="cazy fam",
+            cazy_class="cazy_class",
+            members=set([1, 2, 3])
+        )
+        return family
+
+    def mock_building_dataframe(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(cazy_webscraper, "get_cazy_class_urls", mock_class_pages)
+    monkeypatch.setattr(cazy_webscraper, "get_cazy_family_urls", mock_family_urls)
+    monkeypatch.setattr(cazy_webscraper, "parse_family", mock_parsing_family)
+    monkeypatch.setattr(parse, "proteins_to_dataframe", mock_building_dataframe)
+
+    cazy_webscraper.get_cazy_data(
+        cazy_home_url,
+        None,
+        config_dict,
+        cazy_dict,
+        null_logger,
+        args_datasplit_none_sub_true["args"],
     )
 
 
@@ -731,6 +832,30 @@ def test_get_class_urls_exclusions_given(
         ]
 
     assert expected_result == cazy_webscraper.get_cazy_class_urls(
+        cazy_home_url,
+        exclusions,
+        null_logger,
+    )
+
+
+def test_get_class_urls_attribute(
+    cazy_home_url,
+    cazy_home_no_spip,
+    null_logger,
+    monkeypatch,
+):
+    """Test get_cazy_class_urls when attribute error is raised."""
+    with open(cazy_home_no_spip) as fp:
+        soup = fp.read()
+
+    exclusions = ["<strong>Glycoside Hydrolases (GHs)</strong>"]
+
+    def mock_get_home_page(*args, **kwargs):
+        return [soup, None]
+
+    monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_home_page)
+
+    assert None is cazy_webscraper.get_cazy_class_urls(
         cazy_home_url,
         exclusions,
         null_logger,
@@ -912,7 +1037,10 @@ def test_parse_proteins_none(null_logger, monkeypatch):
 
     monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
 
-    cazy_webscraper.parse_proteins("protein_url", "family", null_logger)
+    assert True is isinstance(
+        cazy_webscraper.parse_proteins("protein_url", "family", null_logger),
+        types.GeneratorType,
+    )
 
 
 def test_parse_proteins(gh147_page, null_logger, monkeypatch):

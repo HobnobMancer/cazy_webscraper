@@ -112,8 +112,8 @@ def parse_configuration(file_io_path, args, logger):
     except (KeyError, TypeError) as e:
         logger.warning(
             (
-                "Did not retrieve any CAZy classes from configuration file.\n"
-                f"Raised {e}"
+                "Did not find the 'classes' tag in the configuration files.\n"
+                "Did not retrieve any CAZy classes from configuration file."
             )
         )
         cazy_classes = []
@@ -133,12 +133,8 @@ def parse_configuration(file_io_path, args, logger):
             cazy_classes.append(key)
 
     # create list of CAZy classes not to be scraped
-    try:
-        excluded_classes = std_class_names
-        excluded_classes = list(set(excluded_classes).difference(cazy_classes))
-    except TypeError:
-        # raised if CAZy classes is None
-        excluded_classes = None
+    excluded_classes = std_class_names
+    excluded_classes = list(set(excluded_classes).difference(cazy_classes))
 
     if len(excluded_classes) != 0:
         # change names of classes into format for excluding classes during scrape

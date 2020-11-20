@@ -527,7 +527,7 @@ def parse_proteins(protein_page_url, family_name, logger):
             (
                 f"Could not connect to {protein_page_url}\n"
                 "The following error was raised:\n"
-                f"{protein_page[1]}"
+                f"{protein_page[1]}\n"
                 f"No protein records from this page will be retried."
             )
         )
