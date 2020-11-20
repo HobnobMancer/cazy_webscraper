@@ -200,6 +200,34 @@ def protein_with_ec(input_dir):
     return file_path
 
 
+# test classes
+
+
+def test_protein_get_protein_dict():
+    """Test the Protein class __str__ and __repr__."""
+    protein = cazy_webscraper.Protein(
+        "protein_name",
+        "GH1",
+        ["1.2.3.4"],
+        "organism",
+        {"GenBank": ["link1"], "UniProt": ["link2"], "PDB": ["link3"]},
+    )
+
+    protein_dict = protein.get_protein_dict()
+
+    expected_protein_dict = {
+        'Protein_name': ['protein_name'],
+        'CAZy_family': ['GH1'],
+        'EC#': ['1.2.3.4'],
+        'Source_organism': ['organism'],
+        'GenBank': ['link1'],
+        'UniProt': ['link2'],
+        'PDB/3D': [''],
+    }
+
+    assert expected_protein_dict == protein_dict
+
+
 # test main()
 
 
