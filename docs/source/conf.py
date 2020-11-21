@@ -15,6 +15,10 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 
+# -- Imports -----------------------------------------------------------------
+
+import sphinx_rtd_theme
+
 # -- Project information -----------------------------------------------------
 
 project = 'cazy_webscraper'
