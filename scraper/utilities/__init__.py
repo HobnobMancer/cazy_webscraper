@@ -67,6 +67,16 @@ def build_parser(argv: Optional[List] = None):
         help="Force file over writting",
     )
 
+    # Add option to download FASTA file for protein from GenBank
+    parser.add_argument(
+        "-g",
+        "--genbank",
+        dest="genbank",
+        action="store_true",
+        default=False,
+        help="Enable downloading of protein sequence in FASTA format from GenBank"
+    )
+
     # Add log file name option
     # If not given, no log file will be written out
     parser.add_argument(
@@ -97,6 +107,16 @@ def build_parser(argv: Optional[List] = None):
         metavar="output file name",
         default=sys.stdout,
         help="Output filename",
+    )
+
+    # Add option to download FASTA file for protein from GenBank
+    parser.add_argument(
+        "-p",
+        "--pdb",
+        dest="pdb",
+        action="store_true",
+        default=False,
+        help="Enable downloading of protein structures in XXXX format from PDB"
     )
 
     # Add option to enable retrieval of subfamilies
