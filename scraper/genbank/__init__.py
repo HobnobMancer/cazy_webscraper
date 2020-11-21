@@ -29,7 +29,7 @@ from urllib.request import urlopen
 
 import pandas as pd
 
-from Bio import Entrez
+from Bio import Entrez, SeqIO
 from tqdm import tqdm
 
 from scraper.file_io import make_output_directory
@@ -48,8 +48,8 @@ def get_genbank_fasta(dataframe, df_name, args, logger):
     Entrez.email = args.genbank
 
     # create directory to write FASTA files to
-    if (args.genbank-output is not sys.stdout) and (args.genbank-output != args.output):
-        make_output_directory(args.genbank-output, logger, args.force, args.nodelete)
+    if (args.genbank_output is not sys.stdout) and (args.genbank_output != args.output):
+        make_output_directory(args.genbank_output, logger, args.force, args.nodelete)
 
     index = 0
     for index in tqdm(range(len(dataframe["Protein_name"])), desc="Downloading GenBank FASTAs"):
@@ -62,11 +62,11 @@ def get_genbank_fasta(dataframe, df_name, args, logger):
 
         # create file name
         file_name = f"{accession}_{cazy_family}.fasta"
-        if args.genbank-output is not sys.stdout:
-            file_name = args.genbank-output / file_name
+        if args.genbank_output is not sys.stdout:
+            file_name = args.genbank_output / file_name
 
         download_fasta(accession, file_name, args, logger)
-    
+
     return
 
 
@@ -113,7 +113,7 @@ def download_fasta(accession, file_name, args, logger):
 
     Returning nothing.
     """
-    if args.genbank-output is not sys.stdout:
+    if args.genbank_output is not sys.stdout:
         if file_name.exists():
             logger.warning(f"FASTA file {file_name} aleady exists, not downloading again")
             return
@@ -142,11 +142,11 @@ def download_fasta(accession, file_name, args, logger):
         )
         return
 
-    if args.genbank-output is not sys.stdout:
+    if args.genbank_output is not sys.stdout:
         with open(file_name, "w") as fh:
             fh.write(record)
 
     else:
-        sys.stdout.write(record)
+        SeqIO.write(record, sys.stdout, "fasta")
 
     return
