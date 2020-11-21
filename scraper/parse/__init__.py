@@ -25,6 +25,7 @@ from datetime import datetime
 from tqdm import tqdm
 
 from scraper.file_io import write_out_df
+from scraper.genbank import get_genbank_fasta
 
 
 def proteins_to_dataframe(families, args, logger):
@@ -81,6 +82,11 @@ def proteins_to_dataframe(families, args, logger):
     # This can arise when scraping subfamilies and families within a class
     # The proteins within the subfamilies will also be listed under their parent family
     protein_dataframe = protein_dataframe.drop_duplicates()
+
+    if args.genbank is not None:
+        get_genbank_fasta(protein_dataframe, df_name, args, logger)
+
+    # if args.pdb is True:
 
     # write out dataframe
     write_out_df(protein_dataframe, df_name, args.output, logger, args.force)
