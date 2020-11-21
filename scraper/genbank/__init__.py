@@ -22,13 +22,6 @@ import re
 import sys
 import time
 
-from socket import timeout
-from typing import List, Optional
-from urllib.error import HTTPError, URLError
-from urllib.request import urlopen
-
-import pandas as pd
-
 from Bio import Entrez, SeqIO
 from tqdm import tqdm
 
