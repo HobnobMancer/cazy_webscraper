@@ -71,10 +71,10 @@ def build_parser(argv: Optional[List] = None):
     parser.add_argument(
         "-g",
         "--genbank",
-        dest="genbank",
-        action="store_true",
+        type=str,
+        help="Email address of user"
         default=False,
-        help="Enable downloading of protein sequence in FASTA format from GenBank"
+        help="Enable downloading of protein sequence in FASTA format from GenBank",
     )
 
     # Add log file name option
@@ -99,10 +99,28 @@ def build_parser(argv: Optional[List] = None):
         help="enable/disable deletion of exisiting files",
     )
 
-    # Add option to specify output directory to write scraped data to
+    # Add option to specify output directory to write output dataframes to
     parser.add_argument(
         "-o",
         "--output",
+        type=Path,
+        metavar="output file name",
+        default=sys.stdout,
+        help="Output filename",
+    )
+
+    # Add option to specify ouput directory for writing out fasta files from GenBank to
+    parser.add_argument(
+        "--genbank-output",
+        type=Path,
+        metavar="output file name",
+        default=sys.stdout,
+        help="Output filename",
+    )
+
+    # Add option to specift output directory for writing out PDB structure files to
+    parser.add_argument(
+        "--pdb-output",
         type=Path,
         metavar="output file name",
         default=sys.stdout,
@@ -116,7 +134,7 @@ def build_parser(argv: Optional[List] = None):
         dest="pdb",
         action="store_true",
         default=False,
-        help="Enable downloading of protein structures in XXXX format from PDB"
+        help="Enable downloading of protein structures in XXXX format from PDB",
     )
 
     # Add option to enable retrieval of subfamilies
@@ -126,7 +144,7 @@ def build_parser(argv: Optional[List] = None):
         dest="subfamilies",
         action="store_true",
         default=False,
-        help="Enable retrieval of subfamilies from CAZy"
+        help="Enable retrieval of subfamilies from CAZy",
     )
 
     # Add option for more detail (verbose) logging
