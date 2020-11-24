@@ -121,10 +121,10 @@ class Protein:
                         accession_string += self.links[database][-1]
                         protein_dict[database] = [accession_string]
                 except KeyError:
-                    protein_dict[database] = ['']
+                    protein_dict[database] = [np.nan]
         else:
             for database in ["GenBank", "UniProt", "PDB/3D"]:
-                protein_dict[database] = ['']
+                protein_dict[database] = [np.nan]
         return protein_dict
 
 
