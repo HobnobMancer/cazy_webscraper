@@ -18,7 +18,6 @@
 # The MIT License
 """Module for retrieving FASTA files from GenBank."""
 
-import re
 import sys
 import time
 
@@ -26,6 +25,7 @@ from Bio import Entrez, SeqIO
 from tqdm import tqdm
 
 from scraper.file_io import make_output_directory
+from scraper.parse import get_accession
 
 
 def get_genbank_fasta(dataframe, df_name, args, logger):
@@ -61,40 +61,6 @@ def get_genbank_fasta(dataframe, df_name, args, logger):
         download_fasta(accession, file_name, args, logger)
 
     return
-
-
-def get_accession(df_row, df_name, row_index, logger):
-    """Retrieve GenBank accession for protein in the dataframe (df) row.
-
-    Retrieve the first GenBank accession becuase if multiple are given, CAZy only links
-    to the first GenBank accession.
-
-    :param df_row: Pandas series, from protein protein dataframe
-    :param df_name: str, name of the Pandas dataframe from which row was retrieved
-    :param row_index: int, index of the row in the protein dataframe
-    :param logger: logger object
-
-    Return two strings, GenBank accession of the protein and the protein's CAZy family.
-    """
-    family = df_row[1]
-    genbank_cell = df_row[4]
-
-    # Retrieve the first accession number, and separate from assoicated HTML link
-    find_result = genbank_cell.find(" ")  # finds space separating the first accession and html link
-    first_accession = genbank_cell[:find_result]
-
-    # check result is in expected genbank format
-    try:
-        re.match(r"\D{3}\d+.\d+", first_accession)
-    except AttributeError:
-        logger.warning(
-            f"Could not return accession for protein in row {index} in\n"
-            "{df_name}.\n"
-            "Not retrieving FASTA file for this protein."
-        )
-        return None, None
-
-    return first_accession, family
 
 
 def download_fasta(accession, file_name, args, logger):
