@@ -107,7 +107,7 @@ class Protein:
         protein_dict["Source_organism"] = [self.source]
 
         if type(self.links) is dict:
-            for database in ["GenBank", "UniProt", "PDB"]:
+            for database in ["GenBank", "UniProt", "PDB/3D"]:
                 try:
                     if len(self.links[database]) == 1:
                         protein_dict[database] = self.links[database]
@@ -117,7 +117,7 @@ class Protein:
                 except KeyError:
                     protein_dict[database] = [np.nan]
         else:
-            for database in ["GenBank", "UniProt", "PDB"]:
+            for database in ["GenBank", "UniProt", "PDB/3D"]:
                 protein_dict[database] = [np.nan]
         return protein_dict
 
@@ -574,7 +574,7 @@ def row_to_protein(row, family_name):
         links["UniProt"] = [f"{_.get_text()} {_['href']}" for _ in tds[4].contents if
                             _.name == "a"]
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
-        links["PDB"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if
+        links["PDB/3D"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if
                         _.name == "a"]
 
     return Protein(protein_name, family_name, ec_numbers, source_organism, links)

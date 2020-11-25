@@ -67,6 +67,7 @@ def proteins_to_dataframe(families, args, logger):
         for protein in tqdm(proteins, desc=f"Writing {family.name} proteins to df"):
             if protein is not None:
                 protein_dict = protein.get_protein_dict()
+                if type(protein_dict["PDB/3D"]) is not float:
                 df = pd.DataFrame(protein_dict)
                 protein_dataframe = protein_dataframe.append(df, ignore_index=True)
 
@@ -202,12 +203,6 @@ def get_pdb_accessions(df_row, df_name, logger):
 
     Return list of PDB accessions.
     """
-    pdb_cell = df_row[6]
-    if df_row[0] == "At4g34215":
-        print("HERE!!!", df_row)
-
-    # separate the PDB accession numbers
-
     # Check if null value is stored in pdb cell
     if type(pdb_cell) is float:
         return None
@@ -250,7 +245,7 @@ def get_pdb_structures(protein_dataframe, df_name, args, logger):
     index = 0
     for index in tqdm(
         range(len(protein_dataframe["Protein_name"])),
-        desc="Downloading GenBank FASTAs",
+        desc="Downloading structures from RSCB",
     ):
         # Retrieve accession from GenBank cell
         df_row = protein_dataframe.iloc[index]
