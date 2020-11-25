@@ -101,29 +101,23 @@ class Protein:
         elif len(self.ec) == 1:
             protein_dict["EC#"] = self.ec
         else:
-            ec_string = ""
-            for ec_num in self.ec[:-1]:
-                ec_string += f"{ec_num}\n"
-            ec_string += self.ec[-1]
+            ec_string = "\n".join(self.ec)
             protein_dict["EC#"] = [ec_string]
 
         protein_dict["Source_organism"] = [self.source]
 
         if type(self.links) is dict:
-            for database in ["GenBank", "UniProt", "PDB/3D"]:
+            for database in ["GenBank", "UniProt", "PDB"]:
                 try:
                     if len(self.links[database]) == 1:
                         protein_dict[database] = self.links[database]
                     else:
-                        accession_string = ""
-                        for accession in self.links[database][:-1]:
-                            accession_string += f"{accession},\n"
-                        accession_string += self.links[database][-1]
+                        accession_string = ",\n".join(self.links[database])
                         protein_dict[database] = [accession_string]
                 except KeyError:
                     protein_dict[database] = [np.nan]
         else:
-            for database in ["GenBank", "UniProt", "PDB/3D"]:
+            for database in ["GenBank", "UniProt", "PDB"]:
                 protein_dict[database] = [np.nan]
         return protein_dict
 
@@ -374,9 +368,7 @@ def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
         return None
 
     # retrieve the <h3> element that titles the div section containing the tables of family links
-    family_h3_element = [_ for _ in
-                         class_page[0].find_all("h3", {"class": "spip"}) if
-                         str(_.contents[0]) == "Tables for Direct Access"][0]
+    family_h3_element = [_ for _ in class_page[0].find_all("h3", {"class": "spip"}) if str(_.contents[0]) == "Tables for Direct Access"][0]
 
     # retrieve all tables within the parent div section of the <h3> element
     tables = family_h3_element.parent.find_all("table")
@@ -582,7 +574,8 @@ def row_to_protein(row, family_name):
         links["UniProt"] = [f"{_.get_text()} {_['href']}" for _ in tds[4].contents if
                             _.name == "a"]
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
-        links["PDB"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if _.name == "a"]
+        links["PDB"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if
+                        _.name == "a"]
 
     return Protein(protein_name, family_name, ec_numbers, source_organism, links)
 
