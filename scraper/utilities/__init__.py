@@ -72,9 +72,9 @@ def build_parser(argv: Optional[List] = None):
         "-g",
         "--genbank",
         type=str,
-        help="Email address of user"
-        default=False,
-        help="Enable downloading of protein sequence in FASTA format from GenBank",
+        metavar="Email address of user",
+        default=None,
+        help="Enable FASTA files from GenBank, and user email required for Entrez",
     )
 
     # Add log file name option
@@ -111,7 +111,7 @@ def build_parser(argv: Optional[List] = None):
 
     # Add option to specify ouput directory for writing out fasta files from GenBank to
     parser.add_argument(
-        "--genbank-output",
+        "--genbank_output",
         type=Path,
         metavar="output file name",
         default=sys.stdout,
@@ -120,7 +120,7 @@ def build_parser(argv: Optional[List] = None):
 
     # Add option to specift output directory for writing out PDB structure files to
     parser.add_argument(
-        "--pdb-output",
+        "--pdb_output",
         type=Path,
         metavar="output file name",
         default=sys.stdout,
@@ -131,9 +131,9 @@ def build_parser(argv: Optional[List] = None):
     parser.add_argument(
         "-p",
         "--pdb",
-        dest="pdb",
-        action="store_true",
-        default=False,
+        choices=[None, "mmCif", "pdb", "xml", "mmtf", "bundle"],
+        type=str,
+        default=None,
         help="Enable downloading of protein structures in XXXX format from PDB",
     )
 
