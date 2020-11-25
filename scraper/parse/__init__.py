@@ -226,7 +226,6 @@ def get_pdb_accessions(df_row, df_name, logger):
 
     # remove duplicate accessions
     pdb_accessions = list(dict.fromkeys(pdb_accessions))
-    print("*****", df_row[0], "PDB accession=", pdb_accessions)
 
     return pdb_accessions
 
