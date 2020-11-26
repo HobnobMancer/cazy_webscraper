@@ -111,7 +111,7 @@ def build_parser(argv: Optional[List] = None):
 
     # Add option to specify ouput directory for writing out fasta files from GenBank to
     parser.add_argument(
-        "--genbank_output",
+        "-genbank_output",
         type=Path,
         metavar="output file name",
         default=sys.stdout,
@@ -120,7 +120,7 @@ def build_parser(argv: Optional[List] = None):
 
     # Add option to specift output directory for writing out PDB structure files to
     parser.add_argument(
-        "--pdb_output",
+        "-pdb_output",
         type=Path,
         metavar="output file name",
         default=sys.stdout,
