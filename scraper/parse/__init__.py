@@ -75,7 +75,7 @@ def proteins_to_dataframe(families, args, logger):
                 df = pd.DataFrame(protein_dict)
                 protein_dataframe = protein_dataframe.append(df, ignore_index=True)
                 # add synonym GenBank accessions to all synonyms accessions
-                genbank_synonyms = family.genbank_synonyms
+                genbank_synonyms = protein.genbank_synonyms
                 if genbank_synonyms is not None:
                     all_genbank_synonyms.update(genbank_synonyms)
 
@@ -94,7 +94,7 @@ def proteins_to_dataframe(families, args, logger):
         synonyms_dict = f"cazy_genbank_synonyms_{families[0].cazy_class}{subfam}_{time_stamp}"
     else:
         df_name = f"cazy_scrape{subfam}_{time_stamp}"
-        synonyms_dict = f"cazy_genbank_synonyms_{subfam}_{time_stamp}"
+        synonyms_dict = f"cazy_genbank_synonyms{subfam}_{time_stamp}"
 
     # Remove duplicate proteins
     # This can arise when scraping subfamilies and families within a class
