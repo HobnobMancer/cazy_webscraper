@@ -69,7 +69,7 @@ class Protein:
     'list' values becuase there may be multiple links per database.
     """
 
-    def __init__(self, name, family, ec, source, links=None):
+    def __init__(self, name, family, ec, source, links=None, genbank_synonyms=None):
         self.name = name
         self.family = family
         self.ec = ec
@@ -78,6 +78,7 @@ class Protein:
             self.links = defaultdict(list)
         else:
             self.links = links
+        self.genbank_synonyms = genbank_synonyms
 
     def __str__(self):
         """Create representative string of class object"""
@@ -212,6 +213,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
 
     Return nothing.
     """
+
     # retrieve links to CAZy class pages
     class_pages = get_cazy_class_urls(cazy_home, excluded_classes, logger)
 
@@ -567,7 +569,7 @@ def row_to_protein(row, family_name):
 
     # test for len(tds[x].contents) in case there is no link,
     # the check of .name then ensures link is captured
-    if len(tds[3].contents) and tds[3].contents[0].name == "a":
+    if len(tds[3].contents) and tds[4].contents[0].name == "a":
         links["GenBank"] = [f"{_.get_text()} {_['href']}" for _ in tds[3].contents if
                             _.name == "a"]
     if len(tds[4].contents) and tds[4].contents[0].name == "a":
@@ -575,9 +577,39 @@ def row_to_protein(row, family_name):
                             _.name == "a"]
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
         links["PDB/3D"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if
-                        _.name == "a"]
+                           _.name == "a"]
 
-    return Protein(protein_name, family_name, ec_numbers, source_organism, links)
+    # Retrieve GenBank accession synonms
+    if len(links["GenBank"]) != 0:
+        key = links["GenBank"][0]
+        all_genbank_accessions = tds[3].get_text(separator=" ")
+        all_genbank_accessions = all_genbank_accessions.split(" ")
+        all_genbank_accessions.append(key)
+        all_genbank_accessions = list(dict.fromkeys(all_genbank_accessions))
+        genbank_synonyms = {key: all_genbank_accessions}
+    else:
+        genbank_synonyms = None
+
+
+    return Protein(protein_name, family_name, ec_numbers, source_organism, links, genbank_synonyms)
+
+
+def get_genbank_accessions(td_element):
+    """Retrieve all GenBank accessions from td element.
+
+    :param td_element: html td element (cell in row of protein table)
+
+    Return list of GenBank protein accessions.
+    """
+    # get GenBank accessions that are hyperlinked to GenBank
+    genbank_accessions = []
+    if len(td.contents) and td.contents[0].name == "a":
+        genbank_accessions = [f"{_.get_text()} {_['href']}" for _ in td.contents if
+                              _.name == "a"]
+
+    # Add non-hyperlinked accession numbers
+
+    
 
 
 def browser_decorator(func):
