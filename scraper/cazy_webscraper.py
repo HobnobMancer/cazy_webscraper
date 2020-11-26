@@ -590,7 +590,6 @@ def row_to_protein(row, family_name):
     else:
         genbank_synonyms = None
 
-
     return Protein(protein_name, family_name, ec_numbers, source_organism, links, genbank_synonyms)
 
 
