@@ -19,6 +19,7 @@
 """Module for parsing the webpages from CAZy."""
 
 
+import json
 import re
 import sys
 import time
@@ -47,6 +48,9 @@ def proteins_to_dataframe(families, args, logger):
 
     Return nothing.
     """
+    # Build empty dictionary to store GenBank accession number synonyms
+    all_genbank_synonyms = {}
+
     # Build empty dataframe to add proteins to
     protein_dataframe = pd.DataFrame(
         data={},
@@ -66,10 +70,14 @@ def proteins_to_dataframe(families, args, logger):
         proteins = family.get_proteins()
         for protein in tqdm(proteins, desc=f"Writing {family.name} proteins to df"):
             if protein is not None:
+                # write out protein to df
                 protein_dict = protein.get_protein_dict()
-                if type(protein_dict["PDB/3D"]) is not float:
                 df = pd.DataFrame(protein_dict)
                 protein_dataframe = protein_dataframe.append(df, ignore_index=True)
+                # add synonym GenBank accessions to all synonyms accessions
+                genbank_synonyms = family.genbank_synonyms
+                if genbank_synonyms is not None:
+                    all_genbank_synonyms.update(genbank_synonyms)
 
     time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
@@ -80,18 +88,30 @@ def proteins_to_dataframe(families, args, logger):
     # compile dataframe name
     if args.data_split == "family":
         df_name = f"cazy_{families[0].name}{subfam}_{time_stamp}"
+        synonyms_dict = f"cazy_genbank_synonyms_{families[0].name}{subfam}_{time_stamp}"
     elif args.data_split == "class":
         df_name = f"cazy_{families[0].cazy_class}{subfam}_{time_stamp}"
+        synonyms_dict = f"cazy_genbank_synonyms_{families[0].cazy_class}{subfam}_{time_stamp}"
     else:
         df_name = f"cazy_scrape{subfam}_{time_stamp}"
+        synonyms_dict = f"cazy_genbank_synonyms_{subfam}_{time_stamp}"
 
-    # Remove duplicate
+    # Remove duplicate proteins
     # This can arise when scraping subfamilies and families within a class
     # The proteins within the subfamilies will also be listed under their parent family
     protein_dataframe = protein_dataframe.drop_duplicates()
 
     # write out dataframe
     write_out_df(protein_dataframe, df_name, args.output, logger, args.force)
+
+    # write out dictionary of genbank_synonyms
+    if args.output is sys.stdout:
+        json.dump(all_genbank_synonyms, sys.stdout)
+
+    else:
+        output_path = args.output / f"{synonyms_dict}.json"
+        with open(output_path, "w") as fh:
+            json.dump(all_genbank_synonyms, fh)
 
     # Additional parsing and retrieval of data: protein sequences and/or structures
     if (args.genbank is not None) and (args.pdb is not None):
