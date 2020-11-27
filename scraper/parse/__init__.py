@@ -178,7 +178,7 @@ def get_structures_and_sequences(protein_dataframe, df_name, args, logger):
                         file_format=args.pdb,
                         pdir=args.pdb_output,
                     )
-            
+
             else:
                 if args.output is not sys.stdout:
                     for accession in pdb_accessions:
@@ -245,6 +245,8 @@ def get_pdb_accessions(df_row, df_name, logger):
 
     Return list of PDB accessions.
     """
+    pdb_cell = df_row[6]
+
     # Check if null value is stored in pdb cell
     if type(pdb_cell) is float:
         return None

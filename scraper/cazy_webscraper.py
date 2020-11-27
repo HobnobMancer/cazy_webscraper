@@ -595,7 +595,7 @@ def row_to_protein(row, family_name):
 
             # remove duplicates
             all_genbank_accessions = list(dict.fromkeys(all_genbank_accessions))
-            
+
             if len(all_genbank_accessions) == 0:
                 genbank_synonyms = None
             else:
