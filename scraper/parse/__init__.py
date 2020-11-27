@@ -332,7 +332,9 @@ def get_genbank_fasta(dataframe, df_name, args, logger):
     Entrez.email = args.genbank
 
     index = 0
-    for index in tqdm(range(len(dataframe["Protein_name"])), desc=f"Downloading {df_name} GenBank FASTAs"):
+    for index in tqdm(
+        range(len(dataframe["Protein_name"])), desc=f"Downloading {df_name} GenBank FASTAs"
+    ):
         # Retrieve accession from GenBank cell
         df_row = dataframe.iloc[index]
         accession, cazy_family = get_genbank_accession(df_row, df_name, index, logger)
