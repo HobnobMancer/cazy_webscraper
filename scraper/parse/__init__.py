@@ -171,7 +171,7 @@ def get_structures_and_sequences(protein_dataframe, df_name, args, logger):
 
         if pdb_accessions is not None:
             # Get structure from PDB
-            if pdb_output is not None:
+            if args.pdb_output is not None:
                 for accession in pdb_accessions:
                     pdbl.retrieve_pdb_file(
                         f"{accession}",
