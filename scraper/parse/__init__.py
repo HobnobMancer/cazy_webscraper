@@ -33,7 +33,7 @@ from Bio import Entrez, SeqIO
 from Bio.PDB import PDBList
 from tqdm import tqdm
 
-from scraper.file_io import make_output_directory, write_out_df
+from scraper.file_io import write_out_df
 
 
 def proteins_to_dataframe(families, args, logger):
@@ -116,12 +116,15 @@ def proteins_to_dataframe(families, args, logger):
 
     # Additional parsing and retrieval of data: protein sequences and/or structures
     if (args.genbank is not None) and (args.pdb is not None):
+        logger.info(f"Retrieving structures and sequences, for proteins in {df_name}")
         get_structures_and_sequences(protein_dataframe, df_name, args, logger)
 
     elif (args.genbank is not None) and (args.pdb is None):
+        logger.info(f"Retrieving FASTA files from GenBank, for proteins in {df_name}")
         get_genbank_fasta(protein_dataframe, df_name, args, logger)
 
     elif (args.genbank is None) and (args.pdb is not None):
+        logger.info(f"Retrieve PDB structure files for proteins in {df_name}")
         get_pdb_structures(protein_dataframe, df_name, args, logger)
 
     return
@@ -137,17 +140,8 @@ def get_structures_and_sequences(protein_dataframe, df_name, args, logger):
 
     Return nothing.
     """
-    logger.info(f"Retrieving structures and sequences, for proteins in {df_name}")
-
     # set user email address for Entrez
     Entrez.email = args.genbank
-
-    # create directory to write FASTA files to
-    if (args.genbank_output is not sys.stdout) and (args.genbank_output != args.output):
-        make_output_directory(args.genbank_output, logger, args.force, args.nodelete)
-    # create directory to write strucure files to
-    if (args.pdb_output is not sys.stdout) and (args.pdb_output != args.output):
-        make_output_directory(args.pdb_output, logger, args.force, args.nodelete)
 
     index = 0
     pdbl = PDBList()
@@ -282,11 +276,6 @@ def get_pdb_structures(protein_dataframe, df_name, args, logger):
 
     Return nothing.
     """
-    logger.info(f"Retrieve PDB structure files for proteins in {df_name}")
-
-    if (args.pdb_output is not None) and (args.pdb_output != args.output):
-        make_output_directory(args.pdb_output, logger, args.force, args.nodelete)
-
     # build PDBList object
     pdbl = PDBList()
     index = 0
@@ -339,14 +328,8 @@ def get_genbank_fasta(dataframe, df_name, args, logger):
 
     Return  nothing.
     """
-    logger.info(f"Retrieving FASTA files from GenBank, for proteins in {df_name}")
-
     # set user email address for Entrez
     Entrez.email = args.genbank
-
-    # create directory to write FASTA files to
-    if (args.genbank_output is not sys.stdout) and (args.genbank_output != args.output):
-        make_output_directory(args.genbank_output, logger, args.force, args.nodelete)
 
     index = 0
     for index in tqdm(range(len(dataframe["Protein_name"])), desc=f"Downloading {df_name} GenBank FASTAs"):
