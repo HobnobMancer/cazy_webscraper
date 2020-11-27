@@ -20,6 +20,7 @@
 
 
 import json
+import os
 import re
 import sys
 import time
@@ -170,8 +171,29 @@ def get_structures_and_sequences(protein_dataframe, df_name, args, logger):
 
         if pdb_accessions is not None:
             # Get structure from PDB
-            for accession in pdb_accessions:
-                pdbl.retrieve_pdb_file(f"{accession}", file_format=args.pdb, pdir=args.pdb_output)
+            if pdb_output is not None:
+                for accession in pdb_accessions:
+                    pdbl.retrieve_pdb_file(
+                        f"{accession}",
+                        file_format=args.pdb,
+                        pdir=args.pdb_output,
+                    )
+            
+            else:
+                if args.output is not sys.stdout:
+                    for accession in pdb_accessions:
+                        pdbl.retrieve_pdb_file(
+                            f"{accession}",
+                            file_format=args.pdb,
+                            pdir=args.output,
+                        )
+                else:
+                    for accession in pdb_accessions:
+                        pdbl.retrieve_pdb_file(
+                            f"{accession}",
+                            file_format=args.pdb,
+                            pdir=os.getcwd,
+                        )
 
     return
 
@@ -257,7 +279,7 @@ def get_pdb_structures(protein_dataframe, df_name, args, logger):
     """
     logger.info(f"Retrieve PDB structure files for proteins in {df_name}")
 
-    if (args.pdb_output is not sys.stdout) and (args.genbank_output != args.output):
+    if (args.pdb_output is not sys.stdout) and (args.pdb_output != args.output):
         make_output_directory(args.pdb_output, logger, args.force, args.nodelete)
 
     # build PDBList object
