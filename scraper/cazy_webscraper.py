@@ -169,6 +169,17 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.output is not sys.stdout:
         file_io.make_output_directory(args.output, logger, args.force, args.nodelete)
 
+
+    if (args.genbank is not None):
+        # create directory to write FASTA files to
+        if (args.genbank_output is not sys.stdout) and (args.genbank_output != args.output):
+            make_output_directory(args.genbank_output, logger, args.force, args.nodelete)
+
+    if args.pdb is not None:
+        # create directory to write structure files to
+        if (args.pdb_output is not None) and (args.pdb_output != args.output):
+            make_output_directory(args.pdb_output, logger, args.force, args.nodelete)
+
     if args.subfamilies is True:
         logger.warning("Enabled to retrieve subfamilies")
 
