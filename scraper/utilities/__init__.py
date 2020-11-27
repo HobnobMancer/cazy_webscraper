@@ -123,7 +123,7 @@ def build_parser(argv: Optional[List] = None):
         "-pdb_output",
         type=Path,
         metavar="output file name",
-        default=sys.stdout,
+        default=None,
         help="Output filename",
     )
 
