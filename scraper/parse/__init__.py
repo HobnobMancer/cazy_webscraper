@@ -281,7 +281,7 @@ def get_pdb_structures(protein_dataframe, df_name, args, logger):
     """
     logger.info(f"Retrieve PDB structure files for proteins in {df_name}")
 
-    if (args.pdb_output is not sys.stdout) and (args.pdb_output != args.output):
+    if (args.pdb_output is not None) and (args.pdb_output != args.output):
         make_output_directory(args.pdb_output, logger, args.force, args.nodelete)
 
     # build PDBList object
