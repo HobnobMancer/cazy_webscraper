@@ -153,7 +153,7 @@ def get_structures_and_sequences(protein_dataframe, df_name, args, logger):
     pdbl = PDBList()
     for index in tqdm(
         range(len(protein_dataframe["Protein_name"])),
-        desc="Downloading PDBs and FASTAs",
+        desc=f"Downloading {df_name} PDBs and FASTAs",
     ):
         # Retrieve accession from GenBank cell
         df_row = protein_dataframe.iloc[index]
@@ -213,6 +213,9 @@ def get_genbank_accession(df_row, df_name, row_index, logger):
     """
     family = df_row[1]
     genbank_cell = df_row[4]
+
+    if type(genbank_cell) is float:
+        return None, None
 
     # Retrieve the first accession number, and separate from assoicated HTML link
     find_result = genbank_cell.find(" ")  # finds space separating the first accession and html link
@@ -289,7 +292,7 @@ def get_pdb_structures(protein_dataframe, df_name, args, logger):
     index = 0
     for index in tqdm(
         range(len(protein_dataframe["Protein_name"])),
-        desc="Downloading structures from RSCB",
+        desc=f"Downloading {df_name} structures",
     ):
         # Retrieve accession from GenBank cell
         df_row = protein_dataframe.iloc[index]
@@ -298,9 +301,30 @@ def get_pdb_structures(protein_dataframe, df_name, args, logger):
         if pdb_accessions is None:
             continue
 
-        # Get download structures from PDB
-        for accession in pdb_accessions:
-            pdbl.retrieve_pdb_file(f"{accession}", file_format=args.pdb, pdir=args.pdb_output)
+        # Get structures from RSCB
+        if args.pdb_output is not None:
+            for accession in pdb_accessions:
+                pdbl.retrieve_pdb_file(
+                    f"{accession}",
+                    file_format=args.pdb,
+                    pdir=args.pdb_output,
+                )
+
+        else:
+            if args.output is not sys.stdout:
+                for accession in pdb_accessions:
+                    pdbl.retrieve_pdb_file(
+                        f"{accession}",
+                        file_format=args.pdb,
+                        pdir=args.output,
+                    )
+            else:
+                for accession in pdb_accessions:
+                    pdbl.retrieve_pdb_file(
+                        f"{accession}",
+                        file_format=args.pdb,
+                        pdir=os.getcwd,
+                    )
 
     return
 
@@ -325,7 +349,7 @@ def get_genbank_fasta(dataframe, df_name, args, logger):
         make_output_directory(args.genbank_output, logger, args.force, args.nodelete)
 
     index = 0
-    for index in tqdm(range(len(dataframe["Protein_name"])), desc="Downloading GenBank FASTAs"):
+    for index in tqdm(range(len(dataframe["Protein_name"])), desc=f"Downloading {df_name} GenBank FASTAs"):
         # Retrieve accession from GenBank cell
         df_row = dataframe.iloc[index]
         accession, cazy_family = get_genbank_accession(df_row, df_name, index, logger)

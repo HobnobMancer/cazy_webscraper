@@ -235,10 +235,12 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
 
     logger.info("Starting retrieval of CAZy families")
 
-    # retrieve links to CAZy family pages
+    # scrape each retrieved class page
     for class_url in tqdm(class_pages, desc="Parsing CAZy classes"):
-        # retrieve class name from url and convert to synonym used in configuration file
+
+        # retrieve class name from url
         class_name = class_url[20: -5]
+        #  convert retrieved class name to synonym used in configuration file
         for key in cazy_dict:
             if class_name in cazy_dict[key]:
                 class_name = key
@@ -246,54 +248,65 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
         # retrieve URLs to families under current working CAZy class
         family_urls = get_cazy_family_urls(class_url, cazy_home, class_name, args, logger)
 
-        if family_urls is None:  # couldn't conenct to CAZy, logged in get_cazy_family_urls()
-            continue
+        if family_urls is None:  # couldn't retrieve URLs to family for working CAZy class
+            continue  # got to next CAZy class, issue logged in get_cazy_family_urls()
 
         families = []  # store Family class objects if splitting data be class
         logger.info("Starting retrieval of protein records of protein records from families")
 
+        # Scrape the familes for the current working CAZy class, retrieving protein data
         if (config_dict is None) or (config_dict[class_name] is None):
-            # no (sub)families specified. Scrape all families in CAZy class
+            # No (sub)families were specified, therefore, scraping all families of the CAZy class
+
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
+                family = None
                 family_name = family_url[(len(cazy_home) + 1): -5]
+                # build family object, populated by Proteins catalogued under the CAZy family
                 family = parse_family(family_url, family_name, cazy_home, logger)
 
                 if args.data_split == "family":
+                    logger.info(f"Data split by Family. Writing out df for {family_name}")
                     parse.proteins_to_dataframe([family], args, logger)
                 else:
                     families.append(family)
 
         else:
-            # scrape only (sub)families specified in config file
+            # scrape only (sub)families specified in the config file
+
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
+                family = None
                 family_name = family_url[(len(cazy_home) + 1): -5]
 
                 # Allows retrieval of subfamilies when only the parent CAZy family was named in the
                 # config file
                 if (args.subfamilies is True) and (family_name.find("_") != -1):
-                    name_check = family_name[:family_name.find("_")]
+                    name_check = family_name[:(family_name.find("_"))]
                 else:
                     name_check = family_name
 
                 if name_check in config_dict[class_name]:
+                    # build family object populated with Proteins catalogued under the CAZy family
                     family = parse_family(family_url, family_name, cazy_home, logger)
 
                     if args.data_split == "family":
+                        logger.info(f"Data split by Family. Writing out df for {family_name}")
                         parse.proteins_to_dataframe([family], args, logger)
                     else:
                         families.append(family)
 
         if (args.data_split == "class"):
             if len(families) != 0:
+                logger.info(f"Data split by Class. Writing out df for {class_name}")
                 parse.proteins_to_dataframe(families, args, logger)
             else:
                 logger.warning(f"Didn't retrieve any families for {class_name}")
-        else:
+
+        elif args.data_split is None:
             all_data += families
 
     if args.data_split is None:
         if len(all_data) != 0:
-            # Write dataframe containing all data from CAZy
+            logger.info("Data was not split. Writing all retrieved data to a single df")
             parse.proteins_to_dataframe(all_data, args, logger)
         else:
             logger.warning("Didn't retrieve any protein data from CAZy")
@@ -437,6 +450,7 @@ def parse_family(family_url, family_name, cazy_home, logger):
     cazy_class = search_result.group()
 
     family = Family(family_name, cazy_class)
+    family.members = set()
 
     for protein in tqdm(
         parse_family_pages(family_url, family_name, cazy_home, logger),
