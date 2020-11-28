@@ -456,3 +456,17 @@ def test_pdb_struc_pdb_to_cwd(
     monkeypatch.setattr(PDBList, "retrieve_pdb_file", mock_no_return)
 
     parse.get_pdb_structures(protein_df, df_name, args_no_output_no_pdb_output["args"], null_logger)
+
+
+# Test get_genbank_fasta()
+
+def test_get_genbank_fasta(protein_df, df_name, args_ds_fam_no_subfam, null_logger, monkeypatch):
+    """Test get_genbank_fasta."""
+    
+    def mock_download_fasta(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(parse, "download_fasta", mock_download_fasta)
+
+    parse.get_genbank_fasta(protein_df, df_name, args_ds_fam_no_subfam["args"], null_logger)
+
