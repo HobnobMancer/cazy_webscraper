@@ -26,7 +26,12 @@ pytest -v
 
 import pytest
 
+import numpy as np
+import pandas as pd
+
 from argparse import Namespace
+
+from Bio.PDB import PDBList
 
 from scraper import cazy_webscraper, parse
 
@@ -117,6 +122,29 @@ def args_ds_none(test_dir):
     return args_dict
 
 
+@pytest.fixture
+def protein_df():
+    column_names = [
+        "Protein_name",
+        "CAZy_family",
+        "EC#",
+        "Source_organism",
+        "GenBank",
+        "UniProt",
+        "PDB/3D",
+    ]
+    
+    df_data = [
+        ["protein_1", "GH1", "1.2.3.4", "bact", "GB1", "U1,\nU2", "P1[A]"],
+        ["protein_2", "PL2", "1.2.3.4\n2.4.5.6", "euk", "GB2", "U1", np.nan],
+        ["protein_3", "CE3", np.nan, "bact", "GB2", np.nan, "P1,\nP2[B]"],
+    ]
+
+    df = pd.DataFrame(df_data, columns=column_names)
+    
+    return df
+
+
 # test proteins_to_dataframe() (dataframe building function)
 
 
@@ -155,3 +183,14 @@ def test_prt_to_df_ds_none(args_ds_none, family, null_logger, monkeypatch):
 
     parse.proteins_to_dataframe([family], args_ds_none["args"], null_logger)
 
+
+# test get_structures_and_sequences()
+
+
+def test_gt_s_p_pdb_out_given():
+    # protein_df
+    # df name
+    # args
+    # logger
+def test_gt_s_p_pdb_to_output():
+def test_gt_s_p_pdb_to_cwd():
