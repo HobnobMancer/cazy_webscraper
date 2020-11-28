@@ -25,6 +25,7 @@ pytest -v
 """
 
 import pytest
+import sys
 
 import numpy as np
 import pandas as pd
@@ -72,7 +73,7 @@ def family():
 
 
 @pytest.fixture
-def args_ds_fam_no_subfam(test_dir):
+def args_ds_fam_no_subfam(test_dir, out_dir):
     args_dict = {
         "args": Namespace(
             subfamilies=False,
@@ -80,9 +81,9 @@ def args_ds_fam_no_subfam(test_dir):
             output=test_dir,
             force=False,
             genbank="dummy_email",
-            genbank_output=test_dir,
+            genbank_output=out_dir,
             pdb="pdb",
-            pdb_output=test_dir,
+            pdb_output=out_dir,
         )
     }
     return args_dict
@@ -133,7 +134,7 @@ def protein_df():
         "UniProt",
         "PDB/3D",
     ]
-    
+
     df_data = [
         ["protein_1", "GH1", "1.2.3.4", "bact", "GB1", "U1,\nU2", "P1[A]"],
         ["protein_2", "PL2", "1.2.3.4\n2.4.5.6", "euk", "GB2", "U1", np.nan],
@@ -141,8 +142,48 @@ def protein_df():
     ]
 
     df = pd.DataFrame(df_data, columns=column_names)
-    
+
     return df
+
+
+@pytest.fixture
+def df_name():
+    name = "test_df_name"
+    return name
+
+
+@pytest.fixture
+def args_output_no_pdb_output(out_dir):
+    args_dict = {
+        "args": Namespace(
+            subfamilies=False,
+            data_split=None,
+            output=out_dir,
+            force=False,
+            genbank="dummy_email",
+            genbank_output=out_dir,
+            pdb="pdb",
+            pdb_output=None,
+        )
+    }
+    return args_dict
+
+
+@pytest.fixture
+def args_no_output_no_pdb_output(out_dir):
+    args_dict = {
+        "args": Namespace(
+            subfamilies=False,
+            data_split=None,
+            output=sys.stdout,
+            force=False,
+            genbank="dummy_email",
+            genbank_output=out_dir,
+            pdb="pdb",
+            pdb_output=None,
+        )
+    }
+    return args_dict
 
 
 # test proteins_to_dataframe() (dataframe building function)
@@ -187,10 +228,88 @@ def test_prt_to_df_ds_none(args_ds_none, family, null_logger, monkeypatch):
 # test get_structures_and_sequences()
 
 
-def test_gt_s_p_pdb_out_given():
-    # protein_df
-    # df name
-    # args
-    # logger
-def test_gt_s_p_pdb_to_output():
-def test_gt_s_p_pdb_to_cwd():
+def test_gt_s_p_pdb_out_given(protein_df, df_name, args_ds_fam_no_subfam, null_logger, monkeypatch):
+    """Test get_structures_and_sequences when no pdb_output given."""
+
+    def mock_genbank_accessions(*args, **kwargs):
+        return("genbank_accession", "GH1")
+
+    def mock_pdb_accessions(*args, **kwargs):
+        return["pdb1", "pdb2", "pdb3"]
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(parse, "get_genbank_accession", mock_genbank_accessions)
+    monkeypatch.setattr(parse, "get_pdb_accessions", mock_pdb_accessions)
+    monkeypatch.setattr(parse, "download_fasta", mock_no_return)
+    monkeypatch.setattr(PDBList, "retrieve_pdb_file", mock_no_return)
+
+    parse.get_structures_and_sequences(
+        protein_df,
+        df_name,
+        args_ds_fam_no_subfam["args"],
+        null_logger,
+    )
+
+
+def test_gt_s_p_pdb_to_output(
+    protein_df,
+    df_name,
+    args_output_no_pdb_output,
+    null_logger,
+    monkeypatch,
+):
+    """Test get_structures_and_sequences when output but not pdb_output given."""
+
+    def mock_genbank_accessions(*args, **kwargs):
+        return("genbank_accession", "GH1")
+
+    def mock_pdb_accessions(*args, **kwargs):
+        return["pdb1", "pdb2", "pdb3"]
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(parse, "get_genbank_accession", mock_genbank_accessions)
+    monkeypatch.setattr(parse, "get_pdb_accessions", mock_pdb_accessions)
+    monkeypatch.setattr(parse, "download_fasta", mock_no_return)
+    monkeypatch.setattr(PDBList, "retrieve_pdb_file", mock_no_return)
+
+    parse.get_structures_and_sequences(
+        protein_df,
+        df_name,
+        args_output_no_pdb_output["args"],
+        null_logger,
+    )
+
+
+def test_gt_s_p_pdb_to_cwd(
+    protein_df,
+    df_name,
+    args_no_output_no_pdb_output,
+    null_logger,
+    monkeypatch,
+):
+    """Test get_structures_and_sequences when no pdb_output given and output is stdout."""
+
+    def mock_genbank_accessions(*args, **kwargs):
+        return("genbank_accession", "GH1")
+
+    def mock_pdb_accessions(*args, **kwargs):
+        return["pdb1", "pdb2", "pdb3"]
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(parse, "get_genbank_accession", mock_genbank_accessions)
+    monkeypatch.setattr(parse, "get_pdb_accessions", mock_pdb_accessions)
+    monkeypatch.setattr(parse, "download_fasta", mock_no_return)
+    monkeypatch.setattr(PDBList, "retrieve_pdb_file", mock_no_return)
+
+    parse.get_structures_and_sequences(
+        protein_df,
+        df_name,
+        args_no_output_no_pdb_output["args"],
+        null_logger,
+    )
