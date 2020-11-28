@@ -249,13 +249,11 @@ def get_pdb_accessions(df_row, df_name, logger):
 
     # Separate the PDB accession
     pdb_accessions = pdb_cell.split(",\n")
-    if len(pdb_accessions) == 0:
-        return None
 
     index = 0
     for index in range(len(pdb_accessions)):
         # remove html links
-        pdb_accessions[index] = pdb_accessions[index][:pdb_accessions[index].find(" ")]
+        pdb_accessions[index] = pdb_accessions[index].split(" ")[0]
         # remove additional data in square brackest
         pdb_accessions[index] = pdb_accessions[index].split("[")[0]
 
