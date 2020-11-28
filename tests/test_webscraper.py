@@ -234,7 +234,7 @@ def test_protein_get_protein_dict():
         "GH1",
         ["1.2.3.4"],
         "organism",
-        {"GenBank": ["link1", "linka", "linkb"], "UniProt": ["link2"], "PDB": ["link3"]},
+        {"GenBank": ["link1", "linka", "linkb"], "UniProt": ["link2"], "PDB/3D": ["link3"]},
     )
 
     protein_dict = protein.get_protein_dict()
@@ -246,7 +246,7 @@ def test_protein_get_protein_dict():
         'Source_organism': ['organism'],
         'GenBank': ['link1,\nlinka,\nlinkb'],
         'UniProt': ['link2'],
-        'PDB/3D': [''],
+        'PDB/3D': ['link3'],
     }
 
     assert expected_protein_dict == protein_dict
