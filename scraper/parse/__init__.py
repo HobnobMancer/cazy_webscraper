@@ -212,16 +212,15 @@ def get_genbank_accession(df_row, df_name, row_index, logger):
         return None, None
 
     # Retrieve the first accession number, and separate from assoicated HTML link
-    find_result = genbank_cell.find(" ")  # finds space separating the first accession and html link
-    first_accession = genbank_cell[:find_result]
+    first_accession = genbank_cell.split(" ")[0]
 
     # check result is in expected genbank format
     try:
-        re.match(r"\D{3}\d+.\d+", first_accession)
+        re.match(r"\D{3}\d+.\d+", first_accession).group()
     except AttributeError:
         logger.warning(
             f"Could not return accession for protein in row {row_index} in\n"
-            "{df_name}.\n"
+            f"{df_name}.\n"
             "Not retrieving FASTA file for this protein."
         )
         return None, None
