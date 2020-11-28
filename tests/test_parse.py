@@ -137,7 +137,7 @@ def protein_df():
 
     df_data = [
         ["protein_1", "GH1", "1.2.3.4", "bact", "ABC12345.1", "U1", "P1[A]"],
-        ["protein_2", "PL2", "1.2.3.4\n2.4.5.6", "euk", "GB15G", "U1", np.nan],
+        ["protein_2", "PL2", "1.2.3.4\n2.4.5.6", "euk", "1235G", "U1", np.nan],
         ["protein_3", "CE3", np.nan, "bact", np.nan, np.nan, "P1,\nP2[B]"],
     ]
 
