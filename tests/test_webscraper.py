@@ -44,6 +44,12 @@ def input_dir(test_input_dir):
 
 
 @pytest.fixture
+def output_dir(test_dir):
+    path = test_dir / "test_outputs"
+    return path
+
+
+@pytest.fixture
 def args_datasplit_none_sub_false():
     argsdict = {
         "args": Namespace(
@@ -260,7 +266,7 @@ def test_family_get_name():
 # test main()
 
 
-def test_main_one(test_dir, null_logger, cazy_dictionary, monkeypatch):
+def test_main_one(test_dir, output_dir, null_logger, cazy_dictionary, monkeypatch):
     """Test function main().
 
     Argv is None, logger is None, args.output is not sys.stdout, args.subfamilies is True.
@@ -284,6 +290,10 @@ def test_main_one(test_dir, null_logger, cazy_dictionary, monkeypatch):
             subfamilies=True,
             force=False,
             nodelete=False,
+            genbank="dummy_email",
+            genbank_output= output_dir,
+            pdb="pdb",
+            pdb_output= output_dir,
         )
         return parser
 
@@ -309,7 +319,7 @@ def test_main_one(test_dir, null_logger, cazy_dictionary, monkeypatch):
     cazy_webscraper.main()
 
 
-def test_main_two(null_logger, cazy_dictionary, monkeypatch):
+def test_main_two(output_dir, null_logger, cazy_dictionary, monkeypatch):
     """Test function main() using opposite scenariors for if statements than in test_main_one().
 
     Argv is not None, logger is not None, args.output is sys.stdout, args.subfamilies is False.
@@ -333,6 +343,10 @@ def test_main_two(null_logger, cazy_dictionary, monkeypatch):
             subfamilies=False,
             force=False,
             nodelete=False,
+            genbank="dummy_email",
+            genbank_output=output_dir,
+            pdb="pdb",
+            pdb_output=output_dir,
         )
         return parser
 
