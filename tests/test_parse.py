@@ -117,6 +117,9 @@ def args_ds_none(test_dir):
     return args_dict
 
 
+# test proteins_to_dataframe() (dataframe building function)
+
+
 def test_prt_to_df_ds_fam_no_subfams(args_ds_fam_no_subfam, family, null_logger, monkeypatch):
     """Test proteins_to_dataframe when data split is family and subfamilies is False."""
 
@@ -129,7 +132,7 @@ def test_prt_to_df_ds_fam_no_subfams(args_ds_fam_no_subfam, family, null_logger,
     parse.proteins_to_dataframe([family], args_ds_fam_no_subfam["args"], null_logger)
 
 
-def test_parse_ds_class_subfams(args_ds_class_subfam, family, null_logger, monkeypatch):
+def test_prt_to_df_ds_class_subfams(args_ds_class_subfam, family, null_logger, monkeypatch):
     """Test proteins_to_dataframe when data split is class and subfamilies is True."""
 
     def mock_no_return(*args, **kwargs):
@@ -141,7 +144,7 @@ def test_parse_ds_class_subfams(args_ds_class_subfam, family, null_logger, monke
     parse.proteins_to_dataframe([family], args_ds_class_subfam["args"], null_logger)
 
 
-def test_parse_ds_none(args_ds_none, family, null_logger, monkeypatch):
+def test_prt_to_df_ds_none(args_ds_none, family, null_logger, monkeypatch):
     """Test proteins_to_dataframe when data split is None."""
 
     def mock_no_return(*args, **kwargs):
@@ -151,3 +154,4 @@ def test_parse_ds_none(args_ds_none, family, null_logger, monkeypatch):
     monkeypatch.setattr(parse, "get_pdb_structures", mock_no_return)
 
     parse.proteins_to_dataframe([family], args_ds_none["args"], null_logger)
+
