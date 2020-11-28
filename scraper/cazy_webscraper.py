@@ -67,6 +67,12 @@ class Protein:
     Each protein has a name, source organism (source), and links to external databases. The links to
     external databases are stored in a dictionary, keyed by the external database name ('str') with
     'list' values becuase there may be multiple links per database.
+
+    Multiple 'synonym' GenBank accession numbers maybe listed for a single protein. CAZy only
+    hyperlinks the first listed accession number. This accession is the one listed for the protein,
+    because is presumed to be the accession used by CAZy in their classification. All other listed
+    GenBank accessions are regarded as synonyms, including for example splice variants and identical
+    protein sequence submissions.
     """
 
     def __init__(self, name, family, ec, source, links=None, genbank_synonyms=None):
