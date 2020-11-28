@@ -136,9 +136,9 @@ def protein_df():
     ]
 
     df_data = [
-        ["protein_1", "GH1", "1.2.3.4", "bact", "ABC12345.1", "U1", "P1[A]"],
-        ["protein_2", "PL2", "1.2.3.4\n2.4.5.6", "euk", "1235G", "U1", np.nan],
-        ["protein_3", "CE3", np.nan, "bact", np.nan, np.nan, "P1,\nP2[B]"],
+        ["protein_1", "GH1", "1.2.3.4", "bact", "ABC12345.1", "U1", "P1,\nP2[B]"],
+        ["protein_2", "PL2", "1.2.3.4\n2.4.5.6", "euk", "1235G", "U1", ""],
+        ["protein_3", "CE3", np.nan, "bact", np.nan, np.nan, np.nan],
     ]
 
     df = pd.DataFrame(df_data, columns=column_names)
@@ -187,7 +187,7 @@ def args_no_output_no_pdb_output(out_dir):
 
 
 @pytest.fixture
-def df_row_gb_float(protein_df):
+def df_row_float(protein_df):
     row = protein_df.iloc[2]
     return row
 
@@ -336,12 +336,12 @@ def test_gt_s_p_pdb_to_cwd(
 # test get_genbank_accession()
 
 
-def test_gb_acc_float(df_row_gb_float, df_name, null_logger):
+def test_gb_acc_float(df_row_float, df_name, null_logger):
     """Test get_genbank_accession when the GenBank cell contains a float data type."""
     row_index = 1
 
     return_acc, returned_fam = parse.get_genbank_accession(
-        df_row_gb_float,
+        df_row_float,
         df_name,
         row_index,
         null_logger,
@@ -388,3 +388,17 @@ def test_gb_acc_successful(df_row_success, df_name, null_logger):
 
     assert expected_acc == return_acc
     assert expected_fam == returned_fam
+
+
+# test get_pdb_accession()
+
+
+def test_pdb_acc_float(df_row_float, df_name, null_logger):
+    """Test get_pdb_accessions when value in PDB cell is a float."""
+    assert None is parse.get_pdb_accessions(df_row_float, df_name, null_logger)
+
+
+def test_pdb_acc_suss(df_row_success, df_name, null_logger):
+    """Test get_pdb_accessions when successfull."""
+    expected = ["P1", "P2"]
+    assert expected == parse.get_pdb_accessions(df_row_success, df_name, null_logger)
