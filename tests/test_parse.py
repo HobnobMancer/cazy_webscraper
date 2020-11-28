@@ -136,9 +136,9 @@ def protein_df():
     ]
 
     df_data = [
-        ["protein_1", "GH1", "1.2.3.4", "bact", "GB1", "U1,\nU2", "P1[A]"],
-        ["protein_2", "PL2", "1.2.3.4\n2.4.5.6", "euk", "GB2", "U1", np.nan],
-        ["protein_3", "CE3", np.nan, "bact", "GB2", np.nan, "P1,\nP2[B]"],
+        ["protein_1", "GH1", "1.2.3.4", "bact", "ABC12345.1", "U1", "P1[A]"],
+        ["protein_2", "PL2", "1.2.3.4\n2.4.5.6", "euk", "GB15G", "U1", np.nan],
+        ["protein_3", "CE3", np.nan, "bact", np.nan, np.nan, "P1,\nP2[B]"],
     ]
 
     df = pd.DataFrame(df_data, columns=column_names)
@@ -184,6 +184,24 @@ def args_no_output_no_pdb_output(out_dir):
         )
     }
     return args_dict
+
+
+@pytest.fixture
+def df_row_gb_float(protein_df):
+    row = protein_df.iloc[2]
+    return row
+
+
+@pytest.fixture
+def df_row_gb_format_wrong(protein_df):
+    row = protein_df.iloc[1]
+    return row
+
+
+@pytest.fixture
+def df_row_success(protein_df):
+    row = protein_df.iloc[0]
+    return row
 
 
 # test proteins_to_dataframe() (dataframe building function)
@@ -313,3 +331,60 @@ def test_gt_s_p_pdb_to_cwd(
         args_no_output_no_pdb_output["args"],
         null_logger,
     )
+
+
+# test get_genbank_accession()
+
+
+def test_gb_acc_float(df_row_gb_float, df_name, null_logger):
+    """Test get_genbank_accession when the GenBank cell contains a float data type."""
+    row_index = 1
+
+    return_acc, returned_fam = parse.get_genbank_accession(
+        df_row_gb_float,
+        df_name,
+        row_index,
+        null_logger,
+    )
+
+    expected_acc = None
+    expected_fam = None
+
+    assert expected_acc == return_acc
+    assert expected_fam == returned_fam
+
+
+def test_gb_acc_re_fail(df_row_gb_format_wrong, df_name, null_logger):
+    """Test get_genbank_accession when the retrieve item does not match expected GenBank format."""
+    row_index = 1
+
+    return_acc, returned_fam = parse.get_genbank_accession(
+        df_row_gb_format_wrong,
+        df_name,
+        row_index,
+        null_logger,
+    )
+
+    expected_acc = None
+    expected_fam = None
+
+    assert expected_acc == return_acc
+    assert expected_fam == returned_fam
+
+
+def test_gb_acc_successful(df_row_success, df_name, null_logger):
+    """Test get_genbank_accession when fully successful."""
+    row_index = 1
+
+    return_acc, returned_fam = parse.get_genbank_accession(
+        df_row_success,
+        df_name,
+        row_index,
+        null_logger,
+    )
+
+    expected_acc = "ABC12345.1"
+    expected_fam = "GH1"
+
+    assert expected_acc == return_acc
+    assert expected_fam == returned_fam
