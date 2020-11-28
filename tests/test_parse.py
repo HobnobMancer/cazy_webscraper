@@ -402,3 +402,57 @@ def test_pdb_acc_suss(df_row_success, df_name, null_logger):
     """Test get_pdb_accessions when successfull."""
     expected = ["P1", "P2"]
     assert expected == parse.get_pdb_accessions(df_row_success, df_name, null_logger)
+
+
+# test get_pdb_structures()
+
+
+def test_pdb_struc_pdb_out_given(
+    protein_df,
+    df_name,
+    args_ds_fam_no_subfam,
+    null_logger,
+    monkeypatch,
+):
+    """Test get_pdb_structures when pdb_output is given."""
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(PDBList, "retrieve_pdb_file", mock_no_return)
+
+    parse.get_pdb_structures(protein_df, df_name, args_ds_fam_no_subfam["args"], null_logger)
+
+
+def test_pdb_struc_pdb_to_output(
+    protein_df,
+    df_name,
+    args_output_no_pdb_output,
+    null_logger,
+    monkeypatch,
+):
+    """Test get_pdb_structures when output not pdb_output is given."""
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(PDBList, "retrieve_pdb_file", mock_no_return)
+
+    parse.get_pdb_structures(protein_df, df_name, args_output_no_pdb_output["args"], null_logger)
+
+
+def test_pdb_struc_pdb_to_cwd(
+    protein_df,
+    df_name,
+    args_no_output_no_pdb_output,
+    null_logger,
+    monkeypatch,
+):
+    """Test get_pdb_structures when output is sys.stdout and no pdb_output is given."""
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(PDBList, "retrieve_pdb_file", mock_no_return)
+
+    parse.get_pdb_structures(protein_df, df_name, args_no_output_no_pdb_output["args"], null_logger)
