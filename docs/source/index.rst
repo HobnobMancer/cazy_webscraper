@@ -99,20 +99,20 @@ includes the additional column "CAZy family", which includes the CAZy family/sub
 the respective CAZy is catalogued. Therefore, the resulting dataframe of the webscraper contains 
 the following columns:
 
-- Protein_name
-- CAZy_family
-- EC#
-- Source_organism
-- GenBank
-- UniProt
-- PDB/3D
+* Protein_name
+* CAZy_family
+* EC#
+* Source_organism
+* GenBank
+* UniProt
+* PDB/3D
 
 The scraped CAZymes can be written to a single dataframe, or separated out into different 
 dataframes depending on how the data has been set to be split:
 
-- Per family: a single dataframe is created per scraped CAZy family
-- Per class: a singel datafarme is created per scraped CAZy family
-- Not split: a single dataframe containing all data scrapend from CAZy is created
+* Per family: a single dataframe is created per scraped CAZy family
+* Per class: a singel datafarme is created per scraped CAZy family
+* Not split: a single dataframe containing all data scrapend from CAZy is created
 
 The dataframes can be written out to a specified directory or written to STDOUT to facilitate 
 piping to a subsequent program.
@@ -134,12 +134,12 @@ line:
 ``cazy_webscraper``  
 
 The default behaviour of the scraper is:
-- Scrape the entire CAZy databases
-- Not to split/separate the data, producing a single dataframe
-- Write the resulting dataframe to standard out (STDOUT)
-- Not to retrieve subfamilies (members of subfamilies will be retrieved but their parent family be listed)
-- Not to retrieve FASTA files from GenBank
-- Not to retrieve protein sequences from PDB
+* Scrape the entire CAZy databases
+* Not to split/separate the data, producing a single dataframe
+* Write the resulting dataframe to standard out (STDOUT)
+* Not to retrieve subfamilies (members of subfamilies will be retrieved but their parent family be listed)
+* Not to retrieve FASTA files from GenBank
+* Not to retrieve protein sequences from PDB
 
 
 Configuration
