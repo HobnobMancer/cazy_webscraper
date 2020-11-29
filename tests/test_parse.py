@@ -24,6 +24,8 @@ pytest -v
 
 """
 
+
+import json
 import pytest
 import sys
 
@@ -31,6 +33,7 @@ import numpy as np
 import pandas as pd
 
 from argparse import Namespace
+from unittest.mock import patch, mock_open
 
 from Bio.PDB import PDBList
 
@@ -73,12 +76,12 @@ def family():
 
 
 @pytest.fixture
-def args_ds_fam_no_subfam(test_dir, out_dir):
+def args_ds_fam_no_subfam(out_dir):
     args_dict = {
         "args": Namespace(
             subfamilies=False,
             data_split="family",
-            output=test_dir,
+            output=out_dir,
             force=False,
             genbank="dummy_email",
             genbank_output=out_dir,
@@ -90,12 +93,12 @@ def args_ds_fam_no_subfam(test_dir, out_dir):
 
 
 @pytest.fixture
-def args_ds_class_subfam(test_dir):
+def args_ds_class_subfam(test_dir, out_dir):
     args_dict = {
         "args": Namespace(
             subfamilies=True,
             data_split="class",
-            output=test_dir,
+            output=out_dir,
             force=False,
             genbank="dummy_email",
             genbank_output=test_dir,
@@ -107,12 +110,12 @@ def args_ds_class_subfam(test_dir):
 
 
 @pytest.fixture
-def args_ds_none(test_dir):
+def args_ds_none(test_dir, out_dir):
     args_dict = {
         "args": Namespace(
             subfamilies=False,
             data_split=None,
-            output=test_dir,
+            output=out_dir,
             force=False,
             genbank=None,
             genbank_output=None,
@@ -204,43 +207,75 @@ def df_row_success(protein_df):
     return row
 
 
+@pytest.fixture
+def args_args_gen_out_stdout(test_dir, out_dir):
+    args_dict = {
+        "args": Namespace(
+            subfamilies=False,
+            data_split="family",
+            output=test_dir,
+            force=False,
+            genbank="dummy_email",
+            genbank_output=sys.stdout,
+            pdb="pdb",
+            pdb_output=out_dir,
+        )
+    }
+    return args_dict
+
+
+@pytest.fixture
+def sequece_fasta(test_dir):
+    path = test_dir / "test_inputs" / "test_inputs_parse" / "sequence.fasta"
+    with open(path, "r") as fh:
+        fasta = fh.read()
+    return fasta
+
+
 # test proteins_to_dataframe() (dataframe building function)
 
 
 def test_prt_to_df_ds_fam_no_subfams(args_ds_fam_no_subfam, family, null_logger, monkeypatch):
     """Test proteins_to_dataframe when data split is family and subfamilies is False."""
 
-    def mock_no_return(*args, **kwargs):
-        return
+    with patch("builtins.open", mock_open(read_data="data")) as mock_file:
 
-    monkeypatch.setattr(parse, "write_out_df", mock_no_return)
-    monkeypatch.setattr(parse, "get_structures_and_sequences", mock_no_return)
+        def mock_no_return(*args, **kwargs):
+            return
 
-    parse.proteins_to_dataframe([family], args_ds_fam_no_subfam["args"], null_logger)
+        monkeypatch.setattr(parse, "write_out_df", mock_no_return)
+        monkeypatch.setattr(parse, "get_structures_and_sequences", mock_no_return)
+        monkeypatch.setattr(json, "dump", mock_no_return)
+
+        parse.proteins_to_dataframe([family], args_ds_fam_no_subfam["args"], null_logger)
 
 
 def test_prt_to_df_ds_class_subfams(args_ds_class_subfam, family, null_logger, monkeypatch):
     """Test proteins_to_dataframe when data split is class and subfamilies is True."""
 
-    def mock_no_return(*args, **kwargs):
-        return
+    with patch("builtins.open", mock_open(read_data="data")) as mock_file:
 
-    monkeypatch.setattr(parse, "write_out_df", mock_no_return)
-    monkeypatch.setattr(parse, "get_genbank_fasta", mock_no_return)
+        def mock_no_return(*args, **kwargs):
+            return
 
-    parse.proteins_to_dataframe([family], args_ds_class_subfam["args"], null_logger)
+        monkeypatch.setattr(parse, "write_out_df", mock_no_return)
+        monkeypatch.setattr(parse, "get_genbank_fasta", mock_no_return)
+
+        parse.proteins_to_dataframe([family], args_ds_class_subfam["args"], null_logger)
 
 
 def test_prt_to_df_ds_none(args_ds_none, family, null_logger, monkeypatch):
     """Test proteins_to_dataframe when data split is None."""
 
-    def mock_no_return(*args, **kwargs):
-        return
+    with patch("builtins.open", mock_open(read_data="data")) as mock_file:
 
-    monkeypatch.setattr(parse, "write_out_df", mock_no_return)
-    monkeypatch.setattr(parse, "get_pdb_structures", mock_no_return)
+        def mock_no_return(*args, **kwargs):
+            return
 
-    parse.proteins_to_dataframe([family], args_ds_none["args"], null_logger)
+        monkeypatch.setattr(parse, "write_out_df", mock_no_return)
+        monkeypatch.setattr(parse, "get_pdb_structures", mock_no_return)
+
+        parse.proteins_to_dataframe([family], args_ds_none["args"], null_logger)
 
 
 # test get_structures_and_sequences()
@@ -462,7 +497,7 @@ def test_pdb_struc_pdb_to_cwd(
 
 def test_get_genbank_fasta(protein_df, df_name, args_ds_fam_no_subfam, null_logger, monkeypatch):
     """Test get_genbank_fasta."""
-    
+
     def mock_download_fasta(*args, **kwargs):
         return
 
@@ -470,3 +505,65 @@ def test_get_genbank_fasta(protein_df, df_name, args_ds_fam_no_subfam, null_logg
 
     parse.get_genbank_fasta(protein_df, df_name, args_ds_fam_no_subfam["args"], null_logger)
 
+
+# Test download_fasta()
+
+
+def test_download_fasta_file_exists(args_ds_fam_no_subfam, out_dir, null_logger, monkeypatch):
+    """Test download_fasta() when file exists."""
+    file_name = out_dir / "existing_file.txt"
+    accession = "test_accession"
+
+    def mock_efetch(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(parse, "entrez_retry", mock_efetch)
+
+    parse.download_fasta(accession, file_name, args_ds_fam_no_subfam["args"], null_logger)
+
+
+def test_download_fasta_handle_none(test_dir, args_ds_fam_no_subfam, null_logger, monkeypatch):
+    """Test download_fasta() when returned handle is None."""
+    file_name = test_dir / "test_outputs" / "test_output_parse" / "novel_fasta.fasta"
+    accession = "test_accession"
+
+    def mock_efetch(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(parse, "entrez_retry", mock_efetch)
+
+    parse.download_fasta(accession, file_name, args_ds_fam_no_subfam["args"], null_logger)
+
+
+def test_download_fasta_when_out_dir_given(
+    sequece_fasta,
+    args_ds_fam_no_subfam,
+    null_logger,
+    monkeypatch,
+):
+    file_name = out_dir / "novel_fasta.fasta"
+    accession = "test_accession"
+
+    def mock_efetch(*args, **kwargs):
+        return sequece_fasta
+
+    monkeypatch.setattr(parse, "entrez_retry", mock_efetch)
+
+    parse.download_fasta(accession, file_name, args_ds_fam_no_subfam["args"], null_logger)
+
+
+def test_download_fasta_when_out_stdout(
+    sequece_fasta,
+    args_args_gen_out_stdout,
+    null_logger,
+    monkeypatch,
+):
+    file_name = out_dir / "novel_fasta.fasta"
+    accession = "test_accession"
+
+    def mock_efetch(*args, **kwargs):
+        return sequece_fasta
+
+    monkeypatch.setattr(parse, "entrez_retry", mock_efetch)
+
+    parse.download_fasta(accession, file_name, args_args_gen_out_stdout["args"], null_logger)
