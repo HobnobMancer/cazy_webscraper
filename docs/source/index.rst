@@ -51,7 +51,7 @@ Installation
 
 **Quick and Easy:**
 The easiest method for installing the ``cazy_webscraper`` is to use Conda, using the following 
-command:  
+command at the command-line in the terminal:  
 ``conda asdasd cazy_webscraper``
 This method installs the full ``cazy_webscraper`` and all dependencies.
 
@@ -134,6 +134,7 @@ line:
 ``cazy_webscraper``  
 
 The default behaviour of the scraper is:
+
 * Scrape the entire CAZy databases
 * Not to split/separate the data, producing a single dataframe
 * Write the resulting dataframe to standard out (STDOUT)
