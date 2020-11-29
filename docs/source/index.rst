@@ -115,7 +115,8 @@ dataframes depending on how the data has been set to be split:
 * Not split: a single dataframe containing all data scrapend from CAZy is created
 
 The dataframes can be written out to a specified directory or written to STDOUT to facilitate 
-piping to a subsequent program.
+piping to a subsequent program. If the dataframes are written to the disk they are saved as 
+**.csv** files.
 
 If enabled, the protein sequence of the scraped CAZymes are retrieved from GenBank are retrieved in 
 the FASTA format and can be written to STDOUT to facilitate piping to a subsequent program or 
@@ -123,7 +124,8 @@ written out to disk, within a specified directory.
 
 If enabled, the protein structures will be written out to the disk, to a specified directory. The 
 protein structures cannot be written to STDOUT due to using the ``BioPython`` module ``PDB``, 
-which currently does not facilitate writing out the protein structures to STDOUT.
+which currently does not facilitate writing out the protein structures to STDOUT. The format of the 
+the structure file is specified at the command line.
 
 
 Quick Start
