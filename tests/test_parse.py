@@ -42,7 +42,7 @@ from scraper import cazy_webscraper, parse
 
 @pytest.fixture
 def out_dir(test_dir):
-    path = test_dir / "test_outputs" / "test_outputs_file_io"
+    path = test_dir / "test_outputs" / "test_outputs_parse"
     return path
 
 
@@ -567,3 +567,24 @@ def test_download_fasta_when_out_stdout(
     monkeypatch.setattr(parse, "entrez_retry", mock_efetch)
 
     parse.download_fasta(accession, file_name, args_args_gen_out_stdout["args"], null_logger)
+
+
+# test entrez_retry()
+
+
+def test_entry_retry(null_logger):
+    """Test entrez_retry."""
+
+    def mock_record(*args, **kwargs):
+        return "test_record"
+
+    assert "test_record" == parse.entrez_retry(null_logger, mock_record)
+
+
+# def test_entrez_retry_none(null_logger):
+#     """Test entrez_retry when nothing is returned."""
+
+#     def mock_record(*args, **kwargs):
+#         return
+
+#     assert parse.entrez_retry(null_logger, mock_record) is None
