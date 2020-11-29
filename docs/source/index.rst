@@ -126,6 +126,22 @@ protein structures cannot be written to STDOUT due to using the ``BioPython`` mo
 which currently does not facilitate writing out the protein structures to STDOUT.
 
 
+Quick Start
+--------------
+
+To invoke the webscraper with its default functionality simply call the webscraper at the command 
+line:  
+``cazy_webscraper``  
+
+The default behaviour of the scraper is:
+- Scrape the entire CAZy databases
+- Not to split/separate the data, producing a single dataframe
+- Write the resulting dataframe to standard out (STDOUT)
+- Not to retrieve subfamilies (members of subfamilies will be retrieved but their parent family be listed)
+- Not to retrieve FASTA files from GenBank
+- Not to retrieve protein sequences from PDB
+
+
 Configuration
 --------------
 
