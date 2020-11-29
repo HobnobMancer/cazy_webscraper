@@ -225,11 +225,9 @@ def args_args_gen_out_stdout(test_dir, out_dir):
 
 
 @pytest.fixture
-def sequece_fasta(test_dir):
+def sequence_fasta(test_dir):
     path = test_dir / "test_inputs" / "test_inputs_parse" / "sequence.fasta"
-    with open(path, "r") as fh:
-        fasta = fh.read()
-    return fasta
+    return path
 
 
 # test proteins_to_dataframe() (dataframe building function)
@@ -536,7 +534,8 @@ def test_download_fasta_handle_none(test_dir, args_ds_fam_no_subfam, null_logger
 
 
 def test_download_fasta_when_out_dir_given(
-    sequece_fasta,
+    sequence_fasta,
+    out_dir,
     args_ds_fam_no_subfam,
     null_logger,
     monkeypatch,
@@ -545,7 +544,7 @@ def test_download_fasta_when_out_dir_given(
     accession = "test_accession"
 
     def mock_efetch(*args, **kwargs):
-        return sequece_fasta
+        return sequence_fasta
 
     monkeypatch.setattr(parse, "entrez_retry", mock_efetch)
 
@@ -553,7 +552,8 @@ def test_download_fasta_when_out_dir_given(
 
 
 def test_download_fasta_when_out_stdout(
-    sequece_fasta,
+    sequence_fasta,
+    out_dir,
     args_args_gen_out_stdout,
     null_logger,
     monkeypatch,
@@ -562,7 +562,7 @@ def test_download_fasta_when_out_stdout(
     accession = "test_accession"
 
     def mock_efetch(*args, **kwargs):
-        return sequece_fasta
+        return sequence_fasta
 
     monkeypatch.setattr(parse, "entrez_retry", mock_efetch)
 
