@@ -19,10 +19,10 @@ _For detailed documentation see the [full documentation](https://cazy-webscraper
 
 ## Requirements
 
-POISx or Mac OS, or a Linux emulator
-Python version 3.8+
-Internet access
-The python libraries listed within `requirements.txt`
+POISx or Mac OS, or a Linux emulator  
+Python version 3.8+  
+Internet access  
+The python libraries listed within `requirements.txt`  
 
 ## Installation
 
