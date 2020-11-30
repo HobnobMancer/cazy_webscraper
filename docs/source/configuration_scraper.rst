@@ -79,7 +79,7 @@ the webscraper's operation. For example:
      - Enable retrieval of FASTA files from GenBank containing the protein sequence of the respective CAZyme. Add the option to the command then provide your email address (this is requirement of NCBI/GenBank).
      - GenBank is false, FASTA files are not retrieved from GenBank.
    * - 
-     - ``--genbank_output``
+     - ``-genbank_output``
      - Specify the output directory for FASTA files retrieved from GenBank to be written tothis applies for the dataframe, FASTA and protein structure output directories. Add the option to the command followed by the path to the desired directory to which the FASTA files are to be written.
      - Write the FASTA files to standard out.
    * - ``-h``
@@ -103,7 +103,7 @@ the webscraper's operation. For example:
      - Enable retrieval of protein structures from PDB. Call the option then specify the format of the resulting structure files. The available file formats are: mmCif, pdb, xml, mmtf, and bundle.
      - Not retrieve protein structures from PDB.
    * -
-     - ``--pdb_output``
+     - ``-pdb_output``
      - Specify the directory to which the protein structures are to be written. Add the option to the command followed by the path to desired output directory.
      - Write the structure files to the directory specified by ``--output``. If ``--output`` is standard out then the structure files are written to the current working directory
    * - ``-s``
