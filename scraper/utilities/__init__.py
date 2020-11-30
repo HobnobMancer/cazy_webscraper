@@ -67,6 +67,16 @@ def build_parser(argv: Optional[List] = None):
         help="Force file over writting",
     )
 
+    # Add option to download FASTA file for protein from GenBank
+    parser.add_argument(
+        "-g",
+        "--genbank",
+        type=str,
+        metavar="Email address of user",
+        default=None,
+        help="Enable FASTA files from GenBank, and user email required for Entrez",
+    )
+
     # Add log file name option
     # If not given, no log file will be written out
     parser.add_argument(
@@ -89,7 +99,7 @@ def build_parser(argv: Optional[List] = None):
         help="enable/disable deletion of exisiting files",
     )
 
-    # Add option to specify output directory to write scraped data to
+    # Add option to specify output directory to write output dataframes to
     parser.add_argument(
         "-o",
         "--output",
@@ -99,6 +109,34 @@ def build_parser(argv: Optional[List] = None):
         help="Output filename",
     )
 
+    # Add option to specify ouput directory for writing out fasta files from GenBank to
+    parser.add_argument(
+        "-genbank_output",
+        type=Path,
+        metavar="output file name",
+        default=sys.stdout,
+        help="Output filename",
+    )
+
+    # Add option to specift output directory for writing out PDB structure files to
+    parser.add_argument(
+        "-pdb_output",
+        type=Path,
+        metavar="output file name",
+        default=None,
+        help="Output filename",
+    )
+
+    # Add option to download FASTA file for protein from GenBank
+    parser.add_argument(
+        "-p",
+        "--pdb",
+        choices=[None, "mmCif", "pdb", "xml", "mmtf", "bundle"],
+        type=str,
+        default=None,
+        help="Enable downloading of protein structures in XXXX format from PDB",
+    )
+
     # Add option to enable retrieval of subfamilies
     parser.add_argument(
         "-s",
@@ -106,7 +144,7 @@ def build_parser(argv: Optional[List] = None):
         dest="subfamilies",
         action="store_true",
         default=False,
-        help="Enable retrieval of subfamilies from CAZy"
+        help="Enable retrieval of subfamilies from CAZy",
     )
 
     # Add option for more detail (verbose) logging

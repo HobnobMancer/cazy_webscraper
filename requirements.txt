@@ -2,6 +2,7 @@ autopep8
 bandit
 beautifulsoup4
 biopython
+bioservices
 black
 coverage
 flake8

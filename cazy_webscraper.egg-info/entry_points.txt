@@ -1,0 +1,3 @@
+[console_scripts]
+cazy_webscraper.py = scraper.cazy_webscraper:main
+

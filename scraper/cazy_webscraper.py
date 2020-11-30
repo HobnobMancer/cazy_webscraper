@@ -67,9 +67,15 @@ class Protein:
     Each protein has a name, source organism (source), and links to external databases. The links to
     external databases are stored in a dictionary, keyed by the external database name ('str') with
     'list' values becuase there may be multiple links per database.
+
+    Multiple 'synonym' GenBank accession numbers maybe listed for a single protein. CAZy only
+    hyperlinks the first listed accession number. This accession is the one listed for the protein,
+    because is presumed to be the accession used by CAZy in their classification. All other listed
+    GenBank accessions are regarded as synonyms, including for example splice variants and identical
+    protein sequence submissions.
     """
 
-    def __init__(self, name, family, ec, source, links=None):
+    def __init__(self, name, family, ec, source, links=None, genbank_synonyms=None):
         self.name = name
         self.family = family
         self.ec = ec
@@ -78,6 +84,7 @@ class Protein:
             self.links = defaultdict(list)
         else:
             self.links = links
+        self.genbank_synonyms = genbank_synonyms
 
     def __str__(self):
         """Create representative string of class object"""
@@ -101,10 +108,7 @@ class Protein:
         elif len(self.ec) == 1:
             protein_dict["EC#"] = self.ec
         else:
-            ec_string = ""
-            for ec_num in self.ec[:-1]:
-                ec_string += f"{ec_num}\n"
-            ec_string += self.ec[-1]
+            ec_string = "\n".join(self.ec)
             protein_dict["EC#"] = [ec_string]
 
         protein_dict["Source_organism"] = [self.source]
@@ -115,16 +119,13 @@ class Protein:
                     if len(self.links[database]) == 1:
                         protein_dict[database] = self.links[database]
                     else:
-                        accession_string = ""
-                        for accession in self.links[database][:-1]:
-                            accession_string += f"{accession},\n"
-                        accession_string += self.links[database][-1]
+                        accession_string = ",\n".join(self.links[database])
                         protein_dict[database] = [accession_string]
                 except KeyError:
-                    protein_dict[database] = ['']
+                    protein_dict[database] = [np.nan]
         else:
             for database in ["GenBank", "UniProt", "PDB/3D"]:
-                protein_dict[database] = ['']
+                protein_dict[database] = [np.nan]
         return protein_dict
 
 
@@ -174,6 +175,16 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.output is not sys.stdout:
         file_io.make_output_directory(args.output, logger, args.force, args.nodelete)
 
+    if (args.genbank is not None):
+        # create directory to write FASTA files to
+        if (args.genbank_output is not sys.stdout) and (args.genbank_output != args.output):
+            file_io.make_output_directory(args.genbank_output, logger, args.force, args.nodelete)
+
+    if args.pdb is not None:
+        # create directory to write structure files to
+        if (args.pdb_output is not None) and (args.pdb_output != args.output):
+            file_io.make_output_directory(args.pdb_output, logger, args.force, args.nodelete)
+
     if args.subfamilies is True:
         logger.warning("Enabled to retrieve subfamilies")
 
@@ -218,6 +229,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
 
     Return nothing.
     """
+
     # retrieve links to CAZy class pages
     class_pages = get_cazy_class_urls(cazy_home, excluded_classes, logger)
 
@@ -239,10 +251,12 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
 
     logger.info("Starting retrieval of CAZy families")
 
-    # retrieve links to CAZy family pages
+    # scrape each retrieved class page
     for class_url in tqdm(class_pages, desc="Parsing CAZy classes"):
-        # retrieve class name from url and convert to synonym used in configuration file
+
+        # retrieve class name from url
         class_name = class_url[20: -5]
+        #  convert retrieved class name to synonym used in configuration file
         for key in cazy_dict:
             if class_name in cazy_dict[key]:
                 class_name = key
@@ -250,54 +264,65 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
         # retrieve URLs to families under current working CAZy class
         family_urls = get_cazy_family_urls(class_url, cazy_home, class_name, args, logger)
 
-        if family_urls is None:  # couldn't conenct to CAZy, logged in get_cazy_family_urls()
-            continue
+        if family_urls is None:  # couldn't retrieve URLs to family for working CAZy class
+            continue  # got to next CAZy class, issue logged in get_cazy_family_urls()
 
         families = []  # store Family class objects if splitting data be class
         logger.info("Starting retrieval of protein records of protein records from families")
 
+        # Scrape the familes for the current working CAZy class, retrieving protein data
         if (config_dict is None) or (config_dict[class_name] is None):
-            # no (sub)families specified. Scrape all families in CAZy class
+            # No (sub)families were specified, therefore, scraping all families of the CAZy class
+
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
+                family = None
                 family_name = family_url[(len(cazy_home) + 1): -5]
+                # build family object, populated by Proteins catalogued under the CAZy family
                 family = parse_family(family_url, family_name, cazy_home, logger)
 
                 if args.data_split == "family":
+                    logger.info(f"Data split by Family. Writing out df for {family_name}")
                     parse.proteins_to_dataframe([family], args, logger)
                 else:
                     families.append(family)
 
         else:
-            # scrape only (sub)families specified in config file
+            # scrape only (sub)families specified in the config file
+
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
+                family = None
                 family_name = family_url[(len(cazy_home) + 1): -5]
 
                 # Allows retrieval of subfamilies when only the parent CAZy family was named in the
                 # config file
                 if (args.subfamilies is True) and (family_name.find("_") != -1):
-                    name_check = family_name[:family_name.find("_")]
+                    name_check = family_name[:(family_name.find("_"))]
                 else:
                     name_check = family_name
 
                 if name_check in config_dict[class_name]:
+                    # build family object populated with Proteins catalogued under the CAZy family
                     family = parse_family(family_url, family_name, cazy_home, logger)
 
                     if args.data_split == "family":
+                        logger.info(f"Data split by Family. Writing out df for {family_name}")
                         parse.proteins_to_dataframe([family], args, logger)
                     else:
                         families.append(family)
 
         if (args.data_split == "class"):
             if len(families) != 0:
+                logger.info(f"Data split by Class. Writing out df for {class_name}")
                 parse.proteins_to_dataframe(families, args, logger)
             else:
                 logger.warning(f"Didn't retrieve any families for {class_name}")
-        else:
+
+        elif args.data_split is None:
             all_data += families
 
     if args.data_split is None:
         if len(all_data) != 0:
-            # Write dataframe containing all data from CAZy
+            logger.info("Data was not split. Writing all retrieved data to a single df")
             parse.proteins_to_dataframe(all_data, args, logger)
         else:
             logger.warning("Didn't retrieve any protein data from CAZy")
@@ -374,9 +399,7 @@ def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
         return None
 
     # retrieve the <h3> element that titles the div section containing the tables of family links
-    family_h3_element = [_ for _ in
-                         class_page[0].find_all("h3", {"class": "spip"}) if
-                         str(_.contents[0]) == "Tables for Direct Access"][0]
+    family_h3_element = [_ for _ in class_page[0].find_all("h3", {"class": "spip"}) if str(_.contents[0]).strip() == "Tables for Direct Access"][0]
 
     # retrieve all tables within the parent div section of the <h3> element
     tables = family_h3_element.parent.find_all("table")
@@ -443,6 +466,7 @@ def parse_family(family_url, family_name, cazy_home, logger):
     cazy_class = search_result.group()
 
     family = Family(family_name, cazy_class)
+    family.members = set()
 
     for protein in tqdm(
         parse_family_pages(family_url, family_name, cazy_home, logger),
@@ -582,9 +606,36 @@ def row_to_protein(row, family_name):
         links["UniProt"] = [f"{_.get_text()} {_['href']}" for _ in tds[4].contents if
                             _.name == "a"]
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
-        links["PDB"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if _.name == "a"]
+        links["PDB/3D"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if
+                           _.name == "a"]
 
-    return Protein(protein_name, family_name, ec_numbers, source_organism, links)
+    # Retrieve GenBank accession synonms
+    try:
+        if len(links["GenBank"]) != 0:
+            # retrieve HTML link GenBank accession (CAZy only hyperlinks the first listed accession)
+            key = links["GenBank"][0]
+            key = key.split(" ")[0]  # remove the URL address
+
+            # retrieve all GenBank accessions listed in td element
+            all_genbank_accessions = tds[3].get_text(separator=" ")
+            all_genbank_accessions = all_genbank_accessions.split(" ")
+
+            if key in all_genbank_accessions:
+                all_genbank_accessions.remove(key)
+
+            # remove duplicates
+            all_genbank_accessions = list(dict.fromkeys(all_genbank_accessions))
+
+            if len(all_genbank_accessions) == 0:
+                genbank_synonyms = None
+            else:
+                genbank_synonyms = {key: all_genbank_accessions}
+        else:
+            genbank_synonyms = None
+    except KeyError:
+        genbank_synonyms = None
+
+    return Protein(protein_name, family_name, ec_numbers, source_organism, links, genbank_synonyms)
 
 
 def browser_decorator(func):
