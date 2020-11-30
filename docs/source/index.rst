@@ -181,5 +181,5 @@ For more detailed see the configuration section of the documetation.
 Development and issues
 -----------------------
 
-If there are additional features you wish to be added, or having consistent problemms with the 
-scraper, please raise and issue at the GitHub repository.
+If there are additional features you wish to be added, having consistent problemms with the 
+scraper, or want to contribute please raise and issue at the GitHub repository.
