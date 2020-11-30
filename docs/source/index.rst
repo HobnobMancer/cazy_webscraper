@@ -92,6 +92,9 @@ webscraper is working. **However, expect an entire scrape of the CAZy database t
 Output
 -------
 
+
+**Dataframes:**
+
 The basic function of the ``cazy_webscraper`` is to retrieve the protein data stored within and 
 presented in the CAZy database. The data is written out to a dataframe with the same headings as 
 found in CAZy, to reflect the way CAZy presented data in its webpages. The resulting dataframe 
@@ -118,9 +121,31 @@ The dataframes can be written out to a specified directory or written to STDOUT 
 piping to a subsequent program. If the dataframes are written to the disk they are saved as 
 **.csv** files.
 
+**GenBank synonyms:**
+Often multiple GenBank accession numbers are listed for a given CAZyme within CAZy. However, only the 
+first listed accession number is hyperlinked to the GenBank database. Examination of the other listed 
+synonyms (referred to as **genbank synonyms** in the webscraper) shows that these GenBank synonyms are 
+the result of submission of identical protein sequences, splice site and protein isoforms. It has been 
+interpreted that it is the first GenBank accession that is listed and hyperlinked to GenBank is the accession 
+number of protein sequence which was used by CAZy to catalogue the CAZyme and the GenBank synonyms were 
+identified and listed by having extremely high sequence identity to the catalogued CAZyme.
+
+Therefore, the webscraper writes only the first GenBank accession listed for each CAZyme in the resulting dataframe. 
+The remaining GenBank synonyms are written out to a JSON file, keyed by the first GenBank accession given for each CAZyme, and valued 
+by a list of GenBank synonyms. If no GenBank synonyms are retrieved for a CAZyme then the CAZyme's GenBank accession is **not** 
+written out to the JSON GenBank synonyms file.
+
+The GenBank synonyms file is written out to the same directory as specificed for the dataframes. 
+Additionally, the data is split as is specified for the dataframes.
+
+
+**Protein sequences:**
+
 If enabled, the protein sequence of the scraped CAZymes are retrieved from GenBank are retrieved in 
 the FASTA format and can be written to STDOUT to facilitate piping to a subsequent program or 
 written out to disk, within a specified directory.
+
+**Protein structures:**
 
 If enabled, the protein structures will be written out to the disk, to a specified directory. The 
 protein structures cannot be written to STDOUT due to using the ``BioPython`` module ``PDB``, 
