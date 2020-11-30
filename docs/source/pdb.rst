@@ -10,8 +10,6 @@ For specific information of the ``Bio.PDB`` module please see the
 [BioPython documentation](https://biopython.org/wiki/The_Biopython_Structural_Bioinformatics_FAQ).
 
 
-   If any subfamilies are listed within the configuration file, the retrieval of subfamilies 
-   **must** be enabled at the command line uisng ``--subfamilies``.
 .. warning::
     If many requests are going to be made in a series to PDB (for example a series of 100 
     requests), then it is expected practise to perform the scraper at the **weekend** or 

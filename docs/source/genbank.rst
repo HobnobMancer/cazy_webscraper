@@ -9,20 +9,23 @@ craped CAZymes. This is performed by using the **BioPython** ``Bio.entrez`` modu
     For specific information of the ``bio.entrez`` module please see the 
     [entrez documentation](https://biopython.org/docs/1.75/api/Bio.Entrez.html).
 
-.. warning:
-    Before using Entrez to access the NCBI’s online resources (via any modules), please read the 
-    [NCBI’s Entrez User Requirements](https://www.ncbi.nlm.nih.gov/books/NBK25497/).  
-    **If you are found to be abusing NCBI's systems, they can and will ban your access!** 
 
-    In summary:
+Expected practise
+--------------------
 
-    For scrapes that would perform more than 100 requests to NCBI, perform the scrape at the 
-    **weekend** or **outside USA peak times**.
+Before using Entrez to access the NCBI’s online resources (via any modules), please read the 
+[NCBI’s Entrez User Requirements](https://www.ncbi.nlm.nih.gov/books/NBK25497/).  
+**If you are found to be abusing NCBI's systems, they can and will ban your access!** 
 
-    Do not perform more than 10 queries to NCBI per second, this is already handled by the 
-    webscraper.
+In summary:
 
-    Provide a user email so that NCBI can contact you if there is a problem.
+For scrapes that would perform more than 100 requests to NCBI, perform the scrape at the 
+**weekend** or **outside USA peak times**.
+
+Do not perform more than 10 queries to NCBI per second, this is already handled by the 
+webscraper.
+
+Provide a user email so that NCBI can contact you if there is a problem.
 
 
 .. note::
