@@ -2,15 +2,14 @@ autopep8
 bandit
 beautifulsoup4
 biopython
-bioservices
 black
 coverage
 flake8
 html5lib
 lxml
-matplotlib
 mechanicalsoup
 mypy
+numpy
 pandas
 pydocstyle
 pycodestyle
