@@ -32,7 +32,6 @@ family or not at all, thus gathering all data into a single dataframe.
    configuration_scraper
    genbank
    pdb
-   notebooks
    license
 
 
