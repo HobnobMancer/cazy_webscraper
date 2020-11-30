@@ -63,7 +63,7 @@ the result of submission of identical protein sequences, splice site and protein
 interpreted that it is the first GenBank accession that is listed and hyperlinked to GenBank is the accession 
 number of protein sequence which was used by CAZy to catalogue the CAZyme and the GenBank synonyms were 
 identified and listed by having extremely high sequence identity to the catalogued CAZyme. Therefore, the 
-webscraper webscraper only retrieves the FASTA file of first listed GenBank accession of each CAZyme. 
+webscraper only retrieves the FASTA file of first listed GenBank accession of each CAZyme. 
 
 ..note::
     If you wish to see a feature where the FASTA files of the GenBank synonyms are also retrieved, please 
