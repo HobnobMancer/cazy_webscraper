@@ -67,3 +67,8 @@ html_context = {
         '_static/theme_overrides.css',  # override wide tables in RTD theme
         ],
      }
+
+# -- Mast file ----------------------------------------------------------------
+
+# Explicitly set master file to index.rst
+master_doc = "index"
