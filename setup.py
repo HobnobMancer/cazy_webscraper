@@ -48,14 +48,12 @@ setuptools.setup(
     license="MIT",
     keywords="bioinforamtics protein webscraper",
     platforms="Posix, MacOS X",
-    url="https://github.com/HobnobMancer/cazy_webscraper",  # Github repository
+    url="https://github.com/HobnobMancer/cazy_webscraper",
     entry_points={
         "console_scripts": ["cazy_webscraper.py = scraper.cazy_webscraper:main"]
     },
-    # Ensure all additional requirements are installed
     install_requires=["biopython>=1.76", "pandas>=1.0.3"],
-    # Include conda microenvironment
-    # and template input file for Extract_genomes_NCBI.py
+    packages=setuptools.find_packages(),
     package_data={
         "Conda microenvironment": ["environment.yml"],
         "CAZy dictionary": ["cazy_dictionary.json"],
