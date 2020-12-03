@@ -275,6 +275,18 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
             # No (sub)families were specified, therefore, scraping all families of the CAZy class
 
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
+                # check url format is correct
+                try:
+                    re.match(rf"{cazy_home}/(\D\D|\D\D\D)(\d+|\d_\d+).html", url).group()
+                except AttributeError:
+                    logger.warning(
+                        (
+                            f"Formate of URL {family_url} is incorrect.\n"
+                            "Will not attempt to scrape this URL."
+                        )
+                    )
+                    continue
+
                 family = None
                 family_name = family_url[(len(cazy_home) + 1): -5]
                 # build family object, populated by Proteins catalogued under the CAZy family
