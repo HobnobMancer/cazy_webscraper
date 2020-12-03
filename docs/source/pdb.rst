@@ -4,10 +4,10 @@ Retrieving Structures from PDB
 
 The CAZy webscraper supports the automated retrieval of 3D structures from PDB for the scraped CAZymes. 
 This is performed by using the ``BioPython`` module ``Bio.PDB``. All protein structures that are listed 
-for each CAZyme are retrieved from the [RSCB PDB database](https://www.rcsb.org/).
+for each CAZyme are retrieved from the `RSCB PDB database <https://www.rcsb.org/>`_.
 
 For specific information of the ``Bio.PDB`` module please see the 
-[BioPython documentation](https://biopython.org/wiki/The_Biopython_Structural_Bioinformatics_FAQ).
+`BioPython documentation <https://biopython.org/wiki/The_Biopython_Structural_Bioinformatics_FAQ>`_.
 
 
 .. warning::
@@ -21,7 +21,7 @@ Enabling structure retrieval
 
 To enable retrieval of protein structures from PDB then use the option ``-p`` or ``--pdb_output`` 
 followed by the desired file format. The options of file format are (as specified in the BioPython 
-[documentation](https://biopython.org/docs/1.75/api/Bio.PDB.PDBList.html)):
+`documentation <https://biopython.org/docs/1.75/api/Bio.PDB.PDBList.html>`_):
 
 * mmCif (default, PDBx/mmCif file),
 * pdb (format PDB),
