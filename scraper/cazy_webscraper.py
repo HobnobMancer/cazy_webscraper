@@ -46,6 +46,7 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 import logging
 import re
 import sys
+import time
 
 import numpy as np
 
@@ -275,6 +276,18 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
             # No (sub)families were specified, therefore, scraping all families of the CAZy class
 
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
+                # check url format is correct
+                try:
+                    re.match(rf"{cazy_home}/(\D\D|\D\D\D)(\d+|\d_\d+).html", family_url).group()
+                except AttributeError:
+                    logger.warning(
+                        (
+                            f"Formate of URL {family_url} is incorrect.\n"
+                            "Will not attempt to scrape this URL."
+                        )
+                    )
+                    continue
+
                 family = None
                 family_name = family_url[(len(cazy_home) + 1): -5]
                 # build family object, populated by Proteins catalogued under the CAZy family
@@ -290,6 +303,18 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
             # scrape only (sub)families specified in the config file
 
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
+                # check url format is correct
+                try:
+                    re.match(rf"{cazy_home}/(\D\D|\D\D\D)(\d+|\d_\d+).html", family_url).group()
+                except AttributeError:
+                    logger.warning(
+                        (
+                            f"Formate of URL {family_url} is incorrect.\n"
+                            "Will not attempt to scrape this URL."
+                        )
+                    )
+                    continue
+
                 family = None
                 family_name = family_url[(len(cazy_home) + 1): -5]
 
@@ -489,8 +514,20 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
     Return list of protein records.
     """
     logger.info(f"Retrieving URLs to all pages containing proteins for {family_url}")
+
     # compile URL to first family page of protein records
     first_pagination_url = family_url.replace(".html", "_all.html")
+
+    # check url formating
+    try:
+        re.match(rf"{cazy_home}/(\D\D|\D\D\D)(\d+|\d_\d+)_all.html", first_pagination_url).group()
+    except AttributeError:
+        logger.warning(
+            f"Incorrect formating of first protein table page URL: {first_pagination_url}\n"
+            "Will not try and connect to this URL."
+        )
+        return []
+
     first_pagination_page = get_page(first_pagination_url)
 
     if first_pagination_page[0] is None:
@@ -502,7 +539,7 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
                 f"No protein records for CAZy family {family_name} will be retried."
             )
         )
-        return None
+        return []
 
     protein_page_urls = [first_pagination_url]
 
@@ -660,6 +697,7 @@ def browser_decorator(func):
                 success = True
             # if response from webpage was not successful
             tries += 1
+            time.sleep(10)
         if (not success) or (response is None):
             return [None, err]
         else:

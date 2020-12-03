@@ -224,6 +224,18 @@ def protein_with_ec(input_dir):
     return file_path
 
 
+@pytest.fixture
+def protein_with_gb_synonyms(input_dir):
+    file_path = input_dir / "protein_with_genbank_synonyms.html"
+    return file_path
+
+
+@pytest.fixture
+def protein_with_no_gb(input_dir):
+    file_path = input_dir / "protein_no_genbank.html"
+    return file_path
+
+
 # test classes
 
 
@@ -446,7 +458,7 @@ def test_get_cazy_data_no_config_ds_family(
         return ["http://www.cazy.org/Glycoside-Hydrolases.html"]
 
     def mock_family_urls(*args, **kwargs):
-        return ["http://www.cazy.org/GH1.html"]
+        return ["cazy.org/fam", "http://www.cazy.org/GH1.html"]
 
     def mock_parsing_family(*args, **kwargs):
         family = Namespace(
@@ -662,7 +674,7 @@ def test_get_cazy_data_config_ds_fam(
         return ["http://www.cazy.org/Glycoside-Hydrolases.html"]
 
     def mock_family_urls(*args, **kwargs):
-        return ["http://www.cazy.org/GH1.html"]
+        return ["cazy.fam.org", "http://www.cazy.org/GH1.html"]
 
     def mock_parsing_family(*args, **kwargs):
         family = Namespace(
@@ -966,6 +978,13 @@ def test_parse_family(protein_list, null_logger, monkeypatch):
         null_logger,
     )
 
+    cazy_webscraper.parse_family(
+        ".cazy.org/GH1.html",
+        "GH1",
+        "http://www.cazy.org",
+        null_logger,
+    )
+
 
 # test parse_family_pages()
 
@@ -978,7 +997,7 @@ def test_parse_fam_pages_none(null_logger, monkeypatch):
 
     monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
 
-    assert None is cazy_webscraper.parse_family_pages(
+    assert [] == cazy_webscraper.parse_family_pages(
         "http://www.cazy.org/GH1.html",
         "GH1",
         "http://www.cazy.org",
@@ -1090,6 +1109,28 @@ def test_row_to_protein_no_ecs(protein_without_ec):
 def test_row_to_protein_ec(protein_with_ec):
     """Test row_to_protein when EC#s are listed."""
     with open(protein_with_ec) as fp:
+        row = BeautifulSoup(fp, features="lxml")
+
+    assert True is isinstance(
+        cazy_webscraper.row_to_protein(row, "GH147"),
+        cazy_webscraper.Protein
+    )
+
+
+def test_row_to_protein_gb_synoymns(protein_with_gb_synonyms):
+    """Test row_to_protein when protein has GenBank synonyms."""
+    with open(protein_with_gb_synonyms) as fp:
+        row = BeautifulSoup(fp, features="lxml")
+
+    assert True is isinstance(
+        cazy_webscraper.row_to_protein(row, "GH147"),
+        cazy_webscraper.Protein
+    )
+
+
+def test_row_to_protein_no_gb(protein_with_no_gb):
+    """Test row_to_protein when protein has no GenBank accession."""
+    with open(protein_with_no_gb) as fp:
         row = BeautifulSoup(fp, features="lxml")
 
     assert True is isinstance(
