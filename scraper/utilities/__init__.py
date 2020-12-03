@@ -49,7 +49,7 @@ def build_parser(argv: Optional[List] = None):
 
     # Add option to define complete classes to scrape
     parser.add_argument(
-        "--class",
+        "--classes",
         type=str,
         default=None,
         help="Classes from which all families are to be scraped. Separate classes by ','"
