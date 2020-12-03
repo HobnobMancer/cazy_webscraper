@@ -502,7 +502,7 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
                 f"No protein records for CAZy family {family_name} will be retried."
             )
         )
-        return None
+        return []
 
     protein_page_urls = [first_pagination_url]
 
