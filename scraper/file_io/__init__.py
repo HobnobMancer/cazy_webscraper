@@ -19,6 +19,7 @@
 """Module for handling input and output files and directories."""
 
 import json
+import re
 import shutil
 import sys
 import yaml
@@ -86,13 +87,19 @@ def parse_configuration(file_io_path, args, logger):
             std_class_names = list(cazy_dict.keys())
     except FileNotFoundError:
         logger.error(
-            "Could not open the CAZy synonym dictionary\n"
+            "Could not open the CAZy synonym dictionary.\n"
             "Terminating programme"
         )
         sys.exit(1)
 
     if args.config is None:
-        return None, None, cazy_dict
+        if (args.classes is None) and (args.families is None):
+            # No specific families or classes specified for scraping
+            return None, None, cazy_dict
+
+        else:
+            config_dict = get_cmd_defined_fams_clsses(args)
+            return 
 
     try:
         # open configuration file
@@ -145,6 +152,79 @@ def parse_configuration(file_io_path, args, logger):
         excluded_classes = None
 
     return excluded_classes, config_dict, cazy_dict
+
+
+def get_cmd_defined_fams_clsses(args):
+    """Retrieve classes and families specified for scraping from the cmd-line args.
+
+    :param args: cmd args parser.
+
+    Return two lists, one list of families, one line of classes.
+    """
+    # create dictionary which will store families and classes to be scraped
+    config_dict = {
+        'classes': None,
+        'Glycoside Hydrolases (GHs)': [],
+        'GlycosylTransferases (GTs)': [],
+        'Polysaccharide Lyases (PLs)': [],
+        'Carbohydrate Esterases (CEs)': [],
+        'Auxiliary Activities (AAs)': [],
+        'Carbohydrate-Binding Modules (CBMs)': [],
+    }
+
+    # add classes to config dict
+    classes = args.cazy_classes
+    if classes is not None:
+        classes = classes.strip().split(",")
+        config_dict["classes"] = classes
+
+    families = args.family
+    if families is not None:
+        # add families to config dict
+        families = families.strip().split(",")
+        for fam in families:
+            try:
+                if fam.find("GH") != -1:
+                    re.match(r"GH\d+", fam, re.IGNORECASE).group()
+                    config_dict['Glycoside Hydrolases (GHs)'].append(fam)
+
+                elif fam.find("GT") != -1:
+                    re.match(r"GT\d+", fam, re.IGNORECASE).group()
+                    config_dict['GlycosylTransferases (GTs)'].append(fam)
+                
+                elif fam.find("PL") != -1:
+                    re.match(r"PL\d+", fam, re.IGNORECASE).group()
+                    config_dict['Polysaccharide Lyases (PLs)'].append(fam)
+                
+                elif fam.find("CE") != -1:
+                    re.match(r"CE\d+", fam, re.IGNORECASE).group()
+                    config_dict['Carbohydrate Esterases (CEs)'].append(fam)
+                
+                elif fam.find("AA") != -1:
+                    re.match(r"AA\d+", fam, re.IGNORECASE).group()
+                    config_dict['Auxiliary Activities (AAs)'].append(fam)
+                
+                elif fam.find("CBM") != -1:
+                    re.match(r"CBM\d+", fam, re.IGNORECASE).group()
+                    config_dict['Carbohydrate-Binding Modules (CBMs)'].append(fam)
+
+                else:
+                    logger.warning(
+                        f"Invalid family specified at cmd line: {fam}\n"
+                        "This family will not be scraped."
+                    )
+
+            except AttributeError:
+                logger.warning(
+                    f"Invalid family specified at cmd line: {fam}\n"
+                    "This family will not be scraped."
+                )
+            
+
+
+
+
+    return families, classes
 
 
 def parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger):
