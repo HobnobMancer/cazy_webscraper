@@ -46,6 +46,7 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 import logging
 import re
 import sys
+import time
 
 import numpy as np
 
@@ -696,6 +697,7 @@ def browser_decorator(func):
                 success = True
             # if response from webpage was not successful
             tries += 1
+            time.sleep(10)
         if (not success) or (response is None):
             return [None, err]
         else:
