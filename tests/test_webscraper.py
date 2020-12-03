@@ -978,7 +978,7 @@ def test_parse_fam_pages_none(null_logger, monkeypatch):
 
     monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
 
-    assert None is cazy_webscraper.parse_family_pages(
+    assert [] == cazy_webscraper.parse_family_pages(
         "http://www.cazy.org/GH1.html",
         "GH1",
         "http://www.cazy.org",
