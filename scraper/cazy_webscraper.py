@@ -277,7 +277,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
                 # check url format is correct
                 try:
-                    re.match(rf"{cazy_home}/(\D\D|\D\D\D)(\d+|\d_\d+).html", url).group()
+                    re.match(rf"{cazy_home}/(\D\D|\D\D\D)(\d+|\d_\d+).html", family_url).group()
                 except AttributeError:
                     logger.warning(
                         (
