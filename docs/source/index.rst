@@ -6,9 +6,10 @@
 Welcome to cazy_webscraper's documentation!
 ===========================================
 
-| Version v1.0.0 2020/11/30
 | `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_
 
+.. image:: https://img.shields.io/badge/Version-v1.0.2-yellowgreen
+   :target: https://github.com/HobnobMancer/cazy_webscraper
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.4300858.svg
    :target: https://doi.org/10.5281/zenodo.4300858
 .. image:: https://img.shields.io/badge/Licence-MIT-brightgreen
