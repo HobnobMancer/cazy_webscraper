@@ -513,8 +513,20 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
     Return list of protein records.
     """
     logger.info(f"Retrieving URLs to all pages containing proteins for {family_url}")
+
     # compile URL to first family page of protein records
     first_pagination_url = family_url.replace(".html", "_all.html")
+
+    # check url formating
+    try:
+        re.match(rf"{cazy_home}/(\D\D|\D\D\D)(\d+|\d_\d+)_all.html", first_pagination_url).group()
+    except AttributeError:
+        logger.warning(
+            f"Incorrect formating of first protein table page URL: {first_pagination_url}\n"
+            "Will not try and connect to this URL."
+        )
+        return []
+
     first_pagination_page = get_page(first_pagination_url)
 
     if first_pagination_page[0] is None:
