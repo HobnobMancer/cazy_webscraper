@@ -154,7 +154,7 @@ def parse_configuration(file_io_path, args, logger):
     return excluded_classes, config_dict, cazy_dict
 
 
-def get_cmd_defined_fams_clsses(args):
+def get_cmd_defined_fams_clsses(args, logger):
     """Retrieve classes and families specified for scraping from the cmd-line args.
 
     :param args: cmd args parser.
@@ -191,19 +191,19 @@ def get_cmd_defined_fams_clsses(args):
                 elif fam.find("GT") != -1:
                     re.match(r"GT\d+", fam, re.IGNORECASE).group()
                     config_dict['GlycosylTransferases (GTs)'].append(fam)
-                
+
                 elif fam.find("PL") != -1:
                     re.match(r"PL\d+", fam, re.IGNORECASE).group()
                     config_dict['Polysaccharide Lyases (PLs)'].append(fam)
-                
+
                 elif fam.find("CE") != -1:
                     re.match(r"CE\d+", fam, re.IGNORECASE).group()
                     config_dict['Carbohydrate Esterases (CEs)'].append(fam)
-                
+
                 elif fam.find("AA") != -1:
                     re.match(r"AA\d+", fam, re.IGNORECASE).group()
                     config_dict['Auxiliary Activities (AAs)'].append(fam)
-                
+
                 elif fam.find("CBM") != -1:
                     re.match(r"CBM\d+", fam, re.IGNORECASE).group()
                     config_dict['Carbohydrate-Binding Modules (CBMs)'].append(fam)
@@ -219,12 +219,14 @@ def get_cmd_defined_fams_clsses(args):
                     f"Invalid family specified at cmd line: {fam}\n"
                     "This family will not be scraped."
                 )
-            
 
+    # Convert empty list to None type objects
+    for key in config_dict:
+        if config_dict[key] is not None:
+            if len(config_dict[key]) == 0:
+                config_dict[key] = None
 
-
-
-    return families, classes
+    return config_dict
 
 
 def parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger):
