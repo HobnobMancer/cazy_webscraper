@@ -7,14 +7,14 @@ craped CAZymes. This is performed by using the **BioPython** ``Bio.entrez`` modu
 
 .. note::
     For specific information of the ``bio.entrez`` module please see the 
-    [entrez documentation](https://biopython.org/docs/1.75/api/Bio.Entrez.html).
+    `entrez documentation <https://biopython.org/docs/1.75/api/Bio.Entrez.html>`_.
 
 
 Expected practise
 --------------------
 
 Before using Entrez to access the NCBI’s online resources (via any modules), please read the 
-[NCBI’s Entrez User Requirements](https://www.ncbi.nlm.nih.gov/books/NBK25497/).  
+`NCBI’s Entrez User Requirements <https://www.ncbi.nlm.nih.gov/books/NBK25497/>`_.  
 **If you are found to be abusing NCBI's systems, they can and will ban your access!** 
 
 In summary:
