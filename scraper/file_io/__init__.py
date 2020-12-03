@@ -78,7 +78,7 @@ def parse_configuration(file_io_path, args, logger):
 
     Return list of classes not to scrape, dict of families to scrape, and dict of class synonoms.
     """
-    # Get dictionary of accepted CAZy class synonyms
+    # Get dictionary of accepted CAZy class synonyms)
     cazy_dict, std_class_names = get_cazy_dict_std_names(file_io_path, logger)
 
     # Retrieve user specified CAZy classes and families to be scraped at CAZy
@@ -98,6 +98,20 @@ def parse_configuration(file_io_path, args, logger):
     if args.config is not None:
         # add configuration data from YAML file yo configuration dictionary
         config_dict = get_yaml_configuration(config_dict, cazy_dict, std_class_names, args, logger)
+
+    if args.config is not None:  # user passed a YAML configuration file
+        # open configuration file
+        try:
+            with open(args.config) as fh:
+                yaml_config_dict = yaml.full_load(fh)
+        except FileNotFoundError:
+            logger.warning(
+                "Could not find configuration file when option was enabled.\n"
+                "Make sure path to the configuration file is correct\n"
+                "Scrapping will not be performed becuase configuration is wrong.\n"
+                "Terminating program."
+            )
+            sys.exit(1)
 
         if (args.classes is None) and (args.families is None):  # no cmd-line configuration
             # get list of CAZy classes not to scrape
@@ -359,10 +373,11 @@ def get_excluded_classes(std_class_names, config_dict, cazy_dict, logger):
 
     :param std_class_names: list of standardised CAZy class names
     :param config_dict: configuration dict defining classes and families to be scraped
+
     :param cazy_dict: dict, accepted CAZy classes synonyms
     :param logger: logger object
 
-    Return list of CAZy classes not to be scraped.
+    Return list of CAZy classes listed by user in the configuration file.
     """
     # retrieve list of CAZy classes from which all families are to be scraped
     cazy_classes = config_dict["classes"]
