@@ -49,10 +49,8 @@ setuptools.setup(
     keywords="bioinforamtics protein webscraper",
     platforms="Posix, MacOS X",
     url="https://github.com/HobnobMancer/cazy_webscraper",
-    entry_points={
-        "console_scripts": ["cazy_webscraper.py = scraper.cazy_webscraper:main"]
-    },
-    install_requires=["biopython>=1.76", "pandas>=1.0.3"],
+    entry_points={"console_scripts": ["cazy_webscraper.py = scraper.cazy_webscraper:main"]},
+    install_requires=["biopython>=1.76", "pandas>=1.0.3", "requests", "mechanicalsoup", "tqdm", "pyyaml"]
     packages=setuptools.find_packages(),
     package_data={
         "Conda microenvironment": ["environment.yml"],
