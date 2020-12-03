@@ -7,8 +7,20 @@ Welcome to cazy_webscraper's documentation!
 ===========================================
 
 | Version v1.0.0 2020/11/30
-| DOI: ---
 | `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_
+
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.4300858.svg
+   :target: https://doi.org/10.5281/zenodo.4300858
+.. image:: https://img.shields.io/badge/Licence-MIT-brightgreen
+   :target: https://img.shields.io/badge/Licence-MIT-brightgreen
+.. image:: https://circleci.com/gh/HobnobMancer/cazy_webscraper.svg?style=shield
+   :target: https://circleci.com/gh/HobnobMancer/cazy_webscraper
+.. image:: https://codecov.io/gh/HobnobMancer/cazy_webscraper/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/HobnobMancer/cazy_webscraper
+.. image:: https://img.shields.io/badge/Python-v3.8.---orange
+   :target: https://www.python.org/about/
+.. image:: https://img.shields.io/badge/Bioinformatics-EASTBio-ff69b4
+   :target: http://www.eastscotbiodtp.ac.uk/eastbio-student-cohort-2019
 
 The ``cazy_webscraper`` is a Python3 package for the automated retrieval of protein data from the 
 [CAZy](http://wwww.cazy.org/) database. This program is free to use under the MIT license, 
