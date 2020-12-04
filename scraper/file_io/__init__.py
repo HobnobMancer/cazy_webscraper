@@ -81,35 +81,7 @@ def parse_configuration(file_io_path, args, logger):
 
     # Retrieve user specified CAZy classes and families to be scraped at CAZy
 
-    if args.config is None:
-        # No specific families or classes specified for scraping
-        if (args.classes is None) and (args.families is None):
-            return None, None, cazy_dict
-
-        # CAZy classes and/or families specified at the cmd-line for scraping
-        else:
-            config_dict = get_cmd_defined_fams_clsses(cazy_dict, std_class_names, args, logger)
-            cazy_classes = config_dict["classes"]
-
-            for key in config_dict:
-                if config_dict[key] is not None:
-                    if len(config_dict[key]) == 0:
-                        # Convert empty lists to None type objects
-                        config_dict[key] = None
-                    else:
-                        # remove duplicates
-                        config_dict[key] = list(dict.fromkeys(config_dict[key]))
-
-            # Get list of classes not to be scraped
-            excluded_classes = get_excluded_classes(
-                std_class_names,
-                cazy_classes,
-                config_dict,
-                cazy_dict,
-                logger,
-            )
-
-    else:  # user passed a YAML configuration file
+    if args.config is not None:  # user passed a YAML configuration file
         # open configuration file
         try:
             with open(args.config) as fh:
@@ -123,40 +95,38 @@ def parse_configuration(file_io_path, args, logger):
             )
             sys.exit(1)
 
-        # Retrieve CAZy classes listed in config YAML file
-        cazy_classes = get_yaml_cazy_classes(yaml_config_dict, cazy_dict, std_class_names, logger)
-        config_dict["classes"] = cazy_classes
+        if (args.classes is None) and (args.families is None):  # no cmd-line configuration
+            # get list of CAZy classes not to scrape
+            excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
 
-        # Get cmd-line defined CAZy classes and families for scraping
-        cmd_config_dict = get_cmd_defined_fams_clsses(cazy_dict, std_class_names, args, logger)
+            return excluded_classes, config_dict, cazy_dict
 
-        # combine yaml and cmd-line defined CAZy classes and families
-        # Work through keys in cmd_config becuase it definetly contains all necessary keys
-        for key in cmd_config_dict:
-            # add families/classes specified in YAML file to args defined families/classes
-            if key in yaml_config_dict:
-                if yaml_config_dict[key] is not None:
-                    cmd_config_dict[key].append(yaml_config_dict[key])
-            # convert empty lists to None type objects
-            if cmd_config_dict[key] is not None:
-                if len(cmd_config_dict[key]) == 0:
-                    cmd_config_dict[key] = None
-                else:
-                    # remove duplicates
-                    cmd_config_dict[key] = list(dict.fromkeys(cmd_config_dict[key]))
+        else:  # get cmd defined configuration
+            cmd_config = get_cmd_defined_fams_clsses(args, logger)
 
-        config_dict = cmd_config_dict
+            # combine YAML file and cmd defined configurations
+            # add items from file_config to cmd_config
+            for key in cmd_config:
+                for item in cmd_config[key]:
+                    if item not in config_dict[key]:
+                        config_dict[key].append(item)
 
-        # get list of CAZy classes not to be scraped
-        excluded_classes = get_excluded_classes(
-            std_class_names,
-            cazy_classes,
-            config_dict,
-            cazy_dict,
-            logger,
-        )
+            # get list of CAZy classes that will not be scraped
+            excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
 
-    return excluded_classes, config_dict, cazy_dict
+            return excluded_classes, config_dict, cazy_dict
+
+    else:  # user did not pass config file
+        if (args.classes is None) and (args.families is None):
+            # No specific families or classes specified for scraping
+            return None, None, cazy_dict
+
+        else:  # configuration specified only via the cmd_line
+            config_dict = get_cmd_defined_fams_clsses(args, logger)
+            # get list of CAZy classes that will not be scraped
+            excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
+
+            return excluded_classes, config_dict, cazy_dict
 
 
 def get_cazy_dict_std_names(file_io_path, logger):
@@ -206,14 +176,14 @@ def get_cmd_defined_fams_clsses(cazy_dict, std_class_names, args, logger):
     }
 
     # add classes to config dict
-    cazy_classes = args.classes
+    cazy_classes = args.cazy_classes
     if cazy_classes is not None:
         cazy_classes = cazy_classes.strip().split(",")
         # Standardise CAZy class names
         cazy_classes = parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger)
         config_dict["classes"] = cazy_classes
 
-    families = args.families
+    families = args.family
     if families is not None:
         # add families to config dict
         families = families.strip().split(",")
@@ -353,7 +323,7 @@ def get_yaml_cazy_classes(config_dict, cazy_dict, std_class_names, logger):
     return cazy_classes
 
 
-def write_out_df(dataframe, df_name, args, logger):
+def write_out_df(dataframe, df_name, outdir, logger, force):
     """Write out dataframe to output directory.
 
     :param dataframe: pandas dataframe
@@ -364,35 +334,29 @@ def write_out_df(dataframe, df_name, args, logger):
 
     Return nothing.
     """
-    if args.output is sys.stdout:
-        dataframe.to_csv(sys.stdout, index=False)
+    # build output path
+    output_path = outdir / f"{df_name}.csv"
 
-    else:
-        # build output path
-        output_path = args.output / f"{df_name}.csv"
-
-        logger.info("Checking if output directory for dataframe already exists")
-
-        if output_path.exists():
-            if args.force is False:
-                logger.warning(
-                    (
-                        "Specified directory for dataframe already exists.\n"
-                        "Exiting writing out dataframe."
-                    )
+    logger.info("Checking if output directory for dataframe already exists")
+    if output_path.exists():
+        if force is False:
+            logger.warning(
+                (
+                    "Specified directory for dataframe already exists.\n"
+                    "Exiting writing out dataframe."
                 )
-                return ()
-            else:
-                logger.warning(
-                    (
-                        "Specified directory for dataframe already exists.\n"
-                        "Forced overwritting enabled."
-                    )
+            )
+            return ()
+        else:
+            logger.warning(
+                (
+                    "Specified directory for dataframe already exists.\n"
+                    "Forced overwritting enabled."
                 )
+            )
 
-        logger.info("Writing out species dataframe to directory")
-        dataframe.to_csv(output_path)
-
+    logger.info("Writing out species dataframe to directory")
+    dataframe.to_csv(output_path)
     return
 
 
