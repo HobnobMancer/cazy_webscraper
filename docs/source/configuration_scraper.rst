@@ -66,6 +66,10 @@ the webscraper's operation. For example:
      - ``--config``
      - Configure which classes and/or families that are to be scraped. Add the option to the command followed by the path to configuration YAML file.
      - Write the generated dataframes to standard out.
+   * -
+     - ``-classes``
+     - Define classes from which all families are to be scraped. Separate classes with a single comma (e.g. GH,PL)
+     - No CAZy classes specified for scraping at the command line
    * - ``-d``
      - ``--data_split``
      - Split/separate the CAZymes into separate dataframes. Spliting the data by class or family. Call the option to the command then specify 'None' for not spliting the data, ' family' for separing the data by family, or 'class' for separating the data by CAZy family.
@@ -74,6 +78,10 @@ the webscraper's operation. For example:
      - ``--force``
      - Forcing writing out to directory that already exists, if specificed as the output directory. Simply add the option to the command.
      - Force is false, thus if the output directory already exists the output will not be written to it.
+   * -
+     - ``-families``
+     - Define CAZy families to be scraped. Separate families with a single comma (e.g. GH1,GH2). Use the proper CAZy nomenclature for family names (e.g. GH1 not gh1)
+     - No families specified to be scraped at the command line
    * - ``-g``
      - ``--genbank``
      - Enable retrieval of FASTA files from GenBank containing the protein sequence of the respective CAZyme. Add the option to the command then provide your email address (this is requirement of NCBI/GenBank).
