@@ -81,9 +81,6 @@ def parse_configuration(file_io_path, args, logger):
 
     # Retrieve user specified CAZy classes and families to be scraped at CAZy
 
-<<<<<<< HEAD
-    if args.config is not None:  # user passed a YAML configuration file
-=======
     if args.config is None:
         # No specific families or classes specified for scraping
         if (args.classes is None) and (args.families is None):
@@ -110,7 +107,6 @@ def parse_configuration(file_io_path, args, logger):
             )
 
     else:  # user passed a YAML configuration file
->>>>>>> factorise out functions, add parsing and combining cazy classes defined at cmd-line and in a yaml file
         # open configuration file
         try:
             with open(args.config) as fh:
@@ -124,40 +120,6 @@ def parse_configuration(file_io_path, args, logger):
             )
             sys.exit(1)
 
-<<<<<<< HEAD
-        if (args.classes is None) and (args.families is None):  # no cmd-line configuration
-            # get list of CAZy classes not to scrape
-            excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
-
-            return excluded_classes, config_dict, cazy_dict
-
-        else:  # get cmd defined configuration
-            cmd_config = get_cmd_defined_fams_clsses(args, logger)
-
-            # combine YAML file and cmd defined configurations
-            # add items from file_config to cmd_config
-            for key in cmd_config:
-                for item in cmd_config[key]:
-                    if item not in config_dict[key]:
-                        config_dict[key].append(item)
-
-            # get list of CAZy classes that will not be scraped
-            excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
-
-            return excluded_classes, config_dict, cazy_dict
-
-    else:  # user did not pass config file
-        if (args.classes is None) and (args.families is None):
-            # No specific families or classes specified for scraping
-            return None, None, cazy_dict
-
-        else:  # configuration specified only via the cmd_line
-            config_dict = get_cmd_defined_fams_clsses(args, logger)
-            # get list of CAZy classes that will not be scraped
-            excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
-
-            return excluded_classes, config_dict, cazy_dict
-=======
         # Retrieve CAZy classes listed in config YAML file
         cazy_classes = get_yaml_cazy_classes(yaml_config_dict, cazy_dict, std_class_names, logger)
         config_dict["classes"] = cazy_classes
@@ -188,7 +150,6 @@ def parse_configuration(file_io_path, args, logger):
         )
 
     return excluded_classes, config_dict, cazy_dict
->>>>>>> factorise out functions, add parsing and combining cazy classes defined at cmd-line and in a yaml file
 
 
 def get_cazy_dict_std_names(file_io_path, logger):
@@ -238,14 +199,14 @@ def get_cmd_defined_fams_clsses(cazy_dict, std_class_names, args, logger):
     }
 
     # add classes to config dict
-    cazy_classes = args.cazy_classes
+    cazy_classes = args.classes
     if cazy_classes is not None:
         cazy_classes = cazy_classes.strip().split(",")
         # Standardise CAZy class names
         cazy_classes = parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger)
         config_dict["classes"] = cazy_classes
 
-    families = args.family
+    families = args.families
     if families is not None:
         # add families to config dict
         families = families.strip().split(",")
@@ -290,21 +251,12 @@ def get_cmd_defined_fams_clsses(cazy_dict, std_class_names, args, logger):
     return config_dict
 
 
-<<<<<<< HEAD
-def get_excluded_classes(std_class_names, config_dict, cazy_dict, logger):
-    """Define the CAZy classes that do not have any Families to be scraped.
-
-    :param std_class_names: list of standardised CAZy class names
-    :param config_dict: configuration dict defining classes and families to be scraped
-    :param cazy_dict: dict, accepted synonyms of CAZy classes
-=======
 def parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger):
     """Standardise the CAZy class names listed in configuration file.
 
     :param cazy_classes: list, list of CAZy classes from configuration file
     :param cazy_dict: dict, keyed by class name, keyed by list of accepted synonoms
     :param std_class_names: list, list of all CAZy classes
->>>>>>> factorise out functions, add parsing and combining cazy classes defined at cmd-line and in a yaml file
     :param logger: logger object
 
     Return list of CAZy classes listed by user in the configuration file.
@@ -394,7 +346,7 @@ def get_yaml_cazy_classes(config_dict, cazy_dict, std_class_names, logger):
     return cazy_classes
 
 
-def write_out_df(dataframe, df_name, outdir, logger, force):
+def write_out_df(dataframe, df_name, args, logger):
     """Write out dataframe to output directory.
 
     :param dataframe: pandas dataframe
@@ -405,13 +357,17 @@ def write_out_df(dataframe, df_name, outdir, logger, force):
 
     Return nothing.
     """
-    if outdir is not sys.stdout:
+    if args.output is sys.stdout:
+        dataframe.to_csv(sys.stdout, index=False)
+
+    else:
         # build output path
-        output_path = outdir / f"{df_name}.csv"
+        output_path = args.output / f"{df_name}.csv"
 
         logger.info("Checking if output directory for dataframe already exists")
+
         if output_path.exists():
-            if force is False:
+            if args.force is False:
                 logger.warning(
                     (
                         "Specified directory for dataframe already exists.\n"
@@ -429,10 +385,6 @@ def write_out_df(dataframe, df_name, outdir, logger, force):
 
         logger.info("Writing out species dataframe to directory")
         dataframe.to_csv(output_path)
-
-    else:
-        logger.info(f"Output dataframe: {df_name}")
-        dataframe.to_csv(outdir)
 
     return
 
