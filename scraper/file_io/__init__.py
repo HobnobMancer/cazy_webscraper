@@ -91,11 +91,14 @@ def parse_configuration(file_io_path, args, logger):
             config_dict = get_cmd_defined_fams_clsses(cazy_dict, std_class_names, args, logger)
             cazy_classes = config_dict["classes"]
 
-            # Convert empty lists to None type objects
             for key in config_dict:
                 if config_dict[key] is not None:
                     if len(config_dict[key]) == 0:
+                        # Convert empty lists to None type objects
                         config_dict[key] = None
+                    else:
+                        # remove duplicates
+                        config_dict[key] = list(dict.fromkeys(config_dict[key]))
 
             # Get list of classes not to be scraped
             excluded_classes = get_excluded_classes(
@@ -130,6 +133,7 @@ def parse_configuration(file_io_path, args, logger):
         # combine yaml and cmd-line defined CAZy classes and families
         # Work through keys in cmd_config becuase it definetly contains all necessary keys
         for key in cmd_config_dict:
+            # add families/classes specified in YAML file to args defined families/classes
             if key in yaml_config_dict:
                 if yaml_config_dict[key] is not None:
                     cmd_config_dict[key].append(yaml_config_dict[key])
@@ -137,6 +141,9 @@ def parse_configuration(file_io_path, args, logger):
             if cmd_config_dict[key] is not None:
                 if len(cmd_config_dict[key]) == 0:
                     cmd_config_dict[key] = None
+                else:
+                    # remove duplicates
+                    cmd_config_dict[key] = list(dict.fromkeys(cmd_config_dict[key]))
 
         config_dict = cmd_config_dict
 
