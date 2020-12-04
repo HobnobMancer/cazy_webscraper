@@ -313,14 +313,14 @@ def get_cmd_defined_fams_classes(cazy_dict, std_class_names, args, logger):
     }
 
     # add classes to config dict
-    cazy_classes = args.classes
+    cazy_classes = args.cazy_classes
     if cazy_classes is not None:
         cazy_classes = cazy_classes.strip().split(",")
         # Standardise CAZy class names
         cazy_classes = parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger)
         config_dict["classes"] = cazy_classes
 
-    families = args.families
+    families = args.family
     if families is not None:
         # add families to config dict
         families = families.strip().split(",")
@@ -419,7 +419,7 @@ def convert_lists_to_none(config_dict, logger):
     return config_dict
 
 
-def write_out_df(dataframe, df_name, args, logger):
+def write_out_df(dataframe, df_name, outdir, logger, force):
     """Write out dataframe to output directory.
 
     :param dataframe: pandas dataframe
@@ -430,36 +430,29 @@ def write_out_df(dataframe, df_name, args, logger):
 
     Return nothing.
     """
-    if args.output is sys.stdout:
-        dataframe.to_csv(sys.stdout, index=False)
+    # build output path
+    output_path = outdir / f"{df_name}.csv"
 
-    else:
-        # build output path
-        output_path = args.output / f"{df_name}.csv"
-
-        logger.info("Checking if output directory for dataframe already exists")
-
-        if output_path.exists():
-            if args.force is False:
-                logger.warning(
-                    (
-                        "Specified directory for dataframe already exists.\n"
-                        "Exiting writing out dataframe."
-                    )
+    logger.info("Checking if output directory for dataframe already exists")
+    if output_path.exists():
+        if force is False:
+            logger.warning(
+                (
+                    "Specified directory for dataframe already exists.\n"
+                    "Exiting writing out dataframe."
                 )
-                return ()
-
-            else:
-                logger.warning(
-                    (
-                        "Specified directory for dataframe already exists.\n"
-                        "Forced overwritting enabled."
-                    )
+            )
+            return ()
+        else:
+            logger.warning(
+                (
+                    "Specified directory for dataframe already exists.\n"
+                    "Forced overwritting enabled."
                 )
+            )
 
-        logger.info("Writing out species dataframe to directory")
-        dataframe.to_csv(output_path)
-
+    logger.info("Writing out species dataframe to directory")
+    dataframe.to_csv(output_path)
     return
 
 
