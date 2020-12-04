@@ -419,7 +419,7 @@ def convert_lists_to_none(config_dict, logger):
     return config_dict
 
 
-def write_out_df(dataframe, df_name, outdir, logger, force):
+def write_out_df(dataframe, df_name, args, logger):
     """Write out dataframe to output directory.
 
     :param dataframe: pandas dataframe
@@ -430,29 +430,36 @@ def write_out_df(dataframe, df_name, outdir, logger, force):
 
     Return nothing.
     """
-    # build output path
-    output_path = outdir / f"{df_name}.csv"
+    if args.output is sys.stdout:
+        dataframe.to_csv(sys.stdout, index=False)
 
-    logger.info("Checking if output directory for dataframe already exists")
-    if output_path.exists():
-        if force is False:
-            logger.warning(
-                (
-                    "Specified directory for dataframe already exists.\n"
-                    "Exiting writing out dataframe."
-                )
-            )
-            return ()
-        else:
-            logger.warning(
-                (
-                    "Specified directory for dataframe already exists.\n"
-                    "Forced overwritting enabled."
-                )
-            )
+    else:
+        # build output path
+        output_path = args.output / f"{df_name}.csv"
 
-    logger.info("Writing out species dataframe to directory")
-    dataframe.to_csv(output_path)
+        logger.info("Checking if output directory for dataframe already exists")
+
+        if output_path.exists():
+            if args.force is False:
+                logger.warning(
+                    (
+                        "Specified directory for dataframe already exists.\n"
+                        "Exiting writing out dataframe."
+                    )
+                )
+                return ()
+
+            else:
+                logger.warning(
+                    (
+                        "Specified directory for dataframe already exists.\n"
+                        "Forced overwritting enabled."
+                    )
+                )
+
+        logger.info("Writing out species dataframe to directory")
+        dataframe.to_csv(output_path)
+
     return
 
 
