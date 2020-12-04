@@ -100,7 +100,7 @@ def proteins_to_dataframe(families, time_stamp, args, logger):
     protein_dataframe = protein_dataframe.drop_duplicates()
 
     # write out dataframe
-    write_out_df(protein_dataframe, df_name, args.output, logger, args.force)
+    write_out_df(protein_dataframe, df_name, args, logger)
 
     # write out dictionary of genbank_synonyms
     if args.output is sys.stdout:
