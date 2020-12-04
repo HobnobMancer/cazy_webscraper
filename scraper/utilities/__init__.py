@@ -77,7 +77,7 @@ def build_parser(argv: Optional[List] = None):
 
     # Add option to specify families to scrape
     parser.add_argument(
-        "--family",
+        "--families",
         type=str,
         default=None,
         help="Families to scrape. Separate families by commas 'GH1,GH2'"
