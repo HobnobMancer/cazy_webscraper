@@ -493,28 +493,6 @@ def parse_family(family_url, family_name, cazy_home, logger):
     family = Family(family_name, cazy_class)
     family.members = set()
 
-    for protein in tqdm(
-        parse_family_pages(family_url, family_name, cazy_home, logger),
-        desc=f"Retrieving proteins from {family_name}"
-    ):
-        family.members.add(protein)
-
-    return family
-
-
-def parse_family_pages(family_url, family_name, cazy_home, logger):
-    """Retrieve all protein records for given CAZy family.
-    Protein records are listed in a pagination method, with 1000 proteins per page.
-
-    :param family_url: str, URL to CAZy family main page
-    :param family_name: str, name of CAZy family
-    :param cazy_home: str, URL to CAZy home page
-    :param logger: logger object
-
-    Return list of protein records.
-    """
-    logger.info(f"Retrieving URLs to all pages containing proteins for {family_url}")
-
     # compile URL to first family page of protein records
     first_pagination_url = family_url.replace(".html", "_all.html")
 
@@ -526,7 +504,7 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
             f"Incorrect formating of first protein table page URL: {first_pagination_url}\n"
             "Will not try and connect to this URL."
         )
-        return []
+        return family
 
     first_pagination_page = get_page(first_pagination_url)
 
@@ -539,13 +517,42 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
                 f"No protein records for CAZy family {family_name} will be retried."
             )
         )
-        return []
+        return family
 
+    protein_page_urls = get_protein_page_urls(
+        first_pagination_url,
+        first_pagination_page[0],
+        cazy_home
+    )
+
+    for protein in tqdm(
+        (
+            y for x in (
+                parse_proteins(url, family_name, logger) for url in protein_page_urls
+            ) for y in x
+        ),
+        total=len(protein_page_urls),
+        desc=f"Scraping protein pages for {family_name}",
+    ):
+        family.members.add(protein)
+
+    return family
+
+
+def get_protein_page_urls(first_pagination_url, first_pagination_page, cazy_home):
+    """Retrieve the URLs to all pages containing proteins for the current working family.
+
+    :param first_pagination_url: str, URL to first page contaiing proteins
+    :param first_pagination_page: BS4 object, first page containing proteins
+    :param cazy_home: str, URL of CAZy homepage
+
+    Return list of URLs.
+    """
     protein_page_urls = [first_pagination_url]
 
     # retrieve the URL to the final page of protein records in the pagination listing
     try:
-        last_pagination_url = first_pagination_page[0].find_all(
+        last_pagination_url = first_pagination_page.find_all(
             "a", {"class": "lien_pagination", "rel": "nofollow"})[-1]
     except IndexError:  # there is no pagination; a single-query entry
         last_pagination_url = None
@@ -559,15 +566,7 @@ def parse_family_pages(family_url, family_name, cazy_home, logger):
         protein_page_urls.extend([f"{cazy_home}/{url_prefix}{_}{url_suffix}" for _ in
                                   range(1000, last_princ_no + 1000, 1000)])
 
-    # Process all URLs into a single collection - a generator
-    # return (y for x in (parse_proteins(url, family_name, logger)
-    # for url in protein_page_urls) for y in x)
-
-    return (
-        y for x in (
-            parse_proteins(url, family_name, logger) for url in protein_page_urls
-        ) for y in x
-    )
+    return protein_page_urls
 
 
 def parse_proteins(protein_page_url, family_name, logger):
