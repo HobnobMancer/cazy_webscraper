@@ -93,11 +93,9 @@ class Protein:
 
     def __repr__(self):
         """Create representative object"""
-        return(
-            (
-                f"<Protein: {id(self)}: {self.name}, {self.family} "
-                f"({self.source}), {len(self.links)} to external databases>"
-            )
+        return (
+            f"<Protein: {id(self)}: {self.name}, {self.family} "
+            f"({self.source}), {len(self.links)} to external databases>"
         )
 
     def get_protein_dict(self):
@@ -176,7 +174,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.output is not sys.stdout:
         file_io.make_output_directory(args.output, logger, args.force, args.nodelete)
 
-    if (args.genbank is not None):
+    if args.genbank is not None:
         # create directory to write FASTA files to
         if (args.genbank_output is not sys.stdout) and (args.genbank_output != args.output):
             file_io.make_output_directory(args.genbank_output, logger, args.force, args.nodelete)
@@ -207,11 +205,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, args)
 
     logger.info(
-        (
-            "Finished scraping the CAZy website.\n"
-            "Thank you for using the cazy_webscraper.py\n"
-            "Terminating program"
-        )
+        ("Finished scraping the CAZy website.\n" "Thank you for using the cazy_webscraper.py\n" "Terminating program")
     )
 
 
@@ -236,16 +230,10 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
 
     try:
         if len(class_pages) == 0:
-            logger.error(
-                "Failed to retrieval URLs to CAZy class pages\n"
-                "Terminating program"
-                )
+            logger.error("Failed to retrieval URLs to CAZy class pages\n" "Terminating program")
             sys.exit(1)
     except TypeError:  # rased when class_pages is None
-        logger.error(
-            "Failed to retrieval URLs to CAZy class pages\n"
-            "Terminating program"
-            )
+        logger.error("Failed to retrieval URLs to CAZy class pages\n" "Terminating program")
         sys.exit(1)
 
     all_data = []  # stores all Family class objects if not splitting the data
@@ -256,7 +244,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
     for class_url in tqdm(class_pages, desc="Parsing CAZy classes"):
 
         # retrieve class name from url
-        class_name = class_url[20: -5]
+        class_name = class_url[20:-5]
         #  convert retrieved class name to synonym used in configuration file
         for key in cazy_dict:
             if class_name in cazy_dict[key]:
@@ -281,15 +269,12 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
                     re.match(rf"{cazy_home}/(\D\D|\D\D\D)(\d+|\d_\d+).html", family_url).group()
                 except AttributeError:
                     logger.warning(
-                        (
-                            f"Formate of URL {family_url} is incorrect.\n"
-                            "Will not attempt to scrape this URL."
-                        )
+                        (f"Formate of URL {family_url} is incorrect.\n" "Will not attempt to scrape this URL.")
                     )
                     continue
 
                 family = None
-                family_name = family_url[(len(cazy_home) + 1): -5]
+                family_name = family_url[(len(cazy_home) + 1) : -5]
                 # build family object, populated by Proteins catalogued under the CAZy family
                 family = parse_family(family_url, family_name, cazy_home, logger)
 
@@ -308,20 +293,17 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
                     re.match(rf"{cazy_home}/(\D\D|\D\D\D)(\d+|\d_\d+).html", family_url).group()
                 except AttributeError:
                     logger.warning(
-                        (
-                            f"Formate of URL {family_url} is incorrect.\n"
-                            "Will not attempt to scrape this URL."
-                        )
+                        (f"Formate of URL {family_url} is incorrect.\n" "Will not attempt to scrape this URL.")
                     )
                     continue
 
                 family = None
-                family_name = family_url[(len(cazy_home) + 1): -5]
+                family_name = family_url[(len(cazy_home) + 1) : -5]
 
                 # Allows retrieval of subfamilies when only the parent CAZy family was named in the
                 # config file
                 if (args.subfamilies is True) and (family_name.find("_") != -1):
-                    name_check = family_name[:(family_name.find("_"))]
+                    name_check = family_name[: (family_name.find("_"))]
                 else:
                     name_check = family_name
 
@@ -335,7 +317,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
                     else:
                         families.append(family)
 
-        if (args.data_split == "class"):
+        if args.data_split == "class":
             if len(families) != 0:
                 logger.info(f"Data split by Class. Writing out df for {class_name}")
                 parse.proteins_to_dataframe(families, args, logger)
@@ -370,7 +352,7 @@ def get_cazy_class_urls(cazy_home, excluded_classes, logger):
     if excluded_classes is not None:
         exclusions = tuple(["<strong>Genomes</strong>"] + excluded_classes)
     else:
-        exclusions = ("<strong>Genomes</strong>")
+        exclusions = "<strong>Genomes</strong>"
 
     # scrape the home page
     home_page = get_page(cazy_home)
@@ -387,10 +369,11 @@ def get_cazy_class_urls(cazy_home, excluded_classes, logger):
         sys.exit(1)
 
     try:
-        return [f"{cazy_home}/{_['href']}" for _ in
-                home_page[0].find_all("a", {"class": "spip_out"}) if
-                (not _["href"].startswith("http")) and
-                (str(_.contents[0]) not in exclusions)]
+        return [
+            f"{cazy_home}/{_['href']}"
+            for _ in home_page[0].find_all("a", {"class": "spip_out"})
+            if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)
+        ]
     except AttributeError:  # raise if can't find results with find_all("a", {"class": "spip_out"})
         return None
 
@@ -424,7 +407,11 @@ def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
         return None
 
     # retrieve the <h3> element that titles the div section containing the tables of family links
-    family_h3_element = [_ for _ in class_page[0].find_all("h3", {"class": "spip"}) if str(_.contents[0]).strip() == "Tables for Direct Access"][0]
+    family_h3_element = [
+        _
+        for _ in class_page[0].find_all("h3", {"class": "spip"})
+        if str(_.contents[0]).strip() == "Tables for Direct Access"
+    ][0]
 
     # retrieve all tables within the parent div section of the <h3> element
     tables = family_h3_element.parent.find_all("table")
@@ -481,9 +468,10 @@ def parse_family(family_url, family_name, cazy_home, logger):
     :param cazy_home: str, URL to CAZy home page
     :param logger: logger object
 
-    Return Family object.
+    Return Family object encapsulating data from the passed family
+    summary page.
     """
-    logger.info(f"Starting retrieval of proteins for {family_name}")
+    logger.info(f"Starting retrieval of proteins for {family_name} from {family_url}")
 
     # retrieve class from family name
     pattern = re.compile(r"\D+")
@@ -498,10 +486,10 @@ def parse_family(family_url, family_name, cazy_home, logger):
 
     # check url formating
     try:
-        re.match(rf"{cazy_home}/(\D\D|\D\D\D)(\d+|\d+_\d+)_all.html", first_pagination_url).group()
+        re.match(rf"{cazy_home}/\D{2,3}\d+_?\d+_all.html", first_pagination_url).group()
     except AttributeError:
         logger.warning(
-            f"Incorrect formating of first protein table page URL: {first_pagination_url}\n"
+            f"Incorrect formatting of first protein table page URL: {first_pagination_url}\n"
             "Will not try and connect to this URL."
         )
         return family
@@ -519,18 +507,10 @@ def parse_family(family_url, family_name, cazy_home, logger):
         )
         return family
 
-    protein_page_urls = get_protein_page_urls(
-        first_pagination_url,
-        first_pagination_page[0],
-        cazy_home
-    )
+    protein_page_urls = get_protein_page_urls(first_pagination_url, first_pagination_page[0], cazy_home)
 
     for protein in tqdm(
-        (
-            y for x in (
-                parse_proteins(url, family_name, logger) for url in protein_page_urls
-            ) for y in x
-        ),
+        (y for x in (parse_proteins(url, family_name, logger) for url in protein_page_urls) for y in x),
         total=len(protein_page_urls),
         desc=f"Scraping protein pages for {family_name}",
     ):
@@ -552,8 +532,7 @@ def get_protein_page_urls(first_pagination_url, first_pagination_page, cazy_home
 
     # retrieve the URL to the final page of protein records in the pagination listing
     try:
-        last_pagination_url = first_pagination_page.find_all(
-            "a", {"class": "lien_pagination", "rel": "nofollow"})[-1]
+        last_pagination_url = first_pagination_page.find_all("a", {"class": "lien_pagination", "rel": "nofollow"})[-1]
     except IndexError:  # there is no pagination; a single-query entry
         last_pagination_url = None
 
@@ -563,8 +542,9 @@ def get_protein_page_urls(first_pagination_url, first_pagination_page, cazy_home
         url_suffix = "#pagination" + last_pagination_url["href"].split("#pagination")[-1]
 
         # Build list of urls to all pages in the pagination listing, increasing the PRINC increment
-        protein_page_urls.extend([f"{cazy_home}/{url_prefix}{_}{url_suffix}" for _ in
-                                  range(1000, last_princ_no + 1000, 1000)])
+        protein_page_urls.extend(
+            [f"{cazy_home}/{url_prefix}{_}{url_suffix}" for _ in range(1000, last_princ_no + 1000, 1000)]
+        )
 
     return protein_page_urls
 
@@ -595,8 +575,9 @@ def parse_proteins(protein_page_url, family_name, logger):
 
     # retrieve protein record table
     protein_table = protein_page[0].find_all("table", {"class": "listing"})[0]
-    protein_rows = [_ for _ in protein_table.descendants if (_.name == "tr") and
-                    ("id" not in _.attrs) and ("class" not in _.attrs)]
+    protein_rows = [
+        _ for _ in protein_table.descendants if (_.name == "tr") and ("id" not in _.attrs) and ("class" not in _.attrs)
+    ]
 
     for row in protein_rows:
         yield row_to_protein(row, family_name)
@@ -636,14 +617,11 @@ def row_to_protein(row, family_name):
     # test for len(tds[x].contents) in case there is no link,
     # the check of .name then ensures link is captured
     if len(tds[3].contents) and tds[3].contents[0].name == "a":
-        links["GenBank"] = [f"{_.get_text()} {_['href']}" for _ in tds[3].contents if
-                            _.name == "a"]
+        links["GenBank"] = [f"{_.get_text()} {_['href']}" for _ in tds[3].contents if _.name == "a"]
     if len(tds[4].contents) and tds[4].contents[0].name == "a":
-        links["UniProt"] = [f"{_.get_text()} {_['href']}" for _ in tds[4].contents if
-                            _.name == "a"]
+        links["UniProt"] = [f"{_.get_text()} {_['href']}" for _ in tds[4].contents if _.name == "a"]
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
-        links["PDB/3D"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if
-                           _.name == "a"]
+        links["PDB/3D"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if _.name == "a"]
 
     # Retrieve GenBank accession synonms
     try:
