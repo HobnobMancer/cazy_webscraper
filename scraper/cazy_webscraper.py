@@ -498,7 +498,7 @@ def parse_family(family_url, family_name, cazy_home, logger):
 
     # check url formating
     try:
-        re.match(rf"{cazy_home}/(\D\D|\D\D\D)(\d+|\d_\d+)_all.html", first_pagination_url).group()
+        re.match(rf"{cazy_home}/(\D\D|\D\D\D)(\d+|\d+_\d+)_all.html", first_pagination_url).group()
     except AttributeError:
         logger.warning(
             f"Incorrect formating of first protein table page URL: {first_pagination_url}\n"
