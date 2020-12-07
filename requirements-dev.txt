@@ -1,0 +1,14 @@
+autopep8
+bandit
+black
+coverage
+flake8
+lxml
+mypy
+pydocstyle
+pycodestyle
+pylint
+pytest
+pytest-cov
+pytest-ordering
+sphinx
