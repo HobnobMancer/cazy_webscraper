@@ -963,23 +963,46 @@ def test_get_subfam_links_urls(no_subfam_h3_element, null_logger):
 # test parse_family()
 
 
-def test_parse_family(protein_list, null_logger, monkeypatch):
-    """Tests parse_family()"""
-
-    def mock_parsing_family_pages(*args, **kwargs):
-        return protein_list
-
-    monkeypatch.setattr(cazy_webscraper, "parse_family_pages", mock_parsing_family_pages)
+def test_parse_family_invalid_url(null_logger):
+    """Tests parse_family() when an invalid format of URL is generated for the cazy_all.html page"""
 
     cazy_webscraper.parse_family(
-        "http://www.cazy.org/GH1.html",
+        ".cazyzy.org/GH1.html",
         "GH1",
         "http://www.cazy.org",
         null_logger,
     )
 
+
+def test_parse_family_no_page(null_logger, monkeypatch):
+    """Test parse_family() when no page retrieved when trying to connect to first protein page."""
+
+    def mock_no_page(*args, **kwargs):
+        return [None, None]
+
+    monkeypatch.setattr(cazy_webscraper, "get_page", mock_no_page)
+
+    cazy_webscraper.parse_family("www.cazy.org/GH1", "GH1", "www.cazy.org", null_logger)
+
+
+def test_parse_family_successful(protein_list, null_logger, monkeypatch):
+    """Tests parse_family() when all checks as passed"""
+
+    def mock_getting_page_urls(*args, **kwargs):
+        return ["first_page_url"]
+
+    def mock_get_page(*args, **kwargs):
+        return ["page", None]
+
+    def mock_parsing_proteins(*args, **kwargs):
+        return protein_list
+
+    monkeypatch.setattr(cazy_webscraper, "get_protein_page_urls", mock_getting_page_urls)
+    monkeypatch.setattr(cazy_webscraper, "get_page", mock_get_page)
+    monkeypatch.setattr(cazy_webscraper, "parse_proteins", mock_parsing_proteins)
+
     cazy_webscraper.parse_family(
-        ".cazy.org/GH1.html",
+        "http://www.cazy.org/GH1.html",
         "GH1",
         "http://www.cazy.org",
         null_logger,
