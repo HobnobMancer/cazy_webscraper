@@ -306,6 +306,7 @@ def test_main_one(test_dir, output_dir, null_logger, cazy_dictionary, monkeypatc
             genbank_output= output_dir,
             pdb="pdb",
             pdb_output= output_dir,
+            retries=0,
         )
         return parser
 
@@ -359,6 +360,7 @@ def test_main_two(output_dir, null_logger, cazy_dictionary, monkeypatch):
             genbank_output=output_dir,
             pdb="pdb",
             pdb_output=output_dir,
+            retries=0,
         )
         return parser
 
