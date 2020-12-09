@@ -50,7 +50,7 @@ setuptools.setup(
     platforms="Posix, MacOS X",
     url="https://github.com/HobnobMancer/cazy_webscraper",
     entry_points={
-        "console_scripts": ["cazy_webscraper.py = scraper.cazy_webscraper:main"]
+        "console_scripts": ["cazy_webscraper.py = cazy_webscraper.cazy_webscraper:main"]
     },
     install_requires=["biopython>=1.76", "pandas>=1.0.3"],
     packages=setuptools.find_packages(),
