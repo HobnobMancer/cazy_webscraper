@@ -55,6 +55,7 @@ from tqdm import tqdm
 
 from cazy_webscraper import crawler, file_io, parse, utilities
 
+
 class Protein:
     """A single protein.
 
@@ -292,7 +293,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
                     continue
 
                 family = None
-                family_name = family_url[0][(len(cazy_home) + 1) : -5]
+                family_name = family_url[0][(len(cazy_home) + 1): -5]
                 # build family object, populated by Proteins catalogued under the CAZy family
                 family = crawler.parse_family(family_url[0], family_name, cazy_home, logger)
 
