@@ -229,22 +229,27 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
     """
 
     # retrieve links to CAZy class pages
-    class_pages = get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger)
+    class_urls = get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger)
 
     try:
-        if len(class_pages) == 0:
-            logger.error("Failed to retrieval URLs to CAZy class pages\n" "Terminating program")
+        if len(class_urls) == 0:
+            logger.error("Failed to retrieval URLs to CAZy class pages.\nTerminating program")
             sys.exit(1)
     except TypeError:  # rased when class_pages is None
-        logger.error("Failed to retrieval URLs to CAZy class pages\n" "Terminating program")
+        logger.error("Failed to retrieval URLs to CAZy class pages.\nTerminating program")
         sys.exit(1)
+
+    # add storing the number of times an attempt to scrape the class page as been performed
+    index = 0
+    for index in range(len(class_urls)):
+        class_urls[index] = [class_urls[index], 0]
 
     all_data = []  # stores all Family class objects if not splitting the data
 
     logger.info("Starting retrieval of CAZy families")
 
     # scrape each retrieved class page
-    for class_url in tqdm(class_pages, desc="Parsing CAZy classes"):
+    for class_url in tqdm(class_urls, desc="Parsing CAZy classes"):
 
         # retrieve class name from url
         class_name = class_url[20:-5]
