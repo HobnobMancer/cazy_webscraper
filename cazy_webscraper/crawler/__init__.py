@@ -16,7 +16,15 @@
 # UK
 
 # The MIT License
-"""Module for crawling through the CAZy website and parsing HTML from the CAZy website."""
+"""Module for crawling through the CAZy website and parsing HTML from the CAZy website.
+
+:func get_cazy_family_urls: retrieve URLs to families on CAZy class summary page
+:func get_subfamily_links: retrieve URLs to subfamilies on CAZy class summary page
+:func parse_family: build Family class object to represent CAZy family
+:func parse_family_pages: retrieve all URLs to pages containing protein records for CAZy family
+:func parse_proteins: retrieve protein records from protein table page
+:func row_to_protein: parse the protein record to build a Protein class object
+"""
 
 
 import re
