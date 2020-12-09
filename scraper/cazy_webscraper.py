@@ -281,7 +281,9 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
                 # check url format is correct
                 try:
-                    re.match(rf"{cazy_home}/(\D{2,3})(\d+|\d+_\d+).html", family_url[0]).group()
+                    re.match(
+                        r"http://www.cazy.org/(\D{2,3})(\d+|\d+_\d+).html", family_url[0]
+                    ).group()
                 except AttributeError:
                     logger.warning(
                         f"Formate of URL {family_url[0]} is incorrect.\n"
@@ -296,7 +298,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
                 family = parse_family(family_url[0], family_name, cazy_home, logger)
 
                 # [family_object, error]
-                if len(family[1]) is not None:  # Scraping family '_all' page was unsuccessful
+                if family[1] is not None:  # Scraping family '_all' page was unsuccessful
                     # add one to the number of attempted scrapes the CAZy family's '_all' page
                     family_url[1] += 1
 
@@ -322,15 +324,20 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
                 # check url format is correct
                 try:
-                    re.match(rf"{cazy_home}/(\D{2,3})(\d+|\d_\d+).html", family_url).group()
+                    re.match(
+                        r"http://www.cazy.org/(\D{2,3})(\d+|\d+_\d+).html", family_url[0]
+                    ).group()
                 except AttributeError:
                     logger.warning(
-                        (f"Formate of URL {family_url} is incorrect.\n" "Will not attempt to scrape this URL.")
+                        (
+                            f"Formate of URL {family_url[0]} is incorrect.\n"
+                            "Will not attempt to scrape this URL."
+                        )
                     )
                     continue
 
                 family = None
-                family_name = family_url[(len(cazy_home) + 1) : -5]
+                family_name = family_url[0][(len(cazy_home) + 1) : -5]
 
                 # Allows retrieval of subfamilies when only the parent CAZy family was named in the
                 # config file
@@ -344,7 +351,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
                     family = parse_family(family_url[0], family_name, cazy_home, logger)
 
                     # [family_object, error]
-                    if len(family[1]) is not None:  # Scraping family '_all' page was unsuccessful
+                    if family[1] is not None:  # Scraping family '_all' page was unsuccessful
                         # add one to the number of attempted scrapes the CAZy family's '_all' page
                         family_url[1] += 1
 
@@ -380,6 +387,8 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
             parse.proteins_to_dataframe(all_data, args, logger)
         else:
             logger.warning("Didn't retrieve any protein data from CAZy")
+
+    # write out URLs which failed to be scaped
 
     return
 
@@ -586,13 +595,15 @@ def parse_family(family_url, family_name, cazy_home, logger):
 
     # check url formating
     try:
-        re.match(rf"{cazy_home}/\D{2,3}\d+_?\d+_all.html", first_pagination_url).group()
+        re.match(
+            r"http://www.cazy.org/\D{2,3}(\d+|\d+_\d+)_all.html", first_pagination_url
+        ).group()
     except AttributeError:
         logger.warning(
             f"Incorrect formatting of first protein table page URL: {first_pagination_url}\n"
             "Will not try and connect to this URL."
         )
-        return family
+        return [family, "Incorrect first protein table page URL formating"]
 
     first_pagination_page = get_page(first_pagination_url)
 
@@ -607,7 +618,11 @@ def parse_family(family_url, family_name, cazy_home, logger):
         )
         return [family, first_pagination_page[1]]
 
-    protein_page_urls = get_protein_page_urls(first_pagination_url, first_pagination_page[0], cazy_home)
+    protein_page_urls = get_protein_page_urls(
+        first_pagination_url,
+        first_pagination_page[0],
+        cazy_home,
+    )
 
     for protein in tqdm(
         (y for x in (parse_proteins(url, family_name, logger) for url in protein_page_urls) for y in x),
