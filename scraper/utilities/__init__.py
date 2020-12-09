@@ -137,6 +137,15 @@ def build_parser(argv: Optional[List] = None):
         help="Enable downloading of protein structures in XXXX format from PDB",
     )
 
+    # Add option to enable number of times to retry scraping a family
+    parser.add_argument(
+        "-r",
+        "--retries",
+        type=int,
+        default=0,
+        help="Number of times to retry scraping a family if error encountered"
+    )
+
     # Add option to enable retrieval of subfamilies
     parser.add_argument(
         "-s",
