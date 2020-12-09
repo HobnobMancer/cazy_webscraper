@@ -35,7 +35,7 @@ import numpy as np
 
 from tqdm import tqdm
 
-from cazy_webscraper.cazy_webscraper import get_page, Family
+from cazy_webscraper.cazy_webscraper import get_page, Family, Protein
 
 
 def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger):
