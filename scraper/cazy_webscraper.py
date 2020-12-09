@@ -227,22 +227,12 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
 
     Return nothing.
     """
+    # List of urls that were failed to be scraped
+    failed_url_scrapes = []
 
     # retrieve links to CAZy class pages
-    class_urls = get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger)
-
-    try:
-        if len(class_urls) == 0:
-            logger.error("Failed to retrieval URLs to CAZy class pages.\nTerminating program")
-            sys.exit(1)
-    except TypeError:  # rased when class_pages is None
-        logger.error("Failed to retrieval URLs to CAZy class pages.\nTerminating program")
-        sys.exit(1)
-
-    # add storing the number of times an attempt to scrape the class page as been performed
-    index = 0
-    for index in range(len(class_urls)):
-        class_urls[index] = [class_urls[index], 0]
+    # nested lists of [class_url, number_of_attempted_class_url_scrapes]
+    class_urls = get_class_urls(cazy_home, excluded_classes, max_tries, logger)
 
     all_data = []  # stores all Family class objects if not splitting the data
 
@@ -252,45 +242,74 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
     for class_url in tqdm(class_urls, desc="Parsing CAZy classes"):
 
         # retrieve class name from url
-        class_name = class_url[20:-5]
+        class_name = class_url[0][20:-5]
         #  convert retrieved class name to synonym used in configuration file
         for key in cazy_dict:
             if class_name in cazy_dict[key]:
                 class_name = key
 
         # retrieve URLs to families under current working CAZy class
-        family_urls = get_cazy_family_urls(class_url, cazy_home, class_name, args, logger)
+        family_urls = get_cazy_family_urls(class_url[0], cazy_home, class_name, args, logger)
 
         if family_urls is None:  # couldn't retrieve URLs to family for working CAZy class
-            continue  # got to next CAZy class, issue logged in get_cazy_family_urls()
+            # add one to the number of scrapping attempts
+            class_url[1] += 1
+
+            if class_url[1] == max_tries:  # max number of attempts to scrape has been met
+                failed_url_scrapes += (
+                    f"{class_url[0]} - no CAZy familes from this class were scraped"
+                )
+                continue
+            else:
+                class_urls += class_url  # retry scraping Class page after the other Class URLs
+                continue
 
         families = []  # store Family class objects if splitting data be class
+
         logger.info("Starting retrieval of protein records of protein records from families")
 
-        # Scrape the familes for the current working CAZy class, retrieving protein data
+        # Scrape the familes of the current CAZy class, retrieving protein data
+
         if (config_dict is None) or (config_dict[class_name] is None):
             # No (sub)families were specified, therefore, scraping all families of the CAZy class
 
             for family_url in tqdm(family_urls, desc="Parsing CAZy families"):
                 # check url format is correct
                 try:
-                    re.match(rf"{cazy_home}/(\D{2,3})(\d+|\d+_\d+).html", family_url).group()
+                    re.match(rf"{cazy_home}/(\D{2,3})(\d+|\d+_\d+).html", family_url[0]).group()
                 except AttributeError:
                     logger.warning(
-                        (f"Formate of URL {family_url} is incorrect.\n" "Will not attempt to scrape this URL.")
+                        f"Formate of URL {family_url[0]} is incorrect.\n"
+                        "Will not attempt to scrape this URL."
                     )
+                    failed_url_scrapes += f"{family_url[0]} - url format was incorrect"
                     continue
 
                 family = None
-                family_name = family_url[(len(cazy_home) + 1) : -5]
+                family_name = family_url[0][(len(cazy_home) + 1) : -5]
                 # build family object, populated by Proteins catalogued under the CAZy family
-                family = parse_family(family_url, family_name, cazy_home, logger)
+                family = parse_family(family_url[0], family_name, cazy_home, logger)
 
+                # [family_object, [family_url], error]
+                if len(family[1]) != 0:  # Scraping family '_all' page was unsuccessful
+                    # add one to the number of attempted scrapes the CAZy family's '_all' page
+                    family_url[1] += 1
+
+                    if family_url[1] == max_tries:  # max number of scraping attempts reached
+                        failed_url_scrapes += (
+                            f"{family_url[0]} - the following error was raised {family[2]}"
+                        )
+                        continue
+                    else:
+                        family_urls += family_url
+                        continue
+
+                # store the family if scraped successfully
                 if args.data_split == "family":
                     logger.info(f"Data split by Family. Writing out df for {family_name}")
-                    parse.proteins_to_dataframe([family], args, logger)
+                    parse.proteins_to_dataframe([family[0]], args, logger)
                 else:
-                    families.append(family)
+                    families.append(family[0])
 
         else:
             # scrape only (sub)families specified in the config file
@@ -343,6 +362,36 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
             logger.warning("Didn't retrieve any protein data from CAZy")
 
     return
+
+
+def get_class_urls(cazy_home, excluded_classes, max_tries, logger):
+    """Retrieve class urls, add storage of number of attempted scrapes of each class URL.
+
+    :param cazy_url: str, URL to the CAZy home page.
+    :param excluded_classes: list, list of CAZy classes not to be scraped
+    :param max_tries: int, maximum number of times to try scrape if errors are encountered
+    :param logger: logger object
+
+    Return list of CAZy class URLs.
+    """
+
+    class_urls = get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger)
+
+    try:
+        if len(class_urls) == 0:
+            logger.error("Failed to retrieve URLs to CAZy class pages.\nTerminating program")
+            sys.exit(1)
+    except TypeError:  # rased when class_pages is None
+        logger.error("Failed to retrieve URLs to CAZy class pages.\nTerminating program")
+        sys.exit(1)
+
+    # add storing the number of times an attempt to scrape the class page as been performed
+    index = 0
+    for index in range(len(class_urls)):
+        # list structure [class_url, number_of_tried_scrapes]
+        class_urls[index] = [class_urls[index], 0]
+
+    return class_urls
 
 
 def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger):
@@ -450,6 +499,12 @@ def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
         subfam_urls = get_subfamily_links(family_h3_element, cazy_home, logger)
         if subfam_urls is not None:
             family_urls += subfam_urls
+
+    if family_urls is not None:
+        # add storage of number of attempts to scrape the Family _all page
+        index = 0
+        for index in range(len(family_urls)):
+            family_urls[index] = [family_urls[index], 0]
 
     return family_urls
 
