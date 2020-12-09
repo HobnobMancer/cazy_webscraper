@@ -204,14 +204,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
 
     # Retrieve data from CAZy database
-    get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, args)
+    get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries, logger, args)
 
     logger.info(
         ("Finished scraping the CAZy website.\n" "Thank you for using the cazy_webscraper.py\n" "Terminating program")
     )
 
 
-def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, args):
+def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries, logger, args):
     """Coordinate retrieval of data from the CAZy website.
 
     This function coordinates the crawling through the CAZy website by calling the appropriate
@@ -221,6 +221,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
     :param excluded_classes: list, list of classes to not scrape from CAZy
     :param config_dict: dict, user defined configuration of the scraper
     :param cazy_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
+    :param max_tries: int, maximum number of times to scrape CAZy if errors are encountered
     :param logger: logger object
     :param args: cmd args parser
 
