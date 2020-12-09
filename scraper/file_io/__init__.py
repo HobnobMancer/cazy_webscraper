@@ -100,9 +100,9 @@ def parse_configuration(file_io_path, args, logger):
             config_dict = yaml.full_load(fh)
     except FileNotFoundError:
         logger.warning(
-            "Could noot find configuration file.\n"
+            "Could not find configuration file.\n"
             "Make sure path to the configuration file is correct\n"
-            "Scrapping will continue using defaul scraper configuration\n"
+            "Scrapping will continue using default scraper configuration\n"
         )
         return None, None, cazy_dict
 
