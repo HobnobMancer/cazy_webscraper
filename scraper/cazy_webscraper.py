@@ -207,7 +207,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries, logger, args)
 
     logger.info(
-        ("Finished scraping the CAZy website.\n" "Thank you for using the cazy_webscraper.py\n" "Terminating program")
+        (
+            "Finished scraping the CAZy website.\n"
+            "Thank you for using the cazy_webscraper.py\n"
+            "Terminating program"
+        )
     )
 
 
@@ -249,6 +253,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
                 class_name = key
 
         # retrieve URLs to families under current working CAZy class
+        # nested list of [family_url, number_of_attempts_to_scrape_family_all_page]
         family_urls = get_cazy_family_urls(class_url[0], cazy_home, class_name, args, logger)
 
         if family_urls is None:  # couldn't retrieve URLs to family for working CAZy class
@@ -290,8 +295,8 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
                 # build family object, populated by Proteins catalogued under the CAZy family
                 family = parse_family(family_url[0], family_name, cazy_home, logger)
 
-                # [family_object, [family_url], error]
-                if len(family[1]) != 0:  # Scraping family '_all' page was unsuccessful
+                # [family_object, error]
+                if len(family[1]) is not None:  # Scraping family '_all' page was unsuccessful
                     # add one to the number of attempted scrapes the CAZy family's '_all' page
                     family_url[1] += 1
 
@@ -335,14 +340,29 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
                     name_check = family_name
 
                 if name_check in config_dict[class_name]:
-                    # build family object populated with Proteins catalogued under the CAZy family
-                    family = parse_family(family_url, family_name, cazy_home, logger)
+                    # build family object, populated by Proteins catalogued under the CAZy family
+                    family = parse_family(family_url[0], family_name, cazy_home, logger)
 
+                    # [family_object, error]
+                    if len(family[1]) is not None:  # Scraping family '_all' page was unsuccessful
+                        # add one to the number of attempted scrapes the CAZy family's '_all' page
+                        family_url[1] += 1
+
+                        if family_url[1] == max_tries:  # max number of scraping attempts reached
+                            failed_url_scrapes += (
+                                f"{family_url[0]} - the following error was raised {family[2]}"
+                            )
+                            continue
+                        else:
+                            family_urls += family_url
+                            continue
+
+                    # store the family if scraped successfully
                     if args.data_split == "family":
                         logger.info(f"Data split by Family. Writing out df for {family_name}")
-                        parse.proteins_to_dataframe([family], args, logger)
+                        parse.proteins_to_dataframe([family[0]], args, logger)
                     else:
-                        families.append(family)
+                        families.append(family[0])
 
         if args.data_split == "class":
             if len(families) != 0:
@@ -548,8 +568,8 @@ def parse_family(family_url, family_name, cazy_home, logger):
     :param cazy_home: str, URL to CAZy home page
     :param logger: logger object
 
-    Return Family object encapsulating data from the passed family
-    summary page.
+    Return list of Family object encapsulating data from the passed family
+    summary page, and an error code if failed to scrape the family 'all' page.
     """
     logger.info(f"Starting retrieval of proteins for {family_name} from {family_url}")
 
@@ -585,7 +605,7 @@ def parse_family(family_url, family_name, cazy_home, logger):
                 f"No protein records for CAZy family {family_name} will be retried."
             )
         )
-        return family
+        return [family, first_pagination_page[1]]
 
     protein_page_urls = get_protein_page_urls(first_pagination_url, first_pagination_page[0], cazy_home)
 
@@ -596,7 +616,7 @@ def parse_family(family_url, family_name, cazy_home, logger):
     ):
         family.members.add(protein)
 
-    return family
+    return [family, None]
 
 
 def get_protein_page_urls(first_pagination_url, first_pagination_page, cazy_home):
