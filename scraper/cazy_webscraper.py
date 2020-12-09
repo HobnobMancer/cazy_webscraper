@@ -187,6 +187,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.subfamilies is True:
         logger.warning("Enabled to retrieve subfamilies")
 
+    max_tries = args.retries + 1  # maximum number of times to try scraping a CAZy
+
     # retrieve configuration data
     file_io_path = file_io.__file__
     excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
@@ -226,7 +228,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
     """
 
     # retrieve links to CAZy class pages
-    class_pages = get_cazy_class_urls(cazy_home, excluded_classes, logger)
+    class_pages = get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger)
 
     try:
         if len(class_pages) == 0:
@@ -337,11 +339,12 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, logger, a
     return
 
 
-def get_cazy_class_urls(cazy_home, excluded_classes, logger):
+def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger):
     """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
 
     :param cazy_url: str, URL to the CAZy home page.
     :param excluded_classes: list, list of CAZy classes not to be scraped
+    :param max_tries: int, maximum number of times to try scrape if errors are encountered
     :param logger: logger object
 
     Return list of URLs.
@@ -354,16 +357,32 @@ def get_cazy_class_urls(cazy_home, excluded_classes, logger):
     else:
         exclusions = "<strong>Genomes</strong>"
 
-    # scrape the home page
-    home_page = get_page(cazy_home)
+    home_page = [None, None]
+    tries = 0  # number of the try/attempt
+
+    while (home_page[0] is None) and (tries < max_tries):
+        home_page = get_page(cazy_home)
+
+        if (home_page[0] is None) and (tries < max_tries):
+            logger.error(
+                f"Failed to connect to CAZy homepage after 10 attempts,\n"
+                f"for attempt# {(tries+1)}/{max_tries}\n"
+                "The following error was raised:\n"
+                f"{home_page[1]}\n"
+                f"Reattempting for attempt# {(tries+2)} in 10s."
+            )
+            time.sleep(10)
+            tries += 1
+
     if home_page[0] is None:
         logger.error(
             (
-                "Failed to connect to CAZy home-page after 10 attempts.\n"
+                "Failed to connect to CAZy home-page after multiple attempts.\n"
                 "The following error was raised:\n"
                 f"{home_page[1]}"
                 "Could not retrieve URLs to CAZy classes.\n"
-                "Check the network connection.\nTerminating program."
+                "Check the network connection.\n"
+                "Terminating program."
             )
         )
         sys.exit(1)
