@@ -389,6 +389,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
             logger.warning("Didn't retrieve any protein data from CAZy")
 
     # write out URLs which failed to be scaped
+    file_io.write_out_failed_scrapes(failed_url_scrapes, args, logger)
 
     return
 

@@ -216,3 +216,15 @@ def write_out_df(dataframe, df_name, outdir, logger, force):
     logger.info("Writing out species dataframe to directory")
     dataframe.to_csv(output_path)
     return
+
+
+def write_out_failed_scrapes(failed_urls, args, logger):
+    """Write out the URLs for which a connection to CAZy failed.
+
+    :param failed_urls: list of URLs
+    :param args: cmd args parser
+    :param logger: logger object
+
+    Return nothing.
+    """
+    return
