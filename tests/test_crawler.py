@@ -1,0 +1,210 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Author:
+# Emma E. M. Hobbs
+
+# Contact
+# eemh1@st-andrews.ac.uk
+
+# Emma E. M. Hobbs,
+# Biomolecular Sciences Building,
+# University of St Andrews,
+# North Haugh Campus,
+# St Andrews,
+# KY16 9ST
+# Scotland,
+# UK
+
+# The MIT License
+
+"""Tests the script scraper.crawler submodule which crawls through the CAZy database.
+
+These test are intened to be run from the root of the repository using:
+pytest -v
+"""
+
+import re
+import sys
+import time
+import pytest
+
+import numpy as np
+
+from collections import defaultdict
+from tqdm import tqdm
+from requests.exceptions import ConnectionError, MissingSchema
+from urllib3.exceptions import HTTPError, RequestError
+
+import mechanicalsoup
+
+from bs4 import BeautifulSoup
+
+from scraper import crawler
+
+
+@pytest.fixture
+def input_dir(test_input_dir):
+    dir_path = test_input_dir / "test_inputs_webscraper"
+    return dir_path
+
+
+@pytest.fixture
+def cazy_home_page(input_dir):
+    file_path = input_dir / "cazy_homepage.html"
+    return file_path
+
+
+@pytest.fixture
+def cazy_home_no_spip(input_dir):
+    file_path = input_dir / "cazy_homepage_no_spip_out.html"
+    return file_path
+
+
+# test the classes Protein and Family
+
+
+def test_protein_get_protein_dict():
+    """Test the Protein class __str__ and __repr__."""
+    protein = crawler.Protein(
+        "protein_name",
+        "GH1",
+        ["1.2.3.4"],
+        "organism",
+        {"GenBank": ["link1", "linka", "linkb"], "UniProt": ["link2"], "PDB/3D": ["link3"]},
+    )
+
+    protein_dict = protein.get_protein_dict()
+
+    expected_protein_dict = {
+        'Protein_name': ['protein_name'],
+        'CAZy_family': ['GH1'],
+        'EC#': ['1.2.3.4'],
+        'Source_organism': ['organism'],
+        'GenBank': ['link1,\nlinka,\nlinkb'],
+        'UniProt': ['link2'],
+        'PDB/3D': ['link3'],
+    }
+
+    assert expected_protein_dict == protein_dict
+
+
+def test_family_get_name():
+    """Tests get family name for Family."""
+    family = crawler.Family("GH1", "Glycoside_Hydrolases(GH)")
+
+    family_name = family.get_family_name()
+
+    exepected_name = "GH1"
+
+    assert exepected_name == family_name
+
+
+# test get_cazy_class_urls
+
+
+def test_get_class_urls_exclusions_none(cazy_home_url, cazy_home_page, null_logger, monkeypatch):
+    """Test get_cazy_class_urls when excluded_classess is None."""
+    with open(cazy_home_page, "r") as fp:
+        home_page = BeautifulSoup(fp, features="lxml")
+
+        def mock_get_home_page(*args, **kwargs):
+            return [home_page, None]
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_home_page)
+
+    expected_result = [
+        'http://www.cazy.org/Glycoside-Hydrolases.html',
+        'http://www.cazy.org/GlycosylTransferases.html',
+        'http://www.cazy.org/Polysaccharide-Lyases.html',
+        'http://www.cazy.org/Carbohydrate-Esterases.html',
+        'http://www.cazy.org/Auxiliary-Activities.html',
+        'http://www.cazy.org/Carbohydrate-Binding-Modules.html',
+    ]
+
+    assert expected_result == crawler.get_cazy_class_urls(
+        cazy_home_url,
+        None,
+        1,
+        null_logger,
+    )
+
+
+def test_get_class_urls_fail(cazy_home_url, null_logger, monkeypatch):
+    """Test get_cazy_class_urls home_page not returned"""
+
+    def mock_get_home_page(*args, **kwargs):
+        return [None, "error"]
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_home_page)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        crawler.get_cazy_class_urls(cazy_home_url, None, 1, null_logger)
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_get_class_urls_exclusions_given(
+    cazy_home_url,
+    cazy_home_page,
+    null_logger,
+    monkeypatch,
+):
+    """Test get_cazy_class_urls when excluded_classess is not None."""
+    with open(cazy_home_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    exclusions = ["<strong>Glycoside Hydrolases (GHs)</strong>"]
+
+    def mock_get_home_page(*args, **kwargs):
+        return [soup, None]
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_home_page)
+
+    expected_result = [
+        'http://www.cazy.org/GlycosylTransferases.html',
+        'http://www.cazy.org/Polysaccharide-Lyases.html',
+        'http://www.cazy.org/Carbohydrate-Esterases.html',
+        'http://www.cazy.org/Auxiliary-Activities.html',
+        'http://www.cazy.org/Carbohydrate-Binding-Modules.html',
+    ]
+
+    assert expected_result == crawler.get_cazy_class_urls(
+        cazy_home_url,
+        exclusions,
+        1,
+        null_logger,
+    )
+
+
+def test_get_class_urls_attribute(
+    cazy_home_url,
+    cazy_home_no_spip,
+    null_logger,
+    monkeypatch,
+):
+    """Test get_cazy_class_urls when attribute error is raised."""
+    with open(cazy_home_no_spip) as fp:
+        soup = fp.read()
+
+    exclusions = ["<strong>Glycoside Hydrolases (GHs)</strong>"]
+
+    def mock_get_home_page(*args, **kwargs):
+        return [soup, None]
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_home_page)
+
+    assert None is crawler.get_cazy_class_urls(
+        cazy_home_url,
+        exclusions,
+        1,
+        null_logger,
+    )
+
+
+# browser decorator and get_page
+
+@pytest.mark.skip(reason="make trial testing quicker")
+def test_browser_decorator():
+    """Test browser_decorator to ensure proper handling if unsuccessful."""
+
+    result = crawler.get_page('www.caz!!!!!!!!y.org')
+    assert True == (result[0] is None) and (type(result[1]) is MissingSchema)
