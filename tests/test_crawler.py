@@ -124,6 +124,25 @@ def no_subfam_h3_element(input_dir):
             str(_.contents[0]) == "Tables for Direct Access"][0]
 
 
+@pytest.fixture
+def protein_list():
+    return [
+        crawler.Protein("protein_name", "GH1", "1.2.3.4", "organism"),
+        crawler.Protein(
+            "protein",
+            "GH1",
+            "",
+            "organism",
+            {"GenBank": ["link1"], "UniProt": ["link2"], "PDB": ["link3"]},
+        ),
+    ]
+
+
+@pytest.fixture
+def protein_gen(protein_list):
+    return (_ for _ in protein_list)
+
+
 # test the classes Protein and Family
 
 
@@ -335,6 +354,70 @@ def test_get_subfam_links_urls(no_subfam_h3_element, null_logger):
         null_logger,
     )
 
+
+# test parse_family()
+
+
+def test_parse_family_fam_name(null_logger):
+    """Tests parse_family() when family name is incorrectly formated"""
+
+    crawler.parse_family(
+        "http://www.cazy.org/GH_test_1.html",
+        "GH_test_1",
+        "http://www.cazy.org",
+        null_logger,
+    )
+
+
+def test_parse_family_url(null_logger):
+    """Test parse_family() whwn the url is incorrectly formatted."""
+
+    crawler.parse_family(
+        "http://www.cazy.org/GH_test_1.html",
+        "GH1",
+        "http://www.cazy.org",
+        null_logger,
+    )
+
+
+def test_parse_family_no_page(null_logger, monkeypatch):
+    """Tests parse_family() when no page retrieved for first paginiation page of proteins"""
+
+    def mock_get_page(*args, **kwargs):
+        return [None, "error message"]
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+
+    crawler.parse_family(
+        "http://www.cazy.org/GH1.html",
+        "GH1",
+        "http://www.cazy.org",
+        null_logger,
+    )
+
+
+def test_parse_family_success(protein_gen, null_logger, monkeypatch):
+    """Test parse_family() when successful."""
+
+    def mock_get_page(*args, **kwargs):
+        return ["first paginiation page", None]
+
+    def mock_get_urls(*args, **kwargs):
+        return ["http://www.cazy.org/GH1_all.html"]
+
+    def mock_parse_proteins(*args, **kwargs):
+        return protein_gen
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+    monkeypatch.setattr(crawler, "get_protein_page_urls", mock_get_urls)
+    monkeypatch.setattr(crawler, "parse_proteins", mock_parse_proteins)
+
+    crawler.parse_family(
+        "http://www.cazy.org/GH1.html",
+        "GH1",
+        "http://www.cazy.org",
+        null_logger,
+    )
 
 
 # browser decorator and get_page
