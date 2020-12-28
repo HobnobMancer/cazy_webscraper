@@ -37,7 +37,7 @@ from unittest.mock import patch, mock_open
 
 from Bio.PDB import PDBList
 
-from scraper import cazy_webscraper, parse
+from scraper import cazy_webscraper, crawler, parse
 
 
 @pytest.fixture
@@ -48,9 +48,9 @@ def out_dir(test_dir):
 
 @pytest.fixture
 def family():
-    family = cazy_webscraper.Family("GH1_test", "GHtest")
+    family = crawler.Family("GH1_test", "GHtest")
 
-    protein = cazy_webscraper.Protein(
+    protein = crawler.Protein(
         "protein_name",
         "GH1",
         "1.2.3.4",
@@ -63,7 +63,7 @@ def family():
     protein = None
     family.members.add(protein)
 
-    protein = cazy_webscraper.Protein(
+    protein = crawler.Protein(
         "protein",
         "GH1",
         "",
