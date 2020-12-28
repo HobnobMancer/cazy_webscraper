@@ -92,6 +92,38 @@ def family_urls(input_dir):
     return fam_list
 
 
+@pytest.fixture
+def family_h3_element(cazy_class_page):
+    with open(cazy_class_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    return [_ for _ in
+            soup.find_all("h3", {"class": "spip"}) if
+            str(_.contents[0]) == "Tables for Direct Access"][0]
+
+
+@pytest.fixture
+def subfamily_urls(input_dir):
+    file_path = input_dir / "subfamily_urls.txt"
+    with open(file_path, "r") as fh:
+        fam_string = fh.read()
+    fam_string = fam_string[1:-1]
+    fam_string = fam_string.replace("'", "")
+    fam_list = fam_string.split(", ")
+    return fam_list
+
+
+@pytest.fixture
+def no_subfam_h3_element(input_dir):
+    file_path = input_dir / "cazy_classpage_no_subfams.html"
+    with open(file_path) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    return [_ for _ in
+            soup.find_all("h3", {"class": "spip"}) if
+            str(_.contents[0]) == "Tables for Direct Access"][0]
+
+
 # test the classes Protein and Family
 
 
@@ -272,14 +304,6 @@ def test_get_family_urls_success(
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
     monkeypatch.setattr(crawler, "get_subfamily_links", mock_get_subfams)
 
-    result = crawler.get_cazy_family_urls(
-        "class_url",
-        "http://www.cazy.org",
-        "class_name",
-        args_datasplit_family["args"],
-        null_logger,
-    )
-
     assert family_urls == crawler.get_cazy_family_urls(
         "class_url",
         "http://www.cazy.org",
@@ -287,6 +311,30 @@ def test_get_family_urls_success(
         args_datasplit_family["args"],
         null_logger,
     )
+
+
+# test get_subfamily_links
+
+
+def test_get_subfam_links_len_0(family_h3_element, subfamily_urls, null_logger):
+    """Test get_subfamily_links when no links are retrieved."""
+
+    assert subfamily_urls == crawler.get_subfamily_links(
+        family_h3_element,
+        "http://www.cazy.org",
+        null_logger,
+    )
+
+
+def test_get_subfam_links_urls(no_subfam_h3_element, null_logger):
+    """Test get_subfamily_links when urls are retrieved."""
+
+    assert None is crawler.get_subfamily_links(
+        no_subfam_h3_element,
+        "http://www.cazy.org",
+        null_logger,
+    )
+
 
 
 # browser decorator and get_page
