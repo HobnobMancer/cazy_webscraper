@@ -143,6 +143,24 @@ def protein_gen(protein_list):
     return (_ for _ in protein_list)
 
 
+@pytest.fixture
+def gh1_page(input_dir):
+    file_path = input_dir / "cazy_gh1_page.html"
+    return file_path
+
+
+@pytest.fixture
+def gh147_page(input_dir):
+    file_path = input_dir / "cazy_gh147_page.html"
+    return file_path
+
+
+@pytest.fixture
+def no_links_page(input_dir):
+    file_path = input_dir / "cazy_no_links.html"
+    return file_path
+
+
 # test the classes Protein and Family
 
 
@@ -418,6 +436,33 @@ def test_parse_family_success(protein_gen, null_logger, monkeypatch):
         "http://www.cazy.org",
         null_logger,
     )
+
+
+# test get_protein_page_urls()
+
+
+def test_get_protein_page_urls_no_links(no_links_page):
+    """Test get_protein_page_urls() on page with no links."""
+    with open(no_links_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    crawler.get_protein_page_urls("http://www.cazy.org/GH147_all.html", soup, "http://www.cazy.org")
+
+
+def test_get_protein_page_urls_no_pag(gh147_page):
+    """Test get_protein_page_urls() on page with no pagination of proteins."""
+    with open(gh147_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    crawler.get_protein_page_urls("http://www.cazy.org/GH147_all.html", soup, "http://www.cazy.org")
+
+
+def test_get_protein_page_urls_pag(gh1_page):
+    """Test get_protein_page_urls() on page with pagination of proteins."""
+    with open(gh1_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    crawler.get_protein_page_urls("http://www.cazy.org/GH1_all.html", soup, "http://www.cazy.org")
 
 
 # browser decorator and get_page
