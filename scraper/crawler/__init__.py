@@ -131,7 +131,6 @@ class Family:
         return self.name
 
 
-
 def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger):
     """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
 
@@ -294,7 +293,16 @@ def parse_family(family_url, family_name, cazy_home, logger):
     # retrieve class from family name
     pattern = re.compile(r"\D+")
     search_result = re.match(pattern, family_name)
-    cazy_class = search_result.group()
+    try:
+        cazy_class = search_result.group()
+    except AttributeError:
+        logger.warning(
+            f"Incorrect formating of the family name {family_name}\n"
+            "Not scrapping this family"
+        )
+        family = Family(family_name, "Incorrect family name format")
+        family.members = set()
+        return [family, "Incorrect formatting of family name"]
 
     family = Family(family_name, cazy_class)
     family.members = set()

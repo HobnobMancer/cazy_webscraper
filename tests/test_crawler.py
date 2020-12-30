@@ -23,21 +23,12 @@ These test are intened to be run from the root of the repository using:
 pytest -v
 """
 
-import re
-import sys
-import time
 import types
 import pytest
 
-import numpy as np
 
-from argparse import Namespace, ArgumentParser
-from collections import defaultdict
-from tqdm import tqdm
-from requests.exceptions import ConnectionError, MissingSchema
-from urllib3.exceptions import HTTPError, RequestError
-
-import mechanicalsoup
+from argparse import Namespace
+from requests.exceptions import MissingSchema
 
 from bs4 import BeautifulSoup
 
