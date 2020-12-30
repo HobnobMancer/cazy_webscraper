@@ -162,6 +162,30 @@ def no_links_page(input_dir):
     return file_path
 
 
+@pytest.fixture
+def protein_without_ec(input_dir):
+    file_path = input_dir / "protein_without_ec.html"
+    return file_path
+
+
+@pytest.fixture
+def protein_with_ec(input_dir):
+    file_path = input_dir / "protein_with_ec.html"
+    return file_path
+
+
+@pytest.fixture
+def protein_with_gb_synonyms(input_dir):
+    file_path = input_dir / "protein_with_genbank_synonyms.html"
+    return file_path
+
+
+@pytest.fixture
+def protein_with_no_gb(input_dir):
+    file_path = input_dir / "protein_no_genbank.html"
+    return file_path
+
+
 # test the classes Protein and Family
 
 
@@ -495,6 +519,52 @@ def test_parse_proteins(gh147_page, null_logger, monkeypatch):
 
     crawler.parse_proteins("protein_url", "family", null_logger)
 
+
+# test row_to_protein()
+
+
+def test_row_to_protein_no_ecs(protein_without_ec):
+    """Test row_to_protein when no EC#s are listed."""
+    with open(protein_without_ec) as fp:
+        row = BeautifulSoup(fp, features="lxml")
+
+    assert True is isinstance(
+        crawler.row_to_protein(row, "GH147"),
+        crawler.Protein
+    )
+
+
+def test_row_to_protein_ec(protein_with_ec):
+    """Test row_to_protein when EC#s are listed."""
+    with open(protein_with_ec) as fp:
+        row = BeautifulSoup(fp, features="lxml")
+
+    assert True is isinstance(
+        crawler.row_to_protein(row, "GH147"),
+        crawler.Protein
+    )
+
+
+def test_row_to_protein_gb_synoymns(protein_with_gb_synonyms):
+    """Test row_to_protein when protein has GenBank synonyms."""
+    with open(protein_with_gb_synonyms) as fp:
+        row = BeautifulSoup(fp, features="lxml")
+
+    assert True is isinstance(
+        crawler.row_to_protein(row, "GH147"),
+        crawler.Protein
+    )
+
+
+def test_row_to_protein_no_gb(protein_with_no_gb):
+    """Test row_to_protein when protein has no GenBank accession."""
+    with open(protein_with_no_gb) as fp:
+        row = BeautifulSoup(fp, features="lxml")
+
+    assert True is isinstance(
+        crawler.row_to_protein(row, "GH147"),
+        crawler.Protein
+    )
 
 
 # browser decorator and get_page
