@@ -26,6 +26,7 @@ pytest -v
 import re
 import sys
 import time
+import types
 import pytest
 
 import numpy as np
@@ -463,6 +464,37 @@ def test_get_protein_page_urls_pag(gh1_page):
         soup = BeautifulSoup(fp, features="lxml")
 
     crawler.get_protein_page_urls("http://www.cazy.org/GH1_all.html", soup, "http://www.cazy.org")
+
+
+# test parse_proteins
+
+
+def test_parse_proteins_none(null_logger, monkeypatch):
+    """Test parse_proteins when no page is returned."""
+
+    def mock_get_page(*args, **kwargs):
+        return [None, "error"]
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+
+    assert True is isinstance(
+        crawler.parse_proteins("protein_url", "family", null_logger),
+        types.GeneratorType,
+    )
+
+
+def test_parse_proteins(gh147_page, null_logger, monkeypatch):
+    """Tests parse_proteins when successful."""
+    with open(gh147_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_page(*args, **kwargs):
+        return soup
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+
+    crawler.parse_proteins("protein_url", "family", null_logger)
+
 
 
 # browser decorator and get_page
