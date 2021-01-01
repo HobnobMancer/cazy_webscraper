@@ -27,8 +27,6 @@ import time
 
 import pandas as pd
 
-from datetime import datetime
-
 from Bio import Entrez, SeqIO
 from Bio.PDB import PDBList
 from tqdm import tqdm
@@ -36,7 +34,7 @@ from tqdm import tqdm
 from scraper.file_io import write_out_df
 
 
-def proteins_to_dataframe(families, args, logger):
+def proteins_to_dataframe(families, time_stamp, args, logger):
     """Write protein members of CAZy families to a pandas dataframe.
 
     Duplicate rows are removed. These rows must be identical across the entire row, not only share
@@ -79,8 +77,6 @@ def proteins_to_dataframe(families, args, logger):
                 genbank_synonyms = protein.genbank_synonyms
                 if genbank_synonyms is not None:
                     all_genbank_synonyms.update(genbank_synonyms)
-
-    time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
     if args.subfamilies is True:
         subfam = "_incld_subfams"

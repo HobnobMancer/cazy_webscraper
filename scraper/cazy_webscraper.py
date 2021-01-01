@@ -41,6 +41,7 @@ import logging
 import re
 import sys
 
+from datetime import datetime
 from typing import List, Optional
 
 from tqdm import tqdm
@@ -57,6 +58,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     families specified to be scraped in the configration file.
     """
     # Program preparation
+    time_stamp = time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")  # used in naming files
+
     if argv is None:
         parser = utilities.build_parser()
         args = parser.parse_args()
@@ -216,7 +219,7 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
                 # store the family if scraped successfully
                 if args.data_split == "family":
                     logger.info(f"Data split by Family. Writing out df for {family_name}")
-                    parse.proteins_to_dataframe([family[0]], args, logger)
+                    parse.proteins_to_dataframe([family[0]], time_stamp, args, logger)
                 else:
                     families.append(family[0])
 
@@ -269,14 +272,14 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
                     # store the family if scraped successfully
                     if args.data_split == "family":
                         logger.info(f"Data split by Family. Writing out df for {family_name}")
-                        parse.proteins_to_dataframe([family[0]], args, logger)
+                        parse.proteins_to_dataframe([family[0]], time_stamp, args, logger)
                     else:
                         families.append(family[0])
 
         if args.data_split == "class":
             if len(families) != 0:
                 logger.info(f"Data split by Class. Writing out df for {class_name}")
-                parse.proteins_to_dataframe(families, args, logger)
+                parse.proteins_to_dataframe(families, time_stamp, args, logger)
             else:
                 logger.warning(f"Didn't retrieve any families for {class_name}")
 
@@ -286,12 +289,12 @@ def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries
     if args.data_split is None:
         if len(all_data) != 0:
             logger.info("Data was not split. Writing all retrieved data to a single df")
-            parse.proteins_to_dataframe(all_data, args, logger)
+            parse.proteins_to_dataframe(all_data, time_stamp, args, logger)
         else:
             logger.warning("Didn't retrieve any protein data from CAZy")
 
     # write out URLs which failed to be scaped
-    file_io.write_out_failed_scrapes(failed_url_scrapes, args, logger)
+    file_io.write_out_failed_scrapes(failed_url_scrapes, time_stamp, args, logger)
 
     return
 
