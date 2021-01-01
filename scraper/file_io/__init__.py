@@ -109,7 +109,7 @@ def parse_configuration(file_io_path, args, logger):
             return excluded_classes, config_dict, cazy_dict
 
         else:  # get cmd defined configuration
-            cmd_config = get_cmd_defined_fams_classes(args, logger)
+            cmd_config = get_cmd_defined_fams_classes(cazy_dict, std_class_names, args, logger)
 
             # add cmd defined configuration to config_dict
             # add items from file_config to cmd_config
@@ -133,7 +133,7 @@ def parse_configuration(file_io_path, args, logger):
             return None, None, cazy_dict
 
         else:  # configuration specified only via the cmd_line
-            config_dict = get_cmd_defined_fams_classes(args, logger)
+            config_dict = get_cmd_defined_fams_classes(cazy_dict, std_class_names, args, logger)
 
             # get list of CAZy classes that will not be scraped
             excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
@@ -243,6 +243,8 @@ def get_yaml_cazy_classes(yaml_config_dict, cazy_dict, std_class_names, logger):
 def get_cmd_defined_fams_classes(cazy_dict, std_class_names, args, logger):
     """Retrieve classes and families specified for scraping from the cmd-line args.
 
+    :param cazy_dict: dict, accepted synonyms of CAZy class names
+    :param std_class_names: list, standardised CAZy class names
     :param args: cmd args parser
     :param logger: logger object
 
@@ -271,6 +273,7 @@ def get_cmd_defined_fams_classes(cazy_dict, std_class_names, args, logger):
     if families is not None:
         # add families to config dict
         families = families.strip().split(",")
+
         for fam in families:
             try:
                 if fam.find("GH") != -1:
