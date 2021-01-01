@@ -96,6 +96,7 @@ def parse_configuration(file_io_path, args, logger):
 
     # user passed a YAML configuration file
     if args.config is not None:
+        # add configuration data from YAML file yo configuration dictionary
         config_dict = get_yaml_configuration(config_dict, cazy_dict, std_class_names, args, logger)
 
         if (args.classes is None) and (args.families is None):  # no cmd-line configuration
@@ -335,20 +336,22 @@ def parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger):
     return cazy_classes
 
 
-def get_excluded_classes(std_class_names, cazy_classes, config_dict, cazy_dict, logger):
+def get_excluded_classes(std_class_names, config_dict, cazy_dict, logger):
     """Define the CAZy classes that will not be scraped.
-    
+
     This includes classes for which not Families have been specified for scraping.
 
     :param std_class_names: list of standardised CAZy class names
     :param config_dict: configuration dict defining classes and families to be scraped
+    :param cazy_dict: dict, accepted CAZy classes synonyms
     :param logger: logger object
 
     Return list of CAZy classes not to be scraped.
     """
+    # retrieve list of CAZy classes from which all families are to be scraped
     cazy_classes = config_dict["classes"]
 
-    # retrieve classes of families/subfamilies specified in configuration file
+    # retrieve the names of classes for which specific families to be scraped have been named
     for key in config_dict:
         if (key != "classes") and (key not in cazy_classes) and (len(config_dict[key]) == 0):
             # add the class of families to be scraped to the list of CAZy classes to be scraped
