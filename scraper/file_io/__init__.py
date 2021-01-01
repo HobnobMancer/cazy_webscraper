@@ -215,16 +215,29 @@ def write_out_df(dataframe, df_name, outdir, logger, force):
 
     logger.info("Writing out species dataframe to directory")
     dataframe.to_csv(output_path)
+
     return
 
 
-def write_out_failed_scrapes(failed_urls, args, logger):
+def write_out_failed_scrapes(failed_urls, time_stamp, args, logger):
     """Write out the URLs for which a connection to CAZy failed.
 
-    :param failed_urls: list of URLs
+    :param failed_urls: list, contains the URL and reason for the failed scrape
     :param args: cmd args parser
     :param logger: logger object
 
     Return nothing.
     """
+    if args.output is not sys.stdout:
+        output_path = args.output / f"failed_cazy_scrapes_{time_stamp}.txt"
+
+        with open(output_path, "a") as fh:
+            for url in failed_urls:
+                fh.write(f"{url}\n")
+
+    else:
+        logger.error("The following items were not scraped:")
+        for url in failed_urls:
+            logger.error(url)
+
     return
