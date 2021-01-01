@@ -83,19 +83,20 @@ def parse_configuration(file_io_path, args, logger):
 
     # Retrieve user specified CAZy classes and families to be scraped at CAZy
 
-    if args.config is not None:  # user passed a YAML configuration file
-        # open configuration file
-        try:
-            with open(args.config) as fh:
-                yaml_config_dict = yaml.full_load(fh)
-        except FileNotFoundError:
-            logger.warning(
-                "Could not find configuration file when option was enabled.\n"
-                "Make sure path to the configuration file is correct\n"
-                "Scrapping will not be performed becuase configuration is wrong.\n"
-                "Terminating program."
-            )
-            sys.exit(1)
+    # create dictionary to store families and classes to be scraped
+    config_dict = {
+        'classes': [],
+        'Glycoside Hydrolases (GHs)': [],
+        'GlycosylTransferases (GTs)': [],
+        'Polysaccharide Lyases (PLs)': [],
+        'Carbohydrate Esterases (CEs)': [],
+        'Auxiliary Activities (AAs)': [],
+        'Carbohydrate-Binding Modules (CBMs)': [],
+    }
+
+    # user passed a YAML configuration file
+    if args.config is not None:
+        config_dict = get_yaml_configuration(config_dict, args, logger)
 
         if (args.classes is None) and (args.families is None):  # no cmd-line configuration
             # get list of CAZy classes not to scrape
@@ -104,14 +105,15 @@ def parse_configuration(file_io_path, args, logger):
             return excluded_classes, config_dict, cazy_dict
 
         else:  # get cmd defined configuration
-            cmd_config = get_cmd_defined_fams_clsses(args, logger)
+            cmd_config = get_cmd_defined_fams_classes(args, logger)
 
-            # combine YAML file and cmd defined configurations
+            # add cmd defined configuration to config_dict
             # add items from file_config to cmd_config
             for key in cmd_config:
-                for item in cmd_config[key]:
-                    if item not in config_dict[key]:
-                        config_dict[key].append(item)
+                if cmd_config[key] is not None:
+                    for item in cmd_config[key]:
+                        if item not in config_dict[key]:  # do not add duplicates
+                            config_dict[key].append(item)
 
             # get list of CAZy classes that will not be scraped
             excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
@@ -124,7 +126,7 @@ def parse_configuration(file_io_path, args, logger):
             return None, None, cazy_dict
 
         else:  # configuration specified only via the cmd_line
-            config_dict = get_cmd_defined_fams_clsses(args, logger)
+            config_dict = get_cmd_defined_fams_classes(args, logger)
             # get list of CAZy classes that will not be scraped
             excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
 
@@ -158,7 +160,39 @@ def get_cazy_dict_std_names(file_io_path, logger):
     return cazy_dict, std_class_names
 
 
-def get_cmd_defined_fams_clsses(cazy_dict, std_class_names, args, logger):
+def get_yaml_configuration(config_dict, args, logger):
+    """Parse data from configuration YAML file.
+
+    :param config_dict: dict, store CAZy classes and families to scrape
+    :param args: cmd args parser
+    :param logger: logger object
+
+    Return dictionary containing CAZy classes and families named in YAML configuration file.
+    """
+    # open configuration file
+    try:
+        with open(args.config) as fh:
+            yaml_config_dict = yaml.full_load(fh)
+    except FileNotFoundError:
+        logger.warning(
+            "Could not find configuration file when option was enabled.\n"
+            "Make sure path to the configuration file is correct\n"
+            "Scrapping will not be performed becuase configuration is wrong.\n"
+            "Terminating program."
+        )
+        sys.exit(1)
+
+    # add CAZy classes and families from configuration file to config dict
+    for key in yaml_config_dict:
+        if yaml_config_dict[key] is not None:
+            for item in yaml_config_dict[key]:
+                if item not in config_dict[key]:  # do not add duplicates
+                    config_dict[key].append(item)
+    
+    return config_dict
+
+
+def get_cmd_defined_fams_classes(cazy_dict, std_class_names, args, logger):
     """Retrieve classes and families specified for scraping from the cmd-line args.
 
     :param args: cmd args parser
