@@ -44,8 +44,10 @@ def make_output_directory(output, logger, force, nodelete):
         logger.warning(
             "Output directory %s exists, nodelete is %s", output, nodelete,
         )
+
         if nodelete and output.exists():
             logger.warning("Not deleting directory %s", output)
+
         elif output.exists():
             logger.warning("Deleting directory %s", output)
             shutil.rmtree(output)
@@ -60,15 +62,15 @@ def make_output_directory(output, logger, force, nodelete):
                 "New directory not made, writing to existing directory."
             )
         )
+    
+    return
 
 
 def parse_configuration(file_io_path, args, logger):
     """Parse configuration data, and retrieve user specified CAZy classes and families.
 
-    Return only the CAZy class synonoms dictionary if a path to a configuration file was not given.
-    This results in the default behaviour of the webscraper to scrape the entirty of CAZy to be
-    invoked. If no items are listed under a heading/tag in the config file, the retrieved item will
-    be a None type object.
+    If no user defined configuration is given the default behaviour to scrape the entirity of CAZy
+    is enabled.
 
     :param file_io_path: str, path to directory where file_io is installed
     :param args: parser arguments
@@ -76,7 +78,7 @@ def parse_configuration(file_io_path, args, logger):
 
     Return list of classes not to scrape, dict of families to scrape, and dict of class synonoms.
     """
-    # Get dictionary of accepted CAZy class synonyms)
+    # Get dictionary of accepted CAZy class synonyms
     cazy_dict, std_class_names = get_cazy_dict_std_names(file_io_path, logger)
 
     # Retrieve user specified CAZy classes and families to be scraped at CAZy
