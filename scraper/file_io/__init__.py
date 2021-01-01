@@ -103,6 +103,9 @@ def parse_configuration(file_io_path, args, logger):
             # get list of CAZy classes not to scrape
             excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
 
+            # convert empty lists to None type objects
+            config_dict = convert_lists_to_none(config_dict, logger)
+
             return excluded_classes, config_dict, cazy_dict
 
         else:  # get cmd defined configuration
@@ -119,6 +122,9 @@ def parse_configuration(file_io_path, args, logger):
             # get list of CAZy classes that will not be scraped
             excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
 
+            # convert empty lists to None type objects
+            config_dict = convert_lists_to_none(config_dict, logger)
+
             return excluded_classes, config_dict, cazy_dict
 
     else:  # user did not pass config file
@@ -128,8 +134,12 @@ def parse_configuration(file_io_path, args, logger):
 
         else:  # configuration specified only via the cmd_line
             config_dict = get_cmd_defined_fams_classes(args, logger)
+
             # get list of CAZy classes that will not be scraped
             excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
+
+            # convert empty lists to None type objects
+            config_dict = convert_lists_to_none(config_dict, logger)
 
             return excluded_classes, config_dict, cazy_dict
 
@@ -370,6 +380,22 @@ def get_excluded_classes(std_class_names, config_dict, cazy_dict, logger):
         excluded_classes = None
 
     return excluded_classes
+
+
+def convert_lists_to_none(config_dict, logger):
+    """Convert empty lists to None type objects in configuration dictionary.
+
+    :param config_dict: dict, CAZy classes and families to be scraped
+    :param logger: logger object
+
+    Return dictionary with no empty lists.
+    """
+    for key in config_dict:
+        if config_dict[key] is not None:
+            if len(config_dict[key]) == 0:
+                config_dict[key] = None
+
+    return config_dict
 
 
 def write_out_df(dataframe, df_name, outdir, logger, force):
