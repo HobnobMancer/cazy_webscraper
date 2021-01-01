@@ -108,7 +108,7 @@ def parse_configuration(file_io_path, args, logger):
 
         if (args.classes is None) and (args.families is None):  # no cmd-line configuration
             # get list of CAZy classes not to scrape
-            excluded_classes = get_excluded_classes(std_class_names, config_dict, logger)
+            excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
 
             return excluded_classes, config_dict, cazy_dict
 
@@ -123,7 +123,7 @@ def parse_configuration(file_io_path, args, logger):
                         config_dict[key].append(item)
 
             # get list of CAZy classes that will not be scraped
-            excluded_classes = get_excluded_classes(std_class_names, config_dict, logger)
+            excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
 
             return excluded_classes, config_dict, cazy_dict
 
@@ -135,7 +135,7 @@ def parse_configuration(file_io_path, args, logger):
         else:  # configuration specified only via the cmd_line
             config_dict = get_cmd_defined_fams_clsses(args, logger)
             # get list of CAZy classes that will not be scraped
-            excluded_classes = get_excluded_classes(std_class_names, config_dict, logger)
+            excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict, logger)
 
             return excluded_classes, config_dict, cazy_dict
 
@@ -216,11 +216,12 @@ def get_cmd_defined_fams_clsses(args, logger):
     return config_dict
 
 
-def get_excluded_classes(std_class_names, config_dict, logger):
+def get_excluded_classes(std_class_names, config_dict, cazy_dict, logger):
     """Define the CAZy classes that do not have any Families to be scraped.
 
     :param std_class_names: list of standardised CAZy class names
     :param config_dict: configuration dict defining classes and families to be scraped
+    :param cazy_dict: dict, accepted synonyms of CAZy classes
     :param logger: logger object
 
     Return list of CAZy classes not to be scraped.
@@ -262,7 +263,7 @@ def get_excluded_classes(std_class_names, config_dict, logger):
             excluded_classes[index] = f"<strong>{excluded_classes[index]}</strong>"
     else:
         excluded_classes = None
-    
+
     return excluded_classes
 
 
@@ -298,18 +299,6 @@ def parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger):
             del cazy_classes[index]
 
     return cazy_classes
-
-
-def combine_file_cmd_configuration(file_config, cmd_config, logger):
-    """Combines the configuration dictionaries retrieved from a YAML file and the cmd-line.
-
-    :param file_config: dict, configuration retrieved from YAML file
-    :param cmd_config: dict, configuration retrieved from cmd-line
-
-    Return dictionary containing all data from the two passes configuration dictionaries.
-    """
-
-
 
 
 def write_out_df(dataframe, df_name, outdir, logger, force):
@@ -364,16 +353,4 @@ def write_out_failed_scrapes(failed_urls, time_stamp, args, logger):
 
     Return nothing.
     """
-    if args.output is not sys.stdout:
-        output_path = args.output / f"failed_cazy_scrapes_{time_stamp}.txt"
-
-        with open(output_path, "a") as fh:
-            for url in failed_urls:
-                fh.write(f"{url}\n")
-
-    else:
-        logger.error("The following items were not scraped:")
-        for url in failed_urls:
-            logger.error(url)
-
     return
