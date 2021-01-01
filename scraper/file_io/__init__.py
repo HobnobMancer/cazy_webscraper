@@ -62,7 +62,7 @@ def make_output_directory(output, logger, force, nodelete):
                 "New directory not made, writing to existing directory."
             )
         )
-    
+
     return
 
 
