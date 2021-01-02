@@ -479,7 +479,7 @@ def write_out_failed_scrapes(failed_urls, time_stamp, args, logger):
     return
 
 
-def delete_temp_db(logger):
+def delete_temp_db(time_stamp, logger):
     """Delete the temporay SQL db.
 
     :param logger: logger object
