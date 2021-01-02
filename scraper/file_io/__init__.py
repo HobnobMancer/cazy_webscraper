@@ -192,29 +192,34 @@ def write_out_df(dataframe, df_name, outdir, logger, force):
 
     Return nothing.
     """
-    # build output path
-    output_path = outdir / f"{df_name}.csv"
+    if outdir is not sys.stdout:
+        # build output path
+        output_path = outdir / f"{df_name}.csv"
 
-    logger.info("Checking if output directory for dataframe already exists")
-    if output_path.exists():
-        if force is False:
-            logger.warning(
-                (
-                    "Specified directory for dataframe already exists.\n"
-                    "Exiting writing out dataframe."
+        logger.info("Checking if output directory for dataframe already exists")
+        if output_path.exists():
+            if force is False:
+                logger.warning(
+                    (
+                        "Specified directory for dataframe already exists.\n"
+                        "Exiting writing out dataframe."
+                    )
                 )
-            )
-            return ()
-        else:
-            logger.warning(
-                (
-                    "Specified directory for dataframe already exists.\n"
-                    "Forced overwritting enabled."
+                return ()
+            else:
+                logger.warning(
+                    (
+                        "Specified directory for dataframe already exists.\n"
+                        "Forced overwritting enabled."
+                    )
                 )
-            )
 
-    logger.info("Writing out species dataframe to directory")
-    dataframe.to_csv(output_path)
+        logger.info("Writing out species dataframe to directory")
+        dataframe.to_csv(output_path)
+
+    else:
+        logger.info(f"Output dataframe: {df_name}")
+        dataframe.to_csv(outdir)
 
     return
 
