@@ -19,6 +19,7 @@
 """Module for handling input and output files and directories."""
 
 import json
+import os
 import re
 import shutil
 import sys
@@ -474,5 +475,25 @@ def write_out_failed_scrapes(failed_urls, time_stamp, args, logger):
         logger.error("The following items were not scraped:")
         for url in failed_urls:
             logger.error(url)
+
+    return
+
+
+def delete_temp_db(logger):
+    """Delete the temporay SQL db.
+
+    :param logger: logger object
+
+    Return nothing.
+    """
+    logger.info("Scrape complete. All requested items were sraped. Deleting temporary db.")
+
+    cwd = os.getcwd()
+    db_path = cwd / f"cazy_scrape_temp_{time_stamp}.db"
+
+    if os.path.exists(db_path):
+        os.remove(db_path)
+    else:
+        logger.error(f"Could not delete temporary db at:\n{db_path}")
 
     return
