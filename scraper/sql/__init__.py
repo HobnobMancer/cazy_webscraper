@@ -23,7 +23,7 @@ import os
 import sys
 
 from sqlalchemy import create_engine, Boolean, Column, ForeignKey, Integer, String, Table
-from sqlalchemy.orm import backref, relationship, sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -90,10 +90,30 @@ class Cazyme(Base):
     cazyme_id = Column(Integer, primary_key=True)
     name = Column(String)
 
-    taxs = relationship("Taxonomy", secondary=cazymes_taxs, back_populates="cazymes", lazy="dynamic")
-    ecs = relationship("EC", secondary=cazymes_ecs, back_populates="cazymes", lazy="dynamic")
-    genbanks = relationship("Genbank", secondary=cazymes_genbanks, back_populates="cazymes", lazy="dynamic")
-    uniprots = relationship("Uniprot", secondary=cazymes_uniprots, back_populates="cazymes", lazy="dynamic")
+    taxs = relationship(
+        "Taxonomy",
+        secondary=cazymes_taxs,
+        back_populates="cazymes",
+        lazy="dynamic",
+    )
+    ecs = relationship(
+        "EC",
+        secondary=cazymes_ecs,
+        back_populates="cazymes",
+        lazy="dynamic",
+    )
+    genbanks = relationship(
+        "Genbank",
+        secondary=cazymes_genbanks,
+        back_populates="cazymes",
+        lazy="dynamic",
+    )
+    uniprots = relationship(
+        "Uniprot",
+        secondary=cazymes_uniprots,
+        back_populates="cazymes",
+        lazy="dynamic",
+    )
     pdbs = relationship("Pdb", secondary=cazymes_pdbs, back_populates="cazymes", lazy="dynamic")
 
     def __repr__(self):
@@ -135,7 +155,12 @@ class Genbank(Base):
     genbank_accession = Column(String)
     primary = Column(Boolean)
 
-    cazymes = relationship("Cazyme", secondary=cazymes_genbanks, back_populates="genbanks", lazy="dynamic")
+    cazymes = relationship(
+        "Cazyme",
+        secondary=cazymes_genbanks,
+        back_populates="genbanks",
+        lazy="dynamic",
+    )
 
     def __repr__(self):
         """Return representation of GenBank accession number."""
@@ -149,7 +174,12 @@ class Uniprot(Base):
     uniprot_accession = Column(String)
     primary = Column(Boolean)
 
-    cazymes = relationship("Cazyme", secondary=cazymes_uniprots, back_populates="uniprots", lazy="dynamic")
+    cazymes = relationship(
+        "Cazyme",
+        secondary=cazymes_uniprots,
+        back_populates="uniprots",
+        lazy="dynamic",
+    )
 
     def __repr__(self):
         """Return representation of UniProt accession number."""
@@ -199,7 +229,18 @@ def build_db(time_stamp, args, logger):
     return Session()
 
 
-def protein_to_db(cazyme_name, source_organism, ec_numbers, primary_genbank, genbanks, primary_uniprot, uniprots, primary_pdb, pdbs, session):
+def protein_to_db(
+    cazyme_name,
+    source_organism,
+    ec_numbers,
+    primary_genbank,
+    genbanks,
+    primary_uniprot,
+    uniprots,
+    primary_pdb,
+    pdbs,
+    session,
+):
     """Add protein (CAZyme) data to SQL database (db).
 
     :param protein: Protein class object
