@@ -103,47 +103,85 @@ def build_db(time_stamp, args, logger):
     # define models
 
     class Cazyme(Base):
-        __tablename__ = "cazyme"
-        ID = Column(Integer, primary_key=True, autoincrement=True)
+        """Describes a CAZyme, a protein single entry in CAZy."""
+        __tablename__ = "cazymes"
+
+        cazyme_id = Column(Integer, primary_key=True)
         name = Column(String)
-        ecs = relationship("EC", backref=backref("cazyme"))
-        genbanks = relationship("Genbank", secondary=cazyme_genbank, back_populates="cazyme")
-        uniprots = relationship("Uniprot", secondary=cazyme_uniprot, back_populates="cazyme")
-        pdbs = relationship("Pdb", backref=backref("cazyme"))
+
+        taxs = relationship("Taxonomy", secondary=cazymes_taxs, back_populates="cazymes", lazy="dynamic")
+        ecs = relationship("EC", secondary=cazymes_ecs, back_populates="cazymes", lazy="dynamic")
+        genbanks = relationship("Genbank", secondary=cazymes_genbanks, back_populates="cazymes", lazy="dynamic")
+        uniprots = relationship("Uniprot", secondary=cazymes_uniprots, back_populates="cazymes", lazy="dynamic")
+        pdbs = relationship("Pdb", secondary=cazymes_pdbs, back_populates="cazymes", lazy="dynamic")
 
         def __repr__(self):
-            return f"<CAZyme({self.name})>"
+            """Return string representation of Cazyme table object."""
+            return f"<CAZyme name={self.name}, id={self.cazyme_id}>"
 
     class Taxonomy(Base):
-        __tablename__ = "taxonomy"
-        ID = Column(Integer, primary_key=True, autoincrement=True)
+        """Describes the source organism of CAZymes."""
+        __tablename__ = "taxs"
+        taxonomy_id = Column(Integer, primary_key=True)
         genus = Column(String)
         species = Column(String)
-        cazymes = relationship("Cazyme", backref=backref("taxonomy"))
+
+        cazymes = relationship("Cazyme", secondary=cazymes_taxs, back_populates="taxs", lazy="dynamic")
+
+        def __repr__(self):
+            """Return string representation of source organism."""
+            return f"<Source organism, taxonomy, Genus={self.genus}, Species={self.species}>"
 
     class EC(Base):
-        __tablename__ = "ec"
-        ID = Column(Integer, primary_key=True, autoincrement=True)
+        """Describe EC numbers."""
+        __tablename__ = "ecs"
+        ec_id = Column(Integer, primary_key=True)
         ec_number = Column(String)
 
+        cazymes = relationship("Cazyme", secondary=cazymes_ecs, back_populates="ecs", lazy="dynamic")
+
+        def __repr__(self):
+            """Return string representation of EC number (EC) object."""
+            return f"<EC#={self.ec_number}>"
+
     class Genbank(Base):
-        __tablename__ = "genbank"
-        ID = Column(Integer, primary_key=True, autoincrement=True)
-        accession = Column(String)
-        primary_accession = Column(Boolean)
-        cazymes = relationship("Cazyme", secondary=cazyme_genbank, back_populates="genbank")
+        """Describe GenBank accession numbers of protein sequences."""
+        __tablename__ = "genbanks"
+        genbank_id = Column(Integer, primary_key=True)
+        genbank_accession = Column(String)
+        primary = Column(Boolean)
+
+        cazymes = relationship("Cazyme", secondary=cazymes_genbanks, back_populates="genbanks", lazy="dynamic")
+
+        def __repr__(self):
+            """Return representation of GenBank accession number."""
+            return f"<GenBank acc={self.genbank_accession}, primary={self.primary}>"
 
     class Uniprot(Base):
-        __tablename__ = "uniprot"
-        ID = Column(Integer, primary_key=True, autoincrement=True)
-        accession = Column(String)
-        primary_accession = Column(Boolean)
-        cazymes = relationship("Cazyme", secondary=cazyme_uniprot, back_populates="genbank")
+        """Describe UniProt accession number."""
+        __tablename__ = "uniprots"
+        uniprot_id = Column(Integer, primary_key=True)
+        uniprot_accession = Column(String)
+        primary = Column(Boolean)
+
+        cazymes = relationship("Cazyme", secondary=cazymes_uniprots, back_populates="uniprots", lazy="dynamic")
+
+        def __repr__(self):
+            """Return representation of UniProt accession number."""
+            return f"<UniProt={self.uniprot_accession}, primary={self.primary}>"
 
     class Pdb(Base):
-        __tablename__ = "pdb"
-        ID = Column(Integer, primary_key=True, autoincrement=True)
-        accession = Column(String)
+        """Describe PDB accession number of protein structure."""
+        __tablename__ = "pdbs"
+        pdb_id = Column(Integer, primary_key=True)
+        pdb_accession = Column(String)
+        primary = Column(Boolean)
+
+        cazymes = relationship("Cazyme", secondary=cazymes_pdbs, back_populates="pdbs", lazy="dynamic")
+
+        def __repr__(self):
+            """Return representation of accesison of PDB structure record."""
+            return f"<PDB={self.pdb_accession}, primary={self.primary}>"
 
     # create a session
     Session = sessionmaker(bind=engine)
