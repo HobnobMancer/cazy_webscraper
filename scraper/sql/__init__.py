@@ -183,7 +183,10 @@ def build_db(time_stamp, args, logger):
             """Return representation of accesison of PDB structure record."""
             return f"<PDB={self.pdb_accession}, primary={self.primary}>"
 
-    # create a session
+    # create engine
+    Base.metadata.create_all(engine)
+
+    # create database session
     Session = sessionmaker(bind=engine)
     session = Session()
 
