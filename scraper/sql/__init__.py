@@ -28,13 +28,13 @@ from sqlalchemy.ext.declarative import declarative_base
 
 
 def build_db(time_stamp, args, logger):
-    """Build an empty SQL database.
+    """Build an empty SQL database and open a session.
 
     :param time_stamp: str, date and time stamp of when scrape was initated
     :param args: cmd args parser
     :param logger: logger object
 
-    Return open database session.
+    Return an open database session.
     """
     logger.info("Building empty db to store data")
 
@@ -44,58 +44,64 @@ def build_db(time_stamp, args, logger):
         # write to cwd, this is deleted in scrape is successful
         cwd = os.getcwd()
         db_path = cwd / f"cazy_scrape_temp_{time_stamp}.db"
-        engine = create_engine(f"sqlite+pysqlite:///{cwd}", echo=False)
 
     else:
         # write to specified output directory
         db_path = args.output / f"cazy_scrape_{time_stamp}.db"
-        engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
+
+    engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
 
     Base = declarative_base()
 
-    # define all relation tables
+    # define association/relationship tables
 
-    cazyme_tax = Table(
-        "cazyme_tax",
+    # linker table between cazymes and source organisms
+    cazymes_taxs = Table(
+        "cazymes_taxs",
         Base.metadata,
-        Column("ID", Integer, primary_key=True, autoincrement=True),
-        Column("cazymeID", Integer, ForeignKey("cazyme_tb.ID")),
-        Column("taxonomyID", Integer, ForeignKey("taxonomy_tb.ID")),
+        Column("ID", Integer),
+        Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
+        Column("taxonomy_id", Integer, ForeignKey("taxs.taxonomy_id"))
     )
 
-    cazyme_ec = Table(
-        "cazyme_ec",
+    # linker table between cazymes and ec numbers
+    cazymes_ecs = Table(
+        "cazymes_ecs",
         Base.metadata,
-        Column("ID", Integer, primary_key=True, autoincrement=True),
-        Column("cazymeID", Integer, ForeignKey("cazyme.ID")),
-        Column("ecID", Integer, ForeignKey("ec.ID")),
+        Column("ID", Integer),
+        Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
+        Column("ec_id", Integer, ForeignKey("ecs.ec_id")),
     )
 
-    cazyme_genbank = Table(
-        "cazyme_genbank",
+    # linker table between cazymes and GenBank accession of source protein sequence
+    cazymes_genbanks = Table(
+        "cazymes_genbanks",
         Base.metadata,
-        Column("ID", Integer, primary_key=True, autoincrement=True),
-        Column("cazymeID", Integer, ForeignKey("cazyme.ID")),
-        Column("genbankID", Integer, ForeignKey("genbank.ID")),
+        Column("ID", Integer),
+        Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
+        Column("genbank_id", Integer, ForeignKey("genbanks.genbank_id")),
     )
 
-    cazyme_uniprot = Table(
-        "cazyme_uniprot",
+    # linker table between cazymes and UniProt accessions of CAZymes
+    cazymes_uniprots = Table(
+        "cazymes_uniprots",
         Base.metadata,
-        Column("ID", Integer, primary_key=True, autoincrement=True),
-        Column("cazymeID", Integer, ForeignKey("cazyme.ID")),
-        Column("uniprotID", Integer, ForeignKey("uniprot.ID")),
+        Column("ID", Integer),
+        Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
+        Column("uniprot_id", Integer, ForeignKey("uniprots.uniprot_id")),
     )
 
-    cazyme_pdb = Table(
-        "cazyme_pdb",
+    # linker table between CAZymes and PDB structures
+    cazymes_pdbs = Table(
+        "cazymes_pdbs",
         Base.metadata,
-        Column("ID", Integer, primary_key=True, autoincrement=True),
-        Column("cazymeID", Integer, ForeignKey("cazyme.ID")),
-        Column("pdbID", Integer, ForeignKey("pdb.ID")),
+        Column("ID", Integer),
+        Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
+        Column("pdb_id", Integer, ForeignKey("pdbs.pdb_id")),
     )
 
-    # define all other tables
+    # define models
+
     class Cazyme(Base):
         __tablename__ = "cazyme"
         ID = Column(Integer, primary_key=True, autoincrement=True)
@@ -158,5 +164,13 @@ def data_to_db(protein, engine):
 
     # insert data into db
     conn.execute(organism_tb.insert(), "DATA HERE")
+
+    # Add a new book
+    add_new_book(
+        session,
+        author_name="Stephen King",
+        book_title="The Stand",
+        publisher_name="Random House",
+    )
 
     return
