@@ -193,25 +193,72 @@ def build_db(time_stamp, args, logger):
     return session
 
 
-def data_to_db(protein, engine):
-    """Add protein data to SQL database (db).
+def protein_to_db(cazyme_name, source_organism, ec_numbers, primary_genbank, genbanks, primary_uniprot, uniprots, primary_pdb, pdbs, session):
+    """Add protein (CAZyme) data to SQL database (db).
 
     :param protein: Protein class object
 
     Return nothing.
     """
-    # create a connection to the db
-    conn = engine.connect()
+    # define the CAZyme
+    new_cazyme = Cazyme(name=cazyme_name)
+    session.add(new_cazyme)
+    session.commit()
 
-    # insert data into db
-    conn.execute(organism_tb.insert(), "DATA HERE")
+    # define source organism
+    genus_sp_separator = source_organism.find(" ")
+    genus = source_organism[:genus_sp_separator]
+    species = source_organism[genus_sp_separator:]
 
-    # Add a new book
-    add_new_book(
-        session,
-        author_name="Stephen King",
-        book_title="The Stand",
-        publisher_name="Random House",
-    )
+    organism = Taxonomy(genus=genus, species=species)
+    session.add(organism)
+    session.commit()
+    new_cazyme.taxs.append(organism)
+
+    # define ec_number
+    for ec in ec_numbers:
+        ec_num = EC(ec_number=ec)
+        session.add(ec_num)
+        session.commit()
+        new_cazyme.ecs.append(ec_num)
+
+    # define genbank accession
+    new_genbank = Genbank(genbank_accession=primary_genbank, primary=True)
+    session.add(new_genbank)
+    session.commit()
+    new_cazyme.genbanks.append(new_genbank)
+
+    for accession in genbanks:
+        new_genbank = Genbank(genbank_accession=accession, primary=False)
+        session.add(new_genbank)
+        session.commit()
+        new_cazyme.genbanks.append(new_genbank)
+
+    # define uniprot accessions
+    new_uniprot = Uniprot(uniprot_accession=primary_uniprot, primary=True)
+    session.add(new_uniprot)
+    session.commit()
+    new_cazyme.uniprots.append(new_uniprot)
+
+    for accession in uniprots:
+        new_uniprot = Uniprot(uniprot_accession=accession, primary=False)
+        session.add(new_uniprot)
+        session.commit()
+        new_cazyme.uniprots.append(new_uniprot)
+
+    # define accessions of pdb structure records
+    new_pdb = Pdb(pdb_accession=primary_pdb, primary=True)
+    session.add(new_pdb)
+    session.commit()
+    new_cazyme.pdbs.append(new_pdb)
+
+    for accession in pdbs:
+        new_pdb = Pdb(pdb_accession=accession, primary=False)
+        session.add(new_pdb)
+        session.commit()
+        new_cazyme.pdbs.append(new_pdb)
+
+    # final commit to ensure all changes are commited
+    session.commit()
 
     return
