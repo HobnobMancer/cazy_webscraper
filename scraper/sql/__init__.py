@@ -228,11 +228,12 @@ def protein_to_db(cazyme_name, source_organism, ec_numbers, primary_genbank, gen
     session.commit()
     new_cazyme.genbanks.append(new_genbank)
 
-    for accession in genbanks:
-        new_genbank = Genbank(genbank_accession=accession, primary=False)
-        session.add(new_genbank)
-        session.commit()
-        new_cazyme.genbanks.append(new_genbank)
+    if genbanks is not None:
+        for accession in genbanks:
+            new_genbank = Genbank(genbank_accession=accession, primary=False)
+            session.add(new_genbank)
+            session.commit()
+            new_cazyme.genbanks.append(new_genbank)
 
     # define uniprot accessions
     new_uniprot = Uniprot(uniprot_accession=primary_uniprot, primary=True)
@@ -240,11 +241,12 @@ def protein_to_db(cazyme_name, source_organism, ec_numbers, primary_genbank, gen
     session.commit()
     new_cazyme.uniprots.append(new_uniprot)
 
-    for accession in uniprots:
-        new_uniprot = Uniprot(uniprot_accession=accession, primary=False)
-        session.add(new_uniprot)
-        session.commit()
-        new_cazyme.uniprots.append(new_uniprot)
+    if uniprots is not None:
+        for accession in uniprots:
+            new_uniprot = Uniprot(uniprot_accession=accession, primary=False)
+            session.add(new_uniprot)
+            session.commit()
+            new_cazyme.uniprots.append(new_uniprot)
 
     # define accessions of pdb structure records
     new_pdb = Pdb(pdb_accession=primary_pdb, primary=True)
@@ -252,11 +254,12 @@ def protein_to_db(cazyme_name, source_organism, ec_numbers, primary_genbank, gen
     session.commit()
     new_cazyme.pdbs.append(new_pdb)
 
-    for accession in pdbs:
-        new_pdb = Pdb(pdb_accession=accession, primary=False)
-        session.add(new_pdb)
-        session.commit()
-        new_cazyme.pdbs.append(new_pdb)
+    if pdbs is not None:
+        for accession in pdbs:
+            new_pdb = Pdb(pdb_accession=accession, primary=False)
+            session.add(new_pdb)
+            session.commit()
+            new_cazyme.pdbs.append(new_pdb)
 
     # final commit to ensure all changes are commited
     session.commit()
