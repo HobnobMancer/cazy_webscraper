@@ -305,7 +305,7 @@ def get_cmd_defined_fams_classes(cazy_dict, std_class_names, args, logger):
         cazy_classes = parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger)
         config_dict["classes"] = cazy_classes
 
-    families = args.family
+    families = args.families
     if families is not None:
         # add families to config dict
         families = families.strip().split(",")
