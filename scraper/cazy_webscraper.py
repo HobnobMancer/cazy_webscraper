@@ -58,7 +58,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     families specified to be scraped in the configration file.
     """
     # Program preparation
-    time_stamp = time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")  # used in naming files
+    time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")  # used in naming files
 
     if argv is None:
         parser = utilities.build_parser()
