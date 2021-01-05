@@ -298,7 +298,7 @@ def get_cmd_defined_fams_classes(cazy_dict, std_class_names, args, logger):
     }
 
     # add classes to config dict
-    cazy_classes = args.cazy_classes
+    cazy_classes = args.classes
     if cazy_classes is not None:
         cazy_classes = cazy_classes.strip().split(",")
         # Standardise CAZy class names
