@@ -110,6 +110,7 @@ def parse_configuration(file_io_path, args, logger):
 
         else:  # get cmd defined configuration
             cmd_config = get_cmd_defined_fams_classes(cazy_dict, std_class_names, args, logger)
+            cmd_config = convert_lists_to_none(cmd_config, logger)
 
             # add cmd defined configuration to config_dict
             # add items from file_config to cmd_config
@@ -368,7 +369,7 @@ def get_excluded_classes(std_class_names, config_dict, cazy_dict, logger):
 
     # retrieve the names of classes for which specific families to be scraped have been named
     for key in config_dict:
-        if (key != "classes") and (key not in cazy_classes) and (len(config_dict[key]) == 0):
+        if (key != "classes") and (key not in cazy_classes) and (len(config_dict[key]) != 0):
             # add the class of families to be scraped to the list of CAZy classes to be scraped
             cazy_classes.append(key)
 
