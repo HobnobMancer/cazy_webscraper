@@ -114,7 +114,16 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
 
 
-def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries, logger, args):
+def get_cazy_data(
+    cazy_home,
+    excluded_classes,
+    config_dict,
+    cazy_dict,
+    max_tries,
+    time_stamp,
+    logger,
+    args,
+):
     """Coordinate retrieval of data from the CAZy website.
 
     This function coordinates the crawling through the CAZy website by calling the appropriate
