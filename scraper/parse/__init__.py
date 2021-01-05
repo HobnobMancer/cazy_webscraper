@@ -42,6 +42,7 @@ def proteins_to_dataframe(families, time_stamp, args, logger):
     subfamilies becuase proteins under the subfamily are also catalogued under the parent family.
 
     :param families: list, list of CAZy families containing protein members
+    :param time_stamp: str, data and time scrape was initiated
     :param args: args parser
     :param logger: logger object
 
