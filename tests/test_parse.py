@@ -233,7 +233,13 @@ def sequence_fasta(test_dir):
 # test proteins_to_dataframe() (dataframe building function)
 
 
-def test_prt_to_df_ds_fam_no_subfams(args_ds_fam_no_subfam, family, null_logger, monkeypatch):
+def test_prt_to_df_ds_fam_no_subfams(
+    time_stamp,
+    args_ds_fam_no_subfam,
+    family,
+    null_logger,
+    monkeypatch,
+):
     """Test proteins_to_dataframe when data split is family and subfamilies is False."""
 
     with patch("builtins.open", mock_open(read_data="data")) as mock_file:
@@ -245,7 +251,12 @@ def test_prt_to_df_ds_fam_no_subfams(args_ds_fam_no_subfam, family, null_logger,
         monkeypatch.setattr(parse, "get_structures_and_sequences", mock_no_return)
         monkeypatch.setattr(json, "dump", mock_no_return)
 
-        parse.proteins_to_dataframe([family], args_ds_fam_no_subfam["args"], null_logger)
+        parse.proteins_to_dataframe(
+            [family],
+            time_stamp,
+            args_ds_fam_no_subfam["args"],
+            null_logger,
+        )
 
 
 def test_prt_to_df_ds_class_subfams(
