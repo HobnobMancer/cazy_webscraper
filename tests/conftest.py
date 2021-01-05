@@ -22,6 +22,7 @@ Contains fixtures used by multiple test files.
 
 import logging
 
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -54,3 +55,9 @@ def cazy_home_url():
 def cazy_dictionary(test_input_dir):
     dict_path = test_input_dir / "cazy_dictionary.json"
     return dict_path
+
+
+@pytest.fixture
+def time_stamp():
+    time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")  # used in naming files
+    return time_stamp
