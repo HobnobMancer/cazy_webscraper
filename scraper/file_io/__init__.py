@@ -194,10 +194,12 @@ def get_yaml_configuration(config_dict, cazy_dict, std_class_names, args, logger
         sys.exit(1)
 
     # retrieve CAZy classes defined in the YAML configuration file
-    yaml_cazy_classes = get_yaml_cazy_classes(yaml_config_dict, cazy_dict, std_class_names, logger)
-
-    # add CAZy classes and families from configuration file to config dict
-    config_dict["classes"] = yaml_cazy_classes
+    config_dict["classes"] = get_yaml_cazy_classes(
+        yaml_config_dict,
+        cazy_dict,
+        std_class_names,
+        logger,
+    )
 
     for key in yaml_config_dict:
         if key != "classes":
@@ -236,6 +238,40 @@ def get_yaml_cazy_classes(yaml_config_dict, cazy_dict, std_class_names, logger):
     if len(cazy_classes) != 0:
         # standardise CAZy class names
         cazy_classes = parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger)
+
+    return cazy_classes
+
+
+def parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger):
+    """Standardise the CAZy class names listed in configuration file.
+
+    :param cazy_classes: list, list of CAZy classes from configuration file
+    :param cazy_dict: dict, keyed by class name, keyed by list of accepted synonoms
+    :param std_class_names: list, list of all CAZy classes
+    :param logger: logger object
+
+    Return list of CAZy classes listed by user in the configuration file.
+    """
+    logger.info("Standardising names of class listed in configuration file")
+
+    index = 0
+    for index in range(len(cazy_classes)):
+        # identify user defined CAZy classes not written in standardised format
+        if cazy_classes[index] not in std_class_names:
+            for key in cazy_dict:
+                if cazy_classes[index] in cazy_dict[key]:  # if in synonyms in cazy_dict
+                    cazy_classes[index] = key  # standardise the class name
+
+        # check all names are standardised, remove names that could not be standardised
+        if cazy_classes[index] not in std_class_names:
+            logger.warning(
+                (
+                    f"'{cazy_classes[index]}' could not be standardised.\n"
+                    "Please use a synonym in the file_io/cazy_dictionary.json.\n"
+                    f"'{cazy_classes[index]}' will NOT be scraped."
+                )
+            )
+            del cazy_classes[index]
 
     return cazy_classes
 
@@ -313,40 +349,6 @@ def get_cmd_defined_fams_classes(cazy_dict, std_class_names, args, logger):
                 )
 
     return config_dict
-
-
-def parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names, logger):
-    """Standardise the CAZy class names listed in configuration file.
-
-    :param cazy_classes: list, list of CAZy classes from configuration file
-    :param cazy_dict: dict, keyed by class name, keyed by list of accepted synonoms
-    :param std_class_names: list, list of all CAZy classes
-    :param logger: logger object
-
-    Return list of CAZy classes listed by user in the configuration file.
-    """
-    logger.info("Standardising names of class listed in configuration file")
-
-    index = 0
-    for index in range(len(cazy_classes)):
-        # identify user defined CAZy classes not written in standardised format
-        if cazy_classes[index] not in std_class_names:
-            for key in cazy_dict:
-                if cazy_classes[index] in cazy_dict[key]:  # if in synonyms in cazy_dict
-                    cazy_classes[index] = key  # standardise the class name
-
-        # check all names are standardised, remove names that could not be standardised
-        if cazy_classes[index] not in std_class_names:
-            logger.warning(
-                (
-                    f"'{cazy_classes[index]}' could not be standardised.\n"
-                    "Please use a synonym in the file_io/cazy_dictionary.json.\n"
-                    f"'{cazy_classes[index]}' will NOT be scraped."
-                )
-            )
-            del cazy_classes[index]
-
-    return cazy_classes
 
 
 def get_excluded_classes(std_class_names, config_dict, cazy_dict, logger):
@@ -440,11 +442,21 @@ def write_out_df(dataframe, df_name, outdir, logger, force):
 
 def write_out_failed_scrapes(failed_urls, time_stamp, args, logger):
     """Write out the URLs for which a connection to CAZy failed.
-
     :param failed_urls: list, contains the URL and reason for the failed scrape
     :param args: cmd args parser
     :param logger: logger object
-
     Return nothing.
     """
+    if args.output is not sys.stdout:
+        output_path = args.output / f"failed_cazy_scrapes_{time_stamp}.txt"
+
+        with open(output_path, "a") as fh:
+            for url in failed_urls:
+                fh.write(f"{url}\n")
+
+    else:
+        logger.error("The following items were not scraped:")
+        for url in failed_urls:
+            logger.error(url)
+
     return
