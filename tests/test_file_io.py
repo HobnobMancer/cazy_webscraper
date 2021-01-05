@@ -159,6 +159,27 @@ def df_output_file(test_dir):
     return df_output
 
 
+@pytest.fixture
+def stdout_args(test_dir):
+    args_dict = {
+        "args": Namespace(
+            output=sys.stdout,
+        )
+    }
+    return args_dict
+
+
+@pytest.fixture
+def output_args(test_dir):
+    path = test_dir / "test_outputs" / "test_outputs_file_io"
+    args_dict = {
+        "args": Namespace(
+            output=path,
+        )
+    }
+    return args_dict
+
+
 # test make_output_directory()
 
 
@@ -475,4 +496,27 @@ def test_writing_df_exists(testing_df, null_logger, making_output_dir):
     """Tests function for writing out a prenamed dataframe"""
     file_io.write_out_df(
         testing_df, "test_writing_existing_df", making_output_dir, null_logger, True
+    )
+
+
+# test write_out_failed_scrapes
+
+
+def test_write_out_failed_scrapes_stdout(stdout_args, null_logger):
+    """Test write_out_failed_scrapes when args.output is sys.STDOUT"""
+    file_io.write_out_failed_scrapes(
+        ["url_1 - message", "url_2 - fail reason"],
+        "time_stamp",
+        stdout_args["args"],
+        null_logger,
+    )
+
+
+def test_write_out_failed_scrapes(output_args, null_logger):
+    """Test write_out_failed_scrapes when args.output is sys.STDOUT"""
+    file_io.write_out_failed_scrapes(
+        ["url_1 - message", "url_2 - fail reason"],
+        "time_stamp",
+        output_args["args"],
+        null_logger,
     )

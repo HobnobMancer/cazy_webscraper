@@ -7,9 +7,9 @@
 # https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html 
 classes:  # classes from which all proteins will be retrieved
 Glycoside Hydrolases (GHs):
+  - "GH4"
 GlycosylTransferases (GTs):
 Polysaccharide Lyases (PLs):
-  - "PL28"
 Carbohydrate Esterases (CEs):
 Auxiliary Activities (AAs):
 Carbohydrate-Binding Modules (CBMs):

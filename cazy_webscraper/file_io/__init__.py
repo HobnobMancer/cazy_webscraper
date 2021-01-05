@@ -192,57 +192,39 @@ def write_out_df(dataframe, df_name, outdir, logger, force):
 
     Return nothing.
     """
-    if outdir is not sys.stdout:
-        # build output path
-        output_path = outdir / f"{df_name}.csv"
+    # build output path
+    output_path = outdir / f"{df_name}.csv"
 
-        logger.info("Checking if output directory for dataframe already exists")
-        if output_path.exists():
-            if force is False:
-                logger.warning(
-                    (
-                        "Specified directory for dataframe already exists.\n"
-                        "Exiting writing out dataframe."
-                    )
+    logger.info("Checking if output directory for dataframe already exists")
+    if output_path.exists():
+        if force is False:
+            logger.warning(
+                (
+                    "Specified directory for dataframe already exists.\n"
+                    "Exiting writing out dataframe."
                 )
-                return ()
-            else:
-                logger.warning(
-                    (
-                        "Specified directory for dataframe already exists.\n"
-                        "Forced overwritting enabled."
-                    )
+            )
+            return ()
+        else:
+            logger.warning(
+                (
+                    "Specified directory for dataframe already exists.\n"
+                    "Forced overwritting enabled."
                 )
+            )
 
-        logger.info("Writing out species dataframe to directory")
-        dataframe.to_csv(output_path)
-
-    else:
-        logger.info(f"Output dataframe: {df_name}")
-        dataframe.to_csv(outdir)
-
+    logger.info("Writing out species dataframe to directory")
+    dataframe.to_csv(output_path)
     return
 
 
-def write_out_failed_scrapes(failed_urls, time_stamp, args, logger):
+def write_out_failed_scrapes(failed_urls, args, logger):
     """Write out the URLs for which a connection to CAZy failed.
 
-    :param failed_urls: list, contains the URL and reason for the failed scrape
+    :param failed_urls: list of URLs
     :param args: cmd args parser
     :param logger: logger object
 
     Return nothing.
     """
-    if args.output is not sys.stdout:
-        output_path = args.output / f"failed_cazy_scrapes_{time_stamp}.txt"
-
-        with open(output_path, "a") as fh:
-            for url in failed_urls:
-                fh.write(f"{url}\n")
-
-    else:
-        logger.error("The following items were not scraped:")
-        for url in failed_urls:
-            logger.error(url)
-
     return

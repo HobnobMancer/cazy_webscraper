@@ -40,13 +40,110 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 import logging
 import re
 import sys
+import time
 
-from datetime import datetime
+import numpy as np
+
+from collections import defaultdict
 from typing import List, Optional
+from requests.exceptions import ConnectionError, MissingSchema
+from urllib3.exceptions import HTTPError, RequestError
+
+import mechanicalsoup
 
 from tqdm import tqdm
 
-from scraper import crawler, file_io, parse, utilities
+from cazy_webscraper import crawler, file_io, parse, utilities
+
+
+class Protein:
+    """A single protein.
+
+    Each protein has a name, source organism (source), and links to external databases. The links to
+    external databases are stored in a dictionary, keyed by the external database name ('str') with
+    'list' values becuase there may be multiple links per database.
+
+    Multiple 'synonym' GenBank accession numbers maybe listed for a single protein. CAZy only
+    hyperlinks the first listed accession number. This accession is the one listed for the protein,
+    because is presumed to be the accession used by CAZy in their classification. All other listed
+    GenBank accessions are regarded as synonyms, including for example splice variants and identical
+    protein sequence submissions.
+    """
+
+    def __init__(self, name, family, ec, source, links=None, genbank_synonyms=None):
+        self.name = name
+        self.family = family
+        self.ec = ec
+        self.source = source
+        if links is None:
+            self.links = defaultdict(list)
+        else:
+            self.links = links
+        self.genbank_synonyms = genbank_synonyms
+
+    def __str__(self):
+        """Create representative string of class object"""
+        return f"{self.name} ({self.family} {self.source}): links to {self.links.keys()}"
+
+    def __repr__(self):
+        """Create representative object"""
+        return (
+            f"<Protein: {id(self)}: {self.name}, {self.family} "
+            f"({self.source}), {len(self.links)} to external databases>"
+        )
+
+    def get_protein_dict(self):
+        """Return a dictionary containing all the data of the protein."""
+        protein_dict = {"Protein_name": [self.name], "CAZy_family": [self.family]}
+
+        if len(self.ec) == 0:
+            protein_dict["EC#"] = [np.nan]
+        elif len(self.ec) == 1:
+            protein_dict["EC#"] = self.ec
+        else:
+            ec_string = "\n".join(self.ec)
+            protein_dict["EC#"] = [ec_string]
+
+        protein_dict["Source_organism"] = [self.source]
+
+        if type(self.links) is dict:
+            for database in ["GenBank", "UniProt", "PDB/3D"]:
+                try:
+                    if len(self.links[database]) == 1:
+                        protein_dict[database] = self.links[database]
+                    else:
+                        accession_string = ",\n".join(self.links[database])
+                        protein_dict[database] = [accession_string]
+                except KeyError:
+                    protein_dict[database] = [np.nan]
+        else:
+            for database in ["GenBank", "UniProt", "PDB/3D"]:
+                protein_dict[database] = [np.nan]
+        return protein_dict
+
+
+class Family:
+    """A single CAZy family."""
+
+    members = set()  # holds Protein instances
+
+    def __init__(self, name, cazy_class):
+        self.name = name
+        self.cazy_class = cazy_class
+
+    def __str__(self):
+        return f"CAZy family {self.name}: {len(self.members)} protein members"
+
+    def __repr__(self):
+        return f"<Family: {id(self)}: {self.name}, {len(self.members)} protein members"
+
+    def get_proteins(self):
+        """Return a list of all protein members of the CAZy family."""
+        return self.members
+
+    def get_family_name(self):
+        """Return family name"""
+        return self.name
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -58,8 +155,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     families specified to be scraped in the configration file.
     """
     # Program preparation
-    time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")  # used in naming files
-
     if argv is None:
         parser = utilities.build_parser()
         args = parser.parse_args()
@@ -103,16 +198,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
 
     # Retrieve data from CAZy database
-    get_cazy_data(
-        cazy_home,
-        excluded_classes,
-        config_dict,
-        cazy_dict,
-        max_tries,
-        time_stamp,
-        logger,
-        args,
-    )
+    get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries, logger, args)
 
     logger.info(
         (
@@ -123,16 +209,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
 
 
-def get_cazy_data(
-    cazy_home,
-    excluded_classes,
-    config_dict,
-    cazy_dict,
-    max_tries,
-    time_stamp,
-    logger,
-    args,
-):
+def get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries, logger, args):
     """Coordinate retrieval of data from the CAZy website.
 
     This function coordinates the crawling through the CAZy website by calling the appropriate
@@ -143,7 +220,6 @@ def get_cazy_data(
     :param config_dict: dict, user defined configuration of the scraper
     :param cazy_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
     :param max_tries: int, maximum number of times to scrape CAZy if errors are encountered
-    :param time_stamp: str, data and time scrape was initiated
     :param logger: logger object
     :param args: cmd args parser
 
@@ -238,7 +314,7 @@ def get_cazy_data(
                 # store the family if scraped successfully
                 if args.data_split == "family":
                     logger.info(f"Data split by Family. Writing out df for {family_name}")
-                    parse.proteins_to_dataframe([family[0]], time_stamp, args, logger)
+                    parse.proteins_to_dataframe([family[0]], args, logger)
                 else:
                     families.append(family[0])
 
@@ -291,14 +367,14 @@ def get_cazy_data(
                     # store the family if scraped successfully
                     if args.data_split == "family":
                         logger.info(f"Data split by Family. Writing out df for {family_name}")
-                        parse.proteins_to_dataframe([family[0]], time_stamp, args, logger)
+                        parse.proteins_to_dataframe([family[0]], args, logger)
                     else:
                         families.append(family[0])
 
         if args.data_split == "class":
             if len(families) != 0:
                 logger.info(f"Data split by Class. Writing out df for {class_name}")
-                parse.proteins_to_dataframe(families, time_stamp, args, logger)
+                parse.proteins_to_dataframe(families, args, logger)
             else:
                 logger.warning(f"Didn't retrieve any families for {class_name}")
 
@@ -308,12 +384,12 @@ def get_cazy_data(
     if args.data_split is None:
         if len(all_data) != 0:
             logger.info("Data was not split. Writing all retrieved data to a single df")
-            parse.proteins_to_dataframe(all_data, time_stamp, args, logger)
+            parse.proteins_to_dataframe(all_data, args, logger)
         else:
             logger.warning("Didn't retrieve any protein data from CAZy")
 
     # write out URLs which failed to be scaped
-    file_io.write_out_failed_scrapes(failed_url_scrapes, time_stamp, args, logger)
+    file_io.write_out_failed_scrapes(failed_url_scrapes, args, logger)
 
     return
 
@@ -326,8 +402,7 @@ def get_class_urls(cazy_home, excluded_classes, max_tries, logger):
     :param max_tries: int, maximum number of times to try scrape if errors are encountered
     :param logger: logger object
 
-    Return list of CAZy class URLs. Each item is a list of [URL, 0]
-    - 0 is used to count number of attempted connections.
+    Return list of CAZy class URLs.
     """
 
     class_urls = crawler.get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger)
@@ -347,6 +422,54 @@ def get_class_urls(cazy_home, excluded_classes, max_tries, logger):
         class_urls[index] = [class_urls[index], 0]
 
     return class_urls
+
+
+def browser_decorator(func):
+    """Decorator to retry the wrapped function up to 'retries' times."""
+
+    def wrapper(*args, retries=10, **kwargs):
+        tries, success, err = 0, False, None
+        while not success and (tries < retries):
+            try:
+                response = func(*args, **kwargs)
+            except (
+                ConnectionError,
+                HTTPError,
+                OSError,
+                MissingSchema,
+                RequestError,
+            ) as err_message:
+                success = False
+                response = None
+                err = err_message
+            if response is not None:  # response was successful
+                success = True
+            # if response from webpage was not successful
+            tries += 1
+            time.sleep(10)
+        if (not success) or (response is None):
+            return [None, err]
+        else:
+            return [response, None]
+
+    return wrapper
+
+
+@browser_decorator
+def get_page(url):
+    """Create browser and use browser to retrieve page for given URL.
+
+    :param url: str, url to webpage
+
+    Return browser response object (the page).
+    """
+    # create browser object
+    browser = mechanicalsoup.Browser()
+    # create response object
+    page = browser.get(url)
+    page = page.soup
+
+    return page
 
 
 if __name__ == "__main__":
