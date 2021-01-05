@@ -248,7 +248,13 @@ def test_prt_to_df_ds_fam_no_subfams(args_ds_fam_no_subfam, family, null_logger,
         parse.proteins_to_dataframe([family], args_ds_fam_no_subfam["args"], null_logger)
 
 
-def test_prt_to_df_ds_class_subfams(args_ds_class_subfam, family, null_logger, monkeypatch):
+def test_prt_to_df_ds_class_subfams(
+    time_stamp,
+    args_ds_class_subfam,
+    family,
+    null_logger,
+    monkeypatch,
+):
     """Test proteins_to_dataframe when data split is class and subfamilies is True."""
 
     with patch("builtins.open", mock_open(read_data="data")) as mock_file:
@@ -259,10 +265,10 @@ def test_prt_to_df_ds_class_subfams(args_ds_class_subfam, family, null_logger, m
         monkeypatch.setattr(parse, "write_out_df", mock_no_return)
         monkeypatch.setattr(parse, "get_genbank_fasta", mock_no_return)
 
-        parse.proteins_to_dataframe([family], args_ds_class_subfam["args"], null_logger)
+        parse.proteins_to_dataframe([family], time_stamp, args_ds_class_subfam["args"], null_logger)
 
 
-def test_prt_to_df_ds_none(args_ds_none, family, null_logger, monkeypatch):
+def test_prt_to_df_ds_none(time_stamp, args_ds_none, family, null_logger, monkeypatch):
     """Test proteins_to_dataframe when data split is None."""
 
     with patch("builtins.open", mock_open(read_data="data")) as mock_file:
@@ -273,7 +279,7 @@ def test_prt_to_df_ds_none(args_ds_none, family, null_logger, monkeypatch):
         monkeypatch.setattr(parse, "write_out_df", mock_no_return)
         monkeypatch.setattr(parse, "get_pdb_structures", mock_no_return)
 
-        parse.proteins_to_dataframe([family], args_ds_none["args"], null_logger)
+        parse.proteins_to_dataframe([family], time_stamp, args_ds_none["args"], null_logger)
 
 
 # test get_structures_and_sequences()
