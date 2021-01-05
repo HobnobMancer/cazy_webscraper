@@ -15,7 +15,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - cazy_wbscrpr-{{ .Branch }}-{{ checksum "requirements.txt" }}
+            - cazy_wbscrpr-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}-{{ checksum "requirements-pip.txt" }}
             - cazy_wbscrpr-
 
       - run:
@@ -24,11 +24,13 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt
+            pip install -r requirements-dev.txt
+            pip install -r requirements-pip.txt
 
       - save_cache:
           paths:
             - ./venv
-          key: cazy_wbscrpr-{{ .Branch }}-{{ checksum "requirements.txt" }}
+          key: cazy_wbscrpr-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}-{{ checksum "requirements-pip.txt" }}
 
       - run:
           name: install package
