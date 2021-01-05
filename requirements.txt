@@ -6,4 +6,5 @@ mechanicalsoup
 numpy
 pandas
 requests
+sqlalchemy==1.3.20
 tqdm
