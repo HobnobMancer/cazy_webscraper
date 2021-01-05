@@ -52,11 +52,12 @@ setuptools.setup(
     entry_points={"console_scripts": ["cazy_webscraper.py = scraper.cazy_webscraper:main"]},
     install_requires=[
         "biopython>=1.76",
-        "pandas>=1.0.3",
-        "requests",
         "mechanicalsoup",
-        "tqdm",
+        "pandas>=1.0.3",
         "pyyaml",
+        "requests",
+        "sqlalchemy==1.3.20",
+        "tqdm",
     ],
     packages=setuptools.find_packages(),
     package_data={

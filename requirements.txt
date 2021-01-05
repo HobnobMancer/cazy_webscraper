@@ -3,7 +3,7 @@ biopython
 html5lib
 lxml
 mechanicalsoup
-mypy
 numpy
 pandas
+requests
 tqdm
