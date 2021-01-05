@@ -561,7 +561,6 @@ def test_row_to_protein_no_gb(protein_with_no_gb):
 # browser decorator and get_page
 
 
-@pytest.mark.skip(reason="make trial testing quicker")
 def test_browser_decorator():
     """Test browser_decorator to ensure proper handling if unsuccessful."""
 
