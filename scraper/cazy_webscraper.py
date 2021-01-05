@@ -143,6 +143,7 @@ def get_cazy_data(
     :param config_dict: dict, user defined configuration of the scraper
     :param cazy_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
     :param max_tries: int, maximum number of times to scrape CAZy if errors are encountered
+    :param time_stamp: str, data and time scrape was initiated
     :param logger: logger object
     :param args: cmd args parser
 
