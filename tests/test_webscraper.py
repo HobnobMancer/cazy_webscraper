@@ -250,6 +250,7 @@ def test_get_cazy_data_no_fam_urls(
     cazy_home_url,
     cazy_dictionary,
     config_dict,
+    time_stamp,
     null_logger,
     get_cazy_data_args_none,
     monkeypatch
@@ -278,12 +279,14 @@ def test_get_cazy_data_no_fam_urls(
         config_dict,
         cazy_dict,
         1,
+        time_stamp,
         null_logger,
         get_cazy_data_args_none["args"],
     )
 
 
 def test_get_cazy_data_no_fam_returned(
+    time_stamp,
     cazy_home_url,
     cazy_dictionary,
     config_dict,
@@ -326,12 +329,14 @@ def test_get_cazy_data_no_fam_returned(
         config_dict,
         cazy_dict,
         1,
+        time_stamp,
         null_logger,
         get_cazy_data_args_none["args"],
     )
 
 
 def test_get_cazy_data_subfams_split_fam(
+    time_stamp,
     cazy_home_url,
     cazy_dictionary,
     config_dict,
@@ -375,12 +380,14 @@ def test_get_cazy_data_subfams_split_fam(
         config_dict,
         cazy_dict,
         1,
+        time_stamp,
         null_logger,
         get_cazy_data_args_family["args"],
     )
 
 
 def test_get_cazy_data_subfams_split_class(
+    time_stamp,
     cazy_home_url,
     cazy_dictionary,
     config_dict,
@@ -424,12 +431,14 @@ def test_get_cazy_data_subfams_split_class(
         config_dict,
         cazy_dict,
         1,
+        time_stamp,
         null_logger,
         get_cazy_data_args_class["args"],
     )
 
 
 def test_get_cazy_data_split_none(
+    time_stamp,
     cazy_home_url,
     cazy_dictionary,
     config_dict,
@@ -473,6 +482,7 @@ def test_get_cazy_data_split_none(
         config_dict,
         cazy_dict,
         1,
+        time_stamp,
         null_logger,
         get_cazy_data_args_none["args"],
     )
