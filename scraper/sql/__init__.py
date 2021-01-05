@@ -35,6 +35,7 @@ Session = sessionmaker()
 
 # define association/relationship tables
 
+
 # linker table between cazymes and source organisms
 cazymes_taxs = Table(
     "cazymes_taxs",
@@ -80,6 +81,7 @@ cazymes_pdbs = Table(
     Column("pdb_id", Integer, ForeignKey("pdbs.pdb_id")),
 )
 
+
 # define models
 
 
@@ -114,7 +116,12 @@ class Cazyme(Base):
         back_populates="cazymes",
         lazy="dynamic",
     )
-    pdbs = relationship("Pdb", secondary=cazymes_pdbs, back_populates="cazymes", lazy="dynamic")
+    pdbs = relationship(
+        "Pdb",
+        secondary=cazymes_pdbs,
+        back_populates="cazymes",
+        lazy="dynamic",
+    )
 
     def __repr__(self):
         """Return string representation of Cazyme table object."""
@@ -124,6 +131,7 @@ class Cazyme(Base):
 class Taxonomy(Base):
     """Describes the source organism of CAZymes."""
     __tablename__ = "taxs"
+
     taxonomy_id = Column(Integer, primary_key=True)
     genus = Column(String)
     species = Column(String)
@@ -138,6 +146,7 @@ class Taxonomy(Base):
 class EC(Base):
     """Describe EC numbers."""
     __tablename__ = "ecs"
+
     ec_id = Column(Integer, primary_key=True)
     ec_number = Column(String)
 
@@ -151,6 +160,7 @@ class EC(Base):
 class Genbank(Base):
     """Describe GenBank accession numbers of protein sequences."""
     __tablename__ = "genbanks"
+
     genbank_id = Column(Integer, primary_key=True)
     genbank_accession = Column(String)
     primary = Column(Boolean)
@@ -170,6 +180,7 @@ class Genbank(Base):
 class Uniprot(Base):
     """Describe UniProt accession number."""
     __tablename__ = "uniprots"
+
     uniprot_id = Column(Integer, primary_key=True)
     uniprot_accession = Column(String)
     primary = Column(Boolean)
@@ -189,6 +200,7 @@ class Uniprot(Base):
 class Pdb(Base):
     """Describe PDB accession number of protein structure."""
     __tablename__ = "pdbs"
+
     pdb_id = Column(Integer, primary_key=True)
     pdb_accession = Column(String)
     primary = Column(Boolean)
