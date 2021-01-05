@@ -103,7 +103,16 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     cazy_home = "http://www.cazy.org"  # the CAZy homepage URL
 
     # Retrieve data from CAZy database
-    get_cazy_data(cazy_home, excluded_classes, config_dict, cazy_dict, max_tries, time_stamp, logger, args)
+    get_cazy_data(
+        cazy_home,
+        excluded_classes,
+        config_dict,
+        cazy_dict,
+        max_tries,
+        time_stamp,
+        logger,
+        args,
+    )
 
     logger.info(
         (
