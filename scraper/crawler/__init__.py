@@ -139,7 +139,7 @@ def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger):
     :param max_tries: int, maximum number of times to try scrape if errors are encountered
     :param logger: logger object
 
-    Return list of URLs.
+    Return list of URLs and None, or None and error message.
     """
     logger.info("Retrieving URLs to summary CAZy class pages")
 
@@ -149,29 +149,29 @@ def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger):
     else:
         exclusions = "<strong>Genomes</strong>"
 
-    home_page = [None, None]
+    home_page = None
     tries = 0  # number of the attempted connections to CAZy
 
-    while (home_page[0] is None) and (tries < max_tries):
-        home_page = get_page(cazy_home)
+    while (home_page is None) and (tries < max_tries):
+        home_page, error = get_page(cazy_home)
 
-        if (home_page[0] is None) and (tries < max_tries):
+        if (home_page is None) and (tries < max_tries):
             logger.error(
                 f"Failed to connect to CAZy homepage after 10 attempts,\n"
                 f"Attempt#= {(tries+1)}/{max_tries}\n"
                 "The following error was raised:\n"
-                f"{home_page[1]}\n"
+                f"{error}\n"
                 f"Reattempting for attempt# {(tries+2)} in 10s."
             )
             time.sleep(10)
             tries += 1
 
-    if home_page[0] is None:
+    if home_page is None:
         logger.error(
             (
                 "Failed to connect to CAZy home-page after multiple attempts.\n"
                 "The following error was raised:\n"
-                f"{home_page[1]}"
+                f"{error}"
                 "Could not retrieve URLs to CAZy classes.\n"
                 "Check the network connection.\n"
                 "Terminating program."
@@ -206,24 +206,24 @@ def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
     :param args: args parser object
     :param logger: logger object
 
-    Returns list of URLs to family pages.
+    Returns list of URLs to family pages and None, or None and error message.
     """
     logger.info(f"Retrieving URLs to families under {class_name}")
 
     # scrape the class page
-    class_page = get_page(class_url)
+    class_page, error = get_page(class_url)
 
-    if class_page[0] is None:
+    if class_page is None:
         logger.error(
             (
                 f"Failed to connect to {class_url} after 10 attempts.\n"
                 "The following error was raised:\n"
-                f"{class_page[1]}"
+                f"{error}"
                 "Could not retrieve URLs to CAZy famileis for this class.\n"
                 "This class will be skipped during the scraping process."
             )
         )
-        return None
+        return None, error
 
     # retrieve the <h3> element that titles the div section containing the tables of family links
     family_h3_element = [
@@ -251,7 +251,7 @@ def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
         for index in range(len(family_urls)):
             family_urls[index] = [family_urls[index], 0]
 
-    return family_urls
+    return family_urls, None
 
 
 def get_subfamily_links(family_h3_element, cazy_home, logger):
@@ -464,47 +464,7 @@ def row_to_protein(row, family_name):
         links["PDB/3D"] = [f"{_.get_text()} {_['href']}" for _ in tds[5].contents if _.name == "a"]
 
     # Retrieve GenBank accession synonms
-    try:
-        if len(links["GenBank"]) != 0:
-            # retrieve HTML link GenBank accession (CAZy only hyperlinks the first listed accession)
-            key = links["GenBank"][0]
-            key = key.split(" ")[0]  # remove the URL address
-
-            # retrieve all GenBank accessions listed in td element
-            all_genbank_accessions = tds[3].get_text(separator=" ")
-            all_genbank_accessions = all_genbank_accessions.split(" ")
-
-            if key in all_genbank_accessions:
-                all_genbank_accessions.remove(key)
-
-            # remove duplicates
-            all_genbank_accessions = list(dict.fromkeys(all_genbank_accessions))
-
-            if len(all_genbank_accessions) == 0:
-                genbank_synonyms = None
-            else:
-                genbank_synonyms = {key: all_genbank_accessions}
-        else:
-            genbank_synonyms = None
-    except KeyError:
-        genbank_synonyms = None
-
-    return Protein(protein_name, family_name, ec_numbers, source_organism, links, genbank_synonyms)
-
-
-def browser_decorator(func):
-    """Decorator to retry the wrapped function up to 'retries' times."""
-
-    def wrapper(*args, retries=10, **kwargs):
-        tries, success, err = 0, False, None
-        while not success and (tries < retries):
-            try:
-                response = func(*args, **kwargs)
-            except (
-                ConnectionError,
-                HTTPError,
-                OSError,
-                MissingSchema,
+[None, 
                 RequestError,
             ) as err_message:
                 success = False
@@ -516,9 +476,9 @@ def browser_decorator(func):
             tries += 1
             time.sleep(10)
         if (not success) or (response is None):
-            return [None, err]
+            return None, err
         else:
-            return [response, None]
+            return response, None
 
     return wrapper
 
