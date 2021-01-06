@@ -47,7 +47,7 @@ def args_v_true():
     args_dict = {
         "args": Namespace(
             verbose=True,
-            log="test_log",
+            log="tests/test_outputs/test_log",
         )
     }
     return args_dict

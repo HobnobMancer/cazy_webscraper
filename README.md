@@ -109,9 +109,11 @@ For the basic invoking of the `cazy_webscraper` use:
 
 ### Command line arguments and operation
 
-- `-c` `--config` Path to configuration yaml file.
+- `-c` `--config` Path to configuration yaml file
+- `--classes` Define classes to be scraped. Separate classes with a single comma
 - `-d` `--data_split` Split data by CAZy class, CAZy family or not at all
 - `-f` `--force` Force writing out in output directory that already exists
+- `-families` Define families to be scraped. Separate families with a single comma (e.g. GH1,GH2)
 - `-g` `--genbank` Entable retrieval of FASTA files, also pass user email
 - `-genbank_output` Specify output directory for FASTA files
 - `-h` `--help` Print option help descriptions
