@@ -150,7 +150,7 @@ def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger):
         exclusions = "<strong>Genomes</strong>"
 
     home_page = [None, None]
-    tries = 0  # number of the try/attempt
+    tries = 0  # number of the attempted connections to CAZy
 
     while (home_page[0] is None) and (tries < max_tries):
         home_page = get_page(cazy_home)
@@ -158,7 +158,7 @@ def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger):
         if (home_page[0] is None) and (tries < max_tries):
             logger.error(
                 f"Failed to connect to CAZy homepage after 10 attempts,\n"
-                f"for attempt# {(tries+1)}/{max_tries}\n"
+                f"Attempt#= {(tries+1)}/{max_tries}\n"
                 "The following error was raised:\n"
                 f"{home_page[1]}\n"
                 f"Reattempting for attempt# {(tries+2)} in 10s."
@@ -186,7 +186,15 @@ def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger):
             if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)
         ]
     except AttributeError:  # raise if can't find results with find_all("a", {"class": "spip_out"})
-        return None
+        logger.error(
+            (
+                "Failed to retrieve URLs to CAZy class pages."
+                "Families and proteins cannot be scraped.\n"
+                "Terminating program."
+            ),
+            exc_info=1
+        )
+        sys.exit(1)
 
 
 def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
