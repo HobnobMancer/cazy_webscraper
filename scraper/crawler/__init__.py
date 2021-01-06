@@ -41,6 +41,48 @@ from urllib3.exceptions import HTTPError, RequestError
 import mechanicalsoup
 
 
+class CazyClass:
+    """A single CAZy class."""
+
+    def __init__(self, name, url, tries):
+        self.name = name
+        self.url = url
+        self.tries = tries
+
+    def __str__(self):
+        return f"<CAZy class: {self.name} id={id(self)}>"
+
+    def __repr__(self):
+        return(
+            f"<CAZy class: {self.name} id={id(self)} url={self.url} "
+            f"attempted connections={self.tries}>"
+        )
+
+
+class Family:
+    """A single CAZy family."""
+
+    members = set()  # holds Protein instances
+
+    def __init__(self, name, cazy_class):
+        self.name = name
+        self.cazy_class = cazy_class
+
+    def __str__(self):
+        return f"CAZy family {self.name}: {len(self.members)} protein members"
+
+    def __repr__(self):
+        return f"<Family: {id(self)}: {self.name}, {len(self.members)} protein members"
+
+    def get_proteins(self):
+        """Return a list of all protein members of the CAZy family."""
+        return self.members
+
+    def get_family_name(self):
+        """Return family name"""
+        return self.name
+
+
 class Protein:
     """A single protein.
 
@@ -107,36 +149,13 @@ class Protein:
         return protein_dict
 
 
-class Family:
-    """A single CAZy family."""
-
-    members = set()  # holds Protein instances
-
-    def __init__(self, name, cazy_class):
-        self.name = name
-        self.cazy_class = cazy_class
-
-    def __str__(self):
-        return f"CAZy family {self.name}: {len(self.members)} protein members"
-
-    def __repr__(self):
-        return f"<Family: {id(self)}: {self.name}, {len(self.members)} protein members"
-
-    def get_proteins(self):
-        """Return a list of all protein members of the CAZy family."""
-        return self.members
-
-    def get_family_name(self):
-        """Return family name"""
-        return self.name
-
-
-def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger):
+def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, cazy_dict, logger):
     """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
 
     :param cazy_url: str, URL to the CAZy home page.
     :param excluded_classes: list, list of CAZy classes not to be scraped
     :param max_tries: int, maximum number of times to try scrape if errors are encountered
+    :param cazy_dict: dictionary of offical CAZy class names
     :param logger: logger object
 
     Return list of URLs and None, or None and error message.
@@ -179,8 +198,9 @@ def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger):
         )
         sys.exit(1)
 
+    # retrieve URLs to the CAZy class pages
     try:
-        return [
+        class_urls = [
             f"{cazy_home}/{_['href']}"
             for _ in home_page[0].find_all("a", {"class": "spip_out"})
             if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)
@@ -195,6 +215,19 @@ def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger):
             exc_info=1
         )
         sys.exit(1)
+
+    # create CAZyClass objects
+    cazy_classes = []
+    for url in class_urls:
+        # retrieve call name and standardise it
+        class_name = class_url[0][20:-5]
+        for key in cazy_dict:
+            if class_name in cazy_dict[key]:
+                class_name = key
+        cazy_class = CazyClass(class_name, url, 0)
+        cazy_classes.append(cazy_class)
+
+    return cazy_classes
 
 
 def get_cazy_family_urls(class_url, cazy_home, class_name, args, logger):
