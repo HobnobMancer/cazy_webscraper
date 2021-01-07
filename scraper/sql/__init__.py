@@ -35,6 +35,15 @@ Session = sessionmaker()
 
 # define association/relationship tables
 
+# linker table between cazymes and CAZy family and subfamilies
+cazymes_families = Table(
+    "cazymes_families",
+    Base.metadata,
+    Column("ID", Integer),
+    Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
+    Column("family_id", Integer, ForeignKey("families.family_id")),
+    Column("subfamily_id", Integer, ForeignKey("subfamilies.subfamily_id")),
+)
 
 # linker table between cazymes and source organisms
 cazymes_taxs = Table(
@@ -42,7 +51,7 @@ cazymes_taxs = Table(
     Base.metadata,
     Column("ID", Integer),
     Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
-    Column("taxonomy_id", Integer, ForeignKey("taxs.taxonomy_id"))
+    Column("taxonomy_id", Integer, ForeignKey("taxs.taxonomy_id")),
 )
 
 # linker table between cazymes and ec numbers
@@ -92,6 +101,18 @@ class Cazyme(Base):
     cazyme_id = Column(Integer, primary_key=True)
     name = Column(String)
 
+    families = relationship(
+        "CazyFamily",
+        secondary=cazymes_families,
+        back_populates="cazymes",
+        lazy="dynamic",
+    )
+    subfamilies = relationship(
+        "CazySubFamily",
+        secondary=cazymes_families,
+        back_populates="cazymes",
+        lazy="dynamic",
+    )
     taxs = relationship(
         "Taxonomy",
         secondary=cazymes_taxs,
@@ -126,6 +147,43 @@ class Cazyme(Base):
     def __repr__(self):
         """Return string representation of Cazyme table object."""
         return f"<CAZyme name={self.name}, id={self.cazyme_id}>"
+
+
+class CazyFamily(Base):
+    """Describes the source organism of CAZymes."""
+    __tablename__ = "families"
+    family_id = Column(Integer, primary_key=True)
+    name = Column(String)
+
+    cazymes = relationship(
+        "Cazyme",
+        secondary=cazymes_families,
+        back_populates="families",
+        lazy="dynamic",
+    )
+    subfamilies = relationship("CazySubFamily")
+
+    def __repr__(self):
+        """Return string representation of source organism."""
+        return f"<CAZy family id={self.family_id} name={self.family_name}>"
+
+
+class CazySubFamily(Base):
+    """Describes the source organism of CAZymes."""
+    __tablename__ = "subfamilies"
+    subfamily_id = Column(Integer, primary_key=True)
+    name = Column(String)
+    family_id = Column(Integer, ForeignKey("families.family_id"))
+
+    cazymes = relationship(
+        "Cazyme",
+        secondary=cazymes_families,
+        back_populates="subfamilies",
+        lazy="dynamic",,
+    )
+
+    def __repr__(self):
+        return f"<Subfamily {self.subfamily_name} under Family {self.family_id}>"
 
 
 class Taxonomy(Base):
@@ -243,19 +301,19 @@ def build_db(time_stamp, args, logger):
 
 def protein_to_db(
     cazyme_name,
+    family,
     source_organism,
     ec_numbers,
-    primary_genbank,
-    genbanks,
-    primary_uniprot,
-    uniprots,
-    primary_pdb,
-    pdbs,
+    external_links,
     session,
 ):
     """Add protein (CAZyme) data to SQL database (db).
 
-    :param protein: Protein class object
+    :param cazyme_name: str, name of the protein/CAZyme
+    :param source_organism: str, the scientific name of the organism from which the CAZy is derived
+    :param ec_numbers: list of EC numbers which the CAZyme is annotated with
+    :param external_links: dict, links to external databases
+    :param session: open sqlalchemy session to database
 
     Return nothing.
     """
@@ -275,50 +333,112 @@ def protein_to_db(
     new_cazyme.taxs.append(organism)
 
     # define ec_number
-    for ec in ec_numbers:
-        ec_num = EC(ec_number=ec)
-        session.add(ec_num)
+    if ec_numbers is not None:
+        for ec in ec_numbers:
+            ec_num = EC(ec_number=ec)
+            session.add(ec_num)
+            session.commit()
+            new_cazyme.ecs.append(ec_num)
+
+    # add CAZy family
+    if family.find("_") != -1:  # subfamily
+        cazy_family = CazyFamily(name=family[:family.find("_")])
+        cazy_subfamily = CazySubFamily(name=family)
+
+        session.add(cazy_subfamily)
+        cazy_family.subfamilies = [cazy_subfamily]
+        session.add(cazy_family)
         session.commit()
-        new_cazyme.ecs.append(ec_num)
 
-    # define genbank accession
-    new_genbank = Genbank(genbank_accession=primary_genbank, primary=True)
-    session.add(new_genbank)
-    session.commit()
-    new_cazyme.genbanks.append(new_genbank)
+        new_cazyme.families.append(cazy_family)
+        new_cazyme.subfamilies.append(cazy_subfamily)
 
-    if genbanks is not None:
-        for accession in genbanks:
-            new_genbank = Genbank(genbank_accession=accession, primary=False)
-            session.add(new_genbank)
-            session.commit()
-            new_cazyme.genbanks.append(new_genbank)
+    else:
+        cazy_family = CazyFamily(name=family)
+        session.add(cazy_family)
+        session.commit()
 
-    # define uniprot accessions
-    new_uniprot = Uniprot(uniprot_accession=primary_uniprot, primary=True)
-    session.add(new_uniprot)
-    session.commit()
-    new_cazyme.uniprots.append(new_uniprot)
+        new_cazyme.families.append(cazy_family)
 
-    if uniprots is not None:
-        for accession in uniprots:
-            new_uniprot = Uniprot(uniprot_accession=accession, primary=False)
-            session.add(new_uniprot)
-            session.commit()
-            new_cazyme.uniprots.append(new_uniprot)
+    # add accession numbers of records linked to the protein/CAZyme in external databases
 
-    # define accessions of pdb structure records
-    new_pdb = Pdb(pdb_accession=primary_pdb, primary=True)
-    session.add(new_pdb)
-    session.commit()
-    new_cazyme.pdbs.append(new_pdb)
+    # define GenBank accessions
+    try:
+        genbank_accessions = external_links["GenBank"]
 
-    if pdbs is not None:
-        for accession in pdbs:
-            new_pdb = Pdb(pdb_accession=accession, primary=False)
-            session.add(new_pdb)
-            session.commit()
-            new_cazyme.pdbs.append(new_pdb)
+        if len(genbank_accessions) != 0:
+            if len(genbank_accessions) > 1:
+                new_genbank = Genbank(genbank_accession=genbank_accessions[0], primary=True)
+                session.add(new_genbank)
+                session.commit()
+                new_cazyme.genbanks.append(new_genbank)
+
+                for accession in genbank_accessions[1:]:
+                    new_genbank = Genbank(genbank_accession=accession, primary=False)
+                    session.add(new_genbank)
+                    session.commit()
+                    new_cazyme.genbanks.append(new_genbank)
+
+            else:
+                new_genbank = Genbank(genbank_accession=genbank_accessions[0], primary=True)
+                session.add(new_genbank)
+                session.commit()
+                new_cazyme.genbanks.append(new_genbank)
+
+    except KeyError:
+        pass
+
+    # define UniProt accessions
+    try:
+        uniprot_accessions = external_links["UniProt"]
+
+        if len(uniprot_accessions) != 0:
+            if len(uniprot_accessions) > 1:
+                new_uniprot = Genbank(genbank_accession=uniprot_accessions[0], primary=True)
+                session.add(new_uniprot)
+                session.commit()
+                new_cazyme.genbanks.append(new_uniprot)
+
+                for accession in uniprot_accessions[1:]:
+                    new_uniprot = Genbank(genbank_accession=accession, primary=False)
+                    session.add(new_uniprot)
+                    session.commit()
+                    new_cazyme.genbanks.append(new_uniprot)
+
+            else:
+                new_uniprot = Genbank(genbank_accession=uniprot_accessions[0], primary=True)
+                session.add(new_uniprot)
+                session.commit()
+                new_cazyme.genbanks.append(new_uniprot)
+
+    except KeyError:
+        pass
+
+    # define PDB accessions
+    try:
+        pdb_accessions = external_links["PDB/3D"]
+
+        if len(pdb_accessions) != 0:
+            if len(pdb_accessions) > 1:
+                new_pdb = Genbank(genbank_accession=pdb_accessions[0], primary=True)
+                session.add(new_pdb)
+                session.commit()
+                new_cazyme.genbanks.append(new_pdb)
+
+                for accession in pdb_accessions[1:]:
+                    new_pdb = Genbank(genbank_accession=accession, primary=False)
+                    session.add(new_pdb)
+                    session.commit()
+                    new_cazyme.genbanks.append(new_pdb)
+
+            else:
+                new_pdb = Genbank(genbank_accession=pdb_accessions[0], primary=True)
+                session.add(new_pdb)
+                session.commit()
+                new_cazyme.genbanks.append(new_pdb)
+
+    except KeyError:
+        pass
 
     # final commit to ensure all changes are commited
     session.commit()
