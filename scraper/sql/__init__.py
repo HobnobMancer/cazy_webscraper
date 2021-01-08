@@ -39,26 +39,14 @@ Session = sessionmaker()
 cazymes_families = Table(
     "cazymes_families",
     Base.metadata,
-    Column("ID", Integer),
     Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
     Column("family_id", Integer, ForeignKey("families.family_id")),
-    Column("subfamily_id", Integer, ForeignKey("subfamilies.subfamily_id")),
-)
-
-# linker table between cazymes and source organisms
-cazymes_taxs = Table(
-    "cazymes_taxs",
-    Base.metadata,
-    Column("ID", Integer),
-    Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
-    Column("taxonomy_id", Integer, ForeignKey("taxs.taxonomy_id")),
 )
 
 # linker table between cazymes and ec numbers
 cazymes_ecs = Table(
     "cazymes_ecs",
     Base.metadata,
-    Column("ID", Integer),
     Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
     Column("ec_id", Integer, ForeignKey("ecs.ec_id")),
 )
@@ -67,7 +55,6 @@ cazymes_ecs = Table(
 cazymes_genbanks = Table(
     "cazymes_genbanks",
     Base.metadata,
-    Column("ID", Integer),
     Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
     Column("genbank_id", Integer, ForeignKey("genbanks.genbank_id")),
 )
@@ -76,7 +63,6 @@ cazymes_genbanks = Table(
 cazymes_uniprots = Table(
     "cazymes_uniprots",
     Base.metadata,
-    Column("ID", Integer),
     Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
     Column("uniprot_id", Integer, ForeignKey("uniprots.uniprot_id")),
 )
@@ -85,7 +71,6 @@ cazymes_uniprots = Table(
 cazymes_pdbs = Table(
     "cazymes_pdbs",
     Base.metadata,
-    Column("ID", Integer),
     Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
     Column("pdb_id", Integer, ForeignKey("pdbs.pdb_id")),
 )
@@ -99,23 +84,14 @@ class Cazyme(Base):
     __tablename__ = "cazymes"
 
     cazyme_id = Column(Integer, primary_key=True)
-    name = Column(String)
+    cazyme_name = Column(String)
+    taxonomy_id = Column(Integer, ForeignKey("taxs.taxonomy_id"))
+
+    taxonomy = relationship("Taxonomy", back_populates="cazymes")
 
     families = relationship(
         "CazyFamily",
         secondary=cazymes_families,
-        back_populates="cazymes",
-        lazy="dynamic",
-    )
-    subfamilies = relationship(
-        "CazySubFamily",
-        secondary=cazymes_families,
-        back_populates="cazymes",
-        lazy="dynamic",
-    )
-    taxs = relationship(
-        "Taxonomy",
-        secondary=cazymes_taxs,
         back_populates="cazymes",
         lazy="dynamic",
     )
@@ -146,44 +122,7 @@ class Cazyme(Base):
 
     def __repr__(self):
         """Return string representation of Cazyme table object."""
-        return f"<CAZyme name={self.name}, id={self.cazyme_id}>"
-
-
-class CazyFamily(Base):
-    """Describes the source organism of CAZymes."""
-    __tablename__ = "families"
-    family_id = Column(Integer, primary_key=True)
-    name = Column(String)
-
-    cazymes = relationship(
-        "Cazyme",
-        secondary=cazymes_families,
-        back_populates="families",
-        lazy="dynamic",
-    )
-    subfamilies = relationship("CazySubFamily")
-
-    def __repr__(self):
-        """Return string representation of source organism."""
-        return f"<CAZy family id={self.family_id} name={self.family_name}>"
-
-
-class CazySubFamily(Base):
-    """Describes the source organism of CAZymes."""
-    __tablename__ = "subfamilies"
-    subfamily_id = Column(Integer, primary_key=True)
-    name = Column(String)
-    family_id = Column(Integer, ForeignKey("families.family_id"))
-
-    cazymes = relationship(
-        "Cazyme",
-        secondary=cazymes_families,
-        back_populates="subfamilies",
-        lazy="dynamic",,
-    )
-
-    def __repr__(self):
-        return f"<Subfamily {self.subfamily_name} under Family {self.family_id}>"
+        return f"<CAZyme name={self.cazyme_name}, id={self.cazyme_id}>"
 
 
 class Taxonomy(Base):
@@ -194,11 +133,33 @@ class Taxonomy(Base):
     genus = Column(String)
     species = Column(String)
 
-    cazymes = relationship("Cazyme", secondary=cazymes_taxs, back_populates="taxs", lazy="dynamic")
+    cazymes = relationship("Cazyme", back_populates="taxonomy")
 
     def __repr__(self):
         """Return string representation of source organism."""
         return f"<Source organism, taxonomy, Genus={self.genus}, Species={self.species}>"
+
+
+class CazyFamily(Base):
+    """Describes the source organism of CAZymes."""
+    __tablename__ = "families"
+    family_id = Column(Integer, primary_key=True)
+    family = Column(String)
+    subfamily = Column(String)
+
+    cazymes = relationship(
+        "Cazyme",
+        secondary=cazymes_families,
+        back_populates="families",
+        lazy="dynamic",
+    )
+
+    def __repr__(self):
+        """Return string representation of source organism."""
+        if self.subfamily is None:
+            return f"<CAZy family id={self.family_id} name={self.family}>"
+        else:
+            return f"<CAZy subfamily id={self.family_id} name={self.subfamily}>"
 
 
 class EC(Base):
@@ -299,7 +260,7 @@ def build_db(time_stamp, args, logger):
     return Session()
 
 
-def protein_to_db(
+def add_protein_to_db(
     cazyme_name,
     family,
     source_organism,
@@ -307,9 +268,108 @@ def protein_to_db(
     external_links,
     session,
 ):
-    """Add protein (CAZyme) data to SQL database (db).
+    """Coordinate adding protein (CAZyme) data to the SQL database (db).
 
     :param cazyme_name: str, name of the protein/CAZyme
+    :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
+    :param source_organism: str, the scientific name of the organism from which the CAZy is derived
+    :param ec_numbers: list of EC numbers which the CAZyme is annotated with
+    :param external_links: dict, links to external databases
+    :param session: open sqlalchemy session to database
+
+    Return nothing.
+    """
+    # query database to see if CAZyme is already present
+    query_result = session.query(Cazyme).filter_by(cazyme_name=cazyme_name).all()
+
+    if len(query_result) == 0:
+        add_new_protein_to_db(
+            cazyme_name,
+            family,
+            source_organism,
+            ec_numbers,
+            external_links,
+            session,
+        )
+
+    else:
+        for record in query_result:
+            if isinstance(record, Cazyme):
+                # check if the primary GenBank accession is the same
+                duplicate_records = record.genbanks.\
+                    filter(Cazyme.genbanks.any(genbank_accession=external_links["GenBank"][])).\
+                    filter(Genbank.primary==True).\
+                    all()
+
+                # Different primary GenBank accession identify these CAZymes are
+                # derived from different GenBank protein records
+                if len(duplicate_records) == 0:
+                    add_new_protein_to_db(
+                        cazyme_name,
+                        family,
+                        source_organism,
+                        ec_numbers,
+                        external_links,
+                        session,
+                    )
+
+                elif len(duplicate_records) > 1:
+                    logger.warning(
+                        "Duplicate records found in SQL database,\n"
+                        f"under the CAZyme name {cazyme_name} and "
+                        f"the primary GenBank accession {external_links['GenBank'][0]}.\n"
+                        "The new CAZyme will not be added to the SQL database but\n"
+                        "written out to the sql errors log file for manual inspection."
+                    )
+                    return "RETURN MESSAGE SO PICKED UP ABOVE AND PROTEIN ADDED TO LOG ERRORS"
+
+                else:
+                    add_data_to_protein_record(
+                        family,
+                        source_organism,
+                        ec_numbers,
+                        external_links,
+                        session,
+                    )
+
+    return
+
+
+def add_data_to_protein_record(
+    family,
+    source_organism,
+    ec_numbers,
+    external_links,
+    session,
+):
+    """Add data to an existing record in the SQL database.
+
+    :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
+    :param ec_numbers: list of EC numbers which the CAZyme is annotated with
+    :param external_links: dict, links to external databases
+    :param session: open sqlalchemy session to database
+
+    Return nothing.
+    """
+
+    # final commit to ensure all changes are commited
+    session.commit()
+
+    return
+
+
+def add_new_protein_to_db(
+    cazyme_name,
+    family,
+    source_organism,
+    ec_numbers,
+    external_links,
+    session,
+):
+    """Add a new protein (a CAZyme) record to the database.
+
+    :param cazyme_name: str, name of the protein/CAZyme
+    :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
     :param source_organism: str, the scientific name of the organism from which the CAZy is derived
     :param ec_numbers: list of EC numbers which the CAZyme is annotated with
     :param external_links: dict, links to external databases
@@ -318,19 +378,18 @@ def protein_to_db(
     Return nothing.
     """
     # define the CAZyme
-    new_cazyme = Cazyme(name=cazyme_name)
-    session.add(new_cazyme)
-    session.commit()
+    new_cazyme = Cazyme(cazyme_name=cazyme_name)
 
     # define source organism
     genus_sp_separator = source_organism.find(" ")
     genus = source_organism[:genus_sp_separator]
     species = source_organism[genus_sp_separator:]
 
-    organism = Taxonomy(genus=genus, species=species)
-    session.add(organism)
+    # add taxonomy data to the new cazyme
+    new_cazyme.taxonomy = Taxonomy(genus=genus, species=species)
+
+    session.add(new_cazyme)
     session.commit()
-    new_cazyme.taxs.append(organism)
 
     # define ec_number
     if ec_numbers is not None:
@@ -339,26 +398,24 @@ def protein_to_db(
             session.add(ec_num)
             session.commit()
             new_cazyme.ecs.append(ec_num)
+        session.commit()
 
     # add CAZy family
-    if family.find("_") != -1:  # subfamily
-        cazy_family = CazyFamily(name=family[:family.find("_")])
-        cazy_subfamily = CazySubFamily(name=family)
-
-        session.add(cazy_subfamily)
-        cazy_family.subfamilies = [cazy_subfamily]
+    if family.find("_") != -1:  # cazyme is classifed under a subfamily
+        cazy_family = CazyFamily(family=family[:family.find("_")], subfamily=family)
         session.add(cazy_family)
         session.commit()
 
         new_cazyme.families.append(cazy_family)
-        new_cazyme.subfamilies.append(cazy_subfamily)
+        session.commit()
 
     else:
-        cazy_family = CazyFamily(name=family)
+        cazy_family = CazyFamily(family=family)
         session.add(cazy_family)
         session.commit()
 
         new_cazyme.families.append(cazy_family)
+        session.commit()
 
     # add accession numbers of records linked to the protein/CAZyme in external databases
 
