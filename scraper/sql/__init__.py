@@ -266,6 +266,7 @@ def add_protein_to_db(
     source_organism,
     ec_numbers,
     external_links,
+    logger
     session,
 ):
     """Coordinate adding protein (CAZyme) data to the SQL database (db).
@@ -289,71 +290,50 @@ def add_protein_to_db(
             source_organism,
             ec_numbers,
             external_links,
+            logger,
             session,
         )
+        return
 
-    else:
-        for record in query_result:
-            if isinstance(record, Cazyme):
-                # check if the primary GenBank accession is the same
-                duplicate_records = record.genbanks.\
-                    filter(Cazyme.genbanks.any(genbank_accession=external_links["GenBank"][])).\
-                    filter(Genbank.primary==True).\
-                    all()
+    for record in query_result:
+        if isinstance(record, Cazyme):
+            # check if the primary GenBank accession is the same
+            duplicate_records = record.genbanks.\
+                filter(Cazyme.genbanks.any(genbank_accession=external_links["GenBank"][0])).\
+                filter(Genbank.primary==True).\
+                all()
 
-                # Different primary GenBank accession identify these CAZymes are
-                # derived from different GenBank protein records
-                if len(duplicate_records) == 0:
-                    add_new_protein_to_db(
-                        cazyme_name,
-                        family,
-                        source_organism,
-                        ec_numbers,
-                        external_links,
-                        session,
-                    )
+            # Different primary GenBank accession identify these CAZymes are
+            # derived from different GenBank protein records
+            if len(duplicate_records) == 0:
+                add_new_protein_to_db(
+                    cazyme_name,
+                    family,
+                    source_organism,
+                    ec_numbers,
+                    external_links,
+                    logger,
+                    session,
+                )
 
-                elif len(duplicate_records) > 1:
-                    logger.warning(
-                        "Duplicate records found in SQL database,\n"
-                        f"under the CAZyme name {cazyme_name} and "
-                        f"the primary GenBank accession {external_links['GenBank'][0]}.\n"
-                        "The new CAZyme will not be added to the SQL database but\n"
-                        "written out to the sql errors log file for manual inspection."
-                    )
-                    return "RETURN MESSAGE SO PICKED UP ABOVE AND PROTEIN ADDED TO LOG ERRORS"
+            elif len(duplicate_records) > 1:
+                logger.warning(
+                    "Duplicate records found in SQL database,\n"
+                    f"under the CAZyme name {cazyme_name} and "
+                    f"the primary GenBank accession {external_links['GenBank'][0]}.\n"
+                    "The new CAZyme will not be added to the SQL database but\n"
+                    "written out to the sql errors log file for manual inspection."
+                )
+                return "RETURN MESSAGE SO PICKED UP ABOVE AND PROTEIN ADDED TO LOG ERRORS"
 
-                else:
-                    add_data_to_protein_record(
-                        family,
-                        source_organism,
-                        ec_numbers,
-                        external_links,
-                        session,
-                    )
-
-    return
-
-
-def add_data_to_protein_record(
-    family,
-    source_organism,
-    ec_numbers,
-    external_links,
-    session,
-):
-    """Add data to an existing record in the SQL database.
-
-    :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
-    :param ec_numbers: list of EC numbers which the CAZyme is annotated with
-    :param external_links: dict, links to external databases
-    :param session: open sqlalchemy session to database
-
-    Return nothing.
-    """
-
-    # final commit to ensure all changes are commited
-    session.commit()
+            else:
+                add_data_to_protein_record(
+                    family,
+                    ec_numbers,
+                    external_links,
+                    logger,
+                    session,
+                )
 
     return
 
@@ -364,6 +344,7 @@ def add_new_protein_to_db(
     source_organism,
     ec_numbers,
     external_links,
+    logger,
     session,
 ):
     """Add a new protein (a CAZyme) record to the database.
@@ -385,28 +366,131 @@ def add_new_protein_to_db(
     genus = source_organism[:genus_sp_separator]
     species = source_organism[genus_sp_separator:]
 
-    # add taxonomy data to the new cazyme
-    new_cazyme.taxonomy = Taxonomy(genus=genus, species=species)
+    # check if the source  organism is already catalogued
+    query = session.query(Taxonomy).filter_by(genus=genus, species=species).all()
 
+    if len(query) == 0:
+        # create Taxonomy model object
+        new_cazyme.taxonomy = Taxonomy(genus=genus, species=species)
+
+    elif len(query) == 1:
+        # add exiting Taxonomy object to the new cazyme
+        new_cazyme.taxonomy = query[0]
+
+    else:
+        logger.warning(
+            f"The species {genus} {species} has been loaded into the database "
+            f"{len(query)} times.\n"
+        )
+        new_cazyme.taxonomy = query[0]
+
+    # add the new cazyme to the database
     session.add(new_cazyme)
     session.commit()
 
+    # add Family/Subfamily classifications
+    add_cazy_family(family, new_cazyme, session, logger)
+
     # define ec_number
     if ec_numbers is not None:
-        for ec in ec_numbers:
-            ec_num = EC(ec_number=ec)
-            session.add(ec_num)
-            session.commit()
-            new_cazyme.ecs.append(ec_num)
-        session.commit()
+        add_ec_numbers(ec_numbers, new_cazyme, session, logger)
 
-    # add CAZy family
+    # add GenBank accessions
+    try:
+        genbank_accessions = external_links["GenBank"]
+        add_genbank_accessions(genbank_accessions, new_cazyme, session, logger)
+    except KeyError:
+        pass
+
+    # add UniProt accessions
+    try:
+        uniprot_accessions = external_links["GenBank"]
+        add_uniprot_accessions(uniprot_accessions, new_cazyme, session, logger)
+    except KeyError:
+        pass
+
+    # add PDB/3D accessions
+    try:
+        pdb_accessions = external_links["GenBank"]
+        add_pdb_accessions(pdb_accessions, new_cazyme, session, logger)
+    except KeyError:
+        pass
+
+    # final commit to ensure all changes are commited
+    session.commit()
+
+    return
+
+
+def add_data_to_protein_record(
+    cazyme,
+    family,
+    ec_numbers,
+    external_links,
+    logger,
+    session,
+):
+    """Add data to an existing record in the SQL database.
+
+    :param cazyme: CAZyme class object
+    :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
+    :param ec_numbers: list of EC numbers which the CAZyme is annotated with
+    :param external_links: dict, links to external databases
+    :param session: open sqlalchemy session to database
+
+    Return nothing.
+    """
+    # add Family/Subfamily classifications
+    add_cazy_family(family, cazyme, session, logger)
+
+    # define ec_number
+    if ec_numbers is not None:
+        add_ec_numbers(ec_numbers, cazyme, session, logger)
+
+    # add GenBank accessions
+    try:
+        genbank_accessions = external_links["GenBank"]
+        add_genbank_accessions(genbank_accessions, cazyme, session, logger)
+    except KeyError:
+        pass
+
+    # add UniProt accessions
+    try:
+        uniprot_accessions = external_links["GenBank"]
+        add_uniprot_accessions(uniprot_accessions, cazyme, session, logger)
+    except KeyError:
+        pass
+
+    # add PDB/3D accessions
+    try:
+        pdb_accessions = external_links["GenBank"]
+        add_pdb_accessions(pdb_accessions, cazyme, session, logger)
+    except KeyError:
+        pass
+
+    # final commit to ensure all changes are commited
+    session.commit()
+
+    return
+
+
+def add_cazy_family(family, cazyme, session, logger):
+    """Add EC numbers to CAZyme record in the local CAZy database.
+
+    :param family: str, name of a CAZy family/subfamily
+    :param cazyme: Cazymes class object
+    :param session: open local database session connector
+    :param logger: logger object
+
+    Return nothing.
+    """
+    # Check if a subfamily was given
     if family.find("_") != -1:  # cazyme is classifed under a subfamily
         cazy_family = CazyFamily(family=family[:family.find("_")], subfamily=family)
         session.add(cazy_family)
         session.commit()
 
-        new_cazyme.families.append(cazy_family)
+        cazyme.families.append(cazy_family)
         session.commit()
 
     else:
@@ -414,90 +498,306 @@ def add_new_protein_to_db(
         session.add(cazy_family)
         session.commit()
 
-        new_cazyme.families.append(cazy_family)
+        cazyme.families.append(cazy_family)
         session.commit()
 
-    # add accession numbers of records linked to the protein/CAZyme in external databases
-
-    # define GenBank accessions
-    try:
-        genbank_accessions = external_links["GenBank"]
-
-        if len(genbank_accessions) != 0:
-            if len(genbank_accessions) > 1:
-                new_genbank = Genbank(genbank_accession=genbank_accessions[0], primary=True)
-                session.add(new_genbank)
-                session.commit()
-                new_cazyme.genbanks.append(new_genbank)
-
-                for accession in genbank_accessions[1:]:
-                    new_genbank = Genbank(genbank_accession=accession, primary=False)
-                    session.add(new_genbank)
-                    session.commit()
-                    new_cazyme.genbanks.append(new_genbank)
-
-            else:
-                new_genbank = Genbank(genbank_accession=genbank_accessions[0], primary=True)
-                session.add(new_genbank)
-                session.commit()
-                new_cazyme.genbanks.append(new_genbank)
-
-    except KeyError:
-        pass
-
-    # define UniProt accessions
-    try:
-        uniprot_accessions = external_links["UniProt"]
-
-        if len(uniprot_accessions) != 0:
-            if len(uniprot_accessions) > 1:
-                new_uniprot = Genbank(genbank_accession=uniprot_accessions[0], primary=True)
-                session.add(new_uniprot)
-                session.commit()
-                new_cazyme.genbanks.append(new_uniprot)
-
-                for accession in uniprot_accessions[1:]:
-                    new_uniprot = Genbank(genbank_accession=accession, primary=False)
-                    session.add(new_uniprot)
-                    session.commit()
-                    new_cazyme.genbanks.append(new_uniprot)
-
-            else:
-                new_uniprot = Genbank(genbank_accession=uniprot_accessions[0], primary=True)
-                session.add(new_uniprot)
-                session.commit()
-                new_cazyme.genbanks.append(new_uniprot)
-
-    except KeyError:
-        pass
-
-    # define PDB accessions
-    try:
-        pdb_accessions = external_links["PDB/3D"]
-
-        if len(pdb_accessions) != 0:
-            if len(pdb_accessions) > 1:
-                new_pdb = Genbank(genbank_accession=pdb_accessions[0], primary=True)
-                session.add(new_pdb)
-                session.commit()
-                new_cazyme.genbanks.append(new_pdb)
-
-                for accession in pdb_accessions[1:]:
-                    new_pdb = Genbank(genbank_accession=accession, primary=False)
-                    session.add(new_pdb)
-                    session.commit()
-                    new_cazyme.genbanks.append(new_pdb)
-
-            else:
-                new_pdb = Genbank(genbank_accession=pdb_accessions[0], primary=True)
-                session.add(new_pdb)
-                session.commit()
-                new_cazyme.genbanks.append(new_pdb)
-
-    except KeyError:
-        pass
-
-    # final commit to ensure all changes are commited
     session.commit()
+    return
 
+
+def add_ec_numbers(ec_numbers, cazyme, session, logger):
+    """Add EC numbers to CAZyme record in the local CAZy database.
+
+    :param ec_numbers: list of EC numbers (str)
+    :param new_cazyme: Cazymes class object
+    :param session: open local database session connector
+    :param logger: logger object
+
+    Return nothing.
+    """
+    for ec in ec_numbers:
+        # check if the EC number is already in the database
+        query = session.query(EC).filter_by(ec_number=ec).all()
+
+        if len(query) == 0:
+            # add new EC number to the database
+            new_ec = EC(ec_number=ec)
+            session.add(new_ec)
+            session.commit()
+
+            cazyme.ecs.append(new_ec)
+            session.commit()
+
+        elif len(query) == 1:
+            # add existing EC number record to the CAZyme record
+            cazyme.ecs.append(query[0])
+            session.commit()
+
+        else:
+            # duplicate records found for the current EC number
+            logger.warning(
+                f"Duplicate entries found for the EC# {ec} in the local CAZy database."
+            )
+            cazyme.ecs.append(query[0])
+            session.commit()
+
+    session.commit()
+    return
+
+
+def add_genbank_accessions(genbank_accessions, cazyme, session, logger):
+    """Add GenBank protein accession numbers to CAZyme record in the local CAZy database.
+
+    :param genbank_accessions: list of GenBank protein accession numbers (str)
+    :param cazyme: Cazymes class object
+    :param session: open local database session connector
+    :param logger: logger object
+
+    Return nothing.
+    """
+    if len(genbank_accessions) == 0:
+        return
+
+    elif len(genbank_accessions) == 1:
+        add_primary_genbank(genbank_accessions, cazyme, session, logger)
+        # check if accession is already in the database
+
+    else:
+        add_primary_genbank(genbank_accessions[0], cazyme, session, logger)
+
+        for accession in genbank_accessions[1:]:
+            # check if accession is in the database already
+            query = session.query(Genbank).filter_by(genbank_accession=accession).all()
+
+            if len(query) == 0:
+                # add new genbank accession
+                new_accession = Genbank(genbank_accession=accession, primary=True)
+                session.add(new_accession)
+                session.commit()
+
+                cazyme.genbanks.append(new_accession)
+                session.commit()
+
+            elif len(query) == 1:
+                # add GenBank record to current working CAZyme
+                cazyme.genbanks.append(query[0])
+                session.commit()
+
+            else:
+                logger.warning(
+                    f"Duplicate entries for GenBank accession {accession}"
+                )
+                cazyme.genbanks.append(query[0])
+                session.commit()
+
+    session.commit()
+    return
+
+
+def add_primary_genbank(accession, cazyme, session, logger):
+    """Add primary GenBank accession for CAZyme to the local CAZy database.
+
+    :param accession: str, primary GenBank accession of a CAZyme
+    :param cazyme: Cazymes class object
+    :param session: open local database session connector
+    :param logger: logger object
+
+    Return nothing.
+    """
+    query = session.query(Genbank).filter_by(genbank_accession=accession).all()
+
+    if len(query) == 0:
+        # add new genbank accession
+        new_accession = Genbank(genbank_accession=accession, primary=True)
+        session.add(new_accession)
+        session.commit()
+
+        cazyme.genbanks.append(new_accession)
+        session.commit()
+
+    elif len(query) == 1:
+        # add GenBank record to current working CAZyme
+        cazyme.genbanks.append(query[0])
+        session.commit()
+
+    else:
+        logger.warning(
+            f"Duplicate entries for GenBank accession {accession}"
+        )
+        cazyme.genbanks.append(query[0])
+        session.commit()
+
+    session.commit()
+    return
+
+
+def add_uniprot_accessions(uniprot_accessions, cazyme, session, logger):
+    """Add UniProt protein accessions to CAZyme record in the local CAZy database.
+
+    :param uniprot_accessions: list of UniProt protein accession numbers (str)
+    :param cazyme: Cazymes class object
+    :param session: open local database session connector
+    :param logger: logger object
+
+    Return nothing.
+    """
+    if len(uniprot_accessions) == 0:
+        return
+
+    elif len(uniprot_accessions) == 1:
+        add_primary_uniprot(uniprot_accessions, cazyme, session, logger)
+        # check if accession is already in the database
+
+    else:
+        add_primary_uniprot(uniprot_accessions[0], cazyme, session, logger)
+
+        for accession in uniprot_accessions[1:]:
+            # check if accession is in the database already
+            query = session.query(Uniprot).filter_by(uniprot_accession=accession).all()
+
+            if len(query) == 0:
+                # add new uniprot accession
+                new_accession = Uniprot(uniprot_accession=accession, primary=True)
+                session.add(new_accession)
+                session.commit()
+
+                cazyme.uniprots.append(new_accession)
+                session.commit()
+
+            elif len(query) == 1:
+                # add UniProt record to current working CAZyme
+                cazyme.uniprots.append(query[0])
+                session.commit()
+
+            else:
+                logger.warning(
+                    f"Duplicate entries for UniProt accession {accession}"
+                )
+                cazyme.uniprots.append(query[0])
+                session.commit()
+
+    session.commit()
+    return
+
+
+def add_primary_uniprot(accession, cazyme, session, logger):
+    """Add primary UniProt accession for CAZyme to the local CAZy database.
+
+    :param accession: str, primary UniProt accession of a CAZyme
+    :param cazyme: Cazymes class object
+    :param session: open local database session connector
+    :param logger: logger object
+
+    Return nothing.
+    """
+    query = session.query(Uniprot).filter_by(uniprot_accession=accession).all()
+
+    if len(query) == 0:
+        # add new uniprot accession
+        new_accession = Uniprot(uniprot_accession=accession, primary=True)
+        session.add(new_accession)
+        session.commit()
+
+        cazyme.uniprots.append(new_accession)
+        session.commit()
+
+    elif len(query) == 1:
+        # add UniProt record to current working CAZyme
+        cazyme.uniprots.append(query[0])
+        session.commit()
+
+    else:
+        logger.warning(
+            f"Duplicate entries for UniProt accession {accession}"
+        )
+        cazyme.uniprots.append(query[0])
+        session.commit()
+
+    session.commit()
+    return
+
+
+def add_pdb_accessions(pdb_accessions, cazyme, session, logger):
+    """Add PDB/3D protein accessions to CAZyme record in the local CAZy database.
+
+    :param pdb_accessions: list of UniProt protein accession numbers (str)
+    :param cazyme: Cazymes class object
+    :param session: open local database session connector
+    :param logger: logger object
+
+    Return nothing.
+    """
+    if len(pdb_accessions) == 0:
+        return
+
+    elif len(pdb_accessions) == 1:
+        add_primary_pdb(pdb_accessions, cazyme, session, logger)
+        # check if accession is already in the database
+
+    else:
+        add_primary_pdb(pdb_accessions[0], cazyme, session, logger)
+
+        for accession in pdb_accessions[1:]:
+            # check if accession is in the database already
+            query = session.query(Pdb).filter_by(pdb_accession=accession).all()
+
+            if len(query) == 0:
+                # add new pdb accession
+                new_accession = Pdb(pdb_accession=accession, primary=True)
+                session.add(new_accession)
+                session.commit()
+
+                cazyme.pdbs.append(new_accession)
+                session.commit()
+
+            elif len(query) == 1:
+                # add PDB/3D record to current working CAZyme
+                cazyme.pdbs.append(query[0])
+                session.commit()
+
+            else:
+                logger.warning(
+                    f"Duplicate entries for PDB/3D accession {accession}"
+                )
+                cazyme.pdbs.append(query[0])
+                session.commit()
+
+    session.commit()
+    return
+
+
+def add_primary_pdb(accession, cazyme, session, logger):
+    """Add primary PDB/3D accession for CAZyme to the local CAZy database.
+
+    :param accession: str, primary UniProt accession of a CAZyme
+    :param cazyme: Cazymes class object
+    :param session: open local database session connector
+    :param logger: logger object
+
+    Return nothing.
+    """
+    query = session.query(Pdb).filter_by(pdb_accession=accession).all()
+
+    if len(query) == 0:
+        # add new pdb accession
+        new_accession = Pdb(pdb_accession=accession, primary=True)
+        session.add(new_accession)
+        session.commit()
+
+        cazyme.pdbs.append(new_accession)
+        session.commit()
+
+    elif len(query) == 1:
+        # add PDB/3D record to current working CAZyme
+        cazyme.pdbs.append(query[0])
+        session.commit()
+
+    else:
+        logger.warning(
+            f"Duplicate entries for PDB/3D accession {accession}"
+        )
+        cazyme.pdbs.append(query[0])
+        session.commit()
+
+    session.commit()
     return
