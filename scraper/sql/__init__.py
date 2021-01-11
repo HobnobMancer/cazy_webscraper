@@ -329,7 +329,9 @@ def add_protein_to_db(
                     "Duplicate records found in SQL database,\n"
                     f"under the CAZyme name {cazyme_name} and "
                     f"the primary GenBank accession {external_links['GenBank'][0]}.\n"
-                    "The new CAZyme was not be added to the SQL database."
+                    "The new CAZyme was not be added to the SQL database.\n"
+                    f"family={family}, source={source_organism}, ec#s={ec_numbers}\n"
+                    f"external links={external_links}"
                 )
 
             else:
