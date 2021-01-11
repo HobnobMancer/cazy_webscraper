@@ -278,7 +278,7 @@ def add_protein_to_db(
     :param external_links: dict, links to external databases
     :param session: open sqlalchemy session to database
 
-    Return nothing.
+    Return nothing or duplicate error message.
     """
     # query database to see if CAZyme is already present
     query_result = session.query(Cazyme).filter_by(cazyme_name=cazyme_name).all()
@@ -324,7 +324,13 @@ def add_protein_to_db(
                     "The new CAZyme will not be added to the SQL database but\n"
                     "written out to the sql errors log file for manual inspection."
                 )
-                return "RETURN MESSAGE SO PICKED UP ABOVE AND PROTEIN ADDED TO LOG ERRORS"
+
+                return(
+                    "Duplicate records found in SQL database,\n"
+                    f"under the CAZyme name {cazyme_name} and "
+                    f"the primary GenBank accession {external_links['GenBank'][0]}.\n"
+                    "The new CAZyme was not be added to the SQL database."
+                )
 
             else:
                 add_data_to_protein_record(
