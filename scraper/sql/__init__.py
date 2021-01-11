@@ -486,20 +486,77 @@ def add_cazy_family(family, cazyme, session, logger):
     """
     # Check if a subfamily was given
     if family.find("_") != -1:  # cazyme is classifed under a subfamily
-        cazy_family = CazyFamily(family=family[:family.find("_")], subfamily=family)
-        session.add(cazy_family)
-        session.commit()
+        # check if the subfamily is already in the database
+        query = session.query(CazyFamily).filter_by(subfamily=family)
 
-        cazyme.families.append(cazy_family)
-        session.commit()
+        if len(query) == 0:
+            # add new CAZy subfamily to the database
+            cazy_family = CazyFamily(family=family[:family.find("_")], subfamily=family)
+            session.add(cazy_family)
+            session.commit()
+
+            cazyme.families.append(cazy_family)
+            session.commit()
+
+        elif len(query) == 1:
+            # add existing subfamily to the current working CAZyme
+            cazyme.families.append(query[0])
+            session.commit()
+
+        else:
+            logger.warning(
+                f"Duplicate subfamily entries found for the CAZy subfamily {family}."""
+            )
+            cazyme.families.append(query[0])
+            session.commit()
 
     else:
-        cazy_family = CazyFamily(family=family)
-        session.add(cazy_family)
-        session.commit()
+        # check if the family is already in the database
+        query = session.query(CazyFamily).filter_by(family=family)
 
-        cazyme.families.append(cazy_family)
-        session.commit()
+        if len(query) == 0:
+            # add new CAZy to the database
+            cazy_family = CazyFamily(family=family)
+            session.add(cazy_family)
+            session.commit()
+
+            cazyme.families.append(cazy_family)
+            session.commit()
+
+        elif len(query) == 1:
+            # check if it is associated with a CAZy subfamily
+            if query.subfamily is not None:
+                # add new CAZy family without a subfamily association to the database
+                cazy_family = CazyFamily(family=family)
+                session.add(cazy_family)
+                session.commit()
+
+                cazyme.families.append(cazy_family)
+                session.commit()
+
+        else:
+            nonsubfamily_asociated_family_entries = []
+            for entry in query:
+                # check if retrieved family record is associated with a subfamily
+                if entry.subfamily is None:
+                    nonsubfamily_asociated_family_entries.append(entry)
+
+            if len(nonsubfamily_asociated_family_entries) == 0:
+                # add new CAZy family without a subfamily association to the database
+                cazy_family = CazyFamily(family=family)
+                session.add(cazy_family)
+                session.commit()
+
+                cazyme.families.append(cazy_family)
+                session.commit()
+
+            else:
+                logger.warning(
+                    f"Duplicate family entries found for the CAZy family {family} "
+                    "without subfamily association."""
+                )
+                cazyme.families.append(entry[0])
+                session.commit()
 
     session.commit()
     return
