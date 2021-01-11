@@ -541,7 +541,7 @@ def parse_proteins(protein_page_url, family_name, logger, session):
                 f"No protein records from this page will be retried."
             )
         )
-        return [{"url": protein_page_url, "error": error, "sql": None}]
+        return {"url": protein_page_url, "error": error, "sql": None}
 
     # retrieve protein record table
     protein_table = protein_page[0].find_all("table", {"class": "listing"})[0]
@@ -602,7 +602,7 @@ def row_to_protein(row, family_name, session):
 
     # add protein to database
     try:
-        sql.add_protein_to_db(
+        result = sql.add_protein_to_db(
             protein_name,
             family_name,
             source_organism,
@@ -619,6 +619,9 @@ def row_to_protein(row, family_name, session):
             "error": f"Failed to add to SQL database. {error_message}",
             "sql": protein_name,
         }
+
+    if result is not None:  # duplicate CAZymes found in the database
+        {"url": None, "error": result, "sql": protein_name}
 
     return {"url": None, "error": None, "sql": None}
 
