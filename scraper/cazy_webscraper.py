@@ -38,7 +38,6 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 """
 
 import logging
-import re
 import sys
 
 from datetime import datetime
@@ -46,7 +45,7 @@ from typing import List, Optional
 
 from tqdm import tqdm
 
-from scraper import crawler, file_io, parse, sql, utilities
+from scraper import crawler, file_io, sql, utilities
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):

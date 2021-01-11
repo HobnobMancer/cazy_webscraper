@@ -266,7 +266,7 @@ def add_protein_to_db(
     source_organism,
     ec_numbers,
     external_links,
-    logger
+    logger,
     session,
 ):
     """Coordinate adding protein (CAZyme) data to the SQL database (db).
@@ -328,6 +328,7 @@ def add_protein_to_db(
 
             else:
                 add_data_to_protein_record(
+                    query_result[0],
                     family,
                     ec_numbers,
                     external_links,
