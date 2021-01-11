@@ -602,14 +602,16 @@ def row_to_protein(row, family_name, session):
 
     # add protein to database
     try:
-        sql.protein_to_db(
+        sql.add_protein_to_db(
             protein_name,
+            family_name,
             source_organism,
             ec_numbers,
             external_links,
-            family_name,
-            session
+            logger,
+            session,
         )
+
     except Exception as error_message:
         logger.warrning(f"Failed to add {protein_name} to SQL database", exc_info=1)
         return {
