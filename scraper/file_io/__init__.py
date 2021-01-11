@@ -443,9 +443,11 @@ def write_out_df(dataframe, df_name, outdir, logger, force):
 
 def write_out_failed_scrapes(failed_urls, time_stamp, args, logger):
     """Write out the URLs for which a connection to CAZy failed.
+
     :param failed_urls: list, contains the URL and reason for the failed scrape
     :param args: cmd args parser
     :param logger: logger object
+
     Return nothing.
     """
     if args.output is not sys.stdout:
@@ -459,5 +461,29 @@ def write_out_failed_scrapes(failed_urls, time_stamp, args, logger):
         logger.error("The following items were not scraped:")
         for url in failed_urls:
             logger.error(url)
+
+    return
+
+
+def write_out_failed_proteins(sql_failures, time_stamp, args, logger):
+    """Write out the names of proteins which raised errors when being added to the local db.
+
+    :param sql_failures: list, the names of proteins that were unsuccessfully added to the db
+    :param args: cmd args parser
+    :param logger: logger object
+
+    Return nothing.
+    """
+    if args.output is not sys.stdout:
+        output_path = args.output / f"failed_db_protein_additions_{time_stamp}.txt"
+
+        with open(output_path, "a") as fh:
+            for fail in sql_failures:
+                fh.write(f"{fail}\n")
+
+    else:
+        logger.error("The following proteins were not entered into database:")
+        for fail in sql_failures:
+            logger.error(fail)
 
     return
