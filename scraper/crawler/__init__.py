@@ -617,8 +617,6 @@ def row_to_protein(row, family_name, logger, session):
             "error": f"Failed to add to SQL database. {error_message}",
             "sql": protein_name,
         }
-    
-    sys.exit(1)
 
     if result is not None:  # duplicate CAZymes found in the database
         {"url": None, "error": result, "sql": protein_name}
