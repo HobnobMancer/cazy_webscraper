@@ -252,7 +252,7 @@ def get_cazy_family_urls(class_url, class_name, cazy_home, args, logger):
     # retrieve the <h3> element that titles the div section containing the tables of family links
     family_h3_element = [
         _
-        for _ in class_page[0].find_all("h3", {"class": "spip"})
+        for _ in class_page.find_all("h3", {"class": "spip"})
         if str(_.contents[0]).strip() == "Tables for Direct Access"
     ][0]
 
@@ -314,7 +314,7 @@ def get_cazy_family_urls(class_url, class_name, cazy_home, args, logger):
             )
             continue
 
-        family_name = family_url[0][(len(cazy_home) + 1): -5]
+        family_name = url[(len(cazy_home) + 1): -5]
 
         family = Family(family_name, class_name, url, 0)
         family.members = set()  # later used to store Protein members
@@ -544,7 +544,7 @@ def parse_proteins(protein_page_url, family_name, logger, session):
         return {"url": protein_page_url, "error": error, "sql": None}
 
     # retrieve protein record table
-    protein_table = protein_page[0].find_all("table", {"class": "listing"})[0]
+    protein_table = protein_page.find_all("table", {"class": "listing"})[0]
     protein_rows = [
         _ for _ in protein_table.descendants if (
             (_.name == "tr") and ("id" not in _.attrs) and ("class" not in _.attrs)
@@ -552,10 +552,10 @@ def parse_proteins(protein_page_url, family_name, logger, session):
     ]
 
     for row in protein_rows:
-        yield row_to_protein(row, family_name, session)
+        yield row_to_protein(row, family_name, logger, session)
 
 
-def row_to_protein(row, family_name, session):
+def row_to_protein(row, family_name, logger, session):
     """Returns a Protein object representing a single protein row from a CAZy family protein page.
 
     Each row, in order, contains the protein name, EC number, source organism, GenBank ID(s),
@@ -607,7 +607,7 @@ def row_to_protein(row, family_name, session):
             family_name,
             source_organism,
             ec_numbers,
-            external_links,
+            links,
             logger,
             session,
         )
