@@ -440,7 +440,7 @@ def parse_family(family, cazy_home, max_tries, logger, session):
                 url,
                 family.name,
                 logger,
-                session
+                session,
             ) for url in protein_page_urls
         ) for y in x),
         total=len(protein_page_urls),
@@ -611,7 +611,7 @@ def row_to_protein(row, family_name, logger, session):
         )
 
     except Exception as error_message:
-        logger.warrning(f"Failed to add {protein_name} to SQL database", exc_info=1)
+        logger.warning(f"Failed to add {protein_name} to SQL database", exc_info=1)
         return {
             "url": None,
             "error": f"Failed to add to SQL database. {error_message}",
