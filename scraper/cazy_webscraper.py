@@ -172,7 +172,7 @@ def get_cazy_data(
     for cazy_class in tqdm(cazy_classes, desc="Parsing CAZy classes"):
 
         # first attempt of scraping, retrieve URLs to CAZy families
-        if len(cazy_class.failed_families.keys) == 0:
+        if len(list(cazy_class.failed_families.keys())) == 0:
 
             # retrieve URLs to families for the current CAZy class, return as Family class objects
             class_families, error_message, incorrect_urls = crawler.get_cazy_family_urls(
@@ -206,7 +206,7 @@ def get_cazy_data(
 
         # Not first try, scrape only the families for which a connections to CAZy previously failed
         else:
-            class_families = cazy_class.failed_families.keys()
+            class_families = list(cazy_class.failed_families.keys())
 
         # Scrape the familes of the current CAZy class, retrieving protein data
 
@@ -236,7 +236,7 @@ def get_cazy_data(
                         del cazy_class.failed_families[cazy_family]  # do not try another scrape
                         continue
 
-                if len(cazy_class.failed_families.keys) != 0:
+                if len(list(cazy_class.failed_families.keys())) != 0:
                     # if there are families with previously failed connection attempts
                     # and remaining tries, retry connection after working through other classes
                     cazy_classes += cazy_class
@@ -280,7 +280,7 @@ def get_cazy_data(
                         del cazy_class.failed_families[cazy_family]  # do not try another scrape
                         continue
 
-                if len(cazy_class.failed_families.keys) != 0:
+                if len(list(cazy_class.failed_families.keys())) != 0:
                     # if there are families with previously failed connection attempts
                     # and remaining tries, retry connection after working through other classes
                     cazy_classes += cazy_class
