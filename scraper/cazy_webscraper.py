@@ -213,10 +213,10 @@ def get_cazy_data(
         if (config_dict is None) or (config_dict[cazy_class.name] is None):
             # No (sub)families were specified, therefore, scraping all families of the CAZy class
 
-            for cazy_family in tqdm(class_families, desc=f"Parsing {cazy_class.name} families"):
+            for family in tqdm(class_families, desc=f"Parsing {cazy_class.name} families"):
                 # Populate family with Proteins catalogued under the CAZy family
                 family, failed_family_page_scrapes, family_sql_failures = crawler.parse_family(
-                    cazy_family,
+                    family,
                     cazy_home,
                     logger,
                     session,
@@ -226,14 +226,14 @@ def get_cazy_data(
                 if failed_family_page_scrapes is not None:
                     # add one to the number of attempted scrapes for CAZy family
                     try:
-                        cazy_class.failed_families[cazy_family] += 1
+                        cazy_class.failed_families[family] += 1
                     except KeyError:
-                        cazy_class.failed_families[cazy_family] = 1  # first attempt
+                        cazy_class.failed_families[family] = 1  # first attempt
 
                     # check if max number of attempts to connect family pages has been met
-                    if cazy_class.failed_families[cazy_family] == max_tries:
+                    if cazy_class.failed_families[family] == max_tries:
                         failed_url_scrapes += failed_family_page_scrapes  # store urls
-                        del cazy_class.failed_families[cazy_family]  # do not try another scrape
+                        del cazy_class.failed_families[family]  # do not try another scrape
                         continue
 
                 if len(list(cazy_class.failed_families.keys())) != 0:
@@ -246,7 +246,7 @@ def get_cazy_data(
         else:
             # scrape only (sub)families specified in the config file
 
-            for cazy_family in tqdm(class_families, desc=f"Parsing {cazy_class.name} families"):
+            for family in tqdm(class_families, desc=f"Parsing {cazy_class.name} families"):
 
                 # Allow retrieval of subfamilies when only the parent CAZy family was named in the
                 # config file, by searching by the family not subfamily in the config file
@@ -260,7 +260,7 @@ def get_cazy_data(
 
                 # Populate family with Proteins catalogued under the CAZy family
                 family, failed_family_page_scrapes, family_sql_failures = crawler.parse_family(
-                    cazy_family,
+                    family,
                     cazy_home,
                     logger,
                     session,
@@ -270,14 +270,14 @@ def get_cazy_data(
                 if failed_family_page_scrapes is not None:
                     # add one to the number of attempted scrapes for CAZy family
                     try:
-                        cazy_class.failed_families[cazy_family] += 1
+                        cazy_class.failed_families[family] += 1
                     except KeyError:
-                        cazy_class.failed_families[cazy_family] = 1  # first attempt
+                        cazy_class.failed_families[family] = 1  # first attempt
 
                     # check if max number of attempts to connect family pages has been met
-                    if cazy_class.failed_families[cazy_family] == max_tries:
+                    if cazy_class.failed_families[family] == max_tries:
                         failed_url_scrapes += failed_family_page_scrapes  # store urls
-                        del cazy_class.failed_families[cazy_family]  # do not try another scrape
+                        del cazy_class.failed_families[family]  # do not try another scrape
                         continue
 
                 if len(list(cazy_class.failed_families.keys())) != 0:
