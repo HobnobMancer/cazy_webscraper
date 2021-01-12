@@ -31,8 +31,6 @@ import re
 import sys
 import time
 
-import numpy as np
-
 from collections import defaultdict
 from tqdm import tqdm
 from requests.exceptions import ConnectionError, MissingSchema
@@ -409,7 +407,7 @@ def parse_family(family, cazy_home, max_tries, logger, session):
                 f"{first_pagination_url}\t"
                 f"{family.cazy_class}\t"
                 f"Failed to connect to first page of proteins for {family.name}\t"
-                f"{err_message}"
+                f"{error_message}"
             ],
             [],
         )
