@@ -177,7 +177,7 @@ def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, cazy_dict, logge
     try:
         class_urls = [
             f"{cazy_home}/{_['href']}"
-            for _ in home_page[0].find_all("a", {"class": "spip_out"})
+            for _ in home_page.find_all("a", {"class": "spip_out"})
             if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)
         ]
     except AttributeError:  # raise if can't find results with find_all("a", {"class": "spip_out"})
@@ -207,7 +207,7 @@ def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, cazy_dict, logge
 
     for url in class_urls:
         # retrieve class name and standardise it
-        class_name = class_url[0][20:-5]
+        class_name = url[20:-5]
         for key in cazy_dict:
             if class_name in cazy_dict[key]:
                 class_name = key
@@ -456,10 +456,10 @@ def parse_family(family, cazy_home, max_tries, logger, session):
                 family.failed_pages[protein["url"]] = 1  # First failed attempt to connect to page
 
             failed_scrapes.append(
-                f"{protein["url"]}\t"
+                f"{protein['url']}\t"
                 f"{family.cazy_class}\t"
                 f"Failed to connect to this page of proteins for {family.name}\t"
-                f"{protein["error"]}"
+                f"{protein['error']}"
             )
 
             if family.failed_pages[protein["url"]] == max_tries:
@@ -470,9 +470,9 @@ def parse_family(family, cazy_home, max_tries, logger, session):
         elif protein["sql"] is not None:
             # Error occured when adding Protein to SQL database
             sql_failures.append(
-                f"{protein["sql"]} was not added to the database\n"
+                f"{protein['sql']} was not added to the database\n"
                 "and raised the following error when atempting to do so:\n"
-                f"{protein["error"]}"
+                f"{protein['error']}"
             )
 
     if len(failed_scrapes) == 0:
