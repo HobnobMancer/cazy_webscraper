@@ -218,6 +218,7 @@ def get_cazy_data(
                 family, failed_family_page_scrapes, family_sql_failures = crawler.parse_family(
                     family,
                     cazy_home,
+                    max_tries,
                     logger,
                     session,
                 )
@@ -262,6 +263,7 @@ def get_cazy_data(
                 family, failed_family_page_scrapes, family_sql_failures = crawler.parse_family(
                     family,
                     cazy_home,
+                    max_tries,
                     logger,
                     session,
                 )
