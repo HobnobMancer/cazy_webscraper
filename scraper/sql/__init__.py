@@ -59,6 +59,7 @@ cazymes_genbanks = Table(
     Column("genbank_id", Integer, ForeignKey("genbanks.genbank_id")),
 )
 
+
 # linker table between cazymes and UniProt accessions of CAZymes
 cazymes_uniprots = Table(
     "cazymes_uniprots",
@@ -413,14 +414,14 @@ def add_new_protein_to_db(
 
     # add UniProt accessions
     try:
-        uniprot_accessions = external_links["GenBank"]
+        uniprot_accessions = external_links["UniProt"]
         add_uniprot_accessions(uniprot_accessions, new_cazyme, session, logger)
     except KeyError:
         pass
 
     # add PDB/3D accessions
     try:
-        pdb_accessions = external_links["GenBank"]
+        pdb_accessions = external_links["PDB/3D"]
         add_pdb_accessions(pdb_accessions, new_cazyme, session, logger)
     except KeyError:
         pass
@@ -496,7 +497,7 @@ def add_cazy_family(family, cazyme, session, logger):
     # Check if a subfamily was given
     if family.find("_") != -1:  # cazyme is classifed under a subfamily
         # check if the subfamily is already in the database
-        query = session.query(CazyFamily).filter_by(subfamily=family)
+        query = session.query(CazyFamily).filter_by(subfamily=family).all()
 
         if len(query) == 0:
             # add new CAZy subfamily to the database
@@ -521,7 +522,7 @@ def add_cazy_family(family, cazyme, session, logger):
 
     else:
         # check if the family is already in the database
-        query = session.query(CazyFamily).filter_by(family=family)
+        query = session.query(CazyFamily).filter_by(family=family).all()
 
         if len(query) == 0:
             # add new CAZy to the database
@@ -534,7 +535,7 @@ def add_cazy_family(family, cazyme, session, logger):
 
         elif len(query) == 1:
             # check if it is associated with a CAZy subfamily
-            if query.subfamily is not None:
+            if query[0].subfamily is not None:
                 # add new CAZy family without a subfamily association to the database
                 cazy_family = CazyFamily(family=family)
                 session.add(cazy_family)
@@ -625,7 +626,7 @@ def add_genbank_accessions(genbank_accessions, cazyme, session, logger):
         return
 
     elif len(genbank_accessions) == 1:
-        add_primary_genbank(genbank_accessions, cazyme, session, logger)
+        add_primary_genbank(genbank_accessions[0], cazyme, session, logger)
         # check if accession is already in the database
 
     else:
@@ -711,7 +712,7 @@ def add_uniprot_accessions(uniprot_accessions, cazyme, session, logger):
         return
 
     elif len(uniprot_accessions) == 1:
-        add_primary_uniprot(uniprot_accessions, cazyme, session, logger)
+        add_primary_uniprot(uniprot_accessions[0], cazyme, session, logger)
         # check if accession is already in the database
 
     else:
@@ -797,7 +798,7 @@ def add_pdb_accessions(pdb_accessions, cazyme, session, logger):
         return
 
     elif len(pdb_accessions) == 1:
-        add_primary_pdb(pdb_accessions, cazyme, session, logger)
+        add_primary_pdb(pdb_accessions[0], cazyme, session, logger)
         # check if accession is already in the database
 
     else:
