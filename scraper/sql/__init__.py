@@ -600,10 +600,6 @@ def add_cazy_subfamily(family, cazyme, session, logger):
         cazyme.families.append(query[0])
         session.commit()
 
-    else:
-        # check if the family is already in the database
-        query = session.query(CazyFamily).filter_by(family=family).all()
-
     session.commit()
     return
 
