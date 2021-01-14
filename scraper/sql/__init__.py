@@ -529,7 +529,6 @@ def add_cazy_family(family, cazyme, session, logger):
         else:
             # add existing Family record to current working CAZyme
             cazyme.families.append(query[0])
-            print("query[0]Fam=", query[0])
             session.commit()
 
     else:
