@@ -22,7 +22,9 @@
 import os
 import sys
 
-from sqlalchemy import create_engine, Boolean, Column, ForeignKey, Integer, String, Table
+from sqlalchemy import (
+    create_engine, Boolean, Column, ForeignKey, Integer, PrimaryKeyConstraint, String, Table
+)
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -35,13 +37,16 @@ Session = sessionmaker()
 
 # define association/relationship tables
 
+
 # linker table between cazymes and CAZy family and subfamilies
 cazymes_families = Table(
     "cazymes_families",
     Base.metadata,
     Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
     Column("family_id", Integer, ForeignKey("families.family_id")),
+    PrimaryKeyConstraint("cazyme_id", "family_id"),
 )
+
 
 # linker table between cazymes and ec numbers
 cazymes_ecs = Table(
@@ -49,7 +54,9 @@ cazymes_ecs = Table(
     Base.metadata,
     Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
     Column("ec_id", Integer, ForeignKey("ecs.ec_id")),
+    PrimaryKeyConstraint("cazyme_id", "ec_id"),
 )
+
 
 # linker table between cazymes and GenBank accession of source protein sequence
 cazymes_genbanks = Table(
@@ -57,6 +64,7 @@ cazymes_genbanks = Table(
     Base.metadata,
     Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
     Column("genbank_id", Integer, ForeignKey("genbanks.genbank_id")),
+    PrimaryKeyConstraint("cazyme_id", "genbank_id"),
 )
 
 
@@ -66,6 +74,7 @@ cazymes_uniprots = Table(
     Base.metadata,
     Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
     Column("uniprot_id", Integer, ForeignKey("uniprots.uniprot_id")),
+    PrimaryKeyConstraint("cazyme_id", "uniprot_id"),
 )
 
 # linker table between CAZymes and PDB structures
@@ -74,6 +83,7 @@ cazymes_pdbs = Table(
     Base.metadata,
     Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
     Column("pdb_id", Integer, ForeignKey("pdbs.pdb_id")),
+    PrimaryKeyConstraint("cazyme_id", "pdb_id"),
 )
 
 
