@@ -105,6 +105,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger,
     )
 
+    logger.info(
+        "Finished program preparation. Starting retrieval of data from CAZy"
+    )
+
     cazy_home = "http://www.cazy.org"
 
     get_cazy_data(
@@ -119,20 +123,23 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         args,
     )
 
-    logger.info("Finished program preparation")
-    logger.info(
-            "Starting retrieval of data from lass_url cwebsite.\n"
-            "Thank you for using the cazy_webscraper.py\n"
-            "Terminating program"
-        )
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     end_time = pd.to_datetime(end_time)
+    total_time = end_time - start_time
+
+    logger.info(
+        "Finished scraping CAZy. Terminating program.\n"
+        f"Scrape initated at {start_time} (YYYY-MM-DD--h-m-s)\n"
+        f"Scrape finished at {end_time} (YYYY-MM-DD--h-m-s)\n"
+        f"Total run time: {total_time}"
+    )
 
     print(
+        "=====================cazy_webscraper=====================\n"
         "Finished scraping CAZy\n"
         f"Scrape initated at {start_time} (YYYY-MM-DD--h-m-s)\n"
         f"Scrape finished at {end_time}(YYYY-MM-DD--h-m-s)\n"
-        f"Total run time: {(end_time - start_time)}"
+        f"Total run time: {total_time}\n"
     )
 
 
