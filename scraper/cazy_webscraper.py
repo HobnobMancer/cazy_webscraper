@@ -40,6 +40,8 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 import logging
 import sys
 
+import pandas as pd
+
 from datetime import datetime
 from typing import List, Optional
 
@@ -58,6 +60,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     """
     # Program preparation
     time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")  # used in naming files
+    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
+    start_time = pd.to_datetime(start_time)
 
     if argv is None:
         parser = utilities.build_parser()
@@ -121,6 +125,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             "Thank you for using the cazy_webscraper.py\n"
             "Terminating program"
         )
+    end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    end_time = pd.to_datetime(end_time)
+
+    print(
+        "Finished scraping CAZy\n"
+        f"Scrape initated at {start_time} (YYYY-MM-DD--h-m-s)\n"
+        f"Scrape finished at {end_time}(YYYY-MM-DD--h-m-s)\n"
+        f"Total run time: {(end_time - start_time)}"
+    )
 
 
 def get_cazy_data(
