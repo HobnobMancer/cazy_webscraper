@@ -129,16 +129,16 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.info(
         "Finished scraping CAZy. Terminating program.\n"
-        f"Scrape initated at {start_time} (YYYY-MM-DD--h-m-s)\n"
-        f"Scrape finished at {end_time} (YYYY-MM-DD--h-m-s)\n"
+        f"Scrape initated at {start_time}\n"
+        f"Scrape finished at {end_time}\n"
         f"Total run time: {total_time}"
     )
 
     print(
         "=====================cazy_webscraper=====================\n"
         "Finished scraping CAZy\n"
-        f"Scrape initated at {start_time} (YYYY-MM-DD--h-m-s)\n"
-        f"Scrape finished at {end_time}(YYYY-MM-DD--h-m-s)\n"
+        f"Scrape initated at {start_time}\n"
+        f"Scrape finished at {end_time}\n"
         f"Total run time: {total_time}\n"
     )
 
