@@ -1,7 +1,7 @@
 # Distribution files
 build/
 dist/
-pyani.egg-info/
+cazy_webscraper.egg-info/
 distribute*
 
 # Compiled Python modules
