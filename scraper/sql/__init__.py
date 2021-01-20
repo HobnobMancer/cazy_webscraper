@@ -514,22 +514,22 @@ def add_new_protein_to_db(
     species = source_organism[genus_sp_separator:]
 
     # check if the source  organism is already catalogued
-    query = session.query(Taxonomy).filter_by(genus=genus, species=species).all()
+    tax_query = session.query(Taxonomy).filter_by(genus=genus, species=species).all()
 
-    if len(query) == 0:
+    if len(tax_query) == 0:
         # create Taxonomy model object
         new_cazyme.taxonomy = Taxonomy(genus=genus, species=species)
 
-    elif len(query) == 1:
+    elif len(tax_query) == 1:
         # add exiting Taxonomy object to the new cazyme
-        new_cazyme.taxonomy = query[0]
+        new_cazyme.taxonomy = tax_query[0]
 
     else:
         logger.warning(
             f"The species {genus} {species} has been loaded into the database "
-            f"{len(query)} times.\n"
+            f"{len(tax_query)} times.\n"
         )
-        new_cazyme.taxonomy = query[0]
+        new_cazyme.taxonomy = tax_query[0]
 
     # add the new cazyme to the database
     session.add(new_cazyme)
@@ -638,9 +638,9 @@ def add_cazy_family(family, cazyme, session, logger):
     Return nothing.
     """
     # Check if Family is already in the local database
-    query = session.query(CazyFamily).filter_by(family=family).all()
+    family_query = session.query(CazyFamily).filter_by(family=family).all()
 
-    if len(query) == 0:
+    if len(family_query) == 0:
         # add new CAZy to the database
         cazy_family = CazyFamily(family=family)
         session.add(cazy_family)
@@ -650,10 +650,10 @@ def add_cazy_family(family, cazyme, session, logger):
             cazyme.families.append(cazy_family)
         session.commit()
 
-    elif len(query) == 1:
+    elif len(family_query) == 1:
         # check if it is associated with a CAZy subfamily
 
-        if query[0].subfamily is not None:
+        if family_query[0].subfamily is not None:
             # The current family record is associated with a subfamily
             # the current working family is not therefore
             # add new CAZy family without a subfamily association to the database
@@ -661,13 +661,13 @@ def add_cazy_family(family, cazyme, session, logger):
             session.add(cazy_family)
             session.commit()
 
-            if not(query[0] in cazyme.families):
+            if not(family_query[0] in cazyme.families):
                 cazyme.families.append(cazy_family)
             session.commit()
 
         else:
             # add existing Family record to current working CAZyme
-            if not(query[0] in cazyme.families):
+            if not(family_query[0] in cazyme.families):
                 cazyme.families.append(query[0])
             session.commit()
 
@@ -675,8 +675,9 @@ def add_cazy_family(family, cazyme, session, logger):
         # check if any of the multiple Family records are associated with subfamilies or not
         nonsubfamily_asociated_family_entries = []
 
-        for entry in query:
+        for entry in family_query:
             # check if retrieved family record is associated with a subfamily
+            # retrieve only entries NOT associated with a subfamily
             if entry.subfamily is None:
                 nonsubfamily_asociated_family_entries.append(entry)
 
@@ -698,7 +699,10 @@ def add_cazy_family(family, cazyme, session, logger):
         else:
             logger.warning(
                 f"Duplicate family entries found for the CAZy family {family} "
-                "without subfamily association."""
+                "without subfamily association.\n"
+                "Linking the family with the id "
+                f"{nonsubfamily_asociated_family_entries[0].family_id} to the cazyme "
+                f"{cazyme.cazyme_name} id={cazyme.cazyme_id}"
             )
             if not(nonsubfamily_asociated_family_entries[0] in cazyme.families):
                 cazyme.families.append(nonsubfamily_asociated_family_entries[0])
@@ -719,9 +723,9 @@ def add_cazy_subfamily(family, cazyme, session, logger):
     Return nothing.
     """
     # check if the subfamily is already in the database
-    query = session.query(CazyFamily).filter_by(subfamily=family).all()
+    subfam_query = session.query(CazyFamily).filter_by(subfamily=family).all()
 
-    if len(query) == 0:
+    if len(subfam_query) == 0:
         # add new CAZy subfamily to the database
         cazy_family = CazyFamily(family=family[:family.find("_")], subfamily=family)
         session.add(cazy_family)
@@ -731,18 +735,20 @@ def add_cazy_subfamily(family, cazyme, session, logger):
             cazyme.families.append(cazy_family)
         session.commit()
 
-    elif len(query) == 1:
+    elif len(subfam_query) == 1:
         # add existing subfamily to the current working CAZyme
-        if not(query[0] in cazyme.families):
-            cazyme.families.append(query[0])
+        if not(subfam_query[0] in cazyme.families):
+            cazyme.families.append(subfam_query[0])
         session.commit()
 
     else:
         logger.warning(
-            f"Duplicate subfamily entries found for the CAZy subfamily {family}."""
+            f"Duplicate subfamily entries found for the CAZy subfamily {family}.\n"
+            f"Add the family with the id {subfam_query[0].family_id} to the cazyme "
+            f"{cazyme.cazyme_name} id={cazyme.cazyme_id}"
         )
-        if not(query[0] in cazyme.families):
-            cazyme.families.append(query[0])
+        if not(subfam_query[0] in cazyme.families):
+            cazyme.families.append(subfam_query[0])
         session.commit()
 
     session.commit()
@@ -761,9 +767,9 @@ def add_ec_numbers(ec_numbers, cazyme, session, logger):
     """
     for ec in ec_numbers:
         # check if the EC number is already in the database
-        query = session.query(EC).filter_by(ec_number=ec).all()
+        ec_query = session.query(EC).filter_by(ec_number=ec).all()
 
-        if len(query) == 0:
+        if len(ec_query) == 0:
             # add new EC number to the database
             new_ec = EC(ec_number=ec)
             session.add(new_ec)
@@ -773,19 +779,21 @@ def add_ec_numbers(ec_numbers, cazyme, session, logger):
                 cazyme.ecs.append(new_ec)
             session.commit()
 
-        elif len(query) == 1:
+        elif len(ec_query) == 1:
             # add existing EC number record to the CAZyme record
-            if not(query[0] in cazyme.ecs):
-                cazyme.ecs.append(query[0])
+            if not(ec_query[0] in cazyme.ecs):
+                cazyme.ecs.append(ec_query[0])
             session.commit()
 
         else:
             # duplicate records found for the current EC number
             logger.warning(
                 f"Duplicate entries found for the EC# {ec} in the local CAZy database."
+                f"Add the family with the id {ec_query[0].ec_id} to the cazyme "
+                f"{cazyme.cazyme_name} id={cazyme.cazyme_id}"
             )
-            if not(query[0] in cazyme.ecs):
-                cazyme.ecs.append(query[0])
+            if not(ec_query[0] in cazyme.ecs):
+                cazyme.ecs.append(ec_query[0])
             session.commit()
 
     session.commit()
@@ -814,9 +822,9 @@ def add_genbank_accessions(genbank_accessions, cazyme, session, logger):
 
         for accession in genbank_accessions[1:]:
             # check if accession is in the database already
-            query = session.query(Genbank).filter_by(genbank_accession=accession).all()
+            genbank_query = session.query(Genbank).filter_by(genbank_accession=accession).all()
 
-            if len(query) == 0:
+            if len(genbank_query) == 0:
                 # add new genbank accession
                 new_accession = Genbank(genbank_accession=accession, primary=False)
                 session.add(new_accession)
@@ -826,18 +834,20 @@ def add_genbank_accessions(genbank_accessions, cazyme, session, logger):
                     cazyme.genbanks.append(new_accession)
                 session.commit()
 
-            elif len(query) == 1:
+            elif len(genbank_query) == 1:
                 # add GenBank record to current working CAZyme
-                if not(query[0] in cazyme.genbanks):
-                    cazyme.genbanks.append(query[0])
+                if not(genbank_query[0] in cazyme.genbanks):
+                    cazyme.genbanks.append(genbank_query[0])
                 session.commit()
 
             else:
                 logger.warning(
                     f"Duplicate entries for GenBank accession {accession}"
+                    f"Adding the accession entry with the ID {genbank_query[0].genbank_id} to the\n"
+                    f"cazyme {cazyme.cazyme_name} id={cazyme.cazyme_id}"
                 )
-                if not(query[0] in cazyme.genbanks):
-                    cazyme.genbanks.append(query[0])
+                if not(genbank_query[0] in cazyme.genbanks):
+                    cazyme.genbanks.append(genbank_query[0])
                 session.commit()
 
     session.commit()
@@ -854,9 +864,9 @@ def add_primary_genbank(accession, cazyme, session, logger):
 
     Return nothing.
     """
-    query = session.query(Genbank).filter_by(genbank_accession=accession).all()
+    genbank_query = session.query(Genbank).filter_by(genbank_accession=accession).all()
 
-    if len(query) == 0:
+    if len(genbank_query) == 0:
         # add new genbank accession
         new_accession = Genbank(genbank_accession=accession, primary=True)
         session.add(new_accession)
@@ -866,18 +876,20 @@ def add_primary_genbank(accession, cazyme, session, logger):
             cazyme.genbanks.append(new_accession)
         session.commit()
 
-    elif len(query) == 1:
+    elif len(genbank_query) == 1:
         # add GenBank record to current working CAZyme
-        if not(query[0] in cazyme.genbanks):
-            cazyme.genbanks.append(query[0])
+        if not(genbank_query[0] in cazyme.genbanks):
+            cazyme.genbanks.append(genbank_query[0])
         session.commit()
 
     else:
         logger.warning(
             f"Duplicate entries for GenBank accession {accession}"
+            f"Adding the accession entry with the ID {genbank_query[0].genbank_id} to the\n"
+            f"cazyme {cazyme.cazyme_name} id={cazyme.cazyme_id}"
         )
-        if not(query[0] in cazyme.genbanks):
-            cazyme.genbanks.append(query[0])
+        if not(genbank_query[0] in cazyme.genbanks):
+            cazyme.genbanks.append(genbank_query[0])
         session.commit()
 
     session.commit()
@@ -906,9 +918,9 @@ def add_uniprot_accessions(uniprot_accessions, cazyme, session, logger):
 
         for accession in uniprot_accessions[1:]:
             # check if accession is in the database already
-            query = session.query(Uniprot).filter_by(uniprot_accession=accession).all()
+            uniprot_query = session.query(Uniprot).filter_by(uniprot_accession=accession).all()
 
-            if len(query) == 0:
+            if len(uniprot_query) == 0:
                 # add new uniprot accession
                 new_accession = Uniprot(uniprot_accession=accession, primary=False)
                 session.add(new_accession)
@@ -918,18 +930,20 @@ def add_uniprot_accessions(uniprot_accessions, cazyme, session, logger):
                     cazyme.uniprots.append(new_accession)
                 session.commit()
 
-            elif len(query) == 1:
+            elif len(uniprot_query) == 1:
                 # add UniProt record to current working CAZyme
-                if not(query[0] in cazyme.uniprots):
-                    cazyme.uniprots.append(query[0])
+                if not(uniprot_query[0] in cazyme.uniprots):
+                    cazyme.uniprots.append(uniprot_query[0])
                 session.commit()
 
             else:
                 logger.warning(
                     f"Duplicate entries for UniProt accession {accession}"
+                    f"Adding the accession entry with the ID {uniprot_query[0].uniprot_id} to the\n"
+                    f"cazyme {cazyme.cazyme_name} id={cazyme.cazyme_id}"
                 )
-                if not(query[0] in cazyme.uniprots):
-                    cazyme.uniprots.append(query[0])
+                if not(uniprot_query[0] in cazyme.uniprots):
+                    cazyme.uniprots.append(uniprot_query[0])
                 session.commit()
 
     session.commit()
@@ -946,7 +960,7 @@ def add_primary_uniprot(accession, cazyme, session, logger):
 
     Return nothing.
     """
-    query = session.query(Uniprot).filter_by(uniprot_accession=accession).all()
+    uniprot_query = session.query(Uniprot).filter_by(uniprot_accession=accession).all()
 
     if len(query) == 0:
         # add new uniprot accession
@@ -958,18 +972,20 @@ def add_primary_uniprot(accession, cazyme, session, logger):
             cazyme.uniprots.append(new_accession)
         session.commit()
 
-    elif len(query) == 1:
+    elif len(uniprot_query) == 1:
         # add UniProt record to current working CAZyme
-        if not(query[0] in cazyme.uniprots):
-            cazyme.uniprots.append(query[0])
+        if not(uniprot_query[0] in cazyme.uniprots):
+            cazyme.uniprots.append(uniprot_query[0])
         session.commit()
 
     else:
         logger.warning(
             f"Duplicate entries for UniProt accession {accession}"
+            f"Adding the accession entry with the ID {uniprot_query[0].uniprot_id} to the\n"
+            f"cazyme {cazyme.cazyme_name} id={cazyme.cazyme_id}"
         )
-        if not(query[0] in cazyme.uniprots):
-            cazyme.uniprots.append(query[0])
+        if not(uniprot_query[0] in cazyme.uniprots):
+            cazyme.uniprots.append(uniprot_query[0])
         session.commit()
 
     session.commit()
@@ -998,9 +1014,9 @@ def add_pdb_accessions(pdb_accessions, cazyme, session, logger):
 
         for accession in pdb_accessions[1:]:
             # check if accession is in the database already
-            query = session.query(Pdb).filter_by(pdb_accession=accession).all()
+            pdb_query = session.query(Pdb).filter_by(pdb_accession=accession).all()
 
-            if len(query) == 0:
+            if len(pdb_query) == 0:
                 # add new pdb accession
                 new_accession = Pdb(pdb_accession=accession, primary=False)
                 session.add(new_accession)
@@ -1010,18 +1026,20 @@ def add_pdb_accessions(pdb_accessions, cazyme, session, logger):
                 cazyme.pdbs.append(new_accession)
                 session.commit()
 
-            elif len(query) == 1:
+            elif len(pdb_query) == 1:
                 # add PDB/3D record to current working CAZyme
-                if not(query[0] in cazyme.pdbs):
-                    cazyme.pdbs.append(query[0])
+                if not(pdb_query[0] in cazyme.pdbs):
+                    cazyme.pdbs.append(pdb_query[0])
                 session.commit()
 
             else:
                 logger.warning(
                     f"Duplicate entries for PDB/3D accession {accession}"
+                    f"Adding the accession entry with the ID {pdb_query[0].pdb_id} to the\n"
+                    f"cazyme {cazyme.cazyme_name} id={cazyme.cazyme_id}"
                 )
-                if not(query[0] in cazyme.pdbs):
-                    cazyme.pdbs.append(query[0])
+                if not(pdb_query[0] in cazyme.pdbs):
+                    cazyme.pdbs.append(pdb_query[0])
                 session.commit()
 
     session.commit()
@@ -1038,7 +1056,7 @@ def add_primary_pdb(accession, cazyme, session, logger):
 
     Return nothing.
     """
-    query = session.query(Pdb).filter_by(pdb_accession=accession).all()
+    pdb_query = session.query(Pdb).filter_by(pdb_accession=accession).all()
 
     if len(query) == 0:
         # add new pdb accession
@@ -1050,18 +1068,20 @@ def add_primary_pdb(accession, cazyme, session, logger):
             cazyme.pdbs.append(new_accession)
         session.commit()
 
-    elif len(query) == 1:
+    elif len(pdb_query) == 1:
         # add PDB/3D record to current working CAZyme
-        if not(query[0] in cazyme.pdbs):
-            cazyme.pdbs.append(query[0])
+        if not(pdb_query[0] in cazyme.pdbs):
+            cazyme.pdbs.append(pdb_query[0])
         session.commit()
 
     else:
         logger.warning(
             f"Duplicate entries for PDB/3D accession {accession}"
+            f"Adding the accession entry with the ID {pdb_query[0].pdb_id} to the\n"
+            f"cazyme {cazyme.cazyme_name} id={cazyme.cazyme_id}"
         )
-        if not(query[0] in cazyme.pdbs):
-            cazyme.pdbs.append(query[0])
+        if not(pdb_query[0] in cazyme.pdbs):
+            cazyme.pdbs.append(pdb_query[0])
         session.commit()
 
     session.commit()
