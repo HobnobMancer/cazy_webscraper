@@ -25,7 +25,6 @@ import sys
 from sqlalchemy import (
     create_engine, Boolean, Column, ForeignKey, Integer, PrimaryKeyConstraint, String, Table
 )
-from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
@@ -398,7 +397,7 @@ def add_protein_to_db(
                 logger.warning(
                     f"The GenBank accession {genbank_object.genbank_accession} with the id "
                     f"{genbank_object.genbank_id}\n"
-                    "was previously add to the local database as a primary GenBank accession\n
+                    "was previously add to the local database as a primary GenBank accession\n"
                     "but NOT associated with a CAZyme."
                 )
 
@@ -453,6 +452,7 @@ def add_protein_to_db(
             add_data_to_protein_record(
                 duplicate_cazyme_entries[0],
                 family,
+                ec_numbers,
                 external_links,
                 logger,
                 session,
@@ -466,7 +466,7 @@ def add_protein_to_db(
                 "Although the GenBank accessions have different genbank_ids, therefore, the\n"
                 "accession has been added to the database as a primary accession multiple times.\n"
                 f"Protein data being added to {duplicate_cazyme_entries[0].cazyme_name} "
-                f"id={duplicate_cazyme_entries[0].cazyme_id}""
+                f"id={duplicate_cazyme_entries[0].cazyme_id}"
             )
             for cazyme in duplicate_cazyme_entries:
                 logger.warning(
@@ -476,6 +476,7 @@ def add_protein_to_db(
             add_data_to_protein_record(
                 duplicate_cazyme_entries[0],
                 family,
+                ec_numbers,
                 external_links,
                 logger,
                 session,
