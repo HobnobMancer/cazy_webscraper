@@ -36,6 +36,7 @@ from tqdm import tqdm
 from requests.exceptions import ConnectionError, MissingSchema
 from urllib3.exceptions import HTTPError, RequestError
 
+import bs4
 import mechanicalsoup
 
 from scraper import sql
@@ -412,7 +413,8 @@ def parse_family(family, cazy_home, max_tries, logger, session):
             [],
         )
 
-    protein_page_urls = get_protein_page_urls(
+    # Get the URLS to all pages of proteins and the total number of proteins in the (sub)family
+    protein_page_urls, total_proteins = get_protein_page_urls(
         first_pagination_url,
         first_pagination_page,
         cazy_home,
@@ -443,8 +445,8 @@ def parse_family(family, cazy_home, max_tries, logger, session):
                 session,
             ) for url in protein_page_urls
         ) for y in x),
-        total=len(protein_page_urls),
-        desc=f"Scraping protein pages for {family.name}",
+        total=total_proteins,
+        desc=f"Parsing protein pages for {family.name}",
     ):
         if protein["url"] is not None:
             # Could not connect to CAZy
@@ -482,11 +484,13 @@ def parse_family(family, cazy_home, max_tries, logger, session):
 def get_protein_page_urls(first_pagination_url, first_pagination_page, cazy_home):
     """Retrieve the URLs to all pages containing proteins for the current working family.
 
+    Also retrieve the total number of proteins catagloued under the family.
+
     :param first_pagination_url: str, URL to first page contaiing proteins
     :param first_pagination_page: BS4 object, first page containing proteins
     :param cazy_home: str, URL of CAZy homepage
 
-    Return list of URLs.
+    Return list of URLs, and number of proteins in the family.
     """
     protein_page_urls = [first_pagination_url]
 
@@ -510,7 +514,18 @@ def get_protein_page_urls(first_pagination_url, first_pagination_page, cazy_home
             )]
         )
 
-    return protein_page_urls
+    # Retrieve the number of proteins in the family
+    data = first_pagination_page.find_all(
+        "div", {"class": "pos_choix"}
+    )
+    search_results = re.findall(r"\(\d+\)", data[0].text)
+    for index in range(len(search_results)):
+        search_results[index] = search_results[index][1:-1]
+        search_results[index] = int(search_results[index])
+    search_results.sort()
+    protein_total = search_results[-1]
+
+    return protein_page_urls, protein_total
 
 
 def parse_proteins(protein_page_url, family_name, logger, session):
@@ -588,7 +603,7 @@ def row_to_protein(row, family_name, logger, session):
     else:
         ec_numbers = None
 
-    links = {}
+    links = {"GenBank": []}
     # test for len(tds[x].contents) in case there is no link,
     # the check of .name then ensures link is captured
     if len(tds[3].contents) and tds[3].contents[0].name == "a":
@@ -597,6 +612,33 @@ def row_to_protein(row, family_name, logger, session):
         links["UniProt"] = [f"{_.get_text()}" for _ in tds[4].contents if _.name == "a"]
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
         links["PDB/3D"] = [f"{_.get_text()}" for _ in tds[5].contents if _.name == "a"]
+
+    # Retrieve non-primary GenBank accession
+    # these are the accessions that are not hyerlinked in CAZy
+    try:
+        genbank_synonyms = tds[3].find('br').next_siblings
+        for i in genbank_synonyms:
+            if type(i) is bs4.element.NavigableString:
+                links["GenBank"].append(i)
+    except AttributeError:
+        pass
+
+    if len(links["GenBank"]) == 0:
+        logger.warning(
+            f"Did not retrieve any GenBank accessions for {protein_name} in {family_name}.\n"
+            "The primary GenBank accession determines what unique protein the current working "
+            "protein is.\n"
+            "Protein will not be added to the local database"
+        )
+
+        return {
+            "url": None,
+            "error": (
+                "Failed to retrieve any GenBank accessions, "
+                "which define what protein the CAZyme is"
+            ),
+            "sql": protein_name,
+        }
 
     # add protein to database
     try:
@@ -619,7 +661,7 @@ def row_to_protein(row, family_name, logger, session):
         }
 
     if result is not None:  # duplicate CAZymes found in the database
-        {"url": None, "error": result, "sql": protein_name}
+        return {"url": None, "error": result, "sql": protein_name}
 
     return {"url": None, "error": None, "sql": None}
 
