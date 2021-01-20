@@ -668,7 +668,7 @@ def add_cazy_family(family, cazyme, session, logger):
         else:
             # add existing Family record to current working CAZyme
             if not(family_query[0] in cazyme.families):
-                cazyme.families.append(query[0])
+                cazyme.families.append(family_query[0])
             session.commit()
 
     else:
@@ -962,7 +962,7 @@ def add_primary_uniprot(accession, cazyme, session, logger):
     """
     uniprot_query = session.query(Uniprot).filter_by(uniprot_accession=accession).all()
 
-    if len(query) == 0:
+    if len(uniprot_query) == 0:
         # add new uniprot accession
         new_accession = Uniprot(uniprot_accession=accession, primary=True)
         session.add(new_accession)
@@ -1058,7 +1058,7 @@ def add_primary_pdb(accession, cazyme, session, logger):
     """
     pdb_query = session.query(Pdb).filter_by(pdb_accession=accession).all()
 
-    if len(query) == 0:
+    if len(pdb_query) == 0:
         # add new pdb accession
         new_accession = Pdb(pdb_accession=accession, primary=True)
         session.add(new_accession)
