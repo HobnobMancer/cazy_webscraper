@@ -3,7 +3,6 @@ bandit
 black
 coverage
 flake8
-lxml
 mypy
 pydocstyle
 pycodestyle
@@ -12,4 +11,3 @@ pytest
 pytest-cov
 pytest-ordering
 sphinx
-sqlalchemy==1.3.20
