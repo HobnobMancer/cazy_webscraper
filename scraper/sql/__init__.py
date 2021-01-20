@@ -296,7 +296,7 @@ def add_protein_to_db(
     # Each unique protein is identified by a unique primary GenBank accession, not its CAZyme name
     # query the local database to see if the current working protein is in the database
     genbank_query = session.query(Genbank).\
-        filter_by(genbank_accession=external_links["GenBank"][0]).\
+        filter_by(genbank_accession=external_links['GenBank"'][0]).\
         filter(Genbank.primary==True).\
         all()
 
@@ -326,7 +326,7 @@ def add_protein_to_db(
 
         if len(cazyme_query) == 0:
             logger.warning(
-                f"The GenBank accession {external_links["GenBank"][0]} with database genbank_id "
+                f"The GenBank accession {external_links['GenBank'][0]} with database genbank_id "
                 f"{genbank_id}\n"
                 "was previously added to the local database, but was not associated with a CAZyme"
             )
@@ -356,7 +356,7 @@ def add_protein_to_db(
             # accession, inferring their duplicate records for the same CAZyme
             logger.warning(
                 "The following CAZymes found with the same primary GenBank accession "
-                f"{external_links["GenBank"][0]}, "
+                f"{external_links['GenBank"'][0]}, "
                 f"genbank_id={genbank_id},\n"
                 "inferring they are the same protein. Therefore, they are potentially duplicate\n"
                 "CAZymes in the local database.\n"
@@ -381,7 +381,7 @@ def add_protein_to_db(
         # local database.
         logger.warning(
             "Multiple copies of the GenBank accession "
-            f"{external_links["GenBank"][0].genbank_accession} found "
+            f"{external_links['GenBank"'][0].genbank_accession} found "
             "in the local database as a primary accession.\n"
             "Checking for potentially duplicate CAZymes in the local database"
         )
@@ -424,7 +424,7 @@ def add_protein_to_db(
             # The GenBank accession has been entered multiple times into the database, but not once
             # associated with a CAZyme.
             logger.warning(
-                f"The GenBank accession {external_links["GenBank"][0]} has been entered multiple\n"
+                f"The GenBank accession {external_links['GenBank"'][0]} has been entered multiple\n"
                 "times as a primary GenBank accession into the local CAZy database with different "
                 "'genbank_id's,\n"
                 "but it was not associated with a CAZyme, therefore, adding it to the database as "
@@ -444,7 +444,7 @@ def add_protein_to_db(
             # only one CAZyme found associated with the primary GenBank accession
             # add the protein data to this CAZyme
             logger.warning(
-                f"The GenBank accession {external_links["GenBank"][0]} has been entered multiple\n"
+                f"The GenBank accession {external_links['GenBank"'][0]} has been entered multiple\n"
                 "times as a primary GenBank accession into the local CAZy database with different "
                 "'genbank_id's,\n"
                 f"but associated with only one CAZyme: {duplicate_cazyme_entries[0].cazyme_name} "
@@ -462,7 +462,7 @@ def add_protein_to_db(
             logger.warning(
                 "The following CAZymes appear to be duplicates in the local database becuase\n"
                 "they have the same primary GenBank accession number, "
-                f"{external_links["GenBank"][0]}.\n"
+                f"{external_links['GenBank"'][0]}.\n"
                 "Although the GenBank accessions have different genbank_ids, therefore, the\n"
                 "accession has been added to the database as a primary accession multiple times.\n"
                 f"Protein data being added to {duplicate_cazyme_entries[0].cazyme_name} "
