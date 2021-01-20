@@ -25,8 +25,9 @@ import sys
 from sqlalchemy import (
     create_engine, Boolean, Column, ForeignKey, Integer, PrimaryKeyConstraint, String, Table
 )
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, sessionmaker
 
 
 # Use the declarative system
@@ -76,6 +77,7 @@ cazymes_uniprots = Table(
     Column("uniprot_id", Integer, ForeignKey("uniprots.uniprot_id")),
     PrimaryKeyConstraint("cazyme_id", "uniprot_id"),
 )
+
 
 # linker table between CAZymes and PDB structures
 cazymes_pdbs = Table(
@@ -291,10 +293,16 @@ def add_protein_to_db(
 
     Return nothing or duplicate error message.
     """
-    # query database to see if CAZyme is already present
-    query_result = session.query(Cazyme).filter_by(cazyme_name=cazyme_name).all()
+    # Each unique protein is identified by a unique primary GenBank accession, not its CAZyme name
+    # query the local database to see if the current working protein is in the database
+    genbank_query = session.query(Genbank).\
+        filter_by(genbank_accession=external_links["GenBank"][0]).\
+        filter(Genbank.primary==True).\
+        all()
 
-    if len(query_result) == 0:
+    if len(genbank_query) == 0:
+        # GenBank accession was not found as a primary accession in the database
+        # Inferring the protein is not in the local database
         add_new_protein_to_db(
             cazyme_name,
             family,
@@ -304,56 +312,174 @@ def add_protein_to_db(
             logger,
             session,
         )
-        return
 
-    for record in query_result:
-        if isinstance(record, Cazyme):
-            # check if the primary GenBank accession is the same
-            duplicate_records = record.genbanks.\
-                filter(Cazyme.genbanks.any(genbank_accession=external_links["GenBank"][0])).\
-                filter(Genbank.primary==True).\
-                all()
+    elif len(genbank_query) == 1:
+        # GenBank accession found as the primary accession in the database for one protien
+        # Identfied that the protein is already catalogued in the local database
 
-            # Different primary GenBank accession identify these CAZymes are
-            # derived from different GenBank protein records
-            if len(duplicate_records) == 0:
-                add_new_protein_to_db(
-                    cazyme_name,
-                    family,
-                    source_organism,
-                    ec_numbers,
-                    external_links,
-                    logger,
-                    session,
-                )
+        # Get the genbank_id for the GenBank record, then get it's associated Cazyme objects.
+        # Above the search filtered for primary==True, so this query only retrieves CAZymes which
+        # have the GenBank accession set as their primary accession
+        genbank_id = genbank_query[0].genbank_id
+        cazyme_query = session.query(Cazyme).join(Cazyme.genbanks).\
+            filter(Genbank.genbank_id==genbank_id).all()
 
-            elif len(duplicate_records) > 1:
+        if len(cazyme_query) == 0:
+            logger.warning(
+                f"The GenBank accession {external_links["GenBank"][0]} with database genbank_id "
+                f"{genbank_id}\n"
+                "was previously added to the local database, but was not associated with a CAZyme"
+            )
+            # No protein is associated with the GenBank accession so treat as if it is a new protein
+            add_new_protein_to_db(
+                cazyme_name,
+                family,
+                source_organism,
+                ec_numbers,
+                external_links,
+                logger,
+                session,
+            )
+
+        elif len(cazyme_query) == 1:
+            add_data_to_protein_record(
+                cazyme_query[0],
+                family,
+                ec_numbers,
+                external_links,
+                logger,
+                session,
+            )
+
+        else:
+            # multiple CAZymes are listed with the GenBank accession as their primary GenBank
+            # accession, inferring their duplicate records for the same CAZyme
+            logger.warning(
+                "The following CAZymes found with the same primary GenBank accession "
+                f"{external_links["GenBank"][0]}, "
+                f"genbank_id={genbank_id},\n"
+                "inferring they are the same protein. Therefore, they are potentially duplicate\n"
+                "CAZymes in the local database.\n"
+                f"Protein data being added to cazyme {cazyme_query[0].cazyme_name}, "
+                f"id={cazyme_query[0].cazyme_id}"
+            )
+            for cazyme in cazyme_query:
                 logger.warning(
-                    "Duplicate records found in SQL database,\n"
-                    f"under the CAZyme name {cazyme_name} and "
-                    f"the primary GenBank accession {external_links['GenBank'][0]}.\n"
-                    "The new CAZyme will not be added to the SQL database but\n"
-                    "written out to the sql errors log file for manual inspection."
+                    f"Duplicate CAZyme: {cazyme.cazyme_name}, id={cazyme.cazyme_id}"
+                )
+            add_data_to_protein_record(
+                cazyme_query[0],
+                family,
+                ec_numbers,
+                external_links,
+                logger,
+                session,
+            )
+
+    else:
+        # The GenBank accession was found multiple times, labeled as the primary accession, in the
+        # local database.
+        logger.warning(
+            "Multiple copies of the GenBank accession "
+            f"{external_links["GenBank"][0].genbank_accession} found "
+            "in the local database as a primary accession.\n"
+            "Checking for potentially duplicate CAZymes in the local database"
+        )
+        # Check how many CAZymes the GenBank accession is associated with
+        duplicate_cazyme_entries = []  # Cazyme objects with the same primary GenBank accession
+
+        for genbank_object in genbank_query:
+            # retrieve CAZymes that are linked to the primary GenBank accession
+            genbank_id = genbank_object.genbank_id
+            cazyme_query = session.query(Cazyme).join(Cazyme.genbanks).\
+                filter(Genbank.genbank_id==genbank_id).all()
+
+            if len(cazyme_query) == 0:
+                logger.warning(
+                    f"The GenBank accession {genbank_object.genbank_accession} with the id "
+                    f"{genbank_object.genbank_id}\n"
+                    "was previously add to the local database as a primary GenBank accession\n
+                    "but NOT associated with a CAZyme."
                 )
 
-                return(
-                    "Duplicate records found in SQL database,\n"
-                    f"under the CAZyme name {cazyme_name} and "
-                    f"the primary GenBank accession {external_links['GenBank'][0]}.\n"
-                    "The new CAZyme was not be added to the SQL database.\n"
-                    f"family={family}, source={source_organism}, ec#s={ec_numbers}\n"
-                    f"external links={external_links}"
-                )
+            elif len(cazyme_query) == 1:
+                duplicate_cazyme_entries.append(cazyme_query[0])
 
             else:
-                add_data_to_protein_record(
-                    query_result[0],
-                    family,
-                    ec_numbers,
-                    external_links,
-                    logger,
-                    session,
+                # multiple CAZymes have the GenBank accession as their primary GenBank accession
+                logger.warning(
+                    f"The following CAZymes have the GenBank accession {genbank_object.accession}, "
+                    f"genbank_id={genbank_object.genbank_id}\n,"
+                    "as their primary GenBank accession,"
+                    "infering they are the same CAZyme and are duplicates of each other"
                 )
+                for cazyme in cazyme_query:
+                    logger.warning(
+                        f"Duplicate CAZymes: {cazyme.cazyme_name}, cazyme_id={cazyme.cazyme_id}"
+                    )
+                    duplicate_cazyme_entries.append(cazyme)
+
+        # check how many CAZyme duplicates there are that have the same primary GenBank accession
+        if len(duplicate_cazyme_entries) == 0:
+            # The GenBank accession has been entered multiple times into the database, but not once
+            # associated with a CAZyme.
+            logger.warning(
+                f"The GenBank accession {external_links["GenBank"][0]} has been entered multiple\n"
+                "times as a primary GenBank accession into the local CAZy database with different "
+                "'genbank_id's,\n"
+                "but it was not associated with a CAZyme, therefore, adding it to the database as "
+                "a new CAZyme."
+            )
+            add_new_protein_to_db(
+                cazyme_name,
+                family,
+                source_organism,
+                ec_numbers,
+                external_links,
+                logger,
+                session,
+            )
+
+        elif len(duplicate_cazyme_entries) == 1:
+            # only one CAZyme found associated with the primary GenBank accession
+            # add the protein data to this CAZyme
+            logger.warning(
+                f"The GenBank accession {external_links["GenBank"][0]} has been entered multiple\n"
+                "times as a primary GenBank accession into the local CAZy database with different "
+                "'genbank_id's,\n"
+                f"but associated with only one CAZyme: {duplicate_cazyme_entries[0].cazyme_name} "
+                f"id={duplicate_cazyme_entries[0].cazyme_id}"
+            )
+            add_data_to_protein_record(
+                duplicate_cazyme_entries[0],
+                family,
+                external_links,
+                logger,
+                session,
+            )
+
+        else:
+            logger.warning(
+                "The following CAZymes appear to be duplicates in the local database becuase\n"
+                "they have the same primary GenBank accession number, "
+                f"{external_links["GenBank"][0]}.\n"
+                "Although the GenBank accessions have different genbank_ids, therefore, the\n"
+                "accession has been added to the database as a primary accession multiple times.\n"
+                f"Protein data being added to {duplicate_cazyme_entries[0].cazyme_name} "
+                f"id={duplicate_cazyme_entries[0].cazyme_id}""
+            )
+            for cazyme in duplicate_cazyme_entries:
+                logger.warning(
+                    f"Duplicate CAZyme: {cazyme.cazyme_name}, id={cazyme.cazyme_id}"
+                )
+            # add the protein data scraped from CAZy to the first duplicate CAZyme
+            add_data_to_protein_record(
+                duplicate_cazyme_entries[0],
+                family,
+                external_links,
+                logger,
+                session,
+            )
 
     return
 
@@ -519,7 +645,8 @@ def add_cazy_family(family, cazyme, session, logger):
         session.add(cazy_family)
         session.commit()
 
-        cazyme.families.append(cazy_family)
+        if not(cazy_family in cazyme.families):
+            cazyme.families.append(cazy_family)
         session.commit()
 
     elif len(query) == 1:
@@ -533,12 +660,14 @@ def add_cazy_family(family, cazyme, session, logger):
             session.add(cazy_family)
             session.commit()
 
-            cazyme.families.append(cazy_family)
+            if not(query[0] in cazyme.families):
+                cazyme.families.append(cazy_family)
             session.commit()
 
         else:
             # add existing Family record to current working CAZyme
-            cazyme.families.append(query[0])
+            if not(query[0] in cazyme.families):
+                cazyme.families.append(query[0])
             session.commit()
 
     else:
@@ -555,12 +684,14 @@ def add_cazy_family(family, cazyme, session, logger):
             cazy_family = CazyFamily(family=family)
             session.add(cazy_family)
             session.commit()
-            cazyme.families.append(cazy_family)
+            if not(cazy_family in cazyme.families):
+                cazyme.families.append(cazy_family)
             session.commit()
 
         elif len(nonsubfamily_asociated_family_entries) == 1:
             # Add existing non-subfamily associated family instance to CAZyme
-            cazyme.families.append(nonsubfamily_asociated_family_entries[0])
+            if not(nonsubfamily_asociated_family_entries[0] in cazyme.families):
+                cazyme.families.append(nonsubfamily_asociated_family_entries[0])
             session.commit()
 
         else:
@@ -568,7 +699,8 @@ def add_cazy_family(family, cazyme, session, logger):
                 f"Duplicate family entries found for the CAZy family {family} "
                 "without subfamily association."""
             )
-            cazyme.families.append(nonsubfamily_asociated_family_entries[0])
+            if not(nonsubfamily_asociated_family_entries[0] in cazyme.families):
+                cazyme.families.append(nonsubfamily_asociated_family_entries[0])
             session.commit()
 
     session.commit()
@@ -594,19 +726,22 @@ def add_cazy_subfamily(family, cazyme, session, logger):
         session.add(cazy_family)
         session.commit()
 
-        cazyme.families.append(cazy_family)
+        if not(cazy_family in cazyme.families):
+            cazyme.families.append(cazy_family)
         session.commit()
 
     elif len(query) == 1:
         # add existing subfamily to the current working CAZyme
-        cazyme.families.append(query[0])
+        if not(query[0] in cazyme.families):
+            cazyme.families.append(query[0])
         session.commit()
 
     else:
         logger.warning(
             f"Duplicate subfamily entries found for the CAZy subfamily {family}."""
         )
-        cazyme.families.append(query[0])
+        if not(query[0] in cazyme.families):
+            cazyme.families.append(query[0])
         session.commit()
 
     session.commit()
@@ -633,12 +768,14 @@ def add_ec_numbers(ec_numbers, cazyme, session, logger):
             session.add(new_ec)
             session.commit()
 
-            cazyme.ecs.append(new_ec)
+            if not(new_ec in cazyme.ecs):
+                cazyme.ecs.append(new_ec)
             session.commit()
 
         elif len(query) == 1:
             # add existing EC number record to the CAZyme record
-            cazyme.ecs.append(query[0])
+            if not(query[0] in cazyme.ecs):
+                cazyme.ecs.append(query[0])
             session.commit()
 
         else:
@@ -646,7 +783,8 @@ def add_ec_numbers(ec_numbers, cazyme, session, logger):
             logger.warning(
                 f"Duplicate entries found for the EC# {ec} in the local CAZy database."
             )
-            cazyme.ecs.append(query[0])
+            if not(query[0] in cazyme.ecs):
+                cazyme.ecs.append(query[0])
             session.commit()
 
     session.commit()
@@ -683,19 +821,22 @@ def add_genbank_accessions(genbank_accessions, cazyme, session, logger):
                 session.add(new_accession)
                 session.commit()
 
-                cazyme.genbanks.append(new_accession)
+                if not(new_accession in cazyme.genbanks):
+                    cazyme.genbanks.append(new_accession)
                 session.commit()
 
             elif len(query) == 1:
                 # add GenBank record to current working CAZyme
-                cazyme.genbanks.append(query[0])
+                if not(query[0] in cazyme.genbanks):
+                    cazyme.genbanks.append(query[0])
                 session.commit()
 
             else:
                 logger.warning(
                     f"Duplicate entries for GenBank accession {accession}"
                 )
-                cazyme.genbanks.append(query[0])
+                if not(query[0] in cazyme.genbanks):
+                    cazyme.genbanks.append(query[0])
                 session.commit()
 
     session.commit()
@@ -720,19 +861,22 @@ def add_primary_genbank(accession, cazyme, session, logger):
         session.add(new_accession)
         session.commit()
 
-        cazyme.genbanks.append(new_accession)
+        if not(new_accession in cazyme.genbanks):
+            cazyme.genbanks.append(new_accession)
         session.commit()
 
     elif len(query) == 1:
         # add GenBank record to current working CAZyme
-        cazyme.genbanks.append(query[0])
+        if not(query[0] in cazyme.genbanks):
+            cazyme.genbanks.append(query[0])
         session.commit()
 
     else:
         logger.warning(
             f"Duplicate entries for GenBank accession {accession}"
         )
-        cazyme.genbanks.append(query[0])
+        if not(query[0] in cazyme.genbanks):
+            cazyme.genbanks.append(query[0])
         session.commit()
 
     session.commit()
@@ -769,19 +913,22 @@ def add_uniprot_accessions(uniprot_accessions, cazyme, session, logger):
                 session.add(new_accession)
                 session.commit()
 
-                cazyme.uniprots.append(new_accession)
+                if not(new_accession in cazyme.uniprots):
+                    cazyme.uniprots.append(new_accession)
                 session.commit()
 
             elif len(query) == 1:
                 # add UniProt record to current working CAZyme
-                cazyme.uniprots.append(query[0])
+                if not(query[0] in cazyme.uniprots):
+                    cazyme.uniprots.append(query[0])
                 session.commit()
 
             else:
                 logger.warning(
                     f"Duplicate entries for UniProt accession {accession}"
                 )
-                cazyme.uniprots.append(query[0])
+                if not(query[0] in cazyme.uniprots):
+                    cazyme.uniprots.append(query[0])
                 session.commit()
 
     session.commit()
@@ -806,19 +953,22 @@ def add_primary_uniprot(accession, cazyme, session, logger):
         session.add(new_accession)
         session.commit()
 
-        cazyme.uniprots.append(new_accession)
+        if not(new_accession in cazyme.uniprots):
+            cazyme.uniprots.append(new_accession)
         session.commit()
 
     elif len(query) == 1:
         # add UniProt record to current working CAZyme
-        cazyme.uniprots.append(query[0])
+        if not(query[0] in cazyme.uniprots):
+            cazyme.uniprots.append(query[0])
         session.commit()
 
     else:
         logger.warning(
             f"Duplicate entries for UniProt accession {accession}"
         )
-        cazyme.uniprots.append(query[0])
+        if not(query[0] in cazyme.uniprots):
+            cazyme.uniprots.append(query[0])
         session.commit()
 
     session.commit()
@@ -855,19 +1005,22 @@ def add_pdb_accessions(pdb_accessions, cazyme, session, logger):
                 session.add(new_accession)
                 session.commit()
 
+            if not(new_accession in cazyme.pdbs):
                 cazyme.pdbs.append(new_accession)
                 session.commit()
 
             elif len(query) == 1:
                 # add PDB/3D record to current working CAZyme
-                cazyme.pdbs.append(query[0])
+                if not(query[0] in cazyme.pdbs):
+                    cazyme.pdbs.append(query[0])
                 session.commit()
 
             else:
                 logger.warning(
                     f"Duplicate entries for PDB/3D accession {accession}"
                 )
-                cazyme.pdbs.append(query[0])
+                if not(query[0] in cazyme.pdbs):
+                    cazyme.pdbs.append(query[0])
                 session.commit()
 
     session.commit()
@@ -892,19 +1045,22 @@ def add_primary_pdb(accession, cazyme, session, logger):
         session.add(new_accession)
         session.commit()
 
-        cazyme.pdbs.append(new_accession)
+        if not(new_accession in cazyme.pdbs):
+            cazyme.pdbs.append(new_accession)
         session.commit()
 
     elif len(query) == 1:
         # add PDB/3D record to current working CAZyme
-        cazyme.pdbs.append(query[0])
+        if not(query[0] in cazyme.pdbs):
+            cazyme.pdbs.append(query[0])
         session.commit()
 
     else:
         logger.warning(
             f"Duplicate entries for PDB/3D accession {accession}"
         )
-        cazyme.pdbs.append(query[0])
+        if not(query[0] in cazyme.pdbs):
+            cazyme.pdbs.append(query[0])
         session.commit()
 
     session.commit()
