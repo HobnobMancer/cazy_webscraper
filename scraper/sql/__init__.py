@@ -274,7 +274,7 @@ def build_db(time_stamp, args, logger):
     Session.configure(bind=engine)
 
     return Session()
-    
+
 
 def add_protein_to_db(
     cazyme_name,
