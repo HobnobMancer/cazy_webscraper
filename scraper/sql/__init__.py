@@ -276,9 +276,6 @@ def build_db(time_stamp, args, logger):
     return Session()
     
 
-
-
-
 def add_protein_to_db(
     cazyme_name,
     family,
