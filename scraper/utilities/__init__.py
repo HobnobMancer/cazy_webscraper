@@ -55,15 +55,16 @@ def build_parser(argv: Optional[List] = None):
         help="Classes from which all families are to be scraped. Separate classes by ','"
     )
 
-    # Add option on how to split data
+    # Add option to provide a path to an existing SQL database to add newly scraped data to
     parser.add_argument(
         "-d",
-        "--data_split",
-        choices=[None, "class", "family"],
-        type=str,
+        "--database",
+        type=Path,
+        metavar="local database path",
         default=None,
-        help="How data is to be split. Not split=all, split by class=class, split by family=family",
+        help="path to an existing local CAZy SQL database",
     )
+
 
     # Add option to force file over writting
     parser.add_argument(

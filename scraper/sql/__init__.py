@@ -255,21 +255,28 @@ def build_db(time_stamp, args, logger):
     logger.info("Building empty db to store data")
 
     # build database engine
+    if args.database is None:
+        if args.output is sys.stdout:
+            # write to cwd, this is deleted in scrape is successful
+            cwd = os.getcwd()
+            db_path = cwd / f"cazy_scrape_temp_{time_stamp}.db"
 
-    if args.output is sys.stdout:
-        # write to cwd, this is deleted in scrape is successful
-        cwd = os.getcwd()
-        db_path = cwd / f"cazy_scrape_temp_{time_stamp}.db"
+        else:
+            # write to specified output directory
+            db_path = args.output / f"cazy_scrape_{time_stamp}.db"
 
     else:
-        # write to specified output directory
-        db_path = args.output / f"cazy_scrape_{time_stamp}.db"
+        # user specificed an existing local CAZy SQL database
+        db_path = args.database
 
     engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
     Base.metadata.create_all(engine)
     Session.configure(bind=engine)
 
     return Session()
+    
+
+
 
 
 def add_protein_to_db(
