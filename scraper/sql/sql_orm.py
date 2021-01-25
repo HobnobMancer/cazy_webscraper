@@ -80,7 +80,7 @@ cazymes_pdbs = Table(
 
 class Cazyme(Base):
     """Describes a CAZyme, which is a protein single entry in CAZy.
-    
+
     Every CAZyme will have a name, a source organism, at least one CAZy family, and at least
     a primary GenBank accession. A CAZyme may also have non-primary GenBank accessions, EC
     number annotations, UniProt accessions and PDB accessions.
@@ -153,7 +153,7 @@ class Taxonomy(Base):
 
 class CazyFamily(Base):
     """Describes a CAZy family.
-    
+
     Every unique CAZy family-subfamily pair will be given a unique family_id. For example, 
     if a CAZyme is catalogued under a subfamily, the parent CAZy family and the CAZy subfamily
     will be listed together, and given a single family_id. If another protein is catalogued
@@ -186,7 +186,7 @@ class CazyFamily(Base):
 
 class Genbank(Base):
     """Describe a GenBank accession number of protein sequences.
-    
+
     The associated GenBank protein record is the source record from which CAZy retrieves the
     protein sequence for the CAZyme.
     """
@@ -262,7 +262,7 @@ class EC(Base):
 
 class Uniprot(Base):
     """Describe a UniProt accession number.
-    
+
     The primary UniProt accession is the first UniProt accession that is lsited in UniProt for
     the CAZyme.
     """
