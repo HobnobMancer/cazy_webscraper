@@ -22,9 +22,7 @@
 import os
 import sys
 
-from sqlalchemy import (
-    create_engine, Boolean, Column, ForeignKey, Integer, PrimaryKeyConstraint, String, Table
-)
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -33,16 +31,11 @@ from scraper.sql.sql_orm import (
     Cazyme,
     Taxonomy,
     CazyFamily,
-    CazyFamily,
     Cazymes_Genbanks,
     EC,
     Genbank,
     Uniprot,
     Pdb,
-    cazymes_families,
-    cazymes_ecs,
-    cazymes_uniprots,
-    cazymes_pdbs,
 )
 
 
@@ -199,8 +192,7 @@ def add_protein_to_db(
             logger.warning(
                 "Potential duplicate CAZymes found in the local database.\n"
                 "The following CAZymes found with the same primary GenBank accession "
-                f"{primary_genbank}, genbank_id={genbank_id},\n"
-                "inferring they are the same protein\n"
+                f"{primary_genbank}\n inferring they are the same protein"
             )
             for cazyme in cazyme_query:
                 logger.warning(
