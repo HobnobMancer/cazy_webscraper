@@ -39,7 +39,7 @@ from urllib3.exceptions import HTTPError, RequestError
 import bs4
 import mechanicalsoup
 
-from scraper import sql
+from scraper.sql import sql_interface
 
 
 class CazyClass:
@@ -628,7 +628,7 @@ def row_to_protein(row, family_name, logger, session):
             f"Did not retrieve any GenBank accessions for {protein_name} in {family_name}.\n"
             "The primary GenBank accession determines what unique protein the current working "
             "protein is.\n"
-            "Protein will not be added to the local database"
+            "Protein NOT be added to the local database"
         )
 
         return {
@@ -642,14 +642,17 @@ def row_to_protein(row, family_name, logger, session):
 
     # add protein to database
     try:
-        result = sql.add_protein_to_db(
+        sql_interface.add_protein_to_db(
             protein_name,
             family_name,
             source_organism,
-            ec_numbers,
-            links,
+            links["GenBank"][0],
             logger,
             session,
+            ec_numbers,
+            links["GenBank"][1:],
+            links["UniProt"],
+            links["PDB/3D"]
         )
 
     except Exception as error_message:
@@ -659,9 +662,6 @@ def row_to_protein(row, family_name, logger, session):
             "error": f"Failed to add to SQL database. {error_message}",
             "sql": protein_name,
         }
-
-    if result is not None:  # duplicate CAZymes found in the database
-        return {"url": None, "error": result, "sql": protein_name}
 
     return {"url": None, "error": None, "sql": None}
 
