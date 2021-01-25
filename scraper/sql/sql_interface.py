@@ -90,11 +90,12 @@ def add_protein_to_db(
     family,
     source_organism,
     primary_genbank,
-    ec_numbers=[],
-    uniprot_accessions=[],
-    pdb_accessions=[],
     logger,
     session,
+    ec_numbers=[],
+    genbank_accessions=[],
+    uniprot_accessions=[],
+    pdb_accessions=[],
 ):
     """Coordinate adding protein (CAZyme) data to the SQL database (db).
 
@@ -107,43 +108,48 @@ def add_protein_to_db(
     for another. This is believed to be possible becuase CAZy does not appear to ID unique proteins
     by the GenBank accession because duplicate entries for CAZyme can be found within CAZy.
 
-    EC numbers, and accessions of associated UniProt and PDB records may not be given. For each,
-    if no accessions are collected from CAZy an empty list will be passed. For the UniProt and PDB,
-    the first accession listed in each list is recorded as the primary accession, and all other
-    listed accessions as non-primary accessions.
+    EC numbers, accessions of associated UniProt and PDB records, non-primary GenBank accessions may
+    not be given. For each, if no accessions are collected from CAZy an empty list will be passed.
+    For the UniProt and PDB, the first accession listed in each list is recorded as the primary
+    accession, and all other listed accessions as non-primary accessions.
 
     :param cazyme_name: str, name of the protein/CAZyme
     :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
     :param source_organism: str, the scientific name of the organism from which the CAZy is derived
     :param primary_genbank: str, the hyperlinked GenBank accession from CAZy
+    :param logger: logger object
+    :param session: open sqlalchemy session to database
 
     ::optional parameters::
     :param ec_numbers: list of EC numbers which the CAZyme is annotated with
+    :param genbank_accessions: list of non-primary GenBank accessions
     :param uniprot_accessions: list, accessions of associated records in UniProtKB
     :param pdb_accessions: list, accessions of associated records in PDB
-    :param logger: logger object
-    :param session: open sqlalchemy session to database
 
     Return nothing or error message.
     """
     # Each unique protein is identified by a unique primary GenBank accession, not its CAZyme name
     # query the local database to see if the current working protein is in the database
-    genbank_query = session.query(Genbank).\
-        filter_by(genbank_accession=external_links['GenBank'][0]).\
-        filter(Genbank.primary==True).\
+    # It is checked that the 'primary_genbank' is logged as a primary accession because if is
+    # possible that the accession could be logged as a non-primary accession for another CAZyme
+    primary_genbank_query = session.query(Genbank).\
+        filter(Genbank.genbank_accession==primary_genbank).\
+        filter(Cazymes_Genbanks.primary==True).\
         all()
 
-    if len(genbank_query) == 0:
+    if len(primary_genbank_query) == 0:
         # GenBank accession was not found as a primary accession in the database
         # Inferring the protein is not in the local database
         add_new_protein_to_db(
             cazyme_name,
             family,
             source_organism,
-            ec_numbers,
-            external_links,
+            primary_genbank,
             logger,
             session,
+            ec_numbers,
+            uniprot_accessions,
+            pdb_accessions,
         )
 
     elif len(genbank_query) == 1:
@@ -323,19 +329,33 @@ def add_new_protein_to_db(
     cazyme_name,
     family,
     source_organism,
-    ec_numbers,
-    external_links,
+    primary_genbank,
     logger,
     session,
+    ec_numbers=[],
+    genbank_accessions=[],
+    uniprot_accessions=[],
+    pdb_accessions=[],
 ):
     """Add a new protein (a CAZyme) record to the database.
+
+    EC numbers, accessions of associated UniProt and PDB records, non-primary GenBank accessions may
+    not be given. For each, if no accessions are collected from CAZy an empty list will be passed.
+    For the UniProt and PDB, the first accession listed in each list is recorded as the primary
+    accession, and all other listed accessions as non-primary accessions.
 
     :param cazyme_name: str, name of the protein/CAZyme
     :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
     :param source_organism: str, the scientific name of the organism from which the CAZy is derived
-    :param ec_numbers: list of EC numbers which the CAZyme is annotated with
-    :param external_links: dict, links to external databases
+    :param primary_genbank: str, the hyperlinked GenBank accession from CAZy
+    :param logger: logger object
     :param session: open sqlalchemy session to database
+
+    ::optional parameters::
+    :param ec_numbers: list of EC numbers which the CAZyme is annotated with
+    :param genbank_accessions: list of non-primary GenBank accessions
+    :param uniprot_accessions: list, accessions of associated records in UniProtKB
+    :param pdb_accessions: list, accessions of associated records in PDB
 
     Return nothing.
     """
@@ -376,29 +396,20 @@ def add_new_protein_to_db(
         add_cazy_family(family, new_cazyme, session, logger)
 
     # define ec_number
-    if ec_numbers is not None:
+    if len(ec_numbers) != 0:
         add_ec_numbers(ec_numbers, new_cazyme, session, logger)
 
-    # add GenBank accessions
-    try:
-        genbank_accessions = external_links["GenBank"]
+    # add non-primary GenBank accessions
+    if len(genbank_accessions) != 0:
         add_genbank_accessions(genbank_accessions, new_cazyme, session, logger)
-    except KeyError:
-        pass
 
     # add UniProt accessions
-    try:
-        uniprot_accessions = external_links["UniProt"]
+    if len(genbank_accessions) != 0:
         add_uniprot_accessions(uniprot_accessions, new_cazyme, session, logger)
-    except KeyError:
-        pass
 
     # add PDB/3D accessions
-    try:
-        pdb_accessions = external_links["PDB/3D"]
+    if len(pdb_accessions) != 0:
         add_pdb_accessions(pdb_accessions, new_cazyme, session, logger)
-    except KeyError:
-        pass
 
     # final commit to ensure all changes are commited
     session.commit()
@@ -407,20 +418,36 @@ def add_new_protein_to_db(
 
 
 def add_data_to_protein_record(
-    cazyme,
+    cazyme_name,
     family,
-    ec_numbers,
-    external_links,
+    source_organism,
+    primary_genbank,
     logger,
     session,
+    ec_numbers=[],
+    genbank_accessions=[],
+    uniprot_accessions=[],
+    pdb_accessions=[],
 ):
     """Add data to an existing record in the SQL database.
 
-    :param cazyme: CAZyme class object
+    EC numbers, accessions of associated UniProt and PDB records, non-primary GenBank accessions may
+    not be given. For each, if no accessions are collected from CAZy an empty list will be passed.
+    For the UniProt and PDB, the first accession listed in each list is recorded as the primary
+    accession, and all other listed accessions as non-primary accessions.
+
+    :param cazyme_name: str, name of the protein/CAZyme
     :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
-    :param ec_numbers: list of EC numbers which the CAZyme is annotated with
-    :param external_links: dict, links to external databases
+    :param source_organism: str, the scientific name of the organism from which the CAZy is derived
+    :param primary_genbank: str, the hyperlinked GenBank accession from CAZy
+    :param logger: logger object
     :param session: open sqlalchemy session to database
+
+    ::optional parameters::
+    :param ec_numbers: list of EC numbers which the CAZyme is annotated with
+    :param genbank_accessions: list of non-primary GenBank accessions
+    :param uniprot_accessions: list, accessions of associated records in UniProtKB
+    :param pdb_accessions: list, accessions of associated records in PDB
 
     Return nothing.
     """
@@ -431,29 +458,20 @@ def add_data_to_protein_record(
         add_cazy_family(family, cazyme, session, logger)
 
     # define ec_number
-    if ec_numbers is not None:
-        add_ec_numbers(ec_numbers, cazyme, session, logger)
+    if len(ec_numbers) != 0:
+        add_ec_numbers(ec_numbers, new_cazyme, session, logger)
 
-    # add GenBank accessions
-    try:
-        genbank_accessions = external_links["GenBank"]
-        add_genbank_accessions(genbank_accessions, cazyme, session, logger)
-    except KeyError:
-        pass
+    # add non-primary GenBank accessions
+    if len(genbank_accessions) != 0:
+        add_genbank_accessions(genbank_accessions, new_cazyme, session, logger)
 
     # add UniProt accessions
-    try:
-        uniprot_accessions = external_links["GenBank"]
-        add_uniprot_accessions(uniprot_accessions, cazyme, session, logger)
-    except KeyError:
-        pass
+    if len(genbank_accessions) != 0:
+        add_uniprot_accessions(uniprot_accessions, new_cazyme, session, logger)
 
     # add PDB/3D accessions
-    try:
-        pdb_accessions = external_links["GenBank"]
-        add_pdb_accessions(pdb_accessions, cazyme, session, logger)
-    except KeyError:
-        pass
+    if len(pdb_accessions) != 0:
+        add_pdb_accessions(pdb_accessions, new_cazyme, session, logger)
 
     # final commit to ensure all changes are commited
     session.commit()
