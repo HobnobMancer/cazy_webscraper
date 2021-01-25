@@ -126,7 +126,7 @@ def add_protein_to_db(
     :param uniprot_accessions: list, accessions of associated records in UniProtKB
     :param pdb_accessions: list, accessions of associated records in PDB
 
-    Return nothing or error message.
+    Return nothing.
     """
     # Each unique protein is identified by a unique primary GenBank accession, not its CAZyme name
     # query the local database to see if the current working protein is in the database
