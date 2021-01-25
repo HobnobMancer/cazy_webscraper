@@ -19,11 +19,8 @@
 """Submodule to build a local SQL database"""
 
 
-import os
-import sys
-
 from sqlalchemy import (
-    create_engine, Boolean, Column, ForeignKey, Integer, PrimaryKeyConstraint, String, Table
+    Boolean, Column, ForeignKey, Integer, PrimaryKeyConstraint, String, Table
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
