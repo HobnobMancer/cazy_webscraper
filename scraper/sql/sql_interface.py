@@ -26,21 +26,21 @@ from sqlalchemy import (
     create_engine, Boolean, Column, ForeignKey, Integer, PrimaryKeyConstraint, String, Table
 )
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 
-from scraper.sql.sql_orm import(
+from scraper.sql.sql_orm import (
     Cazyme,
     Taxonomy,
     CazyFamily,
     CazyFamily,
+    Cazymes_Genbanks,
     EC,
     Genbank,
     Uniprot,
     Pdb,
     cazymes_families,
     cazymes_ecs,
-    cazymes_genbanks,
     cazymes_uniprots,
     cazymes_pdbs,
 )
@@ -89,21 +89,42 @@ def add_protein_to_db(
     cazyme_name,
     family,
     source_organism,
-    ec_numbers,
-    external_links,
+    primary_genbank,
+    ec_numbers=[],
+    uniprot_accessions=[],
+    pdb_accessions=[],
     logger,
     session,
 ):
     """Coordinate adding protein (CAZyme) data to the SQL database (db).
 
+    Every CAZyme will have a cazyme name (called 'protein name' in CAZy), CAZy (sub)family, source
+    organism, primary GenBank accession. The primary GenBank accession is the only hyperlinked
+    GenBank accession for the protein, and believed to be used by CAZy to indicate the source
+    GenBank protein record for the record in CAZy. It can not be guareenteed that a GenBank
+    accession will only be recorded as a primary OR a non-primary accession. It may be possible
+    that a GenBank accession is the primary accession for one CAZyme and a non-primary accession
+    for another. This is believed to be possible becuase CAZy does not appear to ID unique proteins
+    by the GenBank accession because duplicate entries for CAZyme can be found within CAZy.
+
+    EC numbers, and accessions of associated UniProt and PDB records may not be given. For each,
+    if no accessions are collected from CAZy an empty list will be passed. For the UniProt and PDB,
+    the first accession listed in each list is recorded as the primary accession, and all other
+    listed accessions as non-primary accessions.
+
     :param cazyme_name: str, name of the protein/CAZyme
     :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
     :param source_organism: str, the scientific name of the organism from which the CAZy is derived
+    :param primary_genbank: str, the hyperlinked GenBank accession from CAZy
+
+    ::optional parameters::
     :param ec_numbers: list of EC numbers which the CAZyme is annotated with
-    :param external_links: dict, links to external databases
+    :param uniprot_accessions: list, accessions of associated records in UniProtKB
+    :param pdb_accessions: list, accessions of associated records in PDB
+    :param logger: logger object
     :param session: open sqlalchemy session to database
 
-    Return nothing or duplicate error message.
+    Return nothing or error message.
     """
     # Each unique protein is identified by a unique primary GenBank accession, not its CAZyme name
     # query the local database to see if the current working protein is in the database
