@@ -46,6 +46,12 @@ from scraper.sql.sql_orm import(
 )
 
 
+# Use the declarative system
+# Database structured in NF1
+Base = declarative_base()
+Session = sessionmaker()
+
+
 def build_db(time_stamp, args, logger):
     """Build an empty SQL database and open a session.
 
