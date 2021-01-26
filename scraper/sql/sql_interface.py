@@ -102,9 +102,12 @@ def add_protein_to_db(
         # can be added to the CAZyme record
 
         # retrieve the CAZyme record
-        cazyme_query = session.query(Cazyme).\
+        cazyme_query = session.query(Cazyme, Genbank, Cazymes_Genbanks).\
+            join(Genbank, (Genbank.genbank_id==Cazymes_Genbanks.genbank_id)).\
+            join(Cazyme, (Cazyme.cazyme_id==Cazymes_Genbanks.cazyme_id)).\
             filter(Genbank.genbank_accession==primary_genbank).\
-            filter(Cazymes_Genbanks.primary==True).all()
+            filter(Cazymes_Genbanks.primary==True).\
+            all()
 
         if len(cazyme_query) == 0:
             logger.warning(
