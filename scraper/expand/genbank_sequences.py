@@ -107,7 +107,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
 
 def get_everything_sequences(session, args, logger):
-    """Retrieve protein sequences for all CAZymes in the local CAZy database."""
+    """Retrieve protein sequences for all CAZymes in the local CAZy database.
+
+    :param session: open SQLite db session
+    :param args: cmd-line argument parser
+    :param logger: logger object
+
+    Return nothing.
+    """
     # retrieve only sequences for primary GenBank accessions
     if args.primary is True:
         # retrieve all primary GenBank accessions
@@ -137,7 +144,15 @@ def get_everything_sequences(session, args, logger):
 
 
 def get_specific_proteins_sequencse_primary_only(config_dict, session, args, logger):
-    """Retrieve protein sequences for primary GenBank accessions for items in the config_dict."""
+    """Retrieve protein sequences for primary GenBank accessions for items in the config_dict.
+
+    :param config_dict: dict, defines CAZy classes and families to retrieve accessions from
+    :param session: open SQLite db session
+    :param args: cmd-line argument parser
+    :param logger: logger object
+
+    Return nothing.
+    """
     # start with the classes
     if len(config_dict["classes"]) != 0:
         # create a dictionary to convert full class name to abbreviation
@@ -197,7 +212,7 @@ def get_specific_proteins_sequencse_primary_only(config_dict, session, args, log
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(CazyFamily.family == family).\
-                    filter(Cazymes_Genbanks.primary==True).\
+                    filter(Cazymes_Genbanks.primary == True).\
                     all()
 
             for query_result in tqdm(family_query, desc=f"Parsing GenBank accessions in {family}"):
@@ -223,7 +238,15 @@ def get_specific_proteins_sequencse_primary_only(config_dict, session, args, log
 
 
 def get_specific_proteins_sequencse(config_dict, session, args, logger):
-    """Retrieve protein sequences for only CAZymes specified in config_dict."""
+    """Retrieve protein sequences for only CAZymes specified in config_dict.+
+
+    :param config_dict: dict, defines CAZy classes and families to retrieve accessions from
+    :param session: open SQLite db session
+    :param args: cmd-line argument parser
+    :param logger: logger object
+
+    Return nothing.
+    """
     # start with the classes
     if len(config_dict["classes"]) != 0:
         # create a dictionary to convert full class name to abbreviation
