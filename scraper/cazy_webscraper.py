@@ -47,7 +47,8 @@ from typing import List, Optional
 
 from tqdm import tqdm
 
-from scraper import crawler, file_io, sql, utilities
+from scraper import crawler, file_io, utilities
+from scraper.sql import sql_orm
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -92,7 +93,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # build database and return open database session
     try:
-        session = sql.build_db(time_stamp, args, logger)
+        session = sql_orm.build_db(time_stamp, args, logger)
     except Exception:
         logger.error("Failed to build SQL database. Terminating program", exc_info=1)
         sys.exit(1)
