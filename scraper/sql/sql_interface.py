@@ -103,10 +103,10 @@ def add_protein_to_db(
 
         # retrieve the CAZyme record
         cazyme_query = session.query(Cazyme, Genbank, Cazymes_Genbanks).\
-            join(Genbank, (Genbank.genbank_id==Cazymes_Genbanks.genbank_id)).\
-            join(Cazyme, (Cazyme.cazyme_id==Cazymes_Genbanks.cazyme_id)).\
-            filter(Genbank.genbank_accession==primary_genbank).\
-            filter(Cazymes_Genbanks.primary==True).\
+            join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
+            join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
+            filter(Genbank.genbank_accession == primary_genbank).\
+            filter(Cazymes_Genbanks.primary == True).\
             all()
 
         if len(cazyme_query) == 0:
@@ -183,8 +183,8 @@ def add_protein_to_db(
         for genbank_object in primary_genbank_query:
             # retrieve CAZymes with the same primary GenBank accession
             cazyme_query = session.query(Cazyme).\
-                filter(Genbank.genbank_accession==primary_genbank).\
-                filter(Cazymes_Genbanks.primary==True).all()
+                filter(Genbank.genbank_accession == primary_genbank).\
+                filter(Cazymes_Genbanks.primary == True).all()
 
             if len(cazyme_query) == 0:
                 logger.warning(
