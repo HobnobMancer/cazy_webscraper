@@ -367,7 +367,7 @@ def add_new_protein_to_db(
         add_genbank_accessions(genbank_accessions, new_cazyme, session, logger)
 
     # add UniProt accessions
-    if len(genbank_accessions) != 0:
+    if len(uniprot_accessions) != 0:
         add_uniprot_accessions(uniprot_accessions, new_cazyme, session, logger)
 
     # add PDB/3D accessions
@@ -427,7 +427,7 @@ def add_data_to_protein_record(
         add_genbank_accessions(genbank_accessions, cazyme, session, logger)
 
     # add UniProt accessions
-    if len(genbank_accessions) != 0:
+    if len(uniprot_accessions) != 0:
         add_uniprot_accessions(uniprot_accessions, cazyme, session, logger)
 
     # add PDB/3D accessions
