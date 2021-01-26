@@ -640,6 +640,17 @@ def row_to_protein(row, family_name, logger, session):
             "sql": protein_name,
         }
 
+    # check if UniProt or PDB accessions were retrieved. If not store as empty lists
+    # this avoids KeyErros when invoking add_protein_to_db
+    try:
+        uniprot_accessions = links["UniProt"]
+    except KeyError:
+        uniprot_accessions = []
+    try:
+        pdb_accessions = links["PDB/3D"]
+    except KeyError:
+        pdb_accessions = []
+
     # add protein to database
     try:
         sql_interface.add_protein_to_db(
@@ -651,8 +662,8 @@ def row_to_protein(row, family_name, logger, session):
             session,
             ec_numbers,
             links["GenBank"][1:],
-            links["UniProt"],
-            links["PDB/3D"]
+            uniprot_accessions,
+            pdb_accessions,
         )
 
     except Exception as error_message:

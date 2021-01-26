@@ -19,8 +19,11 @@
 """Submodule to build a local SQL database"""
 
 
+import os
+import sys
+
 from sqlalchemy import (
-    Boolean, Column, ForeignKey, Integer, PrimaryKeyConstraint, String, Table
+    create_engine, Boolean, Column, ForeignKey, Integer, PrimaryKeyConstraint, String, Table
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
@@ -194,7 +197,6 @@ class Genbank(Base):
 
     genbank_id = Column(Integer, primary_key=True)
     genbank_accession = Column(String)
-    primary = Column(Boolean)
 
     cazymes_genbanks = relationship(
         "Cazymes_Genbanks",
@@ -317,3 +319,36 @@ class Pdb(Base):
             f"<Class Pdb accession={self.pdb_accession}, "
             f"id={self.pdb_id}, primary={self.primary}>"
         )
+
+
+def build_db(time_stamp, args, logger):
+    """Build an empty SQL database and open a session.
+
+    :param time_stamp: str, date and time stamp of when scrape was initated
+    :param args: cmd args parser
+    :param logger: logger object
+
+    Return an open database session.
+    """
+    logger.info("Building empty db to store data")
+
+    # build database engine
+    if args.database is None:
+        if args.output is sys.stdout:
+            # write to cwd, this is deleted in scrape is successful
+            cwd = os.getcwd()
+            db_path = cwd / f"cazy_scrape_temp_{time_stamp}.db"
+
+        else:
+            # write to specified output directory
+            db_path = args.output / f"cazy_scrape_{time_stamp}.db"
+
+    else:
+        # user specificed an existing local CAZy SQL database
+        db_path = args.database
+
+    engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
+    Base.metadata.create_all(engine)
+    Session.configure(bind=engine)
+
+    return Session()
