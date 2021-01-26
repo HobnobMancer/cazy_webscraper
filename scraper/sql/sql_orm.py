@@ -18,21 +18,114 @@
 # The MIT License
 """Submodule to build a local SQL database"""
 
-
+import re
 import os
 import sys
 
+import sqlite3
+
 from sqlalchemy import (
-    create_engine, Boolean, Column, ForeignKey, Integer, PrimaryKeyConstraint, String, Table
+    Boolean,
+    Column,
+    ForeignKey,
+    Integer,
+    PrimaryKeyConstraint,
+    String,
+    Table,
+    create_engine,
+    event,
+    exc,
 )
+from sqlalchemy.engine import Engine
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.sql.expression import BinaryExpression, func, literal
+from sqlalchemy.sql.operators import custom_op
 
 
 # Use the declarative system
 # Database structured in NF1
 Base = declarative_base()
 Session = sessionmaker()
+
+
+# Enable regular expression searching of the database
+# The enhancement of the String class to create the ReString class was acquired from:
+# https://gist.github.com/Xion/204ddbd020f1a4275a53
+# http://xion.io/post/code/sqlalchemy-regex-filters.html
+class ReString(String):
+    """Enchanced version of standard SQLAlchemy's :class:`String`.
+
+    Supports additional operators that can be used while constructing filter expressions, 
+    specifically, adding in ability to query the database using regular expressions.
+    """
+    class comparator_factory(String.comparator_factory):
+        """Contains implementation of :class:`String` operators related to regular expressions."""
+        def regexp(self, other):
+            return RegexMatchExpression(self.expr, literal(other), custom_op('~'))
+
+        def iregexp(self, other):
+            return RegexMatchExpression(self.expr, literal(other), custom_op('~*'))
+
+        def not_regexp(self, other):
+            return RegexMatchExpression(self.expr, literal(other), custom_op('!~'))
+
+        def not_iregexp(self, other):
+            return RegexMatchExpression(self.expr, literal(other), custom_op('!~*'))
+
+
+class RegexMatchExpression(BinaryExpression):
+    """Represents matching of a column againsts a regular expression."""
+
+
+@compiles(RegexMatchExpression, 'sqlite')
+def sqlite_regex_match(element, compiler, **kw):
+    """Compile the SQL expression representing a regular expression match for the SQLite engine."""
+    # determine the name of a custom SQLite function to use for the operator
+    operator = element.operator.opstring
+    try:
+        func_name, _ = SQLITE_REGEX_FUNCTIONS[operator]
+    except (KeyError, ValueError) as e:
+        would_be_sql_string = ' '.join((compiler.process(element.left),
+                                        operator,
+                                        compiler.process(element.right)))
+        raise exc.StatementError(
+            "unknown regular expression match operator: %s" % operator,
+            would_be_sql_string, None, e)
+
+    # compile the expression as an invocation of the custom function
+    regex_func = getattr(func, func_name)
+    regex_func_call = regex_func(element.left, element.right)
+    return compiler.process(regex_func_call)
+
+
+@event.listens_for(Engine, 'connect')
+def sqlite_engine_connect(dbapi_connection, connection_record):
+    """Listener for the event of establishing connection to a SQLite database.
+
+    Creates the functions handling regular expression operators within SQLite engine,
+    pointing them to their Python implementations above.
+    """
+    if not isinstance(dbapi_connection, sqlite3.Connection):
+        return
+
+    for name, function in SQLITE_REGEX_FUNCTIONS.values():
+        dbapi_connection.create_function(name, 2, function)
+
+
+# Mapping from the regular expression matching operators
+# to named Python functions that implement them for SQLite.
+SQLITE_REGEX_FUNCTIONS = {
+    '~': ('REGEXP',
+          lambda value, regex: bool(re.match(regex, value))),
+    '~*': ('IREGEXP',
+           lambda value, regex: bool(re.match(regex, value, re.IGNORECASE))),
+    '!~': ('NOT_REGEXP',
+           lambda value, regex: not re.match(regex, value)),
+    '!~*': ('NOT_IREGEXP',
+            lambda value, regex: not re.match(regex, value, re.IGNORECASE)),
+}
 
 
 # define association/relationship tables
@@ -197,6 +290,7 @@ class Genbank(Base):
 
     genbank_id = Column(Integer, primary_key=True)
     genbank_accession = Column(String)
+    sequence = Column(ReString)
 
     cazymes_genbanks = relationship(
         "Cazymes_Genbanks",
@@ -205,10 +299,10 @@ class Genbank(Base):
     )
 
     def __str__(self):
-        return f"-Genbank accession={self.genbank_accession}, primary={self.primary}-"
+        return f"-Genbank accession={self.genbank_accession}-"
 
     def __repr__(self):
-        return f"<Class GenBank acc={self.genbank_accession}, primary={self.primary}>"
+        return f"<Class GenBank acc={self.genbank_accession}>"
 
 
 class Cazymes_Genbanks(Base):
@@ -273,6 +367,7 @@ class Uniprot(Base):
     uniprot_id = Column(Integer, primary_key=True)
     uniprot_accession = Column(String)
     primary = Column(Boolean)
+    sequence = Column(String)
 
     cazymes = relationship(
         "Cazyme",
@@ -346,6 +441,25 @@ def build_db(time_stamp, args, logger):
     else:
         # user specificed an existing local CAZy SQL database
         db_path = args.database
+
+    engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
+    Base.metadata.create_all(engine)
+    Session.configure(bind=engine)
+
+    return Session()
+
+
+def get_db_session(args, logger):
+    """Create open session to local CAZy SQL database.
+
+    :param args: cmd args parser
+    :param logger: logger object
+
+    Return an open database session.
+    """
+    logger.info("Building empty db to store data")
+
+    db_path = args.database
 
     engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
     Base.metadata.create_all(engine)
