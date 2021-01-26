@@ -19,14 +19,6 @@
 """Submodule to interacting with a local SQL database"""
 
 
-import os
-import sys
-
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-
-
 from scraper.sql.sql_orm import (
     Cazyme,
     Taxonomy,
@@ -37,45 +29,6 @@ from scraper.sql.sql_orm import (
     Uniprot,
     Pdb,
 )
-
-
-# Use the declarative system
-# Database structured in NF1
-Base = declarative_base()
-Session = sessionmaker()
-
-
-def build_db(time_stamp, args, logger):
-    """Build an empty SQL database and open a session.
-
-    :param time_stamp: str, date and time stamp of when scrape was initated
-    :param args: cmd args parser
-    :param logger: logger object
-
-    Return an open database session.
-    """
-    logger.info("Building empty db to store data")
-
-    # build database engine
-    if args.database is None:
-        if args.output is sys.stdout:
-            # write to cwd, this is deleted in scrape is successful
-            cwd = os.getcwd()
-            db_path = cwd / f"cazy_scrape_temp_{time_stamp}.db"
-
-        else:
-            # write to specified output directory
-            db_path = args.output / f"cazy_scrape_{time_stamp}.db"
-
-    else:
-        # user specificed an existing local CAZy SQL database
-        db_path = args.database
-
-    engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
-    Base.metadata.create_all(engine)
-    Session.configure(bind=engine)
-
-    return Session()
 
 
 def add_protein_to_db(
@@ -630,7 +583,7 @@ def add_genbank_accessions(genbank_accessions, cazyme, session, logger):
 
         if len(genbank_query) == 0:
             # add new genbank accession
-            new_accession = Genbank(genbank_accession=accession, primary=False)
+            new_accession = Genbank(genbank_accession=accession)
             session.add(new_accession)
             session.commit()
 
