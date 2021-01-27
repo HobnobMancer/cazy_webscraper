@@ -93,6 +93,7 @@ def add_protein_to_db(
             logger,
             session,
             ec_numbers,
+            genbank_accessions,
             uniprot_accessions,
             pdb_accessions,
         )
@@ -124,6 +125,7 @@ def add_protein_to_db(
                 primary_genbank,
                 logger,
                 session,
+                ec_numbers,
                 genbank_accessions,
                 uniprot_accessions,
                 pdb_accessions,
@@ -131,7 +133,7 @@ def add_protein_to_db(
 
         elif len(cazyme_query) == 1:
             add_data_to_protein_record(
-                cazyme_query[0],
+                cazyme_query[0][0],
                 family,
                 source_organism,
                 logger,
@@ -152,15 +154,15 @@ def add_protein_to_db(
             )
             for cazyme in cazyme_query:
                 logger.warning(
-                    f"Duplicate CAZyme: {cazyme.cazyme_name}, id={cazyme.cazyme_id}"
+                    f"Duplicate CAZyme: {cazyme[0].cazyme_name}, id={cazyme[0].cazyme_id}"
                 )
             logger.warning(
-                f"Protein data added to cazyme {cazyme_query[0].cazyme_name}, "
-                f"id={cazyme_query[0].cazyme_id}"
+                f"Protein data added to cazyme {cazyme_query[0][0].cazyme_name}, "
+                f"id={cazyme_query[0][0].cazyme_id}"
             )
 
             add_data_to_protein_record(
-                cazyme_query[0],
+                cazyme_query[0][0],
                 family,
                 source_organism,
                 logger,
@@ -223,6 +225,7 @@ def add_protein_to_db(
                 primary_genbank,
                 logger,
                 session,
+                ec_numbers,
                 genbank_accessions,
                 uniprot_accessions,
                 pdb_accessions,
@@ -678,10 +681,7 @@ def add_uniprot_accessions(uniprot_accessions, cazyme, session, logger):
 
     Return nothing.
     """
-    if len(uniprot_accessions) == 0:
-        return
-
-    elif len(uniprot_accessions) == 1:
+    if len(uniprot_accessions) == 1:
         add_primary_uniprot(uniprot_accessions[0], cazyme, session, logger)
         # check if accession is already in the database
 
@@ -774,10 +774,7 @@ def add_pdb_accessions(pdb_accessions, cazyme, session, logger):
 
     Return nothing.
     """
-    if len(pdb_accessions) == 0:
-        return
-
-    elif len(pdb_accessions) == 1:
+    if len(pdb_accessions) == 1:
         add_primary_pdb(pdb_accessions[0], cazyme, session, logger)
         # check if accession is already in the database
 
