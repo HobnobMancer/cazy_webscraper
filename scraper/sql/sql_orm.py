@@ -257,7 +257,7 @@ class CazyFamily(Base):
     a null value for the subfamily and a different family_id. """
     __tablename__ = "families"
     family_id = Column(Integer, primary_key=True)
-    family = Column(String)
+    family = Column(ReString)
     subfamily = Column(String)
 
     cazymes = relationship(
