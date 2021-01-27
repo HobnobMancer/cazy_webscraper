@@ -290,7 +290,7 @@ class Genbank(Base):
 
     genbank_id = Column(Integer, primary_key=True)
     genbank_accession = Column(String)
-    sequence = Column(ReString)
+    sequence = Column(String)
 
     cazymes_genbanks = relationship(
         "Cazymes_Genbanks",
