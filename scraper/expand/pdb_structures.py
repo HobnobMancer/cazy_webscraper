@@ -247,3 +247,6 @@ def download_pdb_structures(pdb_accession, args, logger):
     pdbl.retrieve_pdb_file(f"{pdb_accession}", file_format=args.pdb, pdir=args.outdir)
 
     return
+
+if __name__ == "__main__":
+    main()

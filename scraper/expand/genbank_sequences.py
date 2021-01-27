@@ -20,6 +20,7 @@
 
 
 import logging
+import os
 import time
 
 import pandas as pd
@@ -56,20 +57,26 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # build logger
     logger = build_logger("expand.genbank_sequences", args)
 
+    # check database was passed
+    if os.path.isfile(args.database) is False:
+        logger.error(
+            "Could not find local CAZy database. Check pack is correct. Terminating programme."
+        )
+
     Entrez.email = args.email
 
     # create session to local database
     session = get_db_session(args, logger)
 
     # check if any classes or families were specified to retrieve the sequences only for them
-    if (args.classess is not None) and (args.families is not None):
+    if (args.classes is None) and (args.families is None):
+        config_dict = None
+    
+    else:
         # create dictionary of CAZy classes/families to retrieve sequences for
         file_io_path = file_io.__file__
         cazy_dict, std_class_names = file_io.get_cazy_dict_std_names(file_io_path, logger)
         config_dict = file_io.get_cmd_defined_fams_classes(cazy_dict, std_class_names, args, logger)
-
-    else:
-        config_dict = None
 
     if config_dict is None:
         # get sequences for everything
@@ -199,7 +206,7 @@ def get_specific_proteins_sequencse_primary_only(config_dict, session, args, log
         for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
             if family.find("_") != -1:  # subfamily
                 # Retrieve GenBank accessions catalogued under the subfamily
-                family_query = (CazyFamily, Cazyme, Cazymes_Genbanks, Genbank).\
+                family_query = session.query(CazyFamily, Cazyme, Cazymes_Genbanks, Genbank).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(CazyFamily.subfamily == family).\
@@ -208,7 +215,7 @@ def get_specific_proteins_sequencse_primary_only(config_dict, session, args, log
 
             else:  # family
                 # Retrieve GenBank accessions catalogued under the family
-                family_query = (CazyFamily, Cazyme, Cazymes_Genbanks, Genbank).\
+                family_query = session.query(CazyFamily, Cazyme, Cazymes_Genbanks, Genbank).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(CazyFamily.family == family).\
@@ -216,6 +223,8 @@ def get_specific_proteins_sequencse_primary_only(config_dict, session, args, log
                     all()
 
             for query_result in tqdm(family_query, desc=f"Parsing GenBank accessions in {family}"):
+                genbank_accession = query_result[-1].genbank_accession
+
                 if query_result[-1].sequence is None:
                     get_new_protein_sequence(
                         genbank_accession,
@@ -292,7 +301,7 @@ def get_specific_proteins_sequencse(config_dict, session, args, logger):
         for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
             if family.find("_") != -1:  # subfamily
                 # Retrieve GenBank accessions catalogued under the subfamily
-                family_query = (CazyFamily, Cazyme, Cazymes_Genbanks, Genbank).\
+                family_query = session.query(CazyFamily, Cazyme, Cazymes_Genbanks, Genbank).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(CazyFamily.subfamily == family).\
@@ -300,7 +309,7 @@ def get_specific_proteins_sequencse(config_dict, session, args, logger):
 
             else:  # family
                 # Retrieve GenBank accessions catalogued under the family
-                family_query = (CazyFamily, Cazyme, Cazymes_Genbanks, Genbank).\
+                family_query = session.query(CazyFamily, Cazyme, Cazymes_Genbanks, Genbank).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(CazyFamily.family == family).\
@@ -354,7 +363,7 @@ def get_new_protein_sequence(genbank_accession, genbank_record, session, args, l
 
     # add sequence to the local database
     for record in SeqIO.parse(handle, "fasta"):
-        retrieved_sequence = record.seq
+        retrieved_sequence = str(record.seq)  # convert to a string becuase SQL expects a string
         genbank_record.sequence = retrieved_sequence
         session.commit()
 
@@ -460,3 +469,6 @@ def write_out_fasta(handle, genbank_accession, args):
         with open(fasta_name, "w") as fh:
             SeqIO.write(record, fh, "fasta")
     return
+
+if __name__ == "__main__":
+    main()
