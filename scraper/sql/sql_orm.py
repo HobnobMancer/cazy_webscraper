@@ -51,14 +51,10 @@ Session = sessionmaker()
 
 
 # Enable regular expression searching of the database
-# The enhancement of the String class to create the ReString class was acquired from:
-# https://gist.github.com/Xion/204ddbd020f1a4275a53
-# http://xion.io/post/code/sqlalchemy-regex-filters.html
 class ReString(String):
     """Enchanced version of standard SQLAlchemy's :class:`String`.
 
-    Supports additional operators that can be used while constructing filter expressions, 
-    specifically, adding in ability to query the database using regular expressions.
+    Supports additional operators that can be used while constructing filter expressions.
     """
     class comparator_factory(String.comparator_factory):
         """Contains implementation of :class:`String` operators related to regular expressions."""
@@ -77,7 +73,6 @@ class ReString(String):
 
 class RegexMatchExpression(BinaryExpression):
     """Represents matching of a column againsts a regular expression."""
-
 
 @compiles(RegexMatchExpression, 'sqlite')
 def sqlite_regex_match(element, compiler, **kw):
@@ -99,20 +94,18 @@ def sqlite_regex_match(element, compiler, **kw):
     regex_func_call = regex_func(element.left, element.right)
     return compiler.process(regex_func_call)
 
-
 @event.listens_for(Engine, 'connect')
 def sqlite_engine_connect(dbapi_connection, connection_record):
     """Listener for the event of establishing connection to a SQLite database.
 
-    Creates the functions handling regular expression operators within SQLite engine,
-    pointing them to their Python implementations above.
+    Creates the functions handling regular expression operators
+    within SQLite engine, pointing them to their Python implementations above.
     """
     if not isinstance(dbapi_connection, sqlite3.Connection):
         return
 
     for name, function in SQLITE_REGEX_FUNCTIONS.values():
         dbapi_connection.create_function(name, 2, function)
-
 
 # Mapping from the regular expression matching operators
 # to named Python functions that implement them for SQLite.
