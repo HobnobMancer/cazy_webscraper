@@ -191,14 +191,14 @@ def build_parser(argv: Optional[List] = None):
         return parser.parse_args(argv)
 
 
-def build_logger(script_name, args) -> logging.Logger:
+def config_logger(script_name, args) -> logging.Logger:
     """Return a logger for this script.
     Enables logger for script, sets parameters and creates new file to store log.
     :param script_name: str, name of script
     :param args: parser argument
     Return logger object.
     """
-    logger = logging.getLogger(script_name)
+    logger = logging.getLogger(__package__)
 
     # Set format of loglines
     log_formatter = logging.Formatter(
