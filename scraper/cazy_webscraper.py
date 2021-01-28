@@ -71,7 +71,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         args = utilities.build_parser(argv).parse_args()
 
     if logger is None:
-        logger = utilities.build_logger("cazy_webscraper", args)
+        logger = logging.getLogger(__name__)
+        utilities.config_logger(args)
+
     logger.info("Run initiated")
 
     if args.output is not sys.stdout:
@@ -120,7 +122,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         max_tries,
         time_stamp,
         session,
-        logger,
         args,
     )
 
@@ -152,7 +153,6 @@ def get_cazy_data(
     max_tries,
     time_stamp,
     session,
-    logger,
     args,
 ):
     """Coordinate retrieval of data from the CAZy website.
@@ -172,6 +172,8 @@ def get_cazy_data(
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     # List of urls that were failed to be scraped
     failed_url_scrapes = []
 
