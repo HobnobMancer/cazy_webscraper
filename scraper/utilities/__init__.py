@@ -65,7 +65,6 @@ def build_parser(argv: Optional[List] = None):
         help="path to an existing local CAZy SQL database",
     )
 
-
     # Add option to force file over writting
     parser.add_argument(
         "-f",
