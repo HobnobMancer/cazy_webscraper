@@ -197,7 +197,7 @@ def config_logger(args) -> logging.Logger:
     Configure a logger at the package level, from which the module will inherit.
     If CMD-line args are provided, these are used to define output streams, and
     logging level.
-    
+
     :param args: cmd-line args parser
 
     Return nothing
@@ -207,6 +207,7 @@ def config_logger(args) -> logging.Logger:
     # Set format of loglines
     log_formatter = logging.Formatter("[%(levelname)s] [%(name)s]: %(message)s")
 
+    # define logging level
     if args.verbose is True:
         logger.setLevel(logging.INFO)
     else:
