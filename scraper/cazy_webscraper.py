@@ -77,16 +77,16 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info("Run initiated")
 
     if args.output is not sys.stdout:
-        file_io.make_output_directory(args.output, logger, args.force, args.nodelete)
+        file_io.make_output_directory(args.output, args.force, args.nodelete)
 
     if args.genbank is not None:
         # create directory to write FASTA files to
         if (args.genbank_output is not sys.stdout) and (args.genbank_output != args.output):
-            file_io.make_output_directory(args.genbank_output, logger, args.force, args.nodelete)
+            file_io.make_output_directory(args.genbank_output, args.force, args.nodelete)
 
     if (args.pdb is not None) and (args.pdb_output != args.output):
         # create directory to write structure files to
-        file_io.make_output_directory(args.pdb_output, logger, args.force, args.nodelete)
+        file_io.make_output_directory(args.pdb_output, args.force, args.nodelete)
 
     if args.subfamilies is True:
         logger.warning("Enabled to retrieve subfamilies")
@@ -95,7 +95,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # build database and return open database session
     try:
-        session = sql_orm.build_db(time_stamp, args, logger)
+        session = sql_orm.build_db(time_stamp, args)
     except Exception:
         logger.error("Failed to build SQL database. Terminating program", exc_info=1)
         sys.exit(1)
@@ -105,7 +105,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
         file_io_path,
         args,
-        logger,
     )
 
     logger.info(
@@ -186,7 +185,6 @@ def get_cazy_data(
         excluded_classes,
         max_tries,
         cazy_dict,
-        logger,
     )
 
     logger.info("Starting retrieval of CAZy families")
@@ -203,7 +201,6 @@ def get_cazy_data(
                 cazy_class.name,
                 cazy_home,
                 args,
-                logger,
             )
 
             if incorrect_urls is not None:
@@ -242,7 +239,6 @@ def get_cazy_data(
                     family,
                     cazy_home,
                     max_tries,
-                    logger,
                     session,
                 )
 
@@ -287,7 +283,6 @@ def get_cazy_data(
                     family,
                     cazy_home,
                     max_tries,
-                    logger,
                     session,
                 )
 
@@ -314,11 +309,11 @@ def get_cazy_data(
 
     # write out URLs which failed to be scaped
     if len(failed_url_scrapes) != 0:
-        file_io.write_out_failed_scrapes(failed_url_scrapes, time_stamp, args, logger)
+        file_io.write_out_failed_scrapes(failed_url_scrapes, time_stamp, args)
 
     # write out Proteins which failed to be be added to the database
     if len(sql_failures) != 0:
-        file_io.write_out_failed_proteins(sql_failures, time_stamp, args, logger)
+        file_io.write_out_failed_proteins(sql_failures, time_stamp, args)
 
     return
 
