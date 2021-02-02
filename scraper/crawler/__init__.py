@@ -640,7 +640,7 @@ def row_to_protein(row, family_name, session):
             f"Did not retrieve any GenBank accessions for {protein_name} in {family_name}.\n"
             "The primary GenBank accession determines what unique protein the current working "
             "protein is.\n"
-            "Adding protein with the GenBank accession: 'NA'"
+            "Adding protein with the GenBank accession: 'NA' as a new protein to the db."
         )
         links["GenBank"] = ["NA"]
 
