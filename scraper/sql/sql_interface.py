@@ -19,6 +19,8 @@
 """Submodule to interacting with a local SQL database"""
 
 
+import logging
+
 from scraper.sql.sql_orm import (
     Cazyme,
     Taxonomy,
@@ -36,7 +38,6 @@ def add_protein_to_db(
     family,
     source_organism,
     primary_genbank,
-    logger,
     session,
     ec_numbers=[],
     genbank_accessions=[],
@@ -63,7 +64,6 @@ def add_protein_to_db(
     :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
     :param source_organism: str, the scientific name of the organism from which the CAZy is derived
     :param primary_genbank: str, the hyperlinked GenBank accession from CAZy
-    :param logger: logger object
     :param session: open sqlalchemy session to database
 
     ::optional parameters::
@@ -74,6 +74,8 @@ def add_protein_to_db(
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     # Each unique protein is identified by a unique primary GenBank accession, not its CAZyme name
     # query the local database to see if the current working protein is in the database
     # It is checked that the 'primary_genbank' is logged as a primary accession because it is
@@ -90,7 +92,6 @@ def add_protein_to_db(
             family,
             source_organism,
             primary_genbank,
-            logger,
             session,
             ec_numbers,
             genbank_accessions,
@@ -123,7 +124,6 @@ def add_protein_to_db(
                 family,
                 source_organism,
                 primary_genbank,
-                logger,
                 session,
                 ec_numbers,
                 genbank_accessions,
@@ -136,7 +136,6 @@ def add_protein_to_db(
                 cazyme_query[0][0],
                 family,
                 source_organism,
-                logger,
                 session,
                 ec_numbers,
                 genbank_accessions,
@@ -165,7 +164,6 @@ def add_protein_to_db(
                 cazyme_query[0][0],
                 family,
                 source_organism,
-                logger,
                 session,
                 ec_numbers,
                 genbank_accessions,
@@ -223,7 +221,6 @@ def add_protein_to_db(
                 family,
                 source_organism,
                 primary_genbank,
-                logger,
                 session,
                 ec_numbers,
                 genbank_accessions,
@@ -244,7 +241,6 @@ def add_protein_to_db(
                 duplicate_cazyme_entries[0],
                 family,
                 source_organism,
-                logger,
                 session,
                 ec_numbers,
                 genbank_accessions,
@@ -270,7 +266,6 @@ def add_protein_to_db(
                 duplicate_cazyme_entries[0],
                 family,
                 source_organism,
-                logger,
                 session,
                 ec_numbers,
                 genbank_accessions,
@@ -286,7 +281,6 @@ def add_new_protein_to_db(
     family,
     source_organism,
     primary_genbank,
-    logger,
     session,
     ec_numbers=[],
     genbank_accessions=[],
@@ -304,7 +298,6 @@ def add_new_protein_to_db(
     :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
     :param source_organism: str, the scientific name of the organism from which the CAZy is derived
     :param primary_genbank: str, the hyperlinked GenBank accession from CAZy
-    :param logger: logger object
     :param session: open sqlalchemy session to database
 
     ::optional parameters::
@@ -315,6 +308,8 @@ def add_new_protein_to_db(
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     # define the CAZyme
     new_cazyme = Cazyme(cazyme_name=cazyme_name)
 
@@ -357,25 +352,25 @@ def add_new_protein_to_db(
 
     # add Family/Subfamily classifications
     if family.find("_") != -1:
-        add_cazy_subfamily(family, new_cazyme, session, logger)
+        add_cazy_subfamily(family, new_cazyme, session)
     else:
-        add_cazy_family(family, new_cazyme, session, logger)
+        add_cazy_family(family, new_cazyme, session)
 
     # define ec_number
     if len(ec_numbers) != 0:
-        add_ec_numbers(ec_numbers, new_cazyme, session, logger)
+        add_ec_numbers(ec_numbers, new_cazyme, session)
 
     # add non-primary GenBank accessions
     if len(genbank_accessions) != 0:
-        add_genbank_accessions(genbank_accessions, new_cazyme, session, logger)
+        add_genbank_accessions(genbank_accessions, new_cazyme, session)
 
     # add UniProt accessions
     if len(uniprot_accessions) != 0:
-        add_uniprot_accessions(uniprot_accessions, new_cazyme, session, logger)
+        add_uniprot_accessions(uniprot_accessions, new_cazyme, session)
 
     # add PDB/3D accessions
     if len(pdb_accessions) != 0:
-        add_pdb_accessions(pdb_accessions, new_cazyme, session, logger)
+        add_pdb_accessions(pdb_accessions, new_cazyme, session)
 
     # final commit to ensure all changes are commited
     session.commit()
@@ -387,7 +382,6 @@ def add_data_to_protein_record(
     cazyme,
     family,
     source_organism,
-    logger,
     session,
     ec_numbers=[],
     genbank_accessions=[],
@@ -404,7 +398,6 @@ def add_data_to_protein_record(
     :param cazyme_name: Cazyme class instance - class imported from scraper.sql.sql_orm
     :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
     :param source_organism: str, the scientific name of the organism from which the CAZy is derived
-    :param logger: logger object
     :param session: open sqlalchemy session to database
 
     ::optional parameters::
@@ -417,25 +410,25 @@ def add_data_to_protein_record(
     """
     # add Family/Subfamily classifications
     if family.find("_") != -1:
-        add_cazy_subfamily(family, cazyme, session, logger)
+        add_cazy_subfamily(family, cazyme, session)
     else:
-        add_cazy_family(family, cazyme, session, logger)
+        add_cazy_family(family, cazyme, session)
 
     # define ec_number
     if len(ec_numbers) != 0:
-        add_ec_numbers(ec_numbers, cazyme, session, logger)
+        add_ec_numbers(ec_numbers, cazyme, session)
 
     # add non-primary GenBank accessions
     if len(genbank_accessions) != 0:
-        add_genbank_accessions(genbank_accessions, cazyme, session, logger)
+        add_genbank_accessions(genbank_accessions, cazyme, session)
 
     # add UniProt accessions
     if len(uniprot_accessions) != 0:
-        add_uniprot_accessions(uniprot_accessions, cazyme, session, logger)
+        add_uniprot_accessions(uniprot_accessions, cazyme, session)
 
     # add PDB/3D accessions
     if len(pdb_accessions) != 0:
-        add_pdb_accessions(pdb_accessions, cazyme, session, logger)
+        add_pdb_accessions(pdb_accessions, cazyme, session)
 
     # final commit to ensure all changes are commited
     session.commit()
@@ -443,16 +436,17 @@ def add_data_to_protein_record(
     return
 
 
-def add_cazy_family(family, cazyme, session, logger):
+def add_cazy_family(family, cazyme, session):
     """Add CAZy family to CAZyme record in the local CAZy database.
 
     :param family: str, name of a CAZy family/subfamily
     :param cazyme: Cazymes class object
     :param session: open local database session connector
-    :param logger: logger object
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     # Check if Family is already in the local database
     family_query = session.query(CazyFamily).filter_by(family=family).all()
 
@@ -522,20 +516,23 @@ def add_cazy_family(family, cazyme, session, logger):
                 cazyme.families.append(nonsubfamily_asociated_family_entries[0])
             session.commit()
 
+    # final commit to ensure all changes are added to the db
     session.commit()
+
     return
 
 
-def add_cazy_subfamily(family, cazyme, session, logger):
+def add_cazy_subfamily(family, cazyme, session):
     """Add CAZy family to CAZyme record in the local CAZy database.
 
     :param family: str, name of a CAZy family/subfamily
     :param cazyme: Cazymes class object
     :param session: open local database session connector
-    :param logger: logger object
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     # check if the subfamily is already in the database
     subfam_query = session.query(CazyFamily).filter_by(subfamily=family).all()
 
@@ -573,16 +570,17 @@ def add_cazy_subfamily(family, cazyme, session, logger):
 # PDB accessions
 
 
-def add_genbank_accessions(genbank_accessions, cazyme, session, logger):
+def add_genbank_accessions(genbank_accessions, cazyme, session):
     """Add non-primary GenBank protein accessions to the local database.
 
     :param genbank_accessions: list of non-primary GenBank protein accession numbers (str)
     :param cazyme: Cazymes class object
     :param session: open local database session connector
-    :param logger: logger object
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     for accession in genbank_accessions:
         # check if accession is in the database already
         genbank_query = session.query(Genbank).filter_by(genbank_accession=accession).all()
@@ -626,16 +624,17 @@ def add_genbank_accessions(genbank_accessions, cazyme, session, logger):
     return
 
 
-def add_ec_numbers(ec_numbers, cazyme, session, logger):
+def add_ec_numbers(ec_numbers, cazyme, session):
     """Add EC numbers to CAZyme record in the local CAZy database.
 
     :param ec_numbers: list of EC numbers (str)
     :param new_cazyme: Cazymes class object
     :param session: open local database session connector
-    :param logger: logger object
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     for ec in ec_numbers:
         # check if the EC number is already in the database
         ec_query = session.query(EC).filter_by(ec_number=ec).all()
@@ -671,22 +670,23 @@ def add_ec_numbers(ec_numbers, cazyme, session, logger):
     return
 
 
-def add_uniprot_accessions(uniprot_accessions, cazyme, session, logger):
+def add_uniprot_accessions(uniprot_accessions, cazyme, session):
     """Add UniProt protein accessions to CAZyme record in the local CAZy database.
 
     :param uniprot_accessions: list of UniProt protein accession numbers (str)
     :param cazyme: Cazymes class object
     :param session: open local database session connector
-    :param logger: logger object
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     if len(uniprot_accessions) == 1:
-        add_primary_uniprot(uniprot_accessions[0], cazyme, session, logger)
+        add_primary_uniprot(uniprot_accessions[0], cazyme, session)
         # check if accession is already in the database
 
     else:
-        add_primary_uniprot(uniprot_accessions[0], cazyme, session, logger)
+        add_primary_uniprot(uniprot_accessions[0], cazyme, session)
 
         for accession in uniprot_accessions[1:]:
             # check if accession is in the database already
@@ -722,16 +722,17 @@ def add_uniprot_accessions(uniprot_accessions, cazyme, session, logger):
     return
 
 
-def add_primary_uniprot(accession, cazyme, session, logger):
+def add_primary_uniprot(accession, cazyme, session):
     """Add primary UniProt accession for CAZyme to the local CAZy database.
 
     :param accession: str, primary UniProt accession of a CAZyme
     :param cazyme: Cazymes class object
     :param session: open local database session connector
-    :param logger: logger object
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     uniprot_query = session.query(Uniprot).filter_by(uniprot_accession=accession).all()
 
     if len(uniprot_query) == 0:
@@ -764,22 +765,23 @@ def add_primary_uniprot(accession, cazyme, session, logger):
     return
 
 
-def add_pdb_accessions(pdb_accessions, cazyme, session, logger):
+def add_pdb_accessions(pdb_accessions, cazyme, session):
     """Add PDB/3D protein accessions to CAZyme record in the local CAZy database.
 
     :param pdb_accessions: list of UniProt protein accession numbers (str)
     :param cazyme: Cazymes class object
     :param session: open local database session connector
-    :param logger: logger object
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     if len(pdb_accessions) == 1:
-        add_primary_pdb(pdb_accessions[0], cazyme, session, logger)
+        add_primary_pdb(pdb_accessions[0], cazyme, session)
         # check if accession is already in the database
 
     else:
-        add_primary_pdb(pdb_accessions[0], cazyme, session, logger)
+        add_primary_pdb(pdb_accessions[0], cazyme, session)
 
         for accession in pdb_accessions[1:]:
             # check if accession is in the database already
@@ -815,16 +817,17 @@ def add_pdb_accessions(pdb_accessions, cazyme, session, logger):
     return
 
 
-def add_primary_pdb(accession, cazyme, session, logger):
+def add_primary_pdb(accession, cazyme, session):
     """Add primary PDB/3D accession for CAZyme to the local CAZy database.
 
     :param accession: str, primary UniProt accession of a CAZyme
     :param cazyme: Cazymes class object
     :param session: open local database session connector
-    :param logger: logger object
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     pdb_query = session.query(Pdb).filter_by(pdb_accession=accession).all()
 
     if len(pdb_query) == 0:

@@ -1,7 +1,0 @@
-https://docs.sqlalchemy.org/en/13/orm/tutorial.html
-http://www.mapfish.org/doc/tutorials/sqlalchemy.html
-
-https://realpython.com/flask-connexion-rest-api-part-3/#sqlalchemy-models
-https://realpython.com/building-a-simple-web-app-with-bottle-sqlalchemy-twitter-api/#the-db-and-sqlalchemy
-https://realpython.com/flask-by-example-part-2-postgres-sqlalchemy-and-alembic/
-https://realpython.com/python-sqlite-sqlalchemy/#working-with-sqlalchemy-and-python-objects
