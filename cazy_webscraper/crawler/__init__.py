@@ -33,102 +33,9 @@ import time
 
 import numpy as np
 
-from collections import defaultdict
 from tqdm import tqdm
-from requests.exceptions import ConnectionError, MissingSchema
-from urllib3.exceptions import HTTPError, RequestError
 
-import mechanicalsoup
-
-
-class Protein:
-    """A single protein.
-
-    Each protein has a name, source organism (source), and links to external databases. The links to
-    external databases are stored in a dictionary, keyed by the external database name ('str') with
-    'list' values becuase there may be multiple links per database.
-
-    Multiple 'synonym' GenBank accession numbers maybe listed for a single protein. CAZy only
-    hyperlinks the first listed accession number. This accession is the one listed for the protein,
-    because is presumed to be the accession used by CAZy in their classification. All other listed
-    GenBank accessions are regarded as synonyms, including for example splice variants and identical
-    protein sequence submissions.
-    """
-
-    def __init__(self, name, family, ec, source, links=None, genbank_synonyms=None):
-        self.name = name
-        self.family = family
-        self.ec = ec
-        self.source = source
-        if links is None:
-            self.links = defaultdict(list)
-        else:
-            self.links = links
-        self.genbank_synonyms = genbank_synonyms
-
-    def __str__(self):
-        """Create representative string of class object"""
-        return f"{self.name} ({self.family} {self.source}): links to {self.links.keys()}"
-
-    def __repr__(self):
-        """Create representative object"""
-        return (
-            f"<Protein: {id(self)}: {self.name}, {self.family} "
-            f"({self.source}), {len(self.links)} to external databases>"
-        )
-
-    def get_protein_dict(self):
-        """Return a dictionary containing all the data of the protein."""
-        protein_dict = {"Protein_name": [self.name], "CAZy_family": [self.family]}
-
-        if len(self.ec) == 0:
-            protein_dict["EC#"] = [np.nan]
-        elif len(self.ec) == 1:
-            protein_dict["EC#"] = self.ec
-        else:
-            ec_string = "\n".join(self.ec)
-            protein_dict["EC#"] = [ec_string]
-
-        protein_dict["Source_organism"] = [self.source]
-
-        if type(self.links) is dict:
-            for database in ["GenBank", "UniProt", "PDB/3D"]:
-                try:
-                    if len(self.links[database]) == 1:
-                        protein_dict[database] = self.links[database]
-                    else:
-                        accession_string = ",\n".join(self.links[database])
-                        protein_dict[database] = [accession_string]
-                except KeyError:
-                    protein_dict[database] = [np.nan]
-        else:
-            for database in ["GenBank", "UniProt", "PDB/3D"]:
-                protein_dict[database] = [np.nan]
-        return protein_dict
-
-
-class Family:
-    """A single CAZy family."""
-
-    members = set()  # holds Protein instances
-
-    def __init__(self, name, cazy_class):
-        self.name = name
-        self.cazy_class = cazy_class
-
-    def __str__(self):
-        return f"CAZy family {self.name}: {len(self.members)} protein members"
-
-    def __repr__(self):
-        return f"<Family: {id(self)}: {self.name}, {len(self.members)} protein members"
-
-    def get_proteins(self):
-        """Return a list of all protein members of the CAZy family."""
-        return self.members
-
-    def get_family_name(self):
-        """Return family name"""
-        return self.name
+from cazy_webscraper.cazy_webscraper import get_page, Family, Protein
 
 
 def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, logger):
@@ -293,16 +200,7 @@ def parse_family(family_url, family_name, cazy_home, logger):
     # retrieve class from family name
     pattern = re.compile(r"\D+")
     search_result = re.match(pattern, family_name)
-    try:
-        cazy_class = search_result.group()
-    except AttributeError:
-        logger.warning(
-            f"Incorrect formating of the family name {family_name}\n"
-            "Not scrapping this family"
-        )
-        family = Family(family_name, "Incorrect family name format")
-        family.members = set()
-        return [family, "Incorrect formatting of family name"]
+    cazy_class = search_result.group()
 
     family = Family(family_name, cazy_class)
     family.members = set()
@@ -482,51 +380,3 @@ def row_to_protein(row, family_name):
         genbank_synonyms = None
 
     return Protein(protein_name, family_name, ec_numbers, source_organism, links, genbank_synonyms)
-
-
-def browser_decorator(func):
-    """Decorator to retry the wrapped function up to 'retries' times."""
-
-    def wrapper(*args, retries=10, **kwargs):
-        tries, success, err = 0, False, None
-        while not success and (tries < retries):
-            try:
-                response = func(*args, **kwargs)
-            except (
-                ConnectionError,
-                HTTPError,
-                OSError,
-                MissingSchema,
-                RequestError,
-            ) as err_message:
-                success = False
-                response = None
-                err = err_message
-            if response is not None:  # response was successful
-                success = True
-            # if response from webpage was not successful
-            tries += 1
-            time.sleep(10)
-        if (not success) or (response is None):
-            return [None, err]
-        else:
-            return [response, None]
-
-    return wrapper
-
-
-@browser_decorator
-def get_page(url):
-    """Create browser and use browser to retrieve page for given URL.
-
-    :param url: str, url to webpage
-
-    Return browser response object (the page).
-    """
-    # create browser object
-    browser = mechanicalsoup.Browser()
-    # create response object
-    page = browser.get(url)
-    page = page.soup
-
-    return page
