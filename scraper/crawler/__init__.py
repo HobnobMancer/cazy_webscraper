@@ -624,23 +624,6 @@ def row_to_protein(row, family_name, session):
     except AttributeError:
         pass
 
-    if len(links["GenBank"]) == 0:
-        logger.warning(
-            f"Did not retrieve any GenBank accessions for {protein_name} in {family_name}.\n"
-            "The primary GenBank accession determines what unique protein the current working "
-            "protein is.\n"
-            "Protein NOT be added to the local database"
-        )
-
-        return {
-            "url": None,
-            "error": (
-                "Failed to retrieve any GenBank accessions, "
-                "which define what protein the CAZyme is"
-            ),
-            "sql": protein_name,
-        }
-
     # check if UniProt or PDB accessions were retrieved. If not store as empty lists
     # this avoids KeyErros when invoking add_protein_to_db
     try:
@@ -651,6 +634,43 @@ def row_to_protein(row, family_name, session):
         pdb_accessions = links["PDB/3D"]
     except KeyError:
         pdb_accessions = []
+
+    if len(links["GenBank"]) == 0:
+        logger.warning(
+            f"Did not retrieve any GenBank accessions for {protein_name} in {family_name}.\n"
+            "The primary GenBank accession determines what unique protein the current working "
+            "protein is.\n"
+            "Adding protein with the GenBank accession: 'NA'"
+        )
+        links["GenBank"] = ["NA"]
+
+        try:
+            sql_interface.add_protein_with_no_genbank_to_db(
+                protein_name,
+                family_name,
+                source_organism,
+                session,
+                ec_numbers,
+                uniprot_accessions,
+                pdb_accessions,
+            )
+
+        except Exception as error_message:
+            logger.warning(f"Failed to add {protein_name} to SQL database", exc_info=1)
+            return {
+                "url": None,
+                "error": (
+                    f"Failed to add to SQL database. {error_message} and no GenBank "
+                    f"listed in CAZy for this protein {protein_name}"
+                ),
+                "sql": protein_name,
+            }
+
+        return {
+            "url": None,
+            "error": f"No GenBank accession listed for protein {protein_name} in CAZy",
+            "sql": f"{protein_name}",
+        }
 
     # add protein to database
     try:
