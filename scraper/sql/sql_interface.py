@@ -294,6 +294,19 @@ def add_new_protein_to_db(
     For the UniProt and PDB, the first accession listed in each list is recorded as the primary
     accession, and all other listed accessions as non-primary accessions.
 
+    There are a minority of CAZymes in CAZy for which NO GenBank accessions are listed.
+    These CAZymes will be annotated with the GenBank accession (str) 'NA', and it will be
+    logged which CAZymes this is for.
+
+    These proteins are added as new CAZymes to the database becuase the only true method of
+    checking for unique or identical proteins is by the GenBank accession. This is becuase
+    CAZy retrieves the protein sequences from GenBank. The 'protein_name' assigned by CAZy is
+    not unique for each protein, multiple proteins with different GenBank accessions can be
+    assigned the same 'protein_name', and aer different proteins. Therefore, there is no way
+    to check if a protein has already been catalogued without a GenBank accession. Consequently,
+    when a protein is found with no GenBank accession it is added as a new CAZyme with the 
+    GenBank accession 'NA'.
+
     :param cazyme_name: str, name of the protein/CAZyme
     :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
     :param source_organism: str, the scientific name of the organism from which the CAZy is derived
