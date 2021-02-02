@@ -645,14 +645,15 @@ def row_to_protein(row, family_name, session):
         links["GenBank"] = ["NA"]
 
         try:
-            sql_interface.add_protein_with_no_genbank_to_db(
+            sql_interface.add_new_protein_to_db(
                 protein_name,
                 family_name,
                 source_organism,
+                'NA',
                 session,
-                ec_numbers,
-                uniprot_accessions,
-                pdb_accessions,
+                ec_numbers=ec_numbers,
+                uniprot_accessions=uniprot_accessions,
+                pdb_accessions=pdb_accessions,
             )
 
         except Exception as error_message:
