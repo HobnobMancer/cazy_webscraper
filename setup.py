@@ -49,13 +49,7 @@ setuptools.setup(
     keywords="bioinforamtics protein webscraper",
     platforms="Posix, MacOS X",
     url="https://github.com/HobnobMancer/cazy_webscraper",
-    entry_points={
-        "console_scripts": [
-            "cazy_webscraper.py = scraper.cazy_webscraper:main",
-            "genbank_sequences.py = scraper.expand.genbank_sequences:main",
-            "pdb_structures.py = scraper.expand.pdb_structures:main",
-        ]
-    },
+    entry_points={"console_scripts": ["cazy_webscraper.py = scraper.cazy_webscraper:main"]},
     install_requires=[
         "biopython>=1.76",
         "mechanicalsoup",

@@ -47,14 +47,6 @@ def build_parser(argv: Optional[List] = None):
         help="Path to configuration file. Default: None, scrapes entire database",
     )
 
-    # Add option to define complete classes to scrape
-    parser.add_argument(
-        "--classes",
-        type=str,
-        default=None,
-        help="Classes from which all families are to be scraped. Separate classes by ','"
-    )
-
     # Add option on how to split data
     parser.add_argument(
         "-d",
@@ -73,14 +65,6 @@ def build_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help="Force file over writting",
-    )
-
-    # Add option to specify families to scrape
-    parser.add_argument(
-        "--families",
-        type=str,
-        default=None,
-        help="Families to scrape. Separate families by commas 'GH1,GH2'"
     )
 
     # Add option to download FASTA file for protein from GenBank
