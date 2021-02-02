@@ -16,4 +16,4 @@
 # UK
 
 # The MIT License
-"""Web scraper to scrape the CAZy website."""
+"""Module for building and querying an SQL database."""
