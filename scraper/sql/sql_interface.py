@@ -516,7 +516,9 @@ def add_cazy_family(family, cazyme, session):
                 cazyme.families.append(nonsubfamily_asociated_family_entries[0])
             session.commit()
 
+    # final commit to ensure all changes are added to the db
     session.commit()
+
     return
 
 
