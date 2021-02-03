@@ -285,6 +285,7 @@ class Genbank(Base):
     genbank_id = Column(Integer, primary_key=True)
     genbank_accession = Column(String)
     sequence = Column(String)
+    seq_retrieval_date = Column(String)  # 'YYYY/MM/DD'
 
     cazymes_genbanks = relationship(
         "Cazymes_Genbanks",
