@@ -21,6 +21,7 @@
 
 import logging
 import os
+import re
 import time
 
 import pandas as pd
@@ -39,7 +40,7 @@ from scraper.sql.sql_orm import (
     Genbank,
     get_db_session,
 )
-from scraper.utilities import build_logger, build_genbank_sequences_parser
+from scraper.utilities import config_logger, build_genbank_sequences_parser
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -54,8 +55,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     else:
         args = build_genbank_sequences_parser(argv).parse_args()
 
-    # build logger
-    logger = build_logger("expand.genbank_sequences", args)
+    if logger is None:
+        logger = logging.getLogger(__name__)
+        config_logger(args)
 
     # check database was passed
     if os.path.isfile(args.database) is False:
@@ -66,17 +68,17 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     Entrez.email = args.email
 
     # create session to local database
-    session = get_db_session(args, logger)
+    session = get_db_session(args)
 
     # check if any classes or families were specified to retrieve the sequences only for them
     if (args.classes is None) and (args.families is None):
         config_dict = None
-    
+
     else:
         # create dictionary of CAZy classes/families to retrieve sequences for
         file_io_path = file_io.__file__
-        cazy_dict, std_class_names = file_io.get_cazy_dict_std_names(file_io_path, logger)
-        config_dict = file_io.get_cmd_defined_fams_classes(cazy_dict, std_class_names, args, logger)
+        cazy_dict, std_class_names = file_io.get_cazy_dict_std_names(file_io_path)
+        config_dict = file_io.get_cmd_defined_fams_classes(cazy_dict, std_class_names, args)
 
     if config_dict is None:
         # get sequences for everything
@@ -113,19 +115,76 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
 
 
-def get_everything_sequences(session, args, logger):
-    """Retrieve protein sequences for all CAZymes in the local CAZy database.
+def get_missing_sequences_for_everything(session, args):
+    """Retrieve protein sequences for all CAZymes in the local CAZy database that don't have seq.
 
     :param session: open SQLite db session
     :param args: cmd-line argument parser
-    :param logger: logger object
 
     Return nothing.
     """
-    # retrieve only sequences for primary GenBank accessions
+    logger = logging.getLogger(__name__)
+
+    # retrieve only sequences for primary GenBank accessions, and those without sequences
     if args.primary is True:
         # retrieve all primary GenBank accessions
-        genbank_query = session.query(Genbank, Cazymes_Genbanks).\
+        genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks).\
+            join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
+            filter(Cazymes_Genbanks.primary == True).\
+            filter(Genbank.sequence == None).\
+            all()
+
+    # retrieve sequences for all GenBank accessions
+    else:
+        # retrieve all GenBank accessions
+        genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks).\
+            join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
+            filter(Genbank.sequence == None).\
+            all()
+
+    # retrieve the genbank_accessions
+    accessions = extract_accessions(genbank_query)
+
+    if len(accessions) == 0:
+        logger.warning(
+            "Did not retrieve any GenBank accessions from the local database.\n"
+            "Not adding sequences to the local database."
+        )
+        return
+
+    get_sequences_add_to_db(accessions, session)
+    return
+
+
+def extract_accessions(genbank_query):
+    """The query contains GenBank accessions and Cazymes_Genbanks records, retrieve the accessions.
+
+    :param genbank_query: sql collection
+
+    Return a list of GenBank accessions. Each element is a string of a unique accession.
+    """
+    accessions = [item[0] for item in lst]
+    return [x for x in accessions if "NA" != x]  # remove where no GenBank accession listed in CAZy
+
+
+def add_and_update_all_sequences(session, args):
+    """Retrieve sequences for all proteins in the database.
+
+    For records with no sequences, add the retrieved sequence.
+    For records with a sequence, check if the remove sequence is more recent than the existing
+    sequence. It it is, update the local sequence.
+
+    :param session: open SQLite db session
+    :param args: cmd-line argument parser
+
+    Return nothing.
+    """
+    logger = logging.getLogger(__name__)
+
+    # retrieve only sequences for primary GenBank accessions, and those without sequences
+    if args.primary is True:
+        # retrieve all primary GenBank accessions
+        genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             filter(Cazymes_Genbanks.primary == True).\
             all()
@@ -133,21 +192,200 @@ def get_everything_sequences(session, args, logger):
     # retrieve sequences for all GenBank accessions
     else:
         # retrieve all GenBank accessions
-        genbank_query = session.query(Genbank, Cazymes_Genbanks).\
+        genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             all()
 
-    for genbank_object in tqdm(genbank_query, desc="Retrieving sequences"):
-        genbank_accession = genbank_object[0].genbank_accession
+    # create dictionary of genbank_accession: 'sequence update date' (str)
+    accessions = get_accessions_for_seq_update_add(accessions)  # dictionary {accession:update_date}
 
-        # check if a protein sequence is already stored in the local database
-        if genbank_object[0].sequence is None:
-            get_new_protein_sequence(genbank_accession, genbank_object[0], session, args, logger)
+    accessions = get_accessions_for_new_sequences(accessions)  # list of genkbank_accession
 
-        elif (genbank_object[0].sequence is not None) and (args.update is True):
-            update_protein_sequence(genbank_accession, genbank_object[0], session, args, logger)
+    if len(accessions) == 0:
+        logger.warning(
+            "Did not retrieve any GenBank accessions from the local database.\n"
+            "Not adding sequences to the local database."
+        )
+        return
+
+    get_sequences_add_to_db(accessions, session)
+    return
+
+
+def extract_accessions_and_dates(genbank_query):
+    """Retrieve the GenBank accessions and retrieval dates of existing sequences from the db query.
+
+    :param genbank_query: sql collection
+
+    Return a dict {GenBank_accession: retrieval_date}
+    """
+    accessions = {}
+    for item in genbank_query:
+        if item[0].genbank_accession == "NA":  # no GenBank accession stored in CAZy
+            continue
+        accessions[item[0].genbank_accession] = item[0].seq_update_date
+
+    return accessions
+
+
+def get_accessions_for_new_sequences(accessions):
+    """Get the GenBank accessions of sequences to be added to the local database.
+
+    For records currently with no protein sequence, the retrieved protein sequence will be added
+    to the record. For records with a sequence, the 'UpdateDate' for the sequence from NCBI will
+    be compared against the  'seq_update_date' in the local database. The 'seq_update_date' is the
+    'UpdateDate' previosuly retrieved from NCBI. If the NCBI sequence is newer,
+    the local database will be updated with the new sequence.
+
+    :param accessions: dict, {GenBank accessions (str):sequence retrieval data (str)}
+    :param session: open SQL database session
+
+    Return nothing.
+    """
+    logger = logging.getLogger(__name__)
+
+    accessions_list = list(accessions.keys())
+    # perform batch query of Entrez
+    epost_result = Entrez.read(
+        entrez_retry(
+            Entrez.epost, "Protein", id=accessions_list, retmode="text",
+        )
+    )
+    # retrieve the web environment and query key from the Entrez post
+    epost_webenv = epost_result["WebEnv"]
+    epost_query_key = epost_result["QueryKey"]
+
+    # retrieve summary docs to check the sequence 'UpdateDates' in NCBI
+    with entrez_retry(
+        Entrez.efetch,
+        db="Protein",
+        query_key=epost_query_key,
+        WebEnv=epost_webenv,
+        rettype="docsum",
+        retmode="xml",
+    ) as handle:
+        summary_docs = handle
+
+    for doc in summary_docs:
+        try:
+            temp_accession = doc["AccessionVersion"]  # accession of the current working protein
+        except KeyError:
+            logger.warning(
+                f"Retrieved protein with accession {temp_accession} but this accession is not in "
+                "the local database.\n"
+                "Not retrieving a sequence for this accession."
+            )
+            continue
+        previous_data = accessions[temp_accession]
+        if previous_data is not None:
+            # sequence retrieved previosuly, thus check if the NCBI seq has been updated since
+            previous_data = previous_data.split("/")  # Y=[0], M=[1], D=[]
+            update_date = doc["UpdateDate"]
+            update_date = update_date.split("/")  # Y=[0], M=[1], D=[]
+            if datetime.date(previous_data[0], previous_data[1], previous_data[2]) < datetime.data(update_date[0], update_date[1], update_date[2]) is False:
+                # the sequence at NCBI has not been updated since the seq was retrieved
+                # thus no need to retrieve it again
+                accessions_list.remove(temp_accession)
+
+    return accessions_list
+
+
+def get_sequences_add_to_db(accessions, session):
+    """Retrieve protein sequences from Entrez and add to the local database.
+
+    :param accessions: list, GenBank accessions
+    :param session: open SQL database session
+
+    Return nothing.
+    """
+    logger = logging.getLogger(__name__)
+
+    # perform batch query of Entrez
+    epost_result = Entrez.read(
+        entrez_retry(
+            Entrez.epost, "Protein", id=accessions, retmode="text",
+        )
+    )
+    # retrieve the web environment and query key from the Entrez post
+    epost_webenv = epost_result["WebEnv"]
+    epost_query_key = epost_result["QueryKey"]
+
+    # retrieve the protein sequences
+    with entrez_retry(
+        Entrez.efetch,
+        db="Protein",
+        query_key=epost_query_key,
+        WebEnv=epost_webenv,
+        rettype="fasta",
+        retmode="text",
+    ) as seq_handle:
+        for record in SeqIO.parse(seq_handle, "fasta"):
+            # retrieve the accession of the record
+            temp_accession = record.id  # accession of the current working protein record
+
+            if temp_accession.find("|") != -1:  # sometimes multiple items are listed
+                success = False   # will be true if finds protein accession
+                temp_accession = temp_accession.split("|")
+                for item in temp_accession:
+                    # check if a accession number
+                    try:
+                        re.match(
+                            r"(\D{3}\d{5,7}\.\d+)|(\D\d(\D|\d){3}\d)|(\D\d(\D|\d){3}\d\D(\D|\d){2}\d)",
+                            item,
+                        ).group()
+                        temp_accession = item
+                        success = True
+                        break
+                    except AttributeError:  # raised if not an accession
+                        continue
+
+            else:
+                success = True  # have protein accession number
+
+            if success is False:
+                logger.error(
+                    f"Could not retrieve accession from {record.id}, therefore, "
+                    "protein sequence not added to the database,\n"
+                    "because cannot retrieve the necessary CAZyme record"
+                )
+                continue
+
+            # check the retrieve protein accession is in the list of retrieved accession
+            if temp_accession not in accessions:
+                logger.warning(
+                    f"Retrieved the accession {temp_accession} from the record id={record.id}, "
+                    "but this accession is not in the database.\n"
+                    "Therefore, not adding this protein seqence to the local database"
+                )
+                continue
+
+            # retrieve the GenBank record from the local data base to add the seq to
+            genbank_record = session.query(Genbank).\
+                filter(Genbank.genbank_accession == temp_accession).first()
+
+            retrieved_sequence = str(record.seq)  # convert to a string becuase SQL expects a string
+            genbank_record.sequence = retrieved_sequence
+            session.commit()
+
+            # remove the accession from the list
+            accessions.remove(temp_accession)
+
+    if len(accessions) != 0:
+        logger.warning(
+            "Protein sequences were not retrieved for the following CAZyme in the local database"
+        )
+        for acc in accessions:
+            logger.warning(f"GenBank accession: {acc}")
 
     return
+
+
+
+
+
+
+
+
 
 
 def get_specific_proteins_sequencse_primary_only(config_dict, session, args, logger):
