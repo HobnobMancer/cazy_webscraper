@@ -645,7 +645,7 @@ def row_to_protein(row, family_name, session):
         links["GenBank"] = ["NA"]
 
         try:
-            sql_interface.add_new_protein_to_db(
+            sql_interface.add_protein_to_db(
                 protein_name,
                 family_name,
                 source_organism,
@@ -661,15 +661,18 @@ def row_to_protein(row, family_name, session):
             return {
                 "url": None,
                 "error": (
-                    f"Failed to add to SQL database. {error_message} and no GenBank "
-                    f"listed in CAZy for this protein {protein_name}"
+                    f"Failed to add to SQL database, this error was raised: {error_message},\n"
+                    f"and no GenBank listed in CAZy for this protein {protein_name}"
                 ),
                 "sql": protein_name,
             }
 
         return {
             "url": None,
-            "error": f"No GenBank accession listed for protein {protein_name} in CAZy",
+            "error": (
+                f"No GenBank accession listed for protein {protein_name} in CAZy,\n"
+                "Protein added with the GenBank accesion 'NA'"
+            ),
             "sql": f"{protein_name}",
         }
 
