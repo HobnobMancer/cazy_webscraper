@@ -47,6 +47,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     """Set up programme and initate run."""
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
     start_time = pd.to_datetime(start_time)
+    date_today = datetime.now().strftime("%Y/%m/%d")  # used as seq_update_date in the db
 
     # parse cmd-line arguments
     if argv is None:
@@ -81,20 +82,20 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         config_dict = file_io.get_cmd_defined_fams_classes(cazy_dict, std_class_names, args)
 
     if config_dict is None:
-        if args.update is True:
+        if args.update:
             # get sequence for everything without a sequence and those with newer remote sequence
-            add_and_update_all_sequences(session, args)
+            add_and_update_all_sequences(date_today, session, args)
 
         else:
             # get sequences for everything without a sequence
-            get_missing_sequences_for_everything(session, args)
+            get_missing_sequences_for_everything(date_today, session, args)
 
     else:
         # get sequences for only specified classes/families
-        if args.primary is True:
-            get_specific_proteins_sequencse_primary_only(config_dict, session, args, logger)
+        if args.update :
+            update_sequences_for_specific_records(date_today, config_dict, session, args)
         else:
-            get_specific_proteins_sequencse(config_dict, session, args, logger)
+            get_missing_sequences_for_specific_records(date_today, config_dict, session, args)
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
     end_time = pd.to_datetime(start_time)
@@ -123,9 +124,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 ####### The folowing functions are for querying the local database to get GenBank accessions #######
 
 
-def get_missing_sequences_for_everything(session, args):
+def get_missing_sequences_for_everything(date_today, session, args):
     """Retrieve protein sequences for all CAZymes in the local CAZy database that don't have seq.
 
+    :param date_today: str, today's date, used for logging the date the seq is retrieved in the db
     :param session: open SQLite db session
     :param args: cmd-line argument parser
 
@@ -160,17 +162,18 @@ def get_missing_sequences_for_everything(session, args):
         )
         return
 
-    get_sequences_add_to_db(accessions, session)
+    get_sequences_add_to_db(accessions, date_today, session, args)
     return
 
 
-def add_and_update_all_sequences(session, args):
+def add_and_update_all_sequences(date_today, session, args):
     """Retrieve sequences for all proteins in the database.
 
     For records with no sequences, add the retrieved sequence.
     For records with a sequence, check if the remove sequence is more recent than the existing
     sequence. It it is, update the local sequence.
 
+    :param date_today: str, today's date, used for logging the date the seq is retrieved in the db
     :param session: open SQLite db session
     :param args: cmd-line argument parser
 
@@ -205,19 +208,22 @@ def add_and_update_all_sequences(session, args):
         )
         return
 
-    get_sequences_add_to_db(accessions, session)
+    get_sequences_add_to_db(accessions, date_today, session, args)
     return
 
 
-def get_missing_sequencse_for_specific_records(config_dict, args, session):
+def get_missing_sequencse_for_specific_records(date_today, config_dict, session, args):
     """Coordinate getting the sequences for specific CAZymes, not with seqs in the db.
 
+    :param date_today: str, today's date, used for logging the date the seq is retrieved in the db
     :param config_dict: dict, defines CAZy classes and families to get sequences for
-    :param args: cmd-line args parser
     :param session: open SQL database session
+    :param args: cmd-line args parser
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     # start with the classes
     if len(config_dict["classes"]) != 0:
         # retrieve list of CAZy classes to get sequences for
@@ -235,7 +241,7 @@ def get_missing_sequencse_for_specific_records(config_dict, args, session):
 
             # retrieve the GenBank accessions of the CAZymes in the CAZy class without seqs
             if args.primary:
-                gebank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
@@ -243,7 +249,7 @@ def get_missing_sequencse_for_specific_records(config_dict, args, session):
                     filter(Genbank.sequence == None).\
                     all()
             else:
-                gebank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
@@ -260,7 +266,7 @@ def get_missing_sequencse_for_specific_records(config_dict, args, session):
                 )
                 continue
 
-            get_sequences_add_to_db(accessions, session)
+            get_sequences_add_to_db(accessions, date_today, session, args)
             continue
 
     # Retrieve protein sequences for specified families
@@ -285,7 +291,7 @@ def get_missing_sequencse_for_specific_records(config_dict, args, session):
 
             # get the GenBank accessions of thes CAZymes, without sequences
             if args.primary:
-                gebank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(family_subquery)).\
@@ -293,7 +299,7 @@ def get_missing_sequencse_for_specific_records(config_dict, args, session):
                     filter(Genbank.sequence == None).\
                     all()
             else:
-                gebank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(family_subquery)).\
@@ -301,19 +307,135 @@ def get_missing_sequencse_for_specific_records(config_dict, args, session):
                     all()
 
             # retrieve a list of GenBank accessions from the sql collection returned from the query
-            acessions = extract_accessions(genbank_query)
+            accessions = extract_accessions(genbank_query)
 
-            # add sequences to the database
-            get_sequences_add_to_db(accessions, session)
+            if len(accessions) == 0:
+                logger.warning(
+                    f"Did not retrieve any GenBank accessions for the CAZy class {cazy_class}.\n"
+                    "Not adding sequences to the local database."
+                )
+                continue
+
+            get_sequences_add_to_db(accessions, date_today, session, args)
 
     return
 
 
-def update_sequences_for_specific_records():
-    # retrieve the genbank accessions for the class or family
-    # retrieve the genbank_accession
-    # filter out accessions of records whose remote sequence is not newer than the present
-    # get the sequences and add to the database
+def update_sequences_for_specific_records(date_today, config_dict, args, session):
+    """Coordinate getting the sequences for specific CAZymes, not with seqs in the db nad those
+    whose seq in NCBI has been updated since the last retrieval.
+
+    For records with no sequences, add the retrieved sequence.
+    For records with a sequence, check if the remove sequence is more recent than the existing
+    sequence. It it is, update the local sequence.
+
+    :param date_today: str, today's date, used for logging the date the seq is retrieved in the db
+    :param config_dict: dict, defines CAZy classes and families to get sequences for
+    :param session: open SQL database session
+    :param args: cmd-line args parser
+
+    Return nothing.
+    """
+    logger = logging.getLogger(__name__)
+
+    # start with the classes
+    if len(config_dict["classes"]) != 0:
+        # retrieve list of CAZy classes to get sequences for
+        cazy_classes = config_dict["classes"]
+
+        for cazy_class in tqdm(cazy_classes, desc="Parsing CAZy classes"):
+            # retrieve class name abbreviation
+            cazy_class = cazy_class[cazy_class.find("("):cazy_class.find(")")]
+
+            # get the CAZymes within the CAZy class
+            class_subquery = session.query(Cazyme.cazyme_id).\
+                join(CazyFamily, Cazyme.families).\
+                filter(CazyFamily.family.regexp(rf"{cazy_class}\d+")).\
+                subquery()
+
+            # retrieve the GenBank accessions of the CAZymes in the CAZy class without seqs
+            if args.primary:
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                    join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
+                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
+                    filter(Cazyme.cazyme_id.in_(class_subquery)).\
+                    filter(Cazymes_Genbanks.primary==True).\
+                    filter(Genbank.sequence == None).\
+                    all()
+            else:
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                    join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
+                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
+                    filter(Cazyme.cazyme_id.in_(class_subquery)).\
+                    filter(Genbank.sequence == None).\
+                    all()
+
+            # create dictionary of genbank_accession: 'sequence update date' (str)
+            accessions = extract_accessions_and_dates(genbank_query)  # dictionary {accession:update_date}
+
+            accessions = get_accessions_for_new_sequences(accessions)  # list of genkbank_accession
+
+            if len(accessions) == 0:
+                logger.warning(
+                    f"Did not retrieve any GenBank accessions for the CAZy class {cazy_class}.\n"
+                    "Not adding sequences to the local database."
+                )
+                continue
+
+            get_sequences_add_to_db(accessions, date_today, session, args)
+
+    # Retrieve protein sequences for specified families
+    for key in config_dict:
+        if key == "classes":
+            continue
+
+        for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
+            if family.find("_") != -1:  # subfamily
+                # Retrieve GenBank accessions catalogued under the subfamily
+                family_subquery = session.query(Cazyme.cazyme_id).\
+                    join(CazyFamily, Cazyme.families).\
+                    filter(CazyFamily.subfamily == family).\
+                    subquery()
+
+            else:  # family
+                # Retrieve GenBank accessions catalogued under the family
+                family_subquery = session.query(Cazyme.cazyme_id).\
+                    join(CazyFamily, Cazyme.families).\
+                    filter(CazyFamily.family == family).\
+                    subquery()
+
+            # get the GenBank accessions of thes CAZymes, without sequences
+            if args.primary:
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                    join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
+                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
+                    filter(Cazyme.cazyme_id.in_(family_subquery)).\
+                    filter(Cazymes_Genbanks.primary==True).\
+                    filter(Genbank.sequence == None).\
+                    all()
+            else:
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                    join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
+                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
+                    filter(Cazyme.cazyme_id.in_(family_subquery)).\
+                    filter(Genbank.sequence == None).\
+                    all()
+
+            # create dictionary of genbank_accession: 'sequence update date' (str)
+            accessions = extract_accessions_and_dates(genbank_query)  # dictionary {accession:date}
+
+            accessions = get_accessions_for_new_sequences(accessions)  # list of genkbank_accession
+
+            if len(accessions) == 0:
+                logger.warning(
+                    f"Did not retrieve any GenBank accessions for the CAZy class {cazy_class}.\n"
+                    "Not adding sequences to the local database."
+                )
+                continue
+
+            get_sequences_add_to_db(accessions, date_today, session, args)
+
+    return
 
 
 # The following functions are retrieving the list of Genbank accessions to retrieve sequences for #
@@ -326,7 +448,7 @@ def extract_accessions(genbank_query):
 
     Return a list of GenBank accessions. Each element is a string of a unique accession.
     """
-    accessions = [item[0] for item in lst]
+    accessions = [item[0] for item in genbank_query]
     return [x for x in accessions if "NA" != x]  # remove where no GenBank accession listed in CAZy
 
 
@@ -411,11 +533,13 @@ def get_accessions_for_new_sequences(accessions):
 ## The following functions are for retrieving sequences, adding to the db and writing fasta files ##
 
 
-def get_sequences_add_to_db(accessions, session):
+def get_sequences_add_to_db(accessions, date_today, session, args):
     """Retrieve protein sequences from Entrez and add to the local database.
 
     :param accessions: list, GenBank accessions
+    :param date_today: str, YYYY/MM/DD
     :param session: open SQL database session
+    :param args: cmb-line args parser
 
     Return nothing.
     """
@@ -486,7 +610,11 @@ def get_sequences_add_to_db(accessions, session):
 
             retrieved_sequence = str(record.seq)  # convert to a string becuase SQL expects a string
             genbank_record.sequence = retrieved_sequence
+            genbank_record.seq_update_date = date_today
             session.commit()
+
+            if args.write is not None:
+                write_out_fasta(record, args)
 
             # remove the accession from the list
             accessions.remove(temp_accession)
@@ -501,7 +629,7 @@ def get_sequences_add_to_db(accessions, session):
     return
 
 
-def entrez_retry(logger, entrez_func, *func_args, **func_kwargs):
+def entrez_retry(entrez_func, *func_args, **func_kwargs):
     """Call to NCBI using Entrez.
 
     Maximum number of retries is 10, retry initated when network error encountered.
@@ -515,6 +643,7 @@ def entrez_retry(logger, entrez_func, *func_args, **func_kwargs):
 
     Returns record.
     """
+    logger = logging.getLogger(__name__)
     record, retries, tries = None, 10, 0
 
     while record is None and tries < retries:
@@ -540,301 +669,22 @@ def entrez_retry(logger, entrez_func, *func_args, **func_kwargs):
     return record
 
 
-def write_out_fasta(handle, genbank_accession, args):
+def write_out_fasta(record, args):
     """Write out GenBank protein record to a FASTA file.
 
-    :param handle: Entrez record instance
-    :param genbank_accession: str, GenBank protein accession number
+    :param record: SeqIO parsed record
     :param args: cmd-line arguments parser
 
     Return nothing.
     """
-    for record in SeqIO.parse(handle, "fasta"):
-        fasta_name = f"{genbank_accession}.fasta"
-        fasta_name = args.write / fasta_name
-        with open(fasta_name, "w") as fh:
-            SeqIO.write(record, fh, "fasta")
+    fasta_name = f"{genbank_accession}.fasta"
+    fasta_name = args.write / fasta_name
+
+    with open(fasta_name, "w") as fh:
+        SeqIO.write(record, fh, "fasta")
+
     return
+
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-def get_specific_missing_sequencse(config_dict, session, args, logger):
-    """Retrieve protein sequences for primary GenBank accessions for items in the config_dict.
-
-    - update is false so only get sequences for records with no sequences
-
-    :param config_dict: dict, defines CAZy classes and families to retrieve accessions from
-    :param session: open SQLite db session
-    :param args: cmd-line argument parser
-    :param logger: logger object
-
-    Return nothing.
-    """
-    # start with the classes
-    if len(config_dict["classes"]) != 0:
-        # retrieve list of CAZy classes to get sequences for
-        cazy_classes = config_dict["classes"]
-
-        for cazy_class in tqdm(cazy_classes, desc="Parsing CAZy classes"):
-            # retrieve class name abbreviation
-            cazy_class = cazy_class[cazy_class.find("("):cazy_class.find(")")]
-
-            # get the CAZymes within the CAZy class
-            class_subquery = session.query(Cazyme.cazyme_id).\
-                join(CazyFamily, Cazyme.families).\
-                filter(CazyFamily.family.regexp(rf"{cazy_class}\d+")).\
-                subquery()
-
-            # retrieve the GenBank accessions of the CAZymes in the CAZy class without seqs
-            if args.primary:
-                gebank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
-                    join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
-                    filter(Cazyme.cazyme_id.in_(class_subquery)).\
-                    filter(Cazymes_Genbanks.primary==True).\
-                    filter(Genbank.sequence == None).\
-                    all()
-            else:
-                gebank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
-                    join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
-                    filter(Cazyme.cazyme_id.in_(class_subquery)).\
-                    filter(Genbank.sequence == None).\
-                    all()
-
-            # retrieve the genbank_accessions from the sql collection object returned by the query
-            accessions = extract_accessions(genbank_query)
-
-            if len(accessions) == 0:
-                logger.warning(
-                    f"Did not retrieve any GenBank accessions for the CAZy class {cazy_class}.\n"
-                    "Not adding sequences to the local database."
-                )
-                continue
-
-            get_sequences_add_to_db(accessions, session)
-            continue
-
-    # Retrieve protein sequences for specified families
-    for key in config_dict:
-        if key == "classes":
-            continue
-
-        for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
-            if family.find("_") != -1:  # subfamily
-                # Retrieve GenBank accessions catalogued under the subfamily
-                family_subquery = session.query(Cazyme.cazyme_id).\
-                    join(CazyFamily, Cazyme.families).\
-                    filter(CazyFamily.subfamily == family).\
-                    subquery()
-
-            else:  # family
-                # Retrieve GenBank accessions catalogued under the family
-                family_subquery = session.query(Cazyme.cazyme_id).\
-                    join(CazyFamily, Cazyme.families).\
-                    filter(CazyFamily.family == family).\
-                    subquery()
-            
-            # get the GenBank accessions of thes CAZymes, without sequences
-            if args.primary:
-                gebank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
-                    join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
-                    filter(Cazyme.cazyme_id.in_(family_subquery)).\
-                    filter(Cazymes_Genbanks.primary==True).\
-                    filter(Genbank.sequence == None).\
-                    all()
-            else:
-                gebank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
-                    join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
-                    filter(Cazyme.cazyme_id.in_(family_subquery)).\
-                    filter(Genbank.sequence == None).\
-                    all()
-            
-            # retrieve a list of GenBank accessions from the sql collection returned from the query
-            acessions = extract_accessions(genbank_query)
-
-            # add sequences to the database
-            get_sequences_add_to_db(accessions, session)
-
-    return
-
-
-def get_specific_proteins_sequencse(config_dict, session, args, logger):
-    """Retrieve protein sequences for only CAZymes specified in config_dict.+
-
-    :param config_dict: dict, defines CAZy classes and families to retrieve accessions from
-    :param session: open SQLite db session
-    :param args: cmd-line argument parser
-    :param logger: logger object
-
-    Return nothing.
-    """
-    # start with the classes
-    if len(config_dict["classes"]) != 0:
-        # create a dictionary to convert full class name to abbreviation
-        cazy_classes = config_dict["classes"]
-        for cazy_class in tqdm(cazy_classes, desc="Parsing CAZy classes"):
-            # retrieve class name abbreviation
-            cazy_class = cazy_class[cazy_class.find("("):cazy_class.find(")")]
-
-            # retrieve all GenBank accessions catalogued in the CAZy class
-            class_query = session.query(CazyFamily, Cazyme, Cazymes_Genbanks, Genbank).\
-                join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
-                filter(CazyFamily.family.regexp(rf"{cazy_class}\d+")).\
-                all()
-
-            for query_result in tqdm(class_query, desc=f"Parsing families in {cazy_class}"):
-                genbank_accession = query_result[-1].genbank_accession
-
-                # check if a protein sequence is already stored in the local database
-                if query_result[-1].sequence is None:
-                    get_new_protein_sequence(
-                        genbank_accession,
-                        query_result[-1],
-                        session,
-                        args,
-                        logger,
-                    )
-
-                elif (query_result[-1].sequence is not None) and (args.update is True):
-                    update_protein_sequence(
-                        genbank_accession,
-                        query_result[-1],
-                        session,
-                        args,
-                        logger,
-                    )
-
-    # Retrieve protein sequences for specified families
-    for key in config_dict:
-        if key == "classes":
-            continue
-
-        for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
-            if family.find("_") != -1:  # subfamily
-                # Retrieve GenBank accessions catalogued under the subfamily
-                family_query = session.query(CazyFamily, Cazyme, Cazymes_Genbanks, Genbank).\
-                    join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
-                    filter(CazyFamily.subfamily == family).\
-                    all()
-
-            else:  # family
-                # Retrieve GenBank accessions catalogued under the family
-                family_query = session.query(CazyFamily, Cazyme, Cazymes_Genbanks, Genbank).\
-                    join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
-                    filter(CazyFamily.family == family).\
-                    all()
-
-            for query_result in tqdm(family_query, desc=f"Parsing GenBank accessions in {family}"):
-                if query_result[-1].sequence is None:
-                    get_new_protein_sequence(
-                        genbank_accession,
-                        query_result[-1],
-                        session,
-                        args,
-                        logger,
-                    )
-
-                elif (query_result[-1].sequence is not None) and (args.update is True):
-                    update_protein_sequence(
-                        genbank_accession,
-                        query_result[-1],
-                        session,
-                        args,
-                        logger,
-                    )
-
-    return
-
-
-def get_new_protein_sequence(genbank_accession, genbank_record, session, args, logger):
-    """Retrieve protein sequence from NCBI.
-
-    :param genbank_accession: str, GenBank protein accession
-    :param genbank_record: Genbank instance, existing Genbank record in the local database
-    :param args: cmd-line argument parser
-    :param logger: logger object
-
-    Return nothing.
-    """
-    # retrieve protein record from NCBI Protein database
-    handle = entrez_retry(
-        logger,
-        Entrez.efetch,
-        db="Protein",
-        id=genbank_accession,
-        rettype="fasta",
-        retmode="text",
-    )
-
-    if handle is None:
-        logger.warning(f"Failed to retrieve protein sequence for {genbank_accession}")
-        return
-
-    # add sequence to the local database
-    for record in SeqIO.parse(handle, "fasta"):
-        retrieved_sequence = str(record.seq)  # convert to a string becuase SQL expects a string
-        genbank_record.sequence = retrieved_sequence
-        session.commit()
-
-    # write out sequence to FASTA file if enabled
-    if args.write is not None:
-        write_out_fasta(handle, genbank_accession, args)
-
-    return
-
-
-def update_protein_sequence(genbank_accession, genbank_record, session, args, logger):
-    """Retrieve protein sequence from NCBI and update local database IF the sequence is different.
-
-    :param genbank_accession: str, GenBank protein accession
-    :param genbank_record: Genbank instance, existing Genbank record in the local database
-    :param args: cmd-line argument parser
-    :param logger: logger object
-
-    Return nothing.
-    """
-    # retrieve protein record from NCBI Protein database
-    handle = entrez_retry(
-        logger,
-        Entrez.efetch,
-        db="Protein",
-        id=genbank_accession,
-        rettype="fasta",
-        retmode="text",
-    )
-
-    if handle is None:
-        logger.warning(f"Failed to retrieve protein sequence for {genbank_accession}")
-        return
-
-    # check if the local and retrieved sequences are the same, update sequence if different
-    existing_sequence = genbank_record.sequence
-
-    for record in SeqIO.parse(handle, "fasta"):
-        retrieved_sequence = record.seq
-        if retrieved_sequence != existing_sequence:
-            # update the local record
-            genbank_record.sequence = retrieved_sequence
-            session.commit()
-
-    # write out sequence to FASTA file if enabled
-    if args.write is not None:
-        write_out_fasta(handle, genbank_accession, args)
-
-    return
-
-
-
