@@ -422,20 +422,14 @@ def build_db(time_stamp, args):
     logger = logging.getLogger(__name__)
     logger.info("Building empty db to store data")
 
-    # build database engine
-    if args.database is None:
-        if args.output is sys.stdout:
-            # write to cwd, this is deleted in scrape is successful
-            cwd = os.getcwd()
-            db_path = cwd / f"cazy_scrape_temp_{time_stamp}.db"
-
-        else:
-            # write to specified output directory
-            db_path = args.output / f"cazy_scrape_{time_stamp}.db"
+    if args.output is sys.stdout:
+        # write to cwd, this is deleted in scrape is successful
+        cwd = os.getcwd()
+        db_path = cwd / f"cazy_scrape_temp_{time_stamp}.db"
 
     else:
-        # user specificed an existing local CAZy SQL database
-        db_path = args.database
+        # write to specified output directory
+        db_path = args.output / f"cazy_scrape_{time_stamp}.db"
 
     engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
     Base.metadata.create_all(engine)
@@ -452,7 +446,7 @@ def get_db_session(args):
     Return an open database session.
     """
     logger = logging.getLogger(__name__)
-    logger.info("Building empty db to store data")
+    logger.info("Opening session to an existing local database")
 
     db_path = args.database
 
