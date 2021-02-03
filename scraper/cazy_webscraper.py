@@ -94,11 +94,25 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     max_tries = args.retries + 1  # maximum number of times to try scraping a CAZy
 
     # build database and return open database session
-    try:
-        session = sql_orm.build_db(time_stamp, args)
-    except Exception:
-        logger.error("Failed to build SQL database. Terminating program", exc_info=1)
-        sys.exit(1)
+    if args.database is True:  # open session for existing local database
+        # check the path exists
+        if os.path.isfile(args.database) is False:
+            logger.error(
+                "Could not find local CAZy database. Check path is correct. Terminating programme."
+            )
+            sys.exit(1)
+        try:
+            sql_orm.get_db_session(args)
+        except Exception:
+            logger.error("Failed to build SQL database. Terminating program", exc_info=1)
+            sys.exit(1)
+    
+    else:  # create a new empty database to populate
+        try:
+            session = sql_orm.build_db(time_stamp, args)
+        except Exception:
+            logger.error("Failed to build SQL database. Terminating program", exc_info=1)
+            sys.exit(1)
 
     # retrieve configuration data
     file_io_path = file_io.__file__
