@@ -18,8 +18,9 @@
 # The MIT License
 """Submodule to build a local SQL database"""
 
-import re
+import logging
 import os
+import re
 import sys
 
 import sqlite3
@@ -409,15 +410,15 @@ class Pdb(Base):
         )
 
 
-def build_db(time_stamp, args, logger):
+def build_db(time_stamp, args):
     """Build an empty SQL database and open a session.
 
     :param time_stamp: str, date and time stamp of when scrape was initated
     :param args: cmd args parser
-    :param logger: logger object
 
     Return an open database session.
     """
+    logger = logging.getLogger(__name__)
     logger.info("Building empty db to store data")
 
     # build database engine
@@ -442,14 +443,14 @@ def build_db(time_stamp, args, logger):
     return Session()
 
 
-def get_db_session(args, logger):
+def get_db_session(args):
     """Create open session to local CAZy SQL database.
 
     :param args: cmd args parser
-    :param logger: logger object
 
     Return an open database session.
     """
+    logger = logging.getLogger(__name__)
     logger.info("Building empty db to store data")
 
     db_path = args.database

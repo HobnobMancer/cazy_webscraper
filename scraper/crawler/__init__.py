@@ -27,6 +27,7 @@
 """
 
 
+import logging
 import re
 import sys
 import time
@@ -125,17 +126,17 @@ class Protein:
         )
 
 
-def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, cazy_dict, logger):
+def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, cazy_dict):
     """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
 
     :param cazy_url: str, URL to the CAZy home page.
     :param excluded_classes: list, list of CAZy classes not to be scraped
     :param max_tries: int, maximum number of times to try scrape if errors are encountered
     :param cazy_dict: dictionary of offical CAZy class names
-    :param logger: logger object
 
     Return list of URLs and None, or None and error message.
     """
+    logger = logging.getLogger(__name__)
     logger.info("Retrieving URLs to summary CAZy class pages")
 
     # define items to be excluded from returned class list, ALWAYS exlide links to genomes
@@ -217,18 +218,18 @@ def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, cazy_dict, logge
     return cazy_classes
 
 
-def get_cazy_family_urls(class_url, class_name, cazy_home, args, logger):
+def get_cazy_family_urls(class_url, class_name, cazy_home, args):
     """Retrieve all protein members of each CAZy family within the given CAZy class.
 
     :param class_url: str, URL to the CAZy class
     :param class_name: str, name of CAZy class
     :param cazy_home: str, URL to CAZy home page
     :param args: args parser object
-    :param logger: logger object
 
     Returns list Family class objects, error message when connecting to CAZy and list of incorrectly
     formated URLs
     """
+    logger = logging.getLogger(__name__)
     logger.info(f"Retrieving URLs to families under {class_name}")
 
     # scrape the class page
@@ -270,7 +271,7 @@ def get_cazy_family_urls(class_url, class_name, cazy_home, args, logger):
 
     # retrieve URLs to subfamilies
     if args.subfamilies is True:
-        subfam_urls = get_subfamily_links(family_h3_element, cazy_home, logger)
+        subfam_urls = get_subfamily_links(family_h3_element, cazy_home)
 
         if (family_urls is None) and (subfam_urls is None):
             logger.warning(f"Failed to retrieve URLs to CAZy subfamilies for {class_name}")
@@ -325,12 +326,11 @@ def get_cazy_family_urls(class_url, class_name, cazy_home, args, logger):
     return cazy_families, None, incorrect_urls
 
 
-def get_subfamily_links(family_h3_element, cazy_home, logger):
+def get_subfamily_links(family_h3_element, cazy_home):
     """Retrieve URL links to CAZy subfamilies.
 
     :param family_h3_element: bs4.element.Tag, h3 element titling the page div
     :param cazy_home: str, URL to CAZy home_page
-    :param logger: logger object
 
     Return list of URLs to subfamilies.
     """
@@ -356,21 +356,21 @@ def get_subfamily_links(family_h3_element, cazy_home, logger):
         return urls
 
 
-def parse_family(family, cazy_home, max_tries, logger, session):
+def parse_family(family, cazy_home, max_tries, session):
     """Returns a Family object with Protein members, scraped from CAZy.
-
-    :param family: Family class object, representation of CAZy family
-    :param cazy_home: str, URL to CAZy home page
-    :param logger: logger object
 
     Returns a Family object populated with Proteins and URLs of paginiation pages for which the
     scrape failed, including the number of times a connection to CAZy has been attempted. Also
     returns a list of strings containing URLs and associated error message of URLs for which a
     a connection to CAZy could not be made.
 
+    :param family: Family class object, representation of CAZy family
+    :param cazy_home: str, URL to CAZy home page
+
     Return Family object, list of URLs which couldn't connect to CAZy and list of proteins that
     could not be added to the SQL database.
     """
+    logger = logging.getLogger(__name__)
     logger.info(f"Starting retrieval of proteins for {family.name} from {family.url}")
 
     # compile URL to first family page of protein records
@@ -441,7 +441,6 @@ def parse_family(family, cazy_home, max_tries, logger, session):
             parse_proteins(
                 url,
                 family.name,
-                logger,
                 session,
             ) for url in protein_page_urls
         ) for y in x),
@@ -528,19 +527,19 @@ def get_protein_page_urls(first_pagination_url, first_pagination_page, cazy_home
     return protein_page_urls, protein_total
 
 
-def parse_proteins(protein_page_url, family_name, logger, session):
+def parse_proteins(protein_page_url, family_name, session):
     """Returns generator of Protein objects for all protein rows on a single CAZy family page.
-
-    :param protein_page_url, str, URL to the CAZy family page containing protein records
-    :param family_name: str, name of CAZy family
-    :param logger: logger object
 
     Returns a dictionary containing any errors that arose. If it an attempt to connect to CAZy
     failed the URL is stored under "url". The "sql" key is used to store the name of the protein
     which raised an SQL error further down the pipeline.
 
+    :param protein_page_url, str, URL to the CAZy family page containing protein records
+    :param family_name: str, name of CAZy family
+
     Return generator object.
     """
+    logger = logging.getLogger(__name__)
     logger.info(f"Retrieving proteins from {protein_page_url}")
 
     protein_page, error = get_page(protein_page_url)
@@ -565,10 +564,10 @@ def parse_proteins(protein_page_url, family_name, logger, session):
     ]
 
     for row in protein_rows:
-        yield row_to_protein(row, family_name, logger, session)
+        yield row_to_protein(row, family_name, session)
 
 
-def row_to_protein(row, family_name, logger, session):
+def row_to_protein(row, family_name, session):
     """Returns a Protein object representing a single protein row from a CAZy family protein page.
 
     Each row, in order, contains the protein name, EC number, source organism, GenBank ID(s),
@@ -583,6 +582,8 @@ def row_to_protein(row, family_name, logger, session):
 
     Return dictionary.
     """
+    logger = logging.getLogger(__name__)
+
     # retrieve list of cells ('td' elements) in row
     tds = list(row.find_all("td"))
 
@@ -623,23 +624,6 @@ def row_to_protein(row, family_name, logger, session):
     except AttributeError:
         pass
 
-    if len(links["GenBank"]) == 0:
-        logger.warning(
-            f"Did not retrieve any GenBank accessions for {protein_name} in {family_name}.\n"
-            "The primary GenBank accession determines what unique protein the current working "
-            "protein is.\n"
-            "Protein NOT be added to the local database"
-        )
-
-        return {
-            "url": None,
-            "error": (
-                "Failed to retrieve any GenBank accessions, "
-                "which define what protein the CAZyme is"
-            ),
-            "sql": protein_name,
-        }
-
     # check if UniProt or PDB accessions were retrieved. If not store as empty lists
     # this avoids KeyErros when invoking add_protein_to_db
     try:
@@ -651,6 +635,44 @@ def row_to_protein(row, family_name, logger, session):
     except KeyError:
         pdb_accessions = []
 
+    if len(links["GenBank"]) == 0:
+        logger.warning(
+            f"Did not retrieve any GenBank accessions for {protein_name} in {family_name}.\n"
+            "The primary GenBank accession determines what unique protein the current working "
+            "protein is.\n"
+            "Adding protein with the GenBank accession: 'NA' as a new protein to the db."
+        )
+        links["GenBank"] = ["NA"]
+
+        try:
+            sql_interface.add_new_protein_to_db(
+                protein_name,
+                family_name,
+                source_organism,
+                'NA',
+                session,
+                ec_numbers=ec_numbers,
+                uniprot_accessions=uniprot_accessions,
+                pdb_accessions=pdb_accessions,
+            )
+
+        except Exception as error_message:
+            logger.warning(f"Failed to add {protein_name} to SQL database", exc_info=1)
+            return {
+                "url": None,
+                "error": (
+                    f"Failed to add to SQL database. {error_message} and no GenBank "
+                    f"listed in CAZy for this protein {protein_name}"
+                ),
+                "sql": protein_name,
+            }
+
+        return {
+            "url": None,
+            "error": f"No GenBank accession listed for protein {protein_name} in CAZy",
+            "sql": f"{protein_name}",
+        }
+
     # add protein to database
     try:
         sql_interface.add_protein_to_db(
@@ -658,7 +680,6 @@ def row_to_protein(row, family_name, logger, session):
             family_name,
             source_organism,
             links["GenBank"][0],
-            logger,
             session,
             ec_numbers,
             links["GenBank"][1:],
