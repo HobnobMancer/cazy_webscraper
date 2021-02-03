@@ -806,9 +806,9 @@ def add_pdb_accessions(pdb_accessions, cazyme, session):
                 session.add(new_accession)
                 session.commit()
 
-            if not(new_accession in cazyme.pdbs):
-                cazyme.pdbs.append(new_accession)
-                session.commit()
+                if not(new_accession in cazyme.pdbs):
+                    cazyme.pdbs.append(new_accession)
+                    session.commit()
 
             elif len(pdb_query) == 1:
                 # add PDB/3D record to current working CAZyme
