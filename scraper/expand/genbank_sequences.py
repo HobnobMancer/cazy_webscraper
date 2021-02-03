@@ -212,7 +212,7 @@ def add_and_update_all_sequences(date_today, session, args):
     return
 
 
-def get_missing_sequencse_for_specific_records(date_today, config_dict, session, args):
+def get_missing_sequences_for_specific_records(date_today, config_dict, session, args):
     """Coordinate getting the sequences for specific CAZymes, not with seqs in the db.
 
     :param date_today: str, today's date, used for logging the date the seq is retrieved in the db
@@ -548,7 +548,7 @@ def get_sequences_add_to_db(accessions, date_today, session, args):
     # perform batch query of Entrez
     epost_result = Entrez.read(
         entrez_retry(
-            Entrez.epost, "Protein", id=accessions, retmode="text",
+            Entrez.epost, "Protein", id=accessions,
         )
     )
     # retrieve the web environment and query key from the Entrez post
