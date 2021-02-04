@@ -63,7 +63,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # check database was passed
     if os.path.isfile(args.database) is False:
         logger.error(
-            "Could not find local CAZy database. Check pack is correct. Terminating programme."
+            "Could not find local CAZy database. Check path is correct. Terminating programme."
         )
 
     Entrez.email = args.email
@@ -72,14 +72,18 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     session = get_db_session(args)
 
     # check if any classes or families were specified to retrieve the sequences only for them
-    if (args.classes is None) and (args.families is None):
+    if (args.classes is None) and (args.families is None) and (args.config is None):
         config_dict = None
 
     else:
         # create dictionary of CAZy classes/families to retrieve sequences for
         file_io_path = file_io.__file__
-        cazy_dict, std_class_names = file_io.get_cazy_dict_std_names(file_io_path)
-        config_dict = file_io.get_cmd_defined_fams_classes(cazy_dict, std_class_names, args)
+        excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
+            file_io_path,
+            args,
+        )
+        # excluded_classes and cazy_dict are not needed, but required when the func is 
+        # called in cazy_webscraper.py
 
     if config_dict is None:
         if args.update:
@@ -121,7 +125,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
 
 
-####### The folowing functions are for querying the local database to get GenBank accessions #######
+# The folowing functions are for querying the local database to get GenBank accessions
 
 
 def get_missing_sequences_for_everything(date_today, session, args):
@@ -216,7 +220,7 @@ def add_and_update_all_sequences(date_today, session, args):
 
     if len(accessions) == 0:
         logger.warning(
-            f"Did not retrieve any GenBank accessions from the local database.\n"
+            "Did not retrieve any GenBank accessions from the local database.\n"
             "Not adding sequences to the local database."
         )
         return
@@ -259,7 +263,6 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
 
         for cazy_class in tqdm(cazy_classes, desc="Parsing CAZy classes"):
             # retrieve class name abbreviation
-
             cazy_class = cazy_class[((cazy_class.find("(")) + 1):((cazy_class.find(")")) - 1)]
 
             # get the CAZymes within the CAZy class
@@ -274,7 +277,7 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
-                    filter(Cazymes_Genbanks.primary==True).\
+                    filter(Cazymes_Genbanks.primary == True).\
                     filter(Genbank.sequence == None).\
                     all()
             else:
@@ -306,7 +309,7 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
     for key in config_dict:
         if key == "classes":
             continue
-        if len(config_dict[key]) == 0:
+        if len(config_dict[key]) is None:
             continue  # no families to parse
 
         for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
@@ -330,7 +333,7 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(family_subquery)).\
-                    filter(Cazymes_Genbanks.primary==True).\
+                    filter(Cazymes_Genbanks.primary == True).\
                     filter(Genbank.sequence == None).\
                     all()
             else:
@@ -401,7 +404,7 @@ def update_sequences_for_specific_records(date_today, config_dict, session, args
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
-                    filter(Cazymes_Genbanks.primary==True).\
+                    filter(Cazymes_Genbanks.primary == True).\
                     all()
             else:
                 genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
@@ -411,7 +414,7 @@ def update_sequences_for_specific_records(date_today, config_dict, session, args
                     all()
 
             # create dictionary of genbank_accession: 'sequence update date' (str)
-            accessions = extract_accessions_and_dates(genbank_query)  # dictionary {accession:update_date}
+            accessions = extract_accessions_and_dates(genbank_query)  # dict {accession:update_date}
 
             if len(accessions) == 0:
                 logger.warning(
@@ -439,7 +442,7 @@ def update_sequences_for_specific_records(date_today, config_dict, session, args
     for key in config_dict:
         if key == "classes":
             continue
-        if len(config_dict[key]) == 0:
+        if len(config_dict[key]) is None:
             continue  # no families to parse
 
         for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
@@ -463,7 +466,7 @@ def update_sequences_for_specific_records(date_today, config_dict, session, args
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(family_subquery)).\
-                    filter(Cazymes_Genbanks.primary==True).\
+                    filter(Cazymes_Genbanks.primary == True).\
                     filter(Genbank.sequence == None).\
                     all()
             else:
@@ -607,7 +610,7 @@ def get_accession_chunks(lst, chunk_length):
         yield lst[i:i + chunk_length]
 
 
-## The following functions are for retrieving sequences, adding to the db and writing fasta files ##
+# The following functions are for retrieving sequences, adding to the db and writing fasta files
 
 
 def get_sequences_add_to_db(accessions, date_today, session, args):

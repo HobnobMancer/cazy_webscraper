@@ -16,10 +16,15 @@
 # UK
 
 # The MIT License
+
+# Bio.PDB reference:
+# Hamelryck, T., Manderick, B. (2003) PDB parser and structure class 
+# implemented in Python. Bioinformatics 19: 2308–2310
 """Retrieve PDB structures from RSCB PDB and write to disk"""
 
 
 import logging
+import os
 import time
 
 import pandas as pd
@@ -32,12 +37,11 @@ from tqdm import tqdm
 
 from scraper import file_io
 from scraper.sql.sql_orm import (
-    Cazyme,
     CazyFamily,
     Pdb,
     get_db_session,
 )
-from scraper.utilities import build_logger, build_pdb_structures_parser
+from scraper.utilities import config_logger, build_pdb_structures_parser
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -53,31 +57,48 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         args = build_pdb_structures_parser(argv).parse_args()
 
     # build logger
-    logger = build_logger("expand.pdb_structures", args)
+    if logger is None:
+        logger = logging.getLogger(__name__)
+        config_logger(args)
 
     # create session to local database
-    session = get_db_session(args, logger)
+    if os.path.isfile(args.database) is False:
+        logger.error(
+            "Could not find local CAZy database. Check path is correct. Terminating programme."
+        )
+    session = get_db_session(args)
+
+    # create output directory
+    if args.outdir is None:
+        # save structure files to the cwd
+        outdir = os.getcwd()
+    else:
+        outdir = args.outdir
+    file_io.make_output_directory(outdir, args.force, args.nodelete)
 
     # check if any classes or families were specified to retrieve the sequences only for them
-    if (args.classess is not None) and (args.families is not None):
-        # create dictionary of CAZy classes/families to retrieve sequences for
-        file_io_path = file_io.__file__
-        cazy_dict, std_class_names = file_io.get_cazy_dict_std_names(file_io_path, logger)
-        config_dict = file_io.get_cmd_defined_fams_classes(cazy_dict, std_class_names, args, logger)
-
-    else:
+    if (args.classes is None) and (args.families is None) and (args.config is None):
         config_dict = None
 
-    if config_dict is None:
-        # get sequences for everything
-        get_every_cazymes_structures(session, args, logger)
-
     else:
-        # get sequences for only specified classes/families
-        if args.primary is True:
-            get_specific_proteins_structures_primary_only(config_dict, session, args, logger)
-        else:
-            get_specific_proteins_structures(config_dict, session, args, logger)
+        # create dictionary of CAZy classes/families to retrieve sequences for
+        file_io_path = file_io.__file__
+        excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
+            file_io_path,
+            args,
+        )
+        # excluded_classes and cazy_dict are not needed, but required when the func is 
+        # called in cazy_webscraper.py
+
+    # retrieve protein structures from PDB
+
+    # retrieve sequences for all CAZymes
+    if config_dict is None:
+        get_every_cazymes_structures(outdir, session, args)
+
+    # retrieve sequences for specific CAZy classes and/or families
+    else:
+        get_structures_for_specific_cazymes(outdir, config_dict, session, args)
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
     end_time = pd.to_datetime(start_time)
@@ -103,12 +124,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
 
 
-def get_every_cazymes_structures(session, args, logger):
+def get_every_cazymes_structures(outdir, session, args):
     """Get PDB accessions in the db, and coordinate downloading the structure from pdb.
 
+    :param outdir: path to output directory
     :param session: open SQLite db session
     :param args: cmd-line argument parser
-    :param logger: logger object
 
     Return nothing.
     """
@@ -119,21 +140,22 @@ def get_every_cazymes_structures(session, args, logger):
     # retrieve structures for all PDB accessions
     else:
         pdb_query = session.query(Pdb).all()
-    
-    for query_result in tqdm(pdb_query, desc="Downloading structures from PDB"):
+
+    for query_result in pdb_query:
         pdb_accession = query_result.pdb_accession
-        download_pdb_structures(pdb_accession, args, logger)
-    
+        pdb_accession = pdb_accession[:pdb_accession.find("[")]
+        download_pdb_structures(pdb_accession, outdir, args)
+
     return
 
 
-def get_specific_proteins_structures_primary_only(config_dict, session, args, logger):
+def get_structures_for_specific_cazymes(outdir, config_dict, session, args):
     """Retrieve primary PDB accessions for CAZymes meeting criteria in the config_dict.
 
+    :param outdir: path to output directory
     :param config_dict: dict, defines CAZy classes and families to retrieve accessions from
     :param session: open SQLite db session
     :param args: cmd-line argument parser
-    :param logger: logger object
 
     Return nothing.
     """
@@ -141,112 +163,83 @@ def get_specific_proteins_structures_primary_only(config_dict, session, args, lo
     if len(config_dict["classes"]) != 0:
         # create a dictionary to convert full class name to abbreviation
         cazy_classes = config_dict["classes"]
+
         for cazy_class in tqdm(cazy_classes, desc="Parsing CAZy classes"):
             # retrieve class name abbreviation
-            cazy_class = cazy_class[cazy_class.find("("):cazy_class.find(")")]
+            cazy_class = cazy_class[((cazy_class.find("(")) + 1):((cazy_class.find(")")) - 1)]
 
-            # retrieve all GenBank accessions catalogued in the CAZy class
-            class_query = session.query(Pdb).\
-                filter(CazyFamily.family.regexp(rf"{cazy_class}\d+")).\
-                filter(Pdb.primary == True).\
-                all()
+            # Retrieve PDB accessions under the current working CAZy class
+            if args.primary:
+                class_query = session.query(Pdb).\
+                    filter(CazyFamily.family.regexp(rf"{cazy_class}\d+")).\
+                    filter(Pdb.primary == True).\
+                    all()
 
-            for query_result in tqdm(class_query, desc=f"Parsing families in {cazy_class}"):
+            else:
+                class_query = session.query(Pdb).\
+                    filter(CazyFamily.family.regexp(rf"{cazy_class}\d+")).\
+                    all()
+
+            for query_result in class_query:
                 pdb_accession = query_result.pdb_accession
-                download_pdb_structures(pdb_accession, args, logger)
+                pdb_accession = pdb_accession[:pdb_accession.find("[")]
+                download_pdb_structures(pdb_accession, outdir, args)
 
     # retrieve protein structure for specified families
     for key in config_dict:
         if key == "classes":
             continue
-
-        for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
-            if family.find("_") != -1:  # subfamily
-                # Retrieve PDB accessions catalogued under the subfamily
-                family_query = (Pdb).\
-                    filter(CazyFamily.subfamily == family).\
-                    filter(Pdb.primary == True).\
-                    all()
-
-            else:  # family
-                # Retrieve PDB accessions catalogued under the family
-                family_query = (Pdb).\
-                    filter(CazyFamily.family == family).\
-                    filter(Pdb.primary == True).\
-                    all()
-
-            for query_result in tqdm(family_query, desc=f"Parsing PDB accessions in {family}"):
-                pdb_accession = query_result.pdb_accession
-                download_pdb_structures(pdb_accession, args, logger)
-
-    return
-
-
-def get_specific_proteins_structures(config_dict, session, args, logger):
-    """Retrieve all PDB accessions for CAZymes meeting criteria in the config_dict.
-
-    :param config_dict: dict, defines CAZy classes and families to retrieve accessions from
-    :param session: open SQLite db session
-    :param args: cmd-line argument parser
-    :param logger: logger object
-
-    Return nothing.
-    """
-    # start with the classes
-    if len(config_dict["classes"]) != 0:
-        # create a dictionary to convert full class name to abbreviation
-        cazy_classes = config_dict["classes"]
-        for cazy_class in tqdm(cazy_classes, desc="Parsing CAZy classes"):
-            # retrieve class name abbreviation
-            cazy_class = cazy_class[cazy_class.find("("):cazy_class.find(")")]
-
-            # retrieve all GenBank accessions catalogued in the CAZy class
-            class_query = session.query(Pdb).\
-                filter(CazyFamily.family.regexp(rf"{cazy_class}\d+")).\
-                all()
-
-            for query_result in tqdm(class_query, desc=f"Parsing families in {cazy_class}"):
-                pdb_accession = query_result.pdb_accession
-                download_pdb_structures(pdb_accession, args, logger)
-
-    # retrieve protein structure for specified families
-    for key in config_dict:
-        if key == "classes":
+        if len(config_dict[key]) is None:
             continue
 
         for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
             if family.find("_") != -1:  # subfamily
-                # Retrieve PDB accessions catalogued under the subfamily
-                family_query = (Pdb).\
-                    filter(CazyFamily.subfamily == family).\
-                    all()
+
+                if args.primary:
+                    family_query = session.query(Pdb).\
+                        filter(CazyFamily.subfamily == family).\
+                        filter(Pdb.primary == True).\
+                        all()
+                else:
+                    family_query = session.query(Pdb).\
+                        filter(CazyFamily.subfamily == family).\
+                        all()
 
             else:  # family
-                # Retrieve PDB accessions catalogued under the family
-                family_query = (Pdb).\
-                    filter(CazyFamily.family == family).\
-                    all()
 
-            for query_result in tqdm(family_query, desc=f"Parsing PDB accessions in {family}"):
+                if args.primary:
+                    family_query = session.query(Pdb).\
+                        filter(CazyFamily.subfamily == family).\
+                        filter(Pdb.primary == True).\
+                        all()
+                else:
+                    family_query = session.query(Pdb).\
+                        filter(CazyFamily.subfamily == family).\
+                        all()
+
+            for query_result in family_query:
                 pdb_accession = query_result.pdb_accession
-                download_pdb_structures(pdb_accession, args, logger)
+                pdb_accession = pdb_accession[:pdb_accession.find("[")]
+                download_pdb_structures(pdb_accession, outdir, args)
 
     return
 
 
-def download_pdb_structures(pdb_accession, args, logger):
+def download_pdb_structures(pdb_accession, outdir, args):
     """Download protein structure from the RSCB PDB database
 
     :param pdb_accession: str, accession of record in the PDB database
-    :param args: cmd-line argument parser
-    :param logger: logger object
+    :param outdir: path to output directory
+    :param args: cmd-line args parser
 
     Return nothing.
     """
     pdbl = PDBList()
     pdbl.retrieve_pdb_file(f"{pdb_accession}", file_format=args.pdb, pdir=args.outdir)
+    time.sleep(1)  # to prevent bombarding the system
 
     return
+
 
 if __name__ == "__main__":
     main()
