@@ -225,7 +225,7 @@ def add_and_update_all_sequences(date_today, session, args):
 
     if len(accessions) == 0:
         logger.warning(
-            "Did not retrieve any GenBank accessions whose sequences need updating for.
+            "Did not retrieve any GenBank accessions whose sequences need updating.\n"
             "Not adding sequences to the local database."
         )
         return
@@ -306,6 +306,8 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
     for key in config_dict:
         if key == "classes":
             continue
+        if len(config_dict[key]) == 0:
+            continue  # no families to parse
 
         for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
             if family.find("_") != -1:  # subfamily
@@ -385,7 +387,7 @@ def update_sequences_for_specific_records(date_today, config_dict, session, args
 
         for cazy_class in tqdm(cazy_classes, desc="Parsing CAZy classes"):
             # retrieve class name abbreviation
-            cazy_class = cazy_class[cazy_class.find("("):cazy_class.find(")")]
+            cazy_class = cazy_class[((cazy_class.find("(")) + 1):((cazy_class.find(")")) - 1)]
 
             # get the CAZymes within the CAZy class
             class_subquery = session.query(Cazyme.cazyme_id).\
@@ -400,14 +402,12 @@ def update_sequences_for_specific_records(date_today, config_dict, session, args
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
                     filter(Cazymes_Genbanks.primary==True).\
-                    filter(Genbank.sequence == None).\
                     all()
             else:
                 genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
-                    filter(Genbank.sequence == None).\
                     all()
 
             # create dictionary of genbank_accession: 'sequence update date' (str)
@@ -439,6 +439,8 @@ def update_sequences_for_specific_records(date_today, config_dict, session, args
     for key in config_dict:
         if key == "classes":
             continue
+        if len(config_dict[key]) == 0:
+            continue  # no families to parse
 
         for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
             if family.find("_") != -1:  # subfamily
