@@ -252,6 +252,16 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
 
     # Add optional arguments to parser
 
+    # Add option to specify path to configuration file
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=Path,
+        metavar="config file",
+        default=None,
+        help="Path to configuration file. Default: None, scrapes entire database",
+    )
+
     # Add option to define classes to retrieve protein sequences for
     parser.add_argument(
         "-c",
@@ -261,6 +271,7 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
         help="Classes from which all families are to be scraped. Separate classes by ','"
     )
 
+    # specify the number of accessions posted in single ePost to NCBI
     parser.add_argument(
         "-e",
         "--epost",
@@ -363,18 +374,20 @@ def build_pdb_structures_parser(argv: Optional[List] = None):
         help="File format of downloaded structure from PDB",
     )
 
-    parser.add_argument(
-        "outdir",
-        type=Path,
-        metavar="output directory path",
-        help="Path to output directory to which downloaded structures are retrieved",
-    )
-
     # Add optional arguments to parser
+
+    # Add option to specify path to configuration file
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=Path,
+        metavar="config file",
+        default=None,
+        help="Path to configuration file. Default: None, scrapes entire database",
+    )
 
     # Add option to define classes to retrieve protein sequences for
     parser.add_argument(
-        "-c",
         "--classes",
         type=str,
         default=None,
@@ -383,11 +396,20 @@ def build_pdb_structures_parser(argv: Optional[List] = None):
 
     # Add option to specify families to retrieve protein sequences for
     parser.add_argument(
-        "-f",
         "--families",
         type=str,
         default=None,
         help="Families to scrape. Separate families by commas 'GH1,GH2'"
+    )
+
+    # enable force writing in an existing directory
+    parser.add_argument(
+        "-f"
+        "--force",
+        dest="force",
+        action="store_true",
+        default=False,
+        help="Force file over writting",
     )
 
     # Add log file name option
@@ -399,6 +421,26 @@ def build_pdb_structures_parser(argv: Optional[List] = None):
         metavar="log file name",
         default=None,
         help="Defines log file name and/or path",
+    )
+
+    # Add option to prevent over writing of existing files
+    # and cause addition of files to output directory
+    parser.add_argument(
+        "-n",
+        "--nodelete",
+        dest="nodelete",
+        action="store_true",
+        default=False,
+        help="enable/disable deletion of exisiting files",
+    )
+
+    # enable specifying an output directory
+    parser.add_argument(
+        "-o",
+        "--outdir",
+        type=Path,
+        metavar="output directory path",
+        help="Path to output directory to which downloaded structures are retrieved",
     )
 
     # enable retrieving protein sequences for only primary GenBank accessions
