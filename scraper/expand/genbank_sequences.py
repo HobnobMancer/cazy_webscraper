@@ -162,7 +162,10 @@ def get_missing_sequences_for_everything(date_today, session, args):
         )
         return
 
-    get_sequences_add_to_db(accessions, date_today, session, args)
+    # separate accesions in to separate lists of length args.epost, epost doesn't like more than 200
+    accessions = get_accession_chunks(accessions, args.epost)  # args.epost = number per chunk
+    for lst in accessions:
+        get_sequences_add_to_db(lst, date_today, session, args)
     return
 
 
@@ -208,7 +211,10 @@ def add_and_update_all_sequences(date_today, session, args):
         )
         return
 
-    get_sequences_add_to_db(accessions, date_today, session, args)
+    # separate accesions in to separate lists of length args.epost, epost doesn't like more than 200
+    accessions = get_accession_chunks(accessions, args.epost)  # args.epost = number per chunk
+    for lst in accessions:
+        get_sequences_add_to_db(lst, date_today, session, args)
     return
 
 
@@ -266,7 +272,11 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
                 )
                 continue
 
-            get_sequences_add_to_db(accessions, date_today, session, args)
+            # separate accesions in to separate lists of length args.epost
+            # epost doesn't like posting more than 200 at once
+            accessions = get_accession_chunks(accessions, args.epost)  # args.epost = number/chunk
+            for lst in accessions:
+                get_sequences_add_to_db(lst, date_today, session, args)
             continue
 
     # Retrieve protein sequences for specified families
@@ -315,8 +325,11 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
                     "Not adding sequences to the local database."
                 )
                 continue
-
-            get_sequences_add_to_db(accessions, date_today, session, args)
+            # separate accesions in to separate lists of length args.epost
+            # epost doesn't like posting more than 200 at once
+            accessions = get_accession_chunks(accessions, args.epost)  # args.epost = acc/chunk
+            for lst in accessions:
+                get_sequences_add_to_db(lst, date_today, session, args)
 
     return
 
@@ -381,8 +394,11 @@ def update_sequences_for_specific_records(date_today, config_dict, args, session
                     "Not adding sequences to the local database."
                 )
                 continue
-
-            get_sequences_add_to_db(accessions, date_today, session, args)
+            # separate accesions in to separate lists of length args.epost
+            # epost doesn't like posting more than 200 at once
+            accessions = get_accession_chunks(accessions, args.epost)  # args.epost = acc/chunk
+            for lst in accessions:
+                get_sequences_add_to_db(lst, date_today, session, args)
 
     # Retrieve protein sequences for specified families
     for key in config_dict:
@@ -432,8 +448,11 @@ def update_sequences_for_specific_records(date_today, config_dict, args, session
                     "Not adding sequences to the local database."
                 )
                 continue
-
-            get_sequences_add_to_db(accessions, date_today, session, args)
+            # separate accesions in to separate lists of length args.epost
+            # epost doesn't like posting more than 200 at once
+            accessions = get_accession_chunks(accessions, args.epost)  # args.epost = acc/chunk
+            for lst in accessions:
+                get_sequences_add_to_db(lst, date_today, session, args)
 
     return
 
@@ -530,6 +549,18 @@ def get_accessions_for_new_sequences(accessions):
     return accessions_list
 
 
+def get_accession_chunks(lst, chunk_length):
+    """Separate the long list into separate chunks.
+
+    :param lst: list to be separated into smaller lists (or chunks)
+    :param chunk_length: int, the length of the lists the longer list is to be split up into
+
+    Return a generator object containing lists.
+    """
+    for i in range(0, len(lst), chunk_length):
+        yield lst[i:i + chunk_length]
+
+
 ## The following functions are for retrieving sequences, adding to the db and writing fasta files ##
 
 
@@ -544,7 +575,6 @@ def get_sequences_add_to_db(accessions, date_today, session, args):
     Return nothing.
     """
     logger = logging.getLogger(__name__)
-
     # perform batch query of Entrez
     epost_result = Entrez.read(
         entrez_retry(

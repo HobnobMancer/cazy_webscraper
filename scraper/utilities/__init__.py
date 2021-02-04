@@ -261,6 +261,14 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
         help="Classes from which all families are to be scraped. Separate classes by ','"
     )
 
+    parser.add_argument(
+        "-e",
+        "--epost",
+        type=int,
+        default=150,
+        help="Number of accessions posted to NCBI per epost, advice to be max 200. Default=150"
+    )
+
     # Add option to specify families to retrieve protein sequences for
     parser.add_argument(
         "-f",
