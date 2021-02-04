@@ -504,6 +504,7 @@ def get_accessions_for_new_sequences(accessions):
     logger = logging.getLogger(__name__)
 
     accessions_list = list(accessions.keys())
+    accessions_string = ",".join(accessions_list)
     # perform batch query of Entrez
     epost_result = Entrez.read(
         entrez_retry(
@@ -576,9 +577,10 @@ def get_sequences_add_to_db(accessions, date_today, session, args):
     """
     logger = logging.getLogger(__name__)
     # perform batch query of Entrez
+    accessions_string = ",".join(accessions)
     epost_result = Entrez.read(
         entrez_retry(
-            Entrez.epost, "Protein", id=accessions,
+            Entrez.epost, "Protein", id=accessions_string,
         )
     )
     # retrieve the web environment and query key from the Entrez post
