@@ -161,8 +161,8 @@ def get_missing_sequences_for_everything(date_today, session, args):
 
     if len(accessions) == 0:
         logger.warning(
-            "Did not retrieve any GenBank accessions from the local database.\n"
-            "Not adding sequences to the local database."
+            "Did not retrieve any GenBank accessions from the local database\n"
+            "that have sequences missing. Not adding sequences to the local database."
         )
         return
 
@@ -214,11 +214,18 @@ def add_and_update_all_sequences(date_today, session, args):
     # create dictionary of genbank_accession: 'sequence update date' (str)
     accessions = extract_accessions_and_dates(genbank_query)  # dictionary {accession:update_date}
 
+    if len(accessions) == 0:
+        logger.warning(
+            f"Did not retrieve any GenBank accessions from the local database.\n"
+            "Not adding sequences to the local database."
+        )
+        return
+
     accessions = get_accessions_for_new_sequences(accessions)  # list of genkbank_accession
 
     if len(accessions) == 0:
         logger.warning(
-            "Did not retrieve any GenBank accessions from the local database.\n"
+            "Did not retrieve any GenBank accessions whose sequences need updating for.
             "Not adding sequences to the local database."
         )
         return
@@ -241,6 +248,9 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
     Return nothing.
     """
     logger = logging.getLogger(__name__)
+    logger.warning(
+        "Retrieving sequences for GenBank accessions that do not have a sequence in the database"
+    )
 
     # start with the classes
     if len(config_dict["classes"]) != 0:
@@ -249,7 +259,8 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
 
         for cazy_class in tqdm(cazy_classes, desc="Parsing CAZy classes"):
             # retrieve class name abbreviation
-            cazy_class = cazy_class[cazy_class.find("("):cazy_class.find(")")]
+
+            cazy_class = cazy_class[((cazy_class.find("(")) + 1):((cazy_class.find(")")) - 1)]
 
             # get the CAZymes within the CAZy class
             class_subquery = session.query(Cazyme.cazyme_id).\
@@ -279,8 +290,8 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
 
             if len(accessions) == 0:
                 logger.warning(
-                    f"Did not retrieve any GenBank accessions for the CAZy class {cazy_class}.\n"
-                    "Not adding sequences to the local database."
+                    f"Did not retrieve any GenBank accessions for the CAZy class {cazy_class}\n"
+                    "that have missing sequences. Not adding sequences to the local database."
                 )
                 continue
 
@@ -333,8 +344,8 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
 
             if len(accessions) == 0:
                 logger.warning(
-                    f"Did not retrieve any GenBank accessions for the CAZy class {cazy_class}.\n"
-                    "Not adding sequences to the local database."
+                    f"Did not retrieve any GenBank accessions for the CAZy class {family}\n"
+                    "that have missing sequences. Not adding sequences to the local database."
                 )
                 continue
             # separate accesions in to separate lists of length args.epost
@@ -346,7 +357,7 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
     return
 
 
-def update_sequences_for_specific_records(date_today, config_dict, args, session):
+def update_sequences_for_specific_records(date_today, config_dict, session, args):
     """Coordinate getting the sequences for specific CAZymes, not with seqs in the db nad those
     whose seq in NCBI has been updated since the last retrieval.
 
@@ -362,6 +373,10 @@ def update_sequences_for_specific_records(date_today, config_dict, args, session
     Return nothing.
     """
     logger = logging.getLogger(__name__)
+    logger.warning(
+        "Retrieving sequences for GenBank accessions that do not have a sequence in the database,\n"
+        "and those whose sequence in NCBI has been updated since they were previously retrieved."
+    )
 
     # start with the classes
     if len(config_dict["classes"]) != 0:
@@ -398,11 +413,19 @@ def update_sequences_for_specific_records(date_today, config_dict, args, session
             # create dictionary of genbank_accession: 'sequence update date' (str)
             accessions = extract_accessions_and_dates(genbank_query)  # dictionary {accession:update_date}
 
+            if len(accessions) == 0:
+                logger.warning(
+                    f"Did not retrieve any GenBank accessions for the CAZy class {cazy_class}.\n"
+                    "Not adding sequences to the local database."
+                )
+                continue
+
             accessions = get_accessions_for_new_sequences(accessions)  # list of genkbank_accession
 
             if len(accessions) == 0:
                 logger.warning(
-                    f"Did not retrieve any GenBank accessions for the CAZy class {cazy_class}.\n"
+                    "Did not retrieve any GenBank accessions whose sequences need updating for "
+                    f"the CAZy class {cazy_class}.\n"
                     "Not adding sequences to the local database."
                 )
                 continue
@@ -452,11 +475,19 @@ def update_sequences_for_specific_records(date_today, config_dict, args, session
             # create dictionary of genbank_accession: 'sequence update date' (str)
             accessions = extract_accessions_and_dates(genbank_query)  # dictionary {accession:date}
 
+            if len(accessions) == 0:
+                logger.warning(
+                    f"Did not retrieve any GenBank accessions for the CAZy class {family}.\n"
+                    "Not adding sequences to the local database."
+                )
+                continue
+
             accessions = get_accessions_for_new_sequences(accessions)  # list of genkbank_accession
 
             if len(accessions) == 0:
                 logger.warning(
-                    f"Did not retrieve any GenBank accessions for the CAZy class {cazy_class}.\n"
+                    "Did not retrieve any GenBank accessions whose sequences need updating for "
+                    f"the CAZy class {family}.\n"
                     "Not adding sequences to the local database."
                 )
                 continue
