@@ -658,7 +658,7 @@ def get_sequences_add_to_db(accessions, date_today, session, args):
             session.commit()
 
             if args.write is not None:
-                write_out_fasta(record, args)
+                write_out_fasta(record, temp_accession, args)
 
             # remove the accession from the list
             accessions.remove(temp_accession)
@@ -713,10 +713,11 @@ def entrez_retry(entrez_func, *func_args, **func_kwargs):
     return record
 
 
-def write_out_fasta(record, args):
+def write_out_fasta(record, genbank_accession, args):
     """Write out GenBank protein record to a FASTA file.
 
     :param record: SeqIO parsed record
+    :param genbank_accession: str, accession number of the protein sequence in NCBI.GenBank
     :param args: cmd-line arguments parser
 
     Return nothing.
