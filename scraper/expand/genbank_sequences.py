@@ -92,7 +92,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     else:
         # get sequences for only specified classes/families
-        if args.update :
+        if args.update:
             update_sequences_for_specific_records(date_today, config_dict, session, args)
         else:
             get_missing_sequences_for_specific_records(date_today, config_dict, session, args)
@@ -137,7 +137,9 @@ def get_missing_sequences_for_everything(date_today, session, args):
 
     # retrieve only sequences for primary GenBank accessions, and those without sequences
     if args.primary is True:
-        # retrieve all primary GenBank accessions
+        logger.warning(
+            "Retrieving sequences for all primary GenBank accessions that do not have sequences"
+        )
         genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             filter(Cazymes_Genbanks.primary == True).\
@@ -146,7 +148,9 @@ def get_missing_sequences_for_everything(date_today, session, args):
 
     # retrieve sequences for all GenBank accessions
     else:
-        # retrieve all GenBank accessions
+        logger.warning(
+            "Retrieving sequences for all GenBank accessions that do not have sequences"
+        )
         genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             filter(Genbank.sequence == None).\
@@ -186,16 +190,24 @@ def add_and_update_all_sequences(date_today, session, args):
 
     # retrieve only sequences for primary GenBank accessions, and those without sequences
     if args.primary is True:
-        # retrieve all primary GenBank accessions
-        genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks).\
+        logger.warning(
+            "Retrieving sequences for all primary GenBank accessions that do not have sequences\n"
+            "and those whose sequences have been updated in NCBI "
+            "since they were retrieved previously"
+        )
+        genbank_query = session.query(Genbank, Cazymes_Genbanks).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             filter(Cazymes_Genbanks.primary == True).\
             all()
 
     # retrieve sequences for all GenBank accessions
     else:
-        # retrieve all GenBank accessions
-        genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks).\
+        logger.warning(
+            "Retrieving sequences for all GenBank accessions that do not have sequences\n"
+            "and those whose sequences have been updated in NCBI "
+            "since they were retrieved previously"
+        )
+        genbank_query = session.query(Genbank, Cazymes_Genbanks).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             all()
 
@@ -508,7 +520,7 @@ def get_accessions_for_new_sequences(accessions):
     # perform batch query of Entrez
     epost_result = Entrez.read(
         entrez_retry(
-            Entrez.epost, "Protein", id=accessions_list, retmode="text",
+            Entrez.epost, "Protein", id=accessions_string, retmode="text",
         )
     )
     # retrieve the web environment and query key from the Entrez post
