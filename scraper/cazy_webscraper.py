@@ -79,15 +79,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.output is not sys.stdout:
         file_io.make_output_directory(args.output, args.force, args.nodelete)
 
-    if args.genbank is not None:
-        # create directory to write FASTA files to
-        if (args.genbank_output is not sys.stdout) and (args.genbank_output != args.output):
-            file_io.make_output_directory(args.genbank_output, args.force, args.nodelete)
-
-    if (args.pdb is not None) and (args.pdb_output != args.output):
-        # create directory to write structure files to
-        file_io.make_output_directory(args.pdb_output, args.force, args.nodelete)
-
     if args.subfamilies is True:
         logger.warning("Enabled to retrieve subfamilies")
 
@@ -106,7 +97,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         except Exception:
             logger.error("Failed to build SQL database. Terminating program", exc_info=1)
             sys.exit(1)
-    
+
     else:  # create a new empty database to populate
         try:
             session = sql_orm.build_db(time_stamp, args)
