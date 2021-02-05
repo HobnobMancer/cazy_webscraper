@@ -186,7 +186,7 @@ def get_cazy_data(
     sql_failures = []
 
     # retrieve links to CAZy class pages, return list of CazyClass objects
-    cazy_classes = crawler.get_cazy_class_urls(
+    cazy_classes = crawler.get_cazy_classes(
         cazy_home,
         excluded_classes,
         max_tries,
@@ -227,7 +227,7 @@ def get_cazy_data(
                     continue
 
                 else:
-                    cazy_classes += cazy_class  # retry scraping Class page after the other Classes
+                    cazy_classes.append(cazy_class)  # retry scraping Class page after the other Classes
                     continue
 
         # Not first try, scrape only the families for which a connections to CAZy previously failed
