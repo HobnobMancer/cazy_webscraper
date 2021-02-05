@@ -52,10 +52,9 @@ def db_path(test_input_dir):
 
 
 @pytest.fixture
-def get_cazy_data_args_none():
+def args_get_cazy_data():
     argsdict = {
         "args": Namespace(
-            data_split=None,
             subfamilies=False,
         )
     }
@@ -87,7 +86,7 @@ def get_cazy_data_args_class():
 @pytest.fixture
 def config_dict():
     configuration_dict = {
-        "Glycoside Hydrolases (GHs)": ["GH1"],
+        "Glycoside Hydrolases (GHs)": ["GH3"],
         "Polysaccharide Lyases (PLs)": None,
     }
     return configuration_dict
@@ -253,283 +252,112 @@ def test_get_cazy_data_no_fam_urls(
     cazy_dictionary,
     config_dict,
     time_stamp,
-    null_logger,
-    get_cazy_data_args_none,
+    args_get_cazy_data,
     monkeypatch
 ):
-    """Test get_cazy_data."""
-    with open(cazy_dictionary, "r") as fh:
-        cazy_dict = json.load(fh)
+    """Test get_cazy_data() when no family URLS are retrieved, and fails to scrape families from
+    a class.
+    """
 
-    def mock_get_class_urls(*args, **kwargs):
-        return [
-            ["http://www.cazy.org/Glycoside-Hydrolases.html", 0],
-            ["http://www.cazy.org/Polysaccharide-Lyases.html", 0],
-        ]
+    def mock_get_classes(*args, **kwargs):
+        class1 = crawler.CazyClass("test_class", "test_class_url.html", 0)
+        class2 = crawler.CazyClass("test_class2", "test_class_url2.html", 0)
+        return [class1, class2]
+
+    def mock_get_families(*args, **kwargs):
+        return None, "test error message", ["test_url1", "test_url2"]
 
     def mock_no_return(*args, **kwargs):
         return
 
-    monkeypatch.setattr(cazy_webscraper, "get_class_urls", mock_get_class_urls)
-    monkeypatch.setattr(crawler, "get_cazy_family_urls", mock_no_return)
-    monkeypatch.setattr(parse, "proteins_to_dataframe", mock_no_return)
+    monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
+    monkeypatch.setattr(crawler, "get_cazy_family_urls", mock_get_families)
     monkeypatch.setattr(file_io, "write_out_failed_scrapes", mock_no_return)
 
     cazy_webscraper.get_cazy_data(
         cazy_home_url,
         None,
         config_dict,
-        cazy_dict,
-        1,
+        cazy_dictionary,
+        2,
         time_stamp,
-        null_logger,
-        get_cazy_data_args_none["args"],
+        "session",
+        args_get_cazy_data["args"],
     )
 
 
-def test_get_cazy_data_no_fam_returned(
+def test_get_cazy_data_no_config_dict(
+    time_stamp,
+    cazy_home_url,
+    cazy_dictionary,
+    args_get_cazy_data,
+    monkeypatch
+):
+    """Test get_cazy_data() when some families aren't scraped, and config_dict is None."""
+
+    fam1 = crawler.Family("test_fam", "test_class", "test_url")
+
+    def mock_get_classes(*args, **kwargs):
+        class1 = crawler.CazyClass("test_class", "test_class_url.html", 0, {fam1: 0})
+        return [class1]
+
+    def mock_parse_family(*args, **kwargs):
+        return fam1, True, ["fail1", "fail2"], ["sqlFail1", "sqlFail2"]
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
+    monkeypatch.setattr(crawler, "parse_family", mock_parse_family)
+    monkeypatch.setattr(file_io, "write_out_failed_proteins", mock_no_return)
+    monkeypatch.setattr(file_io, "write_out_failed_scrapes", mock_no_return)
+
+    cazy_webscraper.get_cazy_data(
+        cazy_home_url,
+        None,
+        None,
+        cazy_dictionary,
+        2,
+        time_stamp,
+        "session",
+        args_get_cazy_data["args"],
+    )
+
+
+def test_get_cazy_data_with_config_dict(
     time_stamp,
     cazy_home_url,
     cazy_dictionary,
     config_dict,
-    null_logger,
-    get_cazy_data_args_none,
+    args_get_cazy_data,
     monkeypatch
 ):
-    """Test get_cazy_data() when data_split is None, subfamilies is False."""
-    with open(cazy_dictionary, "r") as fh:
-        cazy_dict = json.load(fh)
+    """Test get_cazy_data() when some families aren't scraped, and a config_dict is given."""
 
-    def mock_get_class_urls(*args, **kwargs):
-        return [
-            ["http://www.cazy.org/Glycoside-Hydrolases.html", 0],
-            ["http://www.cazy.org/Polysaccharide-Lyases.html", 0],
-        ]
+    fam1 = crawler.Family("GH3_1", "Glycoside Hydrolases (GHs)", "test_url")
 
-    def mock_get_family_urls(*args, **kwargs):
-        return [
-            "dddwww.cazddddy.org/GH1.html",
-            "http://www.cazy.org/GH1.html",
-            "http://www.cazy.org/PL1.html",
-        ]
+    def mock_get_classes(*args, **kwargs):
+        class1 = crawler.CazyClass("Glycoside Hydrolases (GHs)", "test_class_url.html", 0, {fam1: 0})
+        return [class1]
 
     def mock_parse_family(*args, **kwargs):
-        return [None, "mock error message"]
+        return fam1, True, ["fail1", "fail2"], ["sqlFail1", "sqlFail2"]
 
     def mock_no_return(*args, **kwargs):
         return
 
-    monkeypatch.setattr(cazy_webscraper, "get_class_urls", mock_get_class_urls)
-    monkeypatch.setattr(crawler, "get_cazy_family_urls", mock_get_family_urls)
+    monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
     monkeypatch.setattr(crawler, "parse_family", mock_parse_family)
-    monkeypatch.setattr(parse, "proteins_to_dataframe", mock_no_return)
+    monkeypatch.setattr(file_io, "write_out_failed_proteins", mock_no_return)
     monkeypatch.setattr(file_io, "write_out_failed_scrapes", mock_no_return)
 
     cazy_webscraper.get_cazy_data(
         cazy_home_url,
         None,
-        config_dict,
-        cazy_dict,
-        1,
-        time_stamp,
-        null_logger,
-        get_cazy_data_args_none["args"],
-    )
-
-
-def test_get_cazy_data_subfams_split_fam(
-    time_stamp,
-    cazy_home_url,
-    cazy_dictionary,
-    config_dict,
-    mock_family,
-    null_logger,
-    get_cazy_data_args_family,
-    monkeypatch
-):
-    """Test get_cazy_data() when data split is family and subfamily is True."""
-    with open(cazy_dictionary, "r") as fh:
-        cazy_dict = json.load(fh)
-
-    def mock_get_class_urls(*args, **kwargs):
-        return [
-            ["http://www.cazy.org/Glycoside-Hydrolases.html", 0],
-            ["http://www.cazy.org/Polysaccharide-Lyases.html", 0],
-        ]
-
-    def mock_get_family_urls(*args, **kwargs):
-        return [
-            "dddwww.cazddddy.org/GH1.html",
-            "http://www.cazy.org/GH1.html",
-            "http://www.cazy.org/PL1.html",
-        ]
-
-    def mock_parse_family(*args, **kwargs):
-        return [mock_family, None]
-
-    def mock_no_return(*args, **kwargs):
-        return
-
-    monkeypatch.setattr(cazy_webscraper, "get_class_urls", mock_get_class_urls)
-    monkeypatch.setattr(crawler, "get_cazy_family_urls", mock_get_family_urls)
-    monkeypatch.setattr(crawler, "parse_family", mock_parse_family)
-    monkeypatch.setattr(parse, "proteins_to_dataframe", mock_no_return)
-    monkeypatch.setattr(file_io, "write_out_failed_scrapes", mock_no_return)
-
-    cazy_webscraper.get_cazy_data(
-        cazy_home_url,
         None,
-        config_dict,
-        cazy_dict,
-        1,
+        cazy_dictionary,
+        2,
         time_stamp,
-        null_logger,
-        get_cazy_data_args_family["args"],
-    )
-
-
-def test_get_cazy_data_subfams_split_class(
-    time_stamp,
-    cazy_home_url,
-    cazy_dictionary,
-    config_dict,
-    mock_family,
-    null_logger,
-    get_cazy_data_args_class,
-    monkeypatch
-):
-    """Test get_cazy_data() when data split is class and subfamily is True."""
-    with open(cazy_dictionary, "r") as fh:
-        cazy_dict = json.load(fh)
-
-    def mock_get_class_urls(*args, **kwargs):
-        return [
-            ["http://www.cazy.org/Glycoside-Hydrolases.html", 0],
-            ["http://www.cazy.org/Polysaccharide-Lyases.html", 0],
-        ]
-
-    def mock_get_family_urls(*args, **kwargs):
-        return [
-            "dddwww.cazddddy.org/GH1.html",
-            "http://www.cazy.org/GH1.html",
-            "http://www.cazy.org/PL1.html",
-        ]
-
-    def mock_parse_family(*args, **kwargs):
-        return [mock_family, None]
-
-    def mock_no_return(*args, **kwargs):
-        return
-
-    monkeypatch.setattr(cazy_webscraper, "get_class_urls", mock_get_class_urls)
-    monkeypatch.setattr(crawler, "get_cazy_family_urls", mock_get_family_urls)
-    monkeypatch.setattr(crawler, "parse_family", mock_parse_family)
-    monkeypatch.setattr(parse, "proteins_to_dataframe", mock_no_return)
-    monkeypatch.setattr(file_io, "write_out_failed_scrapes", mock_no_return)
-
-    cazy_webscraper.get_cazy_data(
-        cazy_home_url,
-        None,
-        config_dict,
-        cazy_dict,
-        1,
-        time_stamp,
-        null_logger,
-        get_cazy_data_args_class["args"],
-    )
-
-
-def test_get_cazy_data_split_none(
-    time_stamp,
-    cazy_home_url,
-    cazy_dictionary,
-    config_dict,
-    mock_family,
-    null_logger,
-    get_cazy_data_args_none,
-    monkeypatch
-):
-    """Test get_cazy_data() when data split is None and subfamily is False."""
-    with open(cazy_dictionary, "r") as fh:
-        cazy_dict = json.load(fh)
-
-    def mock_get_class_urls(*args, **kwargs):
-        return [
-            ["http://www.cazy.org/Glycoside-Hydrolases.html", 0],
-            ["http://www.cazy.org/Polysaccharide-Lyases.html", 0],
-        ]
-
-    def mock_get_family_urls(*args, **kwargs):
-        return [
-            "dddwww.cazddddy.org/GH1.html",
-            "http://www.cazy.org/GH1.html",
-            "http://www.cazy.org/PL1.html",
-        ]
-
-    def mock_parse_family(*args, **kwargs):
-        return [mock_family, None]
-
-    def mock_no_return(*args, **kwargs):
-        return
-
-    monkeypatch.setattr(cazy_webscraper, "get_class_urls", mock_get_class_urls)
-    monkeypatch.setattr(crawler, "get_cazy_family_urls", mock_get_family_urls)
-    monkeypatch.setattr(crawler, "parse_family", mock_parse_family)
-    monkeypatch.setattr(parse, "proteins_to_dataframe", mock_no_return)
-    monkeypatch.setattr(file_io, "write_out_failed_scrapes", mock_no_return)
-
-    cazy_webscraper.get_cazy_data(
-        cazy_home_url,
-        None,
-        config_dict,
-        cazy_dict,
-        1,
-        time_stamp,
-        null_logger,
-        get_cazy_data_args_none["args"],
-    )
-
-
-# test get_class_urls
-
-
-def test_get_class_urls_no_urls(cazy_home_url, null_logger, monkeypatch):
-    """Test get_class_urls() when an empty list is returned."""
-
-    def mock_class_urls(*args, **kwargs):
-        return []
-
-    monkeypatch.setattr(crawler, "get_cazy_class_urls", mock_class_urls)
-
-    with pytest.raises(SystemExit) as pytest_wrapped_e:
-        cazy_webscraper.get_class_urls(cazy_home_url, None, 1, null_logger)
-    assert pytest_wrapped_e.type == SystemExit
-
-
-def test_get_class_urls_none_urls(cazy_home_url, null_logger, monkeypatch):
-    """Test get_class_urls() when a None type object is returned."""
-
-    def mock_class_urls(*args, **kwargs):
-        return
-
-    monkeypatch.setattr(crawler, "get_cazy_class_urls", mock_class_urls)
-
-    with pytest.raises(SystemExit) as pytest_wrapped_e:
-        cazy_webscraper.get_class_urls(cazy_home_url, None, 1, null_logger)
-    assert pytest_wrapped_e.type == SystemExit
-
-
-def test_get_class_urls_success(cazy_home_url, null_logger, monkeypatch):
-    """Test get_class_urls() when URLs were returned."""
-
-    def mock_class_urls(*args, **kwargs):
-        return ["url1", "url2", "url3"]
-
-    monkeypatch.setattr(crawler, "get_cazy_class_urls", mock_class_urls)
-
-    assert [['url1', 0], ['url2', 0], ['url3', 0]] == cazy_webscraper.get_class_urls(
-        cazy_home_url,
-        None,
-        1,
-        null_logger,
+        "session",
+        args_get_cazy_data["args"],
     )
