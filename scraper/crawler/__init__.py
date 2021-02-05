@@ -44,7 +44,10 @@ from scraper.sql import sql_interface
 
 
 class CazyClass:
-    """A single CAZy class."""
+    """A single CAZy class.
+    
+    Used to keep track of if specific families need to be scraped again.
+    """
 
     def __init__(self, name, url, tries, failed_families=None):
         self.name = name
@@ -52,6 +55,8 @@ class CazyClass:
         self.tries = tries
         if failed_families is None:
             self.failed_families = {}  # keyed by URL, valued by number of attempted scrapes
+        else:
+            self.failed_families = failed_families
 
     def __str__(self):
         return f"<CAZy class: {self.name} id={id(self)}>"
@@ -64,9 +69,10 @@ class CazyClass:
 
 
 class Family:
-    """A single CAZy family."""
-
-    members = set()  # holds Protein instances
+    """A single CAZy family.
+    
+    Used to keep track if family needs to be scraped again.
+    """
 
     def __init__(self, name, cazy_class, url, failed_pages=None):
         self.name = name
@@ -81,52 +87,8 @@ class Family:
     def __repr__(self):
         return f"<Family: {id(self)}: {self.name}, {len(self.members)} protein members"
 
-    def get_proteins(self):
-        """Return a list of all protein members of the CAZy family."""
-        return self.members
 
-    def get_family_name(self):
-        """Return family name"""
-        return self.name
-
-
-class Protein:
-    """A single protein.
-
-    Each protein has a name, source organism (source), and links to external databases. The links to
-    external databases are stored in a dictionary, keyed by the external database name ('str') with
-    'list' values becuase there may be multiple links per database.
-
-    Multiple 'synonym' GenBank accession numbers maybe listed for a single protein. CAZy only
-    hyperlinks the first listed accession number. This accession is the one listed for the protein,
-    because is presumed to be the accession used by CAZy in their classification. All other listed
-    GenBank accessions are regarded as synonyms, including for example splice variants and identical
-    protein sequence submissions.
-    """
-
-    def __init__(self, name, family, ec, source, links=None):
-        self.name = name
-        self.family = family
-        self.ec = ec
-        self.source = source
-        if links is None:
-            self.links = defaultdict(list)
-        else:
-            self.links = links
-
-    def __str__(self):
-        """Create representative string of class object"""
-        return f"{self.name} ({self.family} {self.source}): links to {self.links.keys()}"
-
-    def __repr__(self):
-        """Create representative object"""
-        return (
-            f"<Protein: {id(self)}: {self.name}, {self.family} "
-            f"({self.source}), {len(self.links)} to external databases>"
-        )
-
-
-def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, cazy_dict):
+def get_cazy_classes(cazy_home, excluded_classes, max_tries, cazy_dict):
     """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
 
     :param cazy_url: str, URL to the CAZy home page.
@@ -134,7 +96,7 @@ def get_cazy_class_urls(cazy_home, excluded_classes, max_tries, cazy_dict):
     :param max_tries: int, maximum number of times to try scrape if errors are encountered
     :param cazy_dict: dictionary of offical CAZy class names
 
-    Return list of URLs and None, or None and error message.
+    Return list of CazyClass instances, or None and an error message.
     """
     logger = logging.getLogger(__name__)
     logger.info("Retrieving URLs to summary CAZy class pages")
