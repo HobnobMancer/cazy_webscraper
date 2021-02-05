@@ -201,7 +201,7 @@ def get_cazy_data(
         # first attempt of scraping, retrieve URLs to CAZy families
         if len(list(cazy_class.failed_families.keys())) == 0:
 
-            # retrieve URLs to families for the current CAZy class, return as Family class objects
+            # retrieve Family class instances, containing the Family page URL
             class_families, error_message, incorrect_urls = crawler.get_cazy_family_urls(
                 cazy_class.url,
                 cazy_class.name,
@@ -227,7 +227,7 @@ def get_cazy_data(
                     continue
 
                 else:
-                    cazy_classes.append(cazy_class)  # retry scraping Class page after the other Classes
+                    cazy_classes.append(cazy_class)  # retry scraping Class page later Classes
                     continue
 
         # Not first try, scrape only the families for which a connections to CAZy previously failed
@@ -240,16 +240,16 @@ def get_cazy_data(
             # No (sub)families were specified, therefore, scraping all families of the CAZy class
 
             for family in tqdm(class_families, desc=f"Parsing {cazy_class.name} families"):
-                # Populate family with Proteins catalogued under the CAZy family
-                family, failed_family_page_scrapes, family_sql_failures = crawler.parse_family(
+                # Scrape the family and add proteins to the local database
+                family, retry_scrape, failed_fam_pages, family_sql_failures = crawler.parse_family(
                     family,
                     cazy_home,
                     max_tries,
                     session,
                 )
 
-                # if failed to scrape some pages for CAZy family
-                if failed_family_page_scrapes is not None:
+                # check if there are pages that were unsuccessfully scraped and have retries left
+                if retry_scrape is True:
                     # add one to the number of attempted scrapes for CAZy family
                     try:
                         cazy_class.failed_families[family] += 1
@@ -258,15 +258,15 @@ def get_cazy_data(
 
                     # check if max number of attempts to connect family pages has been met
                     if cazy_class.failed_families[family] == max_tries:
-                        failed_url_scrapes += failed_family_page_scrapes  # store urls
                         del cazy_class.failed_families[family]  # do not try another scrape
                         continue
 
                 if len(list(cazy_class.failed_families.keys())) != 0:
                     # if there are families with previously failed connection attempts
                     # and remaining tries, retry connection after working through other classes
-                    cazy_classes += cazy_class
+                    cazy_classes.append(cazy_class)
 
+                failed_url_scrapes += failed_fam_pages  # urls with no attempts left for retrying
                 sql_failures += family_sql_failures
 
         else:
@@ -284,16 +284,16 @@ def get_cazy_data(
                 if name_check not in config_dict[cazy_class.name]:
                     continue
 
-                # Populate family with Proteins catalogued under the CAZy family
-                family, failed_family_page_scrapes, family_sql_failures = crawler.parse_family(
+                # Scrape the family and add proteins to the local database
+                family, retry_scrape, failed_fam_pages, family_sql_failures = crawler.parse_family(
                     family,
                     cazy_home,
                     max_tries,
                     session,
                 )
 
-                # if failed to scrape some pages for CAZy family
-                if failed_family_page_scrapes is not None:
+                # check if there are pages that were unsuccessfully scraped and have retries left
+                if retry_scrape is True:
                     # add one to the number of attempted scrapes for CAZy family
                     try:
                         cazy_class.failed_families[family] += 1
@@ -302,15 +302,15 @@ def get_cazy_data(
 
                     # check if max number of attempts to connect family pages has been met
                     if cazy_class.failed_families[family] == max_tries:
-                        failed_url_scrapes += failed_family_page_scrapes  # store urls
                         del cazy_class.failed_families[family]  # do not try another scrape
                         continue
 
                 if len(list(cazy_class.failed_families.keys())) != 0:
                     # if there are families with previously failed connection attempts
                     # and remaining tries, retry connection after working through other classes
-                    cazy_classes += cazy_class
+                    cazy_classes.append(cazy_class)
 
+                failed_url_scrapes += failed_fam_pages  # urls with no attempts left for retrying
                 sql_failures += family_sql_failures
 
     # write out URLs which failed to be scaped

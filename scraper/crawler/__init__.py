@@ -45,7 +45,7 @@ from scraper.sql import sql_interface
 
 class CazyClass:
     """A single CAZy class.
-    
+
     Used to keep track of if specific families need to be scraped again.
     """
 
@@ -54,7 +54,7 @@ class CazyClass:
         self.url = url
         self.tries = tries
         if failed_families is None:
-            self.failed_families = {}  # keyed by URL, valued by number of attempted scrapes
+            self.failed_families = {}  # keyed by Family instance, valued by attempted scrapes (int)
         else:
             self.failed_families = failed_families
 
@@ -70,7 +70,7 @@ class CazyClass:
 
 class Family:
     """A single CAZy family.
-    
+
     Used to keep track if family needs to be scraped again.
     """
 
@@ -329,8 +329,9 @@ def parse_family(family, cazy_home, max_tries, session):
     :param family: Family class object, representation of CAZy family
     :param cazy_home: str, URL to CAZy home page
 
-    Return Family object, list of URLs which couldn't connect to CAZy and list of proteins that
-    could not be added to the SQL database.
+    Return Family object, Boolean whether to scrape the family again, a list of URLs which couldn't
+    connect to CAZy (and no have re-try attempts left) and list of proteins that could not be added
+    to the SQL database.
     """
     logger = logging.getLogger(__name__)
     logger.info(f"Starting retrieval of proteins for {family.name} from {family.url}")
@@ -395,7 +396,7 @@ def parse_family(family, cazy_home, max_tries, session):
             [],
         )
 
-    failed_scrapes = []  # URLs of pages for which maximum number of attempted connections is met
+    failed_scrapes = []  # URLs of pages for which maximum number of scrape attempts is MET
     sql_failures = []
 
     for protein in tqdm(
@@ -410,22 +411,22 @@ def parse_family(family, cazy_home, max_tries, session):
         desc=f"Parsing protein pages for {family.name}",
     ):
         if protein["url"] is not None:
-            # Could not connect to CAZy
+            # Protein was note retrieved because could not connect to CAZy
             try:
                 family.failed_pages[protein["url"]] += 1
             except KeyError:
                 family.failed_pages[protein["url"]] = 1  # First failed attempt to connect to page
 
-            failed_scrapes.append(
-                f"{protein['url']}\t"
-                f"{family.cazy_class}\t"
-                f"Failed to connect to this page of proteins for {family.name}\t"
-                f"{protein['error']}"
-            )
-
             if family.failed_pages[protein["url"]] == max_tries:
                 # maximum attempts to connect have been reached no more attempts made
-                # do no attempt to scrape again
+                # save the URL for writing out to a file...
+                failed_scrapes.append(
+                    f"{protein['url']}\t"
+                    f"{family.cazy_class}\t"
+                    f"Failed to connect to this page of proteins for {family.name}\t"
+                    f"{protein['error']}"
+                )
+                # ... and do no attempt to scrape again
                 del family.failed_paged[protein["url"]]
 
         elif protein["sql"] is not None:
@@ -436,10 +437,13 @@ def parse_family(family, cazy_home, max_tries, session):
                 f"{protein['error']}"
             )
 
-    if len(failed_scrapes) == 0:
-        failed_scrapes = None
+    # check if any pages for the family still have attempts left for trying for a successful scrape
+    if len(list(family.failed_pages.keys())) == 0:
+        retry_scrape = False
+    else:
+        retry_scrape = True
 
-    return family, failed_scrapes, sql_failures
+    return family, retry_scrape, failed_scrapes, sql_failures
 
 
 def get_protein_page_urls(first_pagination_url, first_pagination_page, cazy_home):
