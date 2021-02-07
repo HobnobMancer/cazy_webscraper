@@ -264,7 +264,6 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
 
     # Add option to define classes to retrieve protein sequences for
     parser.add_argument(
-        "-c",
         "--classes",
         type=str,
         default=None,
