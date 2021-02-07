@@ -80,8 +80,6 @@ def parse_configuration(file_io_path, args):
 
     Return list of classes not to scrape, dict of families to scrape, and dict of class synonoms.
     """
-    logger = logging.getLogger(__name__)
-
     # Get dictionary of accepted CAZy class synonyms
     cazy_dict, std_class_names = get_cazy_dict_std_names(file_io_path)
 
