@@ -430,6 +430,45 @@ def test_get_cazy_data_with_config_dict(
 ):
     """Test get_cazy_data() when some families aren't scraped, and a config_dict is given."""
 
+    fam1 = crawler.Family("GH3", "Glycoside Hydrolases (GHs)", "test_url")
+
+    def mock_get_classes(*args, **kwargs):
+        class1 = crawler.CazyClass("Glycoside Hydrolases (GHs)", "test_class_url.html", 0, {fam1: 0})
+        return [class1]
+
+    def mock_parse_family(*args, **kwargs):
+        return fam1, True, ["fail1", "fail2"], ["sqlFail1", "sqlFail2"]
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
+    monkeypatch.setattr(crawler, "parse_family", mock_parse_family)
+    monkeypatch.setattr(file_io, "write_out_failed_proteins", mock_no_return)
+    monkeypatch.setattr(file_io, "write_out_failed_scrapes", mock_no_return)
+
+    cazy_webscraper.get_cazy_data(
+        cazy_home_url,
+        None,
+        None,
+        cazy_dictionary,
+        2,
+        time_stamp,
+        "session",
+        args_get_cazy_data["args"],
+    )
+
+
+def test_get_cazy_data_with_config_dict_subfam(
+    time_stamp,
+    cazy_home_url,
+    cazy_dictionary,
+    config_dict,
+    args_get_cazy_data,
+    monkeypatch
+):
+    """Test get_cazy_data() when some families aren't scraped, and a config_dict is given."""
+
     fam1 = crawler.Family("GH3_1", "Glycoside Hydrolases (GHs)", "test_url")
 
     def mock_get_classes(*args, **kwargs):
