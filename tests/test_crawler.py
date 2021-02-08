@@ -524,7 +524,39 @@ def test_parse_family_success(protein_gen, monkeypatch):
         return [], 0
 
     def mock_parse_proteins(*args, **kwargs):
-        return protein_gen
+        return [
+            {"url": None, "error": None, "sql": None},
+            {"url": None, "error": None, "sql": None},
+        ]
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+    monkeypatch.setattr(crawler, "get_protein_page_urls", mock_page_urls)
+    monkeypatch.setattr(crawler, "parse_proteins", mock_parse_proteins)
+
+    test_family = crawler.Family("GH1", "Glycoside Hydrolases (GH)", "www.cazy.org/GH1.html")
+
+    crawler.parse_family(
+        test_family,
+        "http://www.cazy.org/GH1.html",
+        2,
+        "session",
+    )
+
+
+def test_parse_family_sql_url_errors(protein_gen, monkeypatch):
+    """Test parse_family() when URL and SQL errors are raised when parsing a protein."""
+
+    def mock_get_page(*args, **kwargs):
+        return "mock_page", None
+
+    def mock_page_urls(*args, **kwargs):
+        return [], 0
+
+    def mock_parse_proteins(*args, **kwargs):
+        return [
+            {"url": 'www.url_address', "error": 'error message', "sql": None},
+            {"url": None, "error": 'error message', "sql": 'protein and sql'},
+        ]
 
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
     monkeypatch.setattr(crawler, "get_protein_page_urls", mock_page_urls)
