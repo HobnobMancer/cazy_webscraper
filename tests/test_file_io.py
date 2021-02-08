@@ -487,3 +487,24 @@ def test_write_out_failed_scrapes(output_args):
         "time_stamp",
         output_args["args"],
     )
+
+
+# test write_out_failed_proteins()
+
+
+def test_write_out_failed_proteins_stdout(stdout_args):
+    """Test write_out_failed_proteins when args.output is sys.STDOUT"""
+    file_io.write_out_failed_proteins(
+        ["sql_1 - message", "sql_2 - fail reason"],
+        "time_stamp",
+        stdout_args["args"],
+    )
+
+
+def test_write_out_failed_proteins(output_args):
+    """Test write_out_failed_proteins when args.output is sys.STDOUT"""
+    file_io.write_out_failed_proteins(
+        ["sql_1 - message", "sql_2 - fail reason"],
+        "time_stamp",
+        output_args["args"],
+    )
