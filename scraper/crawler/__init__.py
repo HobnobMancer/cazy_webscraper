@@ -227,7 +227,10 @@ def get_cazy_family_urls(class_url, class_name, cazy_home, args):
     # tables[1] is the table containing the link to unclassified proteins
 
     family_urls = [f"{cazy_home}/{_['href']}" for _ in tables[0].find_all("a")]
-    family_urls.append(f"{cazy_home}/{tables[1].a['href']}")
+    try:
+        family_urls.append(f"{cazy_home}/{tables[1].a['href']}")
+    except TypeError:
+        family_urls = None
 
     if (args.subfamilies is False) and (family_urls is None):
         logger.warning(f"Failed to retrieve URLs to CAZy families for {class_name}\n")

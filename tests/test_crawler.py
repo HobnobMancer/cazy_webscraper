@@ -55,11 +55,20 @@ def cazy_home_no_spip(input_dir):
 
 
 @pytest.fixture
-def args_datasplit_family():
+def args_subfam_true():
     argsdict = {
         "args": Namespace(
-            data_split="family",
             subfamilies=True,
+        )
+    }
+    return argsdict
+
+
+@pytest.fixture
+def args_subfam_false():
+    argsdict = {
+        "args": Namespace(
+            subfamilies=False,
         )
     }
     return argsdict
@@ -68,6 +77,12 @@ def args_datasplit_family():
 @pytest.fixture
 def cazy_class_page(input_dir):
     file_path = input_dir / "cazy_classpage.html"
+    return file_path
+
+
+@pytest.fixture
+def cazy_class_page_no_fams(input_dir):
+    file_path = input_dir / "cazy_classpage_no_fams.html"
     return file_path
 
 
@@ -189,11 +204,11 @@ def test_cazy_class():
 
 def test_family_get_name():
     """Tests get family name for Family."""
-    family = crawler.Family("GH1", "Glycoside_Hydrolases(GH)", "class_url")
+    fam_1 = crawler.Family("GH1", "Glycoside_Hydrolases(GH)", "class_url")
+    fam_2 = crawler.Family("GH2", "Glycoside_Hydrolases(GH)", "class_url", {"url":0})
 
-    exepected_name = "GH1"
-
-    assert exepected_name == family.name
+    assert "GH1" == fam_1.name
+    assert "GH2" == fam_2.name
 
 
 # test get_cazy_class_urls
@@ -293,7 +308,7 @@ def test_get_class_urls_attribute(
 # test get_cazy_family_urls
 
 
-def test_get_family_urls_fail(args_datasplit_family, monkeypatch):
+def test_get_family_urls_fail(args_subfam_true, monkeypatch):
     """Test get_cazy_family_urls when no page is returned."""
 
     def mock_get_page(*args, **kwargs):
@@ -305,13 +320,13 @@ def test_get_family_urls_fail(args_datasplit_family, monkeypatch):
         "class_url",
         "cazy_home_url",
         "class_name",
-        args_datasplit_family["args"],
+        args_subfam_true["args"],
     ) == (None, 'error', None)
 
 
 def test_get_family_urls_success(
     cazy_class_page,
-    args_datasplit_family,
+    args_subfam_true,
     family_urls,
     monkeypatch,
 ):
@@ -332,7 +347,59 @@ def test_get_family_urls_success(
         "http://www.cazy.org/Glycoside-Hydrolases.html",
         "Glycoside Hydrolases (GHs)",
         "http://www.cazy.org/",
-        args_datasplit_family["args"],
+        args_subfam_true["args"],
+    )
+
+
+def test_get_family_urls_no_urls_no_subfams(
+    cazy_class_page_no_fams,
+    args_subfam_false,
+    monkeypatch,
+):
+    """Test get_cazy_family_urls when no family URLs are retrieved and args.subfamilies is False."""
+    with open(cazy_class_page_no_fams) as fp:
+        page = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_page(*args, **kwargs):
+        return [page, None]
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+
+    crawler.get_cazy_family_urls(
+        "http://www.cazy.org/Glycoside-Hydrolases.html",
+        "Glycoside Hydrolases (GHs)",
+        "http://www.cazy.org/",
+        args_subfam_false["args"],
+    )
+
+
+def test_get_family_urls_no_urls_subfams(
+    cazy_class_page_no_fams,
+    args_subfam_true,
+    monkeypatch,
+):
+    """Test get_cazy_family_urls when no family URLs are retrieved and args.subfamilies is True."""
+    with open(cazy_class_page_no_fams) as fp:
+        page = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_page(*args, **kwargs):
+        return [page, None]
+
+    def mock_subfamilies(*args, **kwargs):
+        return [
+            "http://www.cazy.org/GH5_1.html",
+            "http://www.cazy.org/GH5_2.html",
+            "http://www.cazy.org/GH5_3.html",
+        ]
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+    monkeypatch.setattr(crawler, "get_subfamily_links", mock_subfamilies)
+
+    crawler.get_cazy_family_urls(
+        "http://www.cazy.org/Glycoside-Hydrolases.html",
+        "Glycoside Hydrolases (GHs)",
+        "http://www.cazy.org/",
+        args_subfam_true["args"],
     )
 
 
