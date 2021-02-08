@@ -117,7 +117,7 @@ def args_config_cmd(config_file_path):
         "args": Namespace(
             config=None,
             classes="CE,AA",
-            families="GH14,PL15",
+            families="GH14,GT1,PL15,CE6,AA10,CBM50,DD21",
         )
     }
     return args_dict
@@ -439,7 +439,7 @@ def test_cannot_standardise_user_classes(cazy_dictionary):
 # test get_cmd_defined_fams_classes()
 
 
-def get_cmd_configuration(args_config_cmd, cazy_dictionary):
+def test_get_cmd_configuration(args_config_cmd, cazy_dictionary):
     """Test get_cmd_defined_fams_classes."""
 
     std_classes = list(cazy_dictionary.keys())
