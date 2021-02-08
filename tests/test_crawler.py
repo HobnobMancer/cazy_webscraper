@@ -403,6 +403,32 @@ def test_get_family_urls_no_urls_subfams(
     )
 
 
+def test_get_family_urls_no_urls_subfams_none(
+    cazy_class_page_no_fams,
+    args_subfam_true,
+    monkeypatch,
+):
+    """Test get_cazy_family_urls when no family or subfamily URLs are retrieved."""
+    with open(cazy_class_page_no_fams) as fp:
+        page = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_page(*args, **kwargs):
+        return [page, None]
+
+    def mock_subfamilies(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+    monkeypatch.setattr(crawler, "get_subfamily_links", mock_subfamilies)
+
+    crawler.get_cazy_family_urls(
+        "http://www.cazy.org/Glycoside-Hydrolases.html",
+        "Glycoside Hydrolases (GHs)",
+        "http://www.cazy.org/",
+        args_subfam_true["args"],
+    )
+
+
 # test get_subfamily_links
 
 
