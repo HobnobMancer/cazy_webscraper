@@ -21,6 +21,7 @@ Contains fixtures used by multiple test files.
 """
 
 import logging
+import json
 
 from datetime import datetime
 from pathlib import Path
@@ -54,7 +55,9 @@ def cazy_home_url():
 @pytest.fixture
 def cazy_dictionary(test_input_dir):
     dict_path = test_input_dir / "cazy_dictionary.json"
-    return dict_path
+    with open(dict_path, "r") as fh:
+        cazy_dict = json.load(fh)
+    return cazy_dict
 
 
 @pytest.fixture
