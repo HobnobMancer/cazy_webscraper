@@ -695,6 +695,19 @@ def test_row_to_protein_no_uniprot_no_pdb_sql_error(protein_with_no_uniprot_no_p
     crawler.row_to_protein(row, "GH147", "session")
 
 
+def test_row_to_protein_gb_synoymns_raise_error(protein_with_gb_synonyms, monkeypatch):
+    """Test row_to_protein when protein has GenBank synonyms, and SQL raises an error."""
+    with open(protein_with_gb_synonyms) as fp:
+        row = BeautifulSoup(fp, features="lxml")
+
+    def mock_sql(*args, **kwargs):
+        raise TypeError
+
+    monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
+
+    crawler.row_to_protein(row, "GH147", "session")
+
+
 # browser decorator and get_page
 
 
