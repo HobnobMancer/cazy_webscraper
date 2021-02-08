@@ -226,7 +226,7 @@ def get_cazy_family_urls(class_url, class_name, cazy_home, args):
     # tables[0] is the table containing links to CAZy families
     # tables[1] is the table containing the link to unclassified proteins
 
-    family_urls = family_urls = [f"{cazy_home}/{_['href']}" for _ in tables[0].find_all("a")]
+    family_urls = [f"{cazy_home}/{_['href']}" for _ in tables[0].find_all("a")]
     family_urls.append(f"{cazy_home}/{tables[1].a['href']}")
 
     if (args.subfamilies is False) and (family_urls is None):
