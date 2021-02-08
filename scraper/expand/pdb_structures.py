@@ -236,7 +236,7 @@ def download_pdb_structures(pdb_accession, outdir, args):
     """
     pdbl = PDBList()
     pdbl.retrieve_pdb_file(f"{pdb_accession}", file_format=args.pdb, pdir=args.outdir)
-    time.sleep(1)  # to prevent bombarding the system
+    time.sleep(2)  # to prevent bombarding the system
 
     return
 
