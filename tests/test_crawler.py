@@ -448,7 +448,7 @@ def test_parse_family_no_page(monkeypatch):
     """Test parse_family() no page is returned."""
 
     def mock_get_page(*args, **kwargs):
-        return
+        return None, "error_message"
 
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
 
