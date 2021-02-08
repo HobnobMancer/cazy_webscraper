@@ -244,6 +244,102 @@ def test_main_new_database(output_dir, null_logger, cazy_dictionary, db_path, mo
     cazy_webscraper.main()
 
 
+def test_main_build_sql_error(output_dir, null_logger, cazy_dictionary, db_path, monkeypatch):
+    """Test main() when an error is raised when buildin a new database."""
+
+    def mock_building_parser(*args, **kwargs):
+        parser_args = ArgumentParser(
+            prog="cazy_webscraper.py",
+            usage=None,
+            description="Scrape the CAZy database",
+            conflict_handler="error",
+            add_help=True,
+        )
+        return parser_args
+
+    def mock_parser(*args, **kwargs):
+        parser = Namespace(
+            output=1,
+            subfamilies=True,
+            force=False,
+            nodelete=False,
+            retries=1,
+            database=None,
+        )
+        return parser
+
+    def mock_config_logger(*args, **kwargs):
+        return
+
+    def mock_making_output_dir(*args, **kwargs):
+        return
+
+    def mock_retrieving_configuration(*args, **kwargs):
+        return None, None, cazy_dictionary
+
+    def mock_retrieving_cazy_data(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(utilities, "build_parser", mock_building_parser)
+    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
+    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+    monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
+    monkeypatch.setattr(file_io, "parse_configuration", mock_retrieving_configuration)
+    monkeypatch.setattr(cazy_webscraper, "get_cazy_data", mock_retrieving_cazy_data)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        cazy_webscraper.main()
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_main_get_sql_error(output_dir, null_logger, cazy_dictionary, db_path, monkeypatch):
+    """Test main() when an error is raised when buildin a new database."""
+
+    def mock_building_parser(*args, **kwargs):
+        parser_args = ArgumentParser(
+            prog="cazy_webscraper.py",
+            usage=None,
+            description="Scrape the CAZy database",
+            conflict_handler="error",
+            add_help=True,
+        )
+        return parser_args
+
+    path_ = output_dir / "test_outputs_sql" / "non_sql_file.txt"
+
+    def mock_parser(*args, **kwargs):
+        parser = Namespace(
+            output=output_dir,
+            subfamilies=True,
+            force=False,
+            nodelete=False,
+            retries=1,
+            database=path_,
+        )
+        return parser
+
+    def mock_config_logger(*args, **kwargs):
+        return
+
+    def mock_making_output_dir(*args, **kwargs):
+        return
+
+    def mock_retrieving_configuration(*args, **kwargs):
+        return None, None, cazy_dictionary
+
+    def mock_retrieving_cazy_data(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(utilities, "build_parser", mock_building_parser)
+    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
+    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+    monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
+    monkeypatch.setattr(file_io, "parse_configuration", mock_retrieving_configuration)
+    monkeypatch.setattr(cazy_webscraper, "get_cazy_data", mock_retrieving_cazy_data)
+
+    cazy_webscraper.main()
+
+
 # test get_cazy_data()
 
 
