@@ -407,44 +407,6 @@ def convert_lists_to_none(config_dict):
     return config_dict
 
 
-def write_out_df(dataframe, df_name, outdir, force):
-    """Write out dataframe to output directory.
-
-    :param dataframe: pandas dataframe
-    :param df_name: str, name of dataframe
-    :param outdir: Path, path to output directory
-    :param force: bool, enable/disable over writing of existing file
-
-    Return nothing.
-    """
-    logger = logging.getLogger(__name__)
-
-    # build output path
-    output_path = outdir / f"{df_name}.csv"
-
-    logger.info("Checking if output directory for dataframe already exists")
-    if output_path.exists():
-        if force is False:
-            logger.warning(
-                (
-                    "Specified directory for dataframe already exists.\n"
-                    "Exiting writing out dataframe."
-                )
-            )
-            return ()
-        else:
-            logger.warning(
-                (
-                    "Specified directory for dataframe already exists.\n"
-                    "Forced overwritting enabled."
-                )
-            )
-
-    logger.info("Writing out species dataframe to directory")
-    dataframe.to_csv(output_path)
-    return
-
-
 def write_out_failed_scrapes(failed_urls, time_stamp, args):
     """Write out the URLs for which a connection to CAZy failed.
 
