@@ -589,14 +589,7 @@ def test_parse_proteins(gh147_page, monkeypatch):
     def mock_get_page(*args, **kwargs):
         return soup, None
 
-    def mock_row_to_prtn(*args, **kwargs):
-        return [
-            {"url": "www.url.html", "error": "error message", "sql": None},
-            {"url": None, "error": "error message", "sql": "protein and sql error"},
-        ]
-
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
-    monkeypatch.setattr(crawler, "row_to_protein", mock_row_to_prtn)
 
     crawler.parse_proteins("protein_url", "family", "session")
 
