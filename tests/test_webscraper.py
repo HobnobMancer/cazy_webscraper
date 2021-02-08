@@ -30,7 +30,7 @@ import sys
 from argparse import Namespace, ArgumentParser
 from requests.exceptions import MissingSchema
 
-from scraper import cazy_webscraper, crawler, file_io, parse, utilities
+from scraper import cazy_webscraper, crawler, file_io, utilities
 
 
 @pytest.fixture
