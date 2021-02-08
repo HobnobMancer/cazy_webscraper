@@ -238,10 +238,16 @@ def test_parse_config_file_cmd(
         args_config_file_cmd["args"],
     )
 
-    expected_excluded_classes = [
+    expected_excluded_classes_1 = [
+        '<strong>Carbohydrate-Binding Modules (CBMs)</strong>',
+        '<strong>GlycosylTransferases (GTs)</strong>',
+    ]
+
+    expected_excluded_classes_2 = [
         '<strong>GlycosylTransferases (GTs)</strong>',
         '<strong>Carbohydrate-Binding Modules (CBMs)</strong>',
     ]
+
     expected_config_dict = {
         'classes': [
             'Glycoside Hydrolases (GHs)',
@@ -257,7 +263,7 @@ def test_parse_config_file_cmd(
         'Carbohydrate-Binding Modules (CBMs)': None,
     }
 
-    assert expected_excluded_classes == excluded_classes
+    assert (expected_excluded_classes_1 == excluded_classes) or (expected_excluded_classes_2 == excluded_classes)
     assert expected_config_dict == config_dict
 
 
