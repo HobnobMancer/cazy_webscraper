@@ -30,7 +30,7 @@ import sys
 from argparse import Namespace, ArgumentParser
 from requests.exceptions import MissingSchema
 
-from scraper import cazy_webscraper, crawler, file_io, utilities
+from scraper import cazy_webscraper, crawler, file_io, sql, utilities
 
 
 @pytest.fixture
@@ -305,7 +305,7 @@ def test_main_get_sql_error(output_dir, null_logger, cazy_dictionary, db_path, m
         )
         return parser_args
 
-    path_ = output_dir / "test_outputs_sql" / "non_sql_file.txt"
+    path_ = output_dir / "test_outputs_sql" / "non_sql_file.html"
 
     def mock_parser(*args, **kwargs):
         parser = Namespace(
@@ -329,6 +329,9 @@ def test_main_get_sql_error(output_dir, null_logger, cazy_dictionary, db_path, m
 
     def mock_retrieving_cazy_data(*args, **kwargs):
         return
+    
+    def mock_getting_db_session(*args, **kwargs):
+        raise TypeError
 
     monkeypatch.setattr(utilities, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
@@ -336,8 +339,11 @@ def test_main_get_sql_error(output_dir, null_logger, cazy_dictionary, db_path, m
     monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
     monkeypatch.setattr(file_io, "parse_configuration", mock_retrieving_configuration)
     monkeypatch.setattr(cazy_webscraper, "get_cazy_data", mock_retrieving_cazy_data)
+    monkeypatch.setattr(sql.sql_orm, "get_db_session", mock_getting_db_session)
 
-    cazy_webscraper.main()
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        cazy_webscraper.main()
+    assert pytest_wrapped_e.type == SystemExit
 
 
 # test get_cazy_data()
