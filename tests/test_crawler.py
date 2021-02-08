@@ -574,14 +574,11 @@ def test_parse_proteins_none(monkeypatch):
     """Test parse_proteins when no page is returned."""
 
     def mock_get_page(*args, **kwargs):
-        return [None, "error"]
+        return None, "error message"
 
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
 
-    assert True is isinstance(
-        crawler.parse_proteins("protein_url", "family", "session"),
-        types.GeneratorType,
-    )
+    crawler.parse_proteins("protein_page_url", "GH1", "session")
 
 
 def test_parse_proteins(gh147_page, monkeypatch):
@@ -590,9 +587,16 @@ def test_parse_proteins(gh147_page, monkeypatch):
         soup = BeautifulSoup(fp, features="lxml")
 
     def mock_get_page(*args, **kwargs):
-        return soup
+        return soup, None
+
+    def mock_row_to_prtn(*args, **kwargs):
+        return [
+            {"url": "www.url.html", "error": "error message", "sql": None},
+            {"url": None, "error": "error message", "sql": "protein and sql error"},
+        ]
 
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
+    monkeypatch.setattr(crawler, "row_to_protein", mock_row_to_prtn)
 
     crawler.parse_proteins("protein_url", "family", "session")
 
