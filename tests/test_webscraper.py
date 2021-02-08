@@ -230,6 +230,9 @@ def test_main_new_database(output_dir, null_logger, cazy_dictionary, db_path, mo
 
     def mock_retrieving_configuration(*args, **kwargs):
         return None, None, cazy_dictionary
+    
+    def mock_getting_db_session(*args, **kwargs):
+        return "session"
 
     def mock_retrieving_cazy_data(*args, **kwargs):
         return
@@ -239,6 +242,7 @@ def test_main_new_database(output_dir, null_logger, cazy_dictionary, db_path, mo
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
     monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
     monkeypatch.setattr(file_io, "parse_configuration", mock_retrieving_configuration)
+    monkeypatch.setattr(sql.sql_orm, "build_db", mock_getting_db_session)
     monkeypatch.setattr(cazy_webscraper, "get_cazy_data", mock_retrieving_cazy_data)
 
     cazy_webscraper.main()
