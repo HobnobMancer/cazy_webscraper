@@ -257,8 +257,8 @@ def test_parse_config_file_cmd(
         'Carbohydrate-Binding Modules (CBMs)': None,
     }
 
-    # assert expected_excluded_classes == excluded_classes
-    # assert expected_config_dict == config_dict
+    assert expected_excluded_classes == excluded_classes
+    assert expected_config_dict == config_dict
 
 
 def test_parse_config_file_only(args_config_file, cazy_dictionary, monkeypatch):
@@ -450,28 +450,22 @@ def test_get_cmd_configuration(args_config_cmd, cazy_dictionary):
     )
 
 
-# test write_out_df()
+# test get_excluded_classes
 
 
-def test_writing_named_df_f_true(testing_df, making_output_dir):
-    """Tests function for writing out a prenamed dataframe"""
-    file_io.write_out_df(
-        testing_df, "test_writing_df.csv", making_output_dir, True
-    )
+def test_get_no_excluded_classes(cazy_dictionary):
+    """Test when no excluded classes should be returned."""
+    std_classes = list(cazy_dictionary.keys())
+    config_dict = {"classes": [
+        'Carbohydrate Esterases (CEs)',
+        'Auxiliary Activities (AAs)',
+        'GlycosylTransferases (GTs)',
+        'Glycoside Hydrolases (GHs)',
+        'Polysaccharide Lyases (PLs)',
+        'Carbohydrate-Binding Modules (CBMs)',
+    ]}
 
-
-def test_writing_named_df_f_false(testing_df, making_output_dir):
-    """Tests function for writing out a prenamed dataframe"""
-    file_io.write_out_df(
-        testing_df, "test_writing_df.csv", making_output_dir, False
-    )
-
-
-def test_writing_df_exists(testing_df, making_output_dir):
-    """Tests function for writing out a prenamed dataframe"""
-    file_io.write_out_df(
-        testing_df, "test_writing_existing_df", making_output_dir, True
-    )
+    assert None is file_io.get_excluded_classes(std_classes, config_dict, cazy_dictionary) 
 
 
 # test write_out_failed_scrapes
