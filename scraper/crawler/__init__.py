@@ -80,6 +80,8 @@ class Family:
         self.url = url
         if failed_pages is None:
             self.failed_pages = {}  # keyed by URL, valued by number of attempted scrapes
+        else:
+            self.failed_pages = failed_pages
 
     def __str__(self):
         return f"CAZy family {self.name}: {len(self.members)} protein members"
@@ -278,7 +280,7 @@ def get_cazy_family_urls(class_url, class_name, cazy_home, args):
 
         family_name = url[(len(cazy_home) + 1): -5]
 
-        family = Family(family_name, class_name, url, 0)
+        family = Family(family_name, class_name, url)
         family.members = set()  # later used to store Protein members
         cazy_families.append(family)
 
