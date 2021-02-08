@@ -656,6 +656,19 @@ def test_row_to_protein_no_gb(protein_with_no_gb, monkeypatch):
     crawler.row_to_protein(row, "GH147", "session")
 
 
+def test_row_to_protein_no_gb_sql_error(protein_with_no_gb, monkeypatch):
+    """Test row_to_protein when protein has no GenBank accession and SQL raises an error."""
+    with open(protein_with_no_gb) as fp:
+        row = BeautifulSoup(fp, features="lxml")
+
+    def mock_sql(*args, **kwargs):
+        raise TypeError
+
+    monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
+
+    crawler.row_to_protein(row, "GH147", "session")
+
+
 def test_row_to_protein_no_uniprot_no_pdb(protein_with_no_uniprot_no_pdb, monkeypatch):
     """Test row_to_protein when protein has no UniProt or PDB accessions."""
     with open(protein_with_no_uniprot_no_pdb) as fp:
@@ -663,6 +676,19 @@ def test_row_to_protein_no_uniprot_no_pdb(protein_with_no_uniprot_no_pdb, monkey
 
     def mock_sql(*args, **kwargs):
         return
+
+    monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
+
+    crawler.row_to_protein(row, "GH147", "session")
+
+
+def test_row_to_protein_no_uniprot_no_pdb_sql_error(protein_with_no_uniprot_no_pdb, monkeypatch):
+    """Test row_to_protein when protein has no UniProt or PDB accessions and SQL raises an error."""
+    with open(protein_with_no_uniprot_no_pdb) as fp:
+        row = BeautifulSoup(fp, features="lxml")
+
+    def mock_sql(*args, **kwargs):
+        raise TypeError
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
