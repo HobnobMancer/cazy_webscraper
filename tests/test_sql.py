@@ -32,6 +32,7 @@ from datetime import datetime
 from pathlib import Path
 
 from scraper.sql import sql_orm, sql_interface
+from scraper.sql.sql_orm import Cazyme, CazyFamily
 
 
 @pytest.fixture
@@ -66,15 +67,16 @@ def existing_db_args(output_dir):
 # Unit tests for sql_orm
 
 
-# def test_building_sql(database_args):
-#     """Test build_sql()."""
-#     time_stamp = "2021-02-07--15-35-13"
-#     sql_orm.build_db(time_stamp, database_args["args"])
+def test_regex_search(db_session):
+    """Test a regular expression search can be performed successfully."""
 
+    cazy_class = "PL"
+    class_query = db_session.query(Cazyme.cazyme_id).\
+        join(CazyFamily, Cazyme.families).\
+        filter(CazyFamily.family.regexp(rf"{cazy_class}\d+")).\
+        all()
 
-# def test_retrieve_db_session(existing_db_args):
-#     """Test get_db_session(args)."""
-#     sql_orm.get_db_session(existing_db_args["args"])
+    assert len(class_query) == 24
 
 
 # Unit tests for sql_interface
