@@ -333,7 +333,7 @@ def test_main_get_sql_error(output_dir, null_logger, cazy_dictionary, db_path, m
 
     def mock_retrieving_cazy_data(*args, **kwargs):
         return
-    
+
     def mock_getting_db_session(*args, **kwargs):
         raise TypeError
 
@@ -440,14 +440,18 @@ def test_get_cazy_data_with_config_dict(
 ):
     """Test get_cazy_data() when some families aren't scraped, and a config_dict is given."""
 
-    fam1 = crawler.Family("GH3", "Glycoside Hydrolases (GHs)", "test_url")
+    fam1 = crawler.Family("GH3_1", "Glycoside Hydrolases (GHs)", "test_url")
 
     def mock_get_classes(*args, **kwargs):
-        class1 = crawler.CazyClass("Glycoside Hydrolases (GHs)", "test_class_url.html", 0, {fam1: 0})
+        class1 = crawler.CazyClass(
+            "Glycoside Hydrolases (GHs)",
+            "test_class_url.html",
+            0,
+        )
         return [class1]
 
     def mock_parse_family(*args, **kwargs):
-        return fam1, True, ["fail1", "fail2"], ["sqlFail1", "sqlFail2"]
+        return fam1, False, [], ["sqlFail1", "sqlFail2"]
 
     def mock_no_return(*args, **kwargs):
         return
@@ -460,7 +464,7 @@ def test_get_cazy_data_with_config_dict(
     cazy_webscraper.get_cazy_data(
         cazy_home_url,
         None,
-        None,
+        config_dict,
         cazy_dictionary,
         2,
         time_stamp,
@@ -469,7 +473,7 @@ def test_get_cazy_data_with_config_dict(
     )
 
 
-def test_get_cazy_data_with_config_dict_subfam(
+def test_get_cazy_data_witha_config_dict_subfam(
     time_stamp,
     cazy_home_url,
     cazy_dictionary,
@@ -499,7 +503,7 @@ def test_get_cazy_data_with_config_dict_subfam(
     cazy_webscraper.get_cazy_data(
         cazy_home_url,
         None,
-        None,
+        config_dict,
         cazy_dictionary,
         2,
         time_stamp,
