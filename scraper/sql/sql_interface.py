@@ -212,7 +212,8 @@ def add_protein_to_db(
             else:
                 # multiple CAZymes have the same primary GenBank accession
                 logger.warning(
-                    f"The following CAZymes have the GenBank accession {genbank_object.accession}, "
+                    "The following CAZymes have the GenBank accession "
+                    f"{genbank_object.genbank_accession}, "
                     f"genbank_id={genbank_object.genbank_id}\n, as their primary GenBank accession,"
                     "infering they are duplicates of each other"
                 )
