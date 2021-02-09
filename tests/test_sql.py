@@ -393,7 +393,7 @@ def test_adding_new_subfamily(db_session):
     time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     new_fam = f"GH{time_stamp}_1"
 
-    sql_interface.add_cazy_family(
+    sql_interface.add_cazy_subfamily(
         new_fam,
         cazyme,
         db_session,
@@ -407,7 +407,7 @@ def test_adding_cazyme_to_existing_db(db_session):
 
     existing_fam = "testGH1_53"
 
-    sql_interface.add_cazy_family(
+    sql_interface.add_cazy_subfamily(
         existing_fam,
         cazyme,
         db_session,
@@ -421,8 +421,263 @@ def test_multiple_subfamilies_found(db_session):
 
     identical_subfam = "testident_ident123"
 
-    sql_interface.add_cazy_family(
+    sql_interface.add_cazy_subfamily(
         identical_subfam,
+        cazyme,
+        db_session,
+    )
+
+
+# Unit tests for adding non-primary GenBank accessions
+
+
+def test_adding_new_non_prim_gb_acc(db_session):
+    """Test adding a new non-primary GenBank accession."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    new_acc = [f"gb_acc_{time_stamp}"]
+
+    sql_interface.add_genbank_accessions(
+        new_acc,
+        cazyme,
+        db_session,
+    )
+
+
+def test_duplicate_non_prim_db_acc(db_session):
+    """Test when finding multiple identical non-primary duplicate GenBank accessions."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    duplicate_acc = ["dupNonPrimGBAcc"]
+
+    sql_interface.add_genbank_accessions(
+        duplicate_acc,
+        cazyme,
+        db_session,
+    )
+
+
+# Unit tests for adding EC numbers
+
+
+def test_adding_new_ec_num(db_session):
+    """Testing adding a new EC# to the local database."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    ec = [f"EC{time_stamp}"]
+
+    sql_interface.add_ec_numbers(
+        ec,
+        cazyme,
+        db_session,
+    )
+
+
+def test_adding_existing_ec_num(db_session):
+    """Testing adding an existing EC# to a CAZyme."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    ec = ["existing_ec"]
+
+    sql_interface.add_ec_numbers(
+        ec,
+        cazyme,
+        db_session,
+    )
+
+
+def test_finding_multiple_ecs(db_session):
+    """Testing handling when multiple duplicate EC#s are found."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    ec = ["dupEC"]
+
+    sql_interface.add_ec_numbers(
+        ec,
+        cazyme,
+        db_session,
+    )
+
+
+# Unit tests for adding UniPro accessions
+
+
+def test_adding_one_uniprot_acc(db_session, monkeypatch):
+    """Test when only one UniProt accession is given to the function."""
+
+    def mock_add_primary(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(sql_interface, "add_primary_uniprot", mock_add_primary)
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    uniprot = [f"uni{time_stamp}"]
+
+    sql_interface.add_uniprot_accessions(
+        uniprot,
+        cazyme,
+        db_session,
+    )
+
+
+def test_adding_multiple_uniprot_accessions(db_session, monkeypatch):
+    """Test adding multiple UniProt accessions."""
+
+    def mock_add_primary(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(sql_interface, "add_primary_uniprot", mock_add_primary)
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    uniprot = [f"uni{time_stamp}", f"uni-test-{time_stamp}", "existing_acc", ]
+
+    sql_interface.add_uniprot_accessions(
+        uniprot,
+        cazyme,
+        db_session,
+    )
+
+
+# Unit tests for adding primary UniProt accessions
+
+
+def test_new_primary_uniprot(db_session):
+    """Test adding a new primary UniProt accession."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    new_acc = f"uni_acc_test{time_stamp}"
+
+    sql_interface.add_primary_uniprot(
+        new_acc,
+        cazyme,
+        db_session,
+    )
+
+
+def test_existing_primary_uniprot(db_session):
+    """Test adding an existing primary UniProt accession to a CAZyme."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    existing_uni = "existing_acc_test"
+
+    sql_interface.add_primary_uniprot(
+        existing_uni,
+        cazyme,
+        db_session,
+    )
+
+
+def test_duplicate_primary_uniprot(db_session):
+    """Test handling duplicate primary UniProt accessions."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    dup_uni = "dup_acc_test"
+
+    sql_interface.add_primary_uniprot(
+        dup_uni,
+        cazyme,
+        db_session,
+    )
+
+
+# Unit tests for adding PDB accessions to the local database
+
+
+def test_one_pdb_accession(db_session, monkeypatch):
+    """Test when on PDB accession is passed to add_pdb_accessions."""
+
+    def mock_add_primary(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(sql_interface, "add_primary_pdb", mock_add_primary)
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    acc = ["pdb_add"]
+
+    sql_interface.add_pdb_accessions(
+        acc,
+        cazyme,
+        db_session,
+    )
+
+
+def test_multiple_pdb_accession(db_session, monkeypatch):
+    """Test when multiple PDB accessions are added to the database."""
+
+    def mock_add_primary(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(sql_interface, "add_primary_pdb", mock_add_primary)
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    acc = ["pdb_add", f"pdb{time_stamp}", "existing_pdb", "DupPDBs"]
+
+    sql_interface.add_pdb_accessions(
+        acc,
+        cazyme,
+        db_session,
+    )
+
+
+# Unit tests for adding primary PDBs
+
+
+def test_add_new_prim_pdb(db_session):
+    """Test adding a new primary PDB accession to the local database."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    acc = f"new_prim{time_stamp}"
+
+    sql_interface.add_primary_pdb(
+        acc,
+        cazyme,
+        db_session,
+    )
+
+
+def test_existing_prim_pdb(db_session):
+    """Test adding an existing primary PDB accession to a CAZyme."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    acc = "existing"
+
+    sql_interface.add_primary_pdb(
+        acc,
+        cazyme,
+        db_session,
+    )
+
+
+def test_handling_duplicate_primary_pdb(db_session):
+    """Test when multiple duplicate primary PDB accessions are found."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    acc = "dupPrimPDB"
+
+    sql_interface.add_primary_pdb(
+        acc,
         cazyme,
         db_session,
     )
