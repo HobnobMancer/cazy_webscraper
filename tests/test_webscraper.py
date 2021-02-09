@@ -23,12 +23,9 @@ These test are intened to be run from the root of the repository using:
 pytest -v
 """
 
-import json
 import pytest
-import sys
 
 from argparse import Namespace, ArgumentParser
-from requests.exceptions import MissingSchema
 
 from scraper import cazy_webscraper, crawler, file_io, sql, utilities
 
@@ -55,28 +52,6 @@ def db_path(test_input_dir):
 def args_get_cazy_data():
     argsdict = {
         "args": Namespace(
-            subfamilies=False,
-        )
-    }
-    return argsdict
-
-
-@pytest.fixture
-def get_cazy_data_args_family():
-    argsdict = {
-        "args": Namespace(
-            data_split="family",
-            subfamilies=True,
-        )
-    }
-    return argsdict
-
-
-@pytest.fixture
-def get_cazy_data_args_class():
-    argsdict = {
-        "args": Namespace(
-            data_split="class",
             subfamilies=True,
         )
     }
@@ -90,12 +65,6 @@ def config_dict():
         "Polysaccharide Lyases (PLs)": None,
     }
     return configuration_dict
-
-
-@pytest.fixture
-def mock_family():
-    family = crawler.Family("GH1", "Glycoside_Hydrolases(GH)")
-    return family
 
 
 # test main()
@@ -440,7 +409,7 @@ def test_get_cazy_data_with_config_dict(
 ):
     """Test get_cazy_data() when some families aren't scraped, and a config_dict is given."""
 
-    fam1 = crawler.Family("GH3_1", "Glycoside Hydrolases (GHs)", "test_url")
+    fam1 = crawler.Family("GH3", "Glycoside Hydrolases (GHs)", "test_url")
 
     def mock_get_classes(*args, **kwargs):
         class1 = crawler.CazyClass(
