@@ -292,3 +292,91 @@ def test_adding_new_protein_with_multiple_species(db_session, monkeypatch):
         uniprot_accessions=["uni1", "uni2"],
         pdb_accessions=["pdb1", "pdb2"],
     )
+
+
+# Unit tests for add_cazy_family
+
+
+def test_adding_new_family(db_session):
+    """Test adding a new CAZy family to the local database."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    new_fam = f"GH{time_stamp}"
+
+    sql_interface.add_cazy_family(
+        new_fam,
+        cazyme,
+        db_session,
+    )
+
+
+def test_add_existing_family(db_session):
+    """Test adding an existing family to a CAZyme record."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    existing_fam = "FamOnly"
+
+    sql_interface.add_cazy_family(
+        existing_fam,
+        cazyme,
+        db_session,
+    )
+
+
+def test_add_new_fam_cos_old_fam_has_subfam(db_session):
+    """Test adding a new family because the existing family record is a subfamily."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    existing_fam = "FamWithSubFam"
+
+    sql_interface.add_cazy_family(
+        existing_fam,
+        cazyme,
+        db_session,
+    )
+
+
+def test_duplicate_families_no_nonsubfams(db_session):
+    """Test when multiple families are found with none without subfamilies."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    duplicate_families = "dupFam"
+
+    sql_interface.add_cazy_family(
+        duplicate_families,
+        cazyme,
+        db_session,
+    )
+
+
+def test_duplicate_families_one_with_no_subfams(db_session):
+    """test when multiple families are found and one has no subfamiy submission."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    identical_fam = "identFam"
+
+    sql_interface.add_cazy_family(
+        identical_fam,
+        cazyme,
+        db_session,
+    )
+
+
+def test_duplicate_families_multiple_with_no_subfams(db_session):
+    """test when multiple families have no subfamily assoication."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    identical_fam = "IdenticalFamily"
+
+    sql_interface.add_cazy_family(
+        identical_fam,
+        cazyme,
+        db_session,
+    )
