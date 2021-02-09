@@ -210,3 +210,85 @@ def test_multiple_genbanks_no_cazymes(db_session, monkeypatch):
         identical_genbanks_no_cazymes,
         db_session,
     )
+
+
+# Unit tests for add_new_protein_to_db()
+
+
+def test_adding_new_protein_and_new_species(db_session, monkeypatch):
+    """Test add_new_protein_to_db and a new species to the database."""
+
+    def mock_return_none(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(sql_interface, "add_ec_numbers", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_genbank_accessions", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_uniprot_accessions", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_pdb_accessions", mock_return_none)
+
+    time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    new_species = f"genus-{time_stamp} species-{time_stamp}"
+
+    sql_interface.add_new_protein_to_db(
+        "cazyme_name",
+        "GH5_1",
+        new_species,
+        "primary_genbank",
+        db_session,
+        ec_numbers=["EC number", "ec number"],
+        genbank_accessions=["gen1", "gen2"],
+        uniprot_accessions=["uni1", "uni2"],
+        pdb_accessions=["pdb1", "pdb2"],
+    )
+
+
+def test_addding_new_protein_with_existing_species(db_session, monkeypatch):
+    """Test add_new_protein_to_db when the species exists in the database."""
+
+    def mock_return_none(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(sql_interface, "add_ec_numbers", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_genbank_accessions", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_uniprot_accessions", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_pdb_accessions", mock_return_none)
+
+    existing_species = "test_existing_genus test_existing_species"
+
+    sql_interface.add_new_protein_to_db(
+        "cazyme_name",
+        "GH5_1",
+        existing_species,
+        "primary_genbank",
+        db_session,
+        ec_numbers=["EC number", "ec number"],
+        genbank_accessions=["gen1", "gen2"],
+        uniprot_accessions=["uni1", "uni2"],
+        pdb_accessions=["pdb1", "pdb2"],
+    )
+
+
+def test_adding_new_protein_with_multiple_species(db_session, monkeypatch):
+    """Test add_new_protein_to_db when there are multiple records for the same species."""
+
+    def mock_return_none(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(sql_interface, "add_ec_numbers", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_genbank_accessions", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_uniprot_accessions", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_pdb_accessions", mock_return_none)
+
+    duplicate_species = "duplicate_genus duplicate_species"
+
+    sql_interface.add_new_protein_to_db(
+        "cazyme_name",
+        "GH5_1",
+        duplicate_species,
+        "primary_genbank",
+        db_session,
+        ec_numbers=["EC number", "ec number"],
+        genbank_accessions=["gen1", "gen2"],
+        uniprot_accessions=["uni1", "uni2"],
+        pdb_accessions=["pdb1", "pdb2"],
+    )
