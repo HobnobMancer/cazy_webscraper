@@ -380,3 +380,49 @@ def test_duplicate_families_multiple_with_no_subfams(db_session):
         cazyme,
         db_session,
     )
+
+
+# Unit tests for adding subfamilies
+
+
+def test_adding_new_subfamily(db_session):
+    """Test adding a new subfamily to the local database."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    new_fam = f"GH{time_stamp}_1"
+
+    sql_interface.add_cazy_family(
+        new_fam,
+        cazyme,
+        db_session,
+    )
+
+
+def test_adding_cazyme_to_existing_db(db_session):
+    """Test adding a CAZyme to an existing subfamily in the local database."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    existing_fam = "testGH1_53"
+
+    sql_interface.add_cazy_family(
+        existing_fam,
+        cazyme,
+        db_session,
+    )
+
+
+def test_multiple_subfamilies_found(db_session):
+    """Test when multiple identical subfamilies are found in the local database."""
+
+    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+
+    identical_subfam = "testident_ident123"
+
+    sql_interface.add_cazy_family(
+        identical_subfam,
+        cazyme,
+        db_session,
+    )
