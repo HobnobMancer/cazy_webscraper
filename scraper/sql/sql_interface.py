@@ -360,9 +360,19 @@ def add_new_protein_to_db(
     session.commit()
 
     # establish relationship between the CAZyme and its primary GenBank accession
-    relationship = Cazymes_Genbanks(cazymes=new_cazyme, genbanks=new_primary_genbank, primary=True)
-    session.add(relationship)
-    session.commit()
+    caz_gen_query = session.query(Cazymes_Genbanks).\
+        filter(Cazymes_Genbanks.cazyme_id == new_cazyme.cazyme_id).\
+        filter(Cazymes_Genbanks.genbank_id == new_primary_genbank.genbank_id).\
+        all()
+
+    if len(caz_gen_query) == 0:
+        relationship = Cazymes_Genbanks(
+            cazymes=new_cazyme,
+            genbanks=new_primary_genbank,
+            primary=True,
+        )
+        session.add(relationship)
+        session.commit()
 
     # add Family/Subfamily classifications
     if family.find("_") != -1:
@@ -591,6 +601,9 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
     :param cazyme: Cazymes class object
     :param session: open local database session connector
 
+    `caz_gen_query` is a query of the SQL database to check if the Cazyme and the
+    Genbank have not already been 
+
     Return nothing.
     """
     logger = logging.getLogger(__name__)
@@ -609,7 +622,7 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
 
             # establish relationship between the CAZyme and its primary GenBank accession
             genbank_id = new_accession.genbank_id
-            caz_gen_query = session.(Cazymes_Genbanks).\
+            caz_gen_query = session.query(Cazymes_Genbanks).\
                 filter(Cazymes_Genbanks.cazyme_id == cazyme_id).\
                 filter(Cazymes_Genbanks.genbank_id == genbank_id).\
                 all()
