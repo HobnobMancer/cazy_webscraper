@@ -595,6 +595,8 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
     """
     logger = logging.getLogger(__name__)
 
+    cazyme_id = cazyme.cazyme_id
+
     for accession in genbank_accessions:
         # check if accession is in the database already
         genbank_query = session.query(Genbank).filter_by(genbank_accession=accession).all()
@@ -606,19 +608,36 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
             session.commit()
 
             # establish relationship between the CAZyme and its primary GenBank accession
-            relationship = Cazymes_Genbanks(cazymes=cazyme, genbanks=new_accession, primary=False)
-            session.add(relationship)
-            session.commit()
+            genbank_id = new_accession.genbank_id
+            caz_gen_query = session.(Cazymes_Genbanks).\
+                filter(Cazymes_Genbanks.cazyme_id == cazyme_id).\
+                filter(Cazymes_Genbanks.genbank_id == genbank_id).\
+                all()
+
+            if len(caz_gen_query) == 0:
+                relationship = Cazymes_Genbanks(
+                    cazymes=cazyme,
+                    genbanks=new_accession,
+                    primary=False,
+                )
+                session.add(relationship)
+                session.commit()
 
         elif len(genbank_query) == 1:
             # add GenBank record to current working CAZyme
-            relationship = Cazymes_Genbanks(
-                cazymes=cazyme,
-                genbanks=genbank_query[0],
-                primary=False,
-            )
-            session.add(relationship)
-            session.commit()
+            caz_gen_query = session.(Cazymes_Genbanks).\
+                filter(Cazymes_Genbanks.cazyme_id == cazyme_id).\
+                filter(Cazymes_Genbanks.genbank_id == genbank_query[0].genbank_id).\
+                all()
+
+            if len(caz_gen_query) == 0:
+                relationship = Cazymes_Genbanks(
+                    cazymes=cazyme,
+                    genbanks=genbank_query[0],
+                    primary=False,
+                )
+                session.add(relationship)
+                session.commit()
 
         else:
             logger.warning(
@@ -626,13 +645,19 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
                 f"Adding the accession entry with the ID {genbank_query[0].genbank_id} to the\n"
                 f"cazyme {cazyme.cazyme_name} id={cazyme.cazyme_id}"
             )
-            relationship = Cazymes_Genbanks(
-                cazymes=cazyme,
-                genbanks=genbank_query[0],
-                primary=False,
-            )
-            session.add(relationship)
-            session.commit()
+            caz_gen_query = session.(Cazymes_Genbanks).\
+                filter(Cazymes_Genbanks.cazyme_id == cazyme_id).\
+                filter(Cazymes_Genbanks.genbank_id == genbank_query[0].genbank_id).\
+                all()
+
+            if len(caz_gen_query) == 0:
+                relationship = Cazymes_Genbanks(
+                    cazymes=cazyme,
+                    genbanks=genbank_query[0],
+                    primary=False,
+                )
+                session.add(relationship)
+                session.commit()
 
     session.commit()
     return
