@@ -638,7 +638,7 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
 
         elif len(genbank_query) == 1:
             # add GenBank record to current working CAZyme
-            caz_gen_query = session.(Cazymes_Genbanks).\
+            caz_gen_query = session.query(Cazymes_Genbanks).\
                 filter(Cazymes_Genbanks.cazyme_id == cazyme_id).\
                 filter(Cazymes_Genbanks.genbank_id == genbank_query[0].genbank_id).\
                 all()
@@ -658,7 +658,7 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
                 f"Adding the accession entry with the ID {genbank_query[0].genbank_id} to the\n"
                 f"cazyme {cazyme.cazyme_name} id={cazyme.cazyme_id}"
             )
-            caz_gen_query = session.(Cazymes_Genbanks).\
+            caz_gen_query = session.query(Cazymes_Genbanks).\
                 filter(Cazymes_Genbanks.cazyme_id == cazyme_id).\
                 filter(Cazymes_Genbanks.genbank_id == genbank_query[0].genbank_id).\
                 all()
