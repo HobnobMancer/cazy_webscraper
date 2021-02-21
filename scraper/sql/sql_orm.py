@@ -411,6 +411,28 @@ class Pdb(Base):
         )
 
 
+class Log(Base):
+    """Record what data was added to the database and when."""
+    __tablename__ = "logs"
+
+    date = Column(String)  # date CAZy scrape was initiated
+    classes = Column(String)  # CAZy classes scraped
+    families = Column(String)  # CAZy families scraped
+    cmd_line = Column(String)  # command line arguments
+
+    def __str__(self):
+        return(
+            f"Log: date={self.date}, scraped classes={self.classes}, "
+            f"scraped families={self.families}, cmd line commands={self.cmd_line}"
+        )
+
+    def __repr__(self):
+        return(
+            f"Class Log: date={self.date}, scraped classes={self.classes}, "
+            f"scraped families={self.families}, cmd line commands={self.cmd_line}>"
+        )
+
+
 def build_db(time_stamp, args):
     """Build an empty SQL database and open a session.
 
