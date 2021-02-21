@@ -396,9 +396,6 @@ def add_new_protein_to_db(
     if len(pdb_accessions) != 0:
         add_pdb_accessions(pdb_accessions, new_cazyme, session)
 
-    # final commit to ensure all changes are commited
-    session.commit()
-
     return
 
 
@@ -453,9 +450,6 @@ def add_data_to_protein_record(
     # add PDB/3D accessions
     if len(pdb_accessions) != 0:
         add_pdb_accessions(pdb_accessions, cazyme, session)
-
-    # final commit to ensure all changes are commited
-    session.commit()
 
     return
 
@@ -540,9 +534,6 @@ def add_cazy_family(family, cazyme, session):
                 cazyme.families.append(nonsubfamily_asociated_family_entries[0])
             session.commit()
 
-    # final commit to ensure all changes are added to the db
-    session.commit()
-
     return
 
 
@@ -586,7 +577,6 @@ def add_cazy_subfamily(family, cazyme, session):
             cazyme.families.append(subfam_query[0])
         session.commit()
 
-    session.commit()
     return
 
 
@@ -672,7 +662,6 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
                 session.add(relationship)
                 session.commit()
 
-    session.commit()
     return
 
 
@@ -718,7 +707,6 @@ def add_ec_numbers(ec_numbers, cazyme, session):
                 cazyme.ecs.append(ec_query[0])
             session.commit()
 
-    session.commit()
     return
 
 
@@ -770,7 +758,6 @@ def add_uniprot_accessions(uniprot_accessions, cazyme, session):
                     cazyme.uniprots.append(uniprot_query[0])
                 session.commit()
 
-    session.commit()
     return
 
 
@@ -813,7 +800,6 @@ def add_primary_uniprot(accession, cazyme, session):
             cazyme.uniprots.append(uniprot_query[0])
         session.commit()
 
-    session.commit()
     return
 
 
@@ -865,7 +851,6 @@ def add_pdb_accessions(pdb_accessions, cazyme, session):
                     cazyme.pdbs.append(pdb_query[0])
                 session.commit()
 
-    session.commit()
     return
 
 
@@ -908,5 +893,4 @@ def add_primary_pdb(accession, cazyme, session):
             cazyme.pdbs.append(pdb_query[0])
         session.commit()
 
-    session.commit()
     return
