@@ -33,6 +33,7 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     String,
     Table,
+    UniqueConstraint,
     create_engine,
     event,
     exc,
@@ -312,6 +313,7 @@ class Cazymes_Genbanks(Base):
     by the GenBank accession because duplicate entries for CAZyme can be found within CAZy.
     """
     __tablename__ = "cazymes_genbanks"
+    __table_args__ = (UniqueConstraint("cazyme_id", "genbank_id")
 
     link_id = Column(Integer, primary_key=True)  # unique ID of the CAZyme-GenBank relationship
     cazyme_id = Column(Integer, ForeignKey("cazymes.cazyme_id"))
