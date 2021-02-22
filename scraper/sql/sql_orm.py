@@ -424,6 +424,9 @@ class Log(Base):
     time = Column(String)  # time scrape was initated
     classes = Column(String)  # CAZy classes scraped
     families = Column(String)  # CAZy families scraped
+    genera_filter = Column(String)
+    species_filter = Column(String)
+    strains_filter = Column(String)
     cmd_line = Column(String)  # command line arguments
 
     def __str__(self):
