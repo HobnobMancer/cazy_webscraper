@@ -368,44 +368,54 @@ def log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, session, args):
         families = str(families).replace("[", "").replace("]", "").replace("'", "")
         new_log.families = families
 
-    if len(taxonomy_filters["genera"]) != 0:
-        genera = str(taxonomy_filters["genera"]).replace("[", "").replace("]", "").replace("'", "")
-        new_log.genera = genera
+    try:
+        if len(taxonomy_filters["genera"]) != 0:
+            genera = str(taxonomy_filters["genera"]).replace("[", "").replace("]", "").replace("'", "")
+            new_log.genera = genera
+    except TypeError:
+        pass
 
-    if len(taxonomy_filters["species"]) != 0:
-        species = str(taxonomy_filters["species"])
-        species = species.replace("[", "").replace("]", "").replace("'", "")
-        new_log.species = species
+    try:
+        if len(taxonomy_filters["species"]) != 0:
+            species = str(taxonomy_filters["species"])
+            species = species.replace("[", "").replace("]", "").replace("'", "")
+            new_log.species = species
+    except TypeError:
+        pass
 
-    if len(taxonomy_filters["strains"]) != 0:
-        strains = str(taxonomy_filters["strains"])
-        strains = strains.replace("[", "").replace("]", "").replace("'", "")
-        new_log.strains = strains
+    try:
+        if len(taxonomy_filters["strains"]) != 0:
+            strains = str(taxonomy_filters["strains"])
+            strains = strains.replace("[", "").replace("]", "").replace("'", "")
+            new_log.strains = strains
+    except TypeError:
+        pass
 
     # retrieve commands from the command line
     cmd_line = ""
     try:
-        cmd_line = cmd_line + "--classes '" + args.classes + "'"
+        cmd_line = cmd_line + " --classes '" + args.classes + "'"
     except TypeError:
         pass
     try:
-        cmd_line = cmd_line + "--families '" + args.families + "'"
+        cmd_line = cmd_line + " --families '" + args.families + "'"
     except TypeError:
         pass
     try:
-        cmd_line = cmd_line + "--genera '" + args.genera + "'"
+        cmd_line = cmd_line + " --genera '" + args.genera + "'"
     except TypeError:
         pass
     try:
-        cmd_line = cmd_line + "--species '" + args.species + "'"
+        cmd_line = cmd_line + " --species '" + args.species + "'"
     except TypeError:
         pass
     try:
-        cmd_line = cmd_line + "--strains '" + args.strains + "'"
+        cmd_line = cmd_line + " --strains '" + args.strains + "'"
     except TypeError:
         pass
 
     if len(cmd_line) != 0:
+        cmd_line = cmd_line.strip()
         new_log.cmd_line = cmd_line
 
     session.add(new_log)
@@ -424,8 +434,11 @@ def get_filter_set(taxonomy_filters_dict):
     taxonomy_filters = []
 
     for key in taxonomy_filters_dict:
-        if len(taxonomy_filters_dict[key]) != 0:
-            taxonomy_filters += taxonomy_filters_dict[key]
+        try:
+            if len(taxonomy_filters_dict[key]) != 0:
+                taxonomy_filters += taxonomy_filters_dict[key]
+        except TypeError:
+            pass
 
     if len(taxonomy_filters) == 0:
         taxonomy_filters = None

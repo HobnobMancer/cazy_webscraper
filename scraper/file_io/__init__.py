@@ -182,13 +182,13 @@ def get_genera_species_strains(args):
                 pass
 
     if args.genera is not None:
-        taxonomy_filter["genera"] += args.genera
+        taxonomy_filter["genera"] += (args.genera).split(",")
 
     if args.species is not None:
-        taxonomy_filter["species"] += args.species
+        taxonomy_filter["species"] += (args.species).split(",")
 
     if args.strains is not None:
-        taxonomy_filter["strains"] += args.strains
+        taxonomy_filter["strains"] += (args.strains).split(",")
 
     else:
         taxonomy_filter = convert_lists_to_none(taxonomy_filter)
