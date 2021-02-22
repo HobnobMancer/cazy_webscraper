@@ -78,8 +78,8 @@ def parse_configuration(file_io_path, args):
     :param file_io_path: str, path to directory where file_io is installed
     :param args: parser arguments
 
-    Return list of classes not to scrape, dict of families to scrape, dict of class synonoms, and
-    a set of taxonomy filters (genera, species and strains) to restrict the scrape to.
+    Return list of classes not to scrape, dict of families to scrape, dict of class synonoms,
+    a dict of taxonomy filters (genera, species and strains) to restrict the scrape to.
     """
     # retrieve taxonomy filters
     taxonomy_filter = get_genera_species_strains(args)
@@ -160,7 +160,7 @@ def get_genera_species_strains(args):
     """
     logger = logging.getLogger(__name__)
 
-    taxonomy_filter = []
+    taxonomy_filter = {"genera": [], "species": [], "strains": []}
 
     # open config dict
     if args.config is not None:
@@ -177,23 +177,21 @@ def get_genera_species_strains(args):
         for key in ["genera", "species", "strain"]:
             try:
                 if raw_config_dict[key] is not None:
-                    taxonomy_filter += raw_config_dict[key]
+                    taxonomy_filter[key] = raw_config_dict[key]
             except KeyError:
                 pass
 
     if args.genera is not None:
-        taxonomy_filter += args.genera
+        taxonomy_filter["genera"] += args.genera
 
     if args.species is not None:
-        taxonomy_filter += args.species
+        taxonomy_filter["species"] += args.species
 
     if args.strains is not None:
-        taxonomy_filter += args.strains
+        taxonomy_filter["strains"] += args.strains
 
-    if len(taxonomy_filter) == 0:
-        taxonomy_filter = None
     else:
-        taxonomy_filter = set(taxonomy_filter)
+        taxonomy_filter = convert_lists_to_none(taxonomy_filter)
 
     return taxonomy_filter
 
