@@ -421,6 +421,7 @@ class Log(Base):
 
     log_id = Column(Integer, primary_key=True)
     date = Column(String)  # date CAZy scrape was initiated
+    time = Column(String)  # time scrape was initated
     classes = Column(String)  # CAZy classes scraped
     families = Column(String)  # CAZy families scraped
     cmd_line = Column(String)  # command line arguments

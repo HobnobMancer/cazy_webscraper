@@ -114,7 +114,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
 
     # log scraping of CAZy in local db
-    log_scrape_in_db(time_stamp, session, config_dict, args)
+    log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, session, args)
 
     logger.info(
         "Finished program preparation. Starting retrieval of data from CAZy"
@@ -332,36 +332,27 @@ def get_cazy_data(
     return
 
 
-def log_scrape_in_db(time_stamp, session, config_dict, args):
+def log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, session, args):
     """Add a log of scraping CAZy to the local database.
 
-    :param session: open SQL database session
+    :param time_stamp: str, date and time cazy_webscraper was invoked
     :param config_dict: dict of CAZy classes and families to be scraped
+    :param taxonomy_filters: dict of genera, species and strains to restrict the scrape to
+    :param session: open SQL database session
     :param args: cmd arguments
 
     Return nothing."""
     date = time_stamp[:time_stamp.find("--")]
     time = time_stamp[((time_stamp.find("--")) + 2):].replace("-", ":")
 
+    new_log = sql_orm.Log(date=date, time=time)
+
     # get classes that user named to be scraped
     classes = config_dict["classes"]
     if classes is not None:
-        classes = str(classes)
-        classes = classes.replace("[", "")
-        classes = classes.replace("]", "")
-        classes = classes.replace("'", "")
-
-    # retrieve commands from the command line
-    cmd_line = ""
-    try:
-        cmd_line = cmd_line + args.classes
-    except TypeError:
-        pass
-    try:
-        cmd_line = cmd_line + args.families
-    except TypeError:
-        pass
-
+        classes = str(classes).replace("[", "").replace("]", "").replace("'", "")
+        new_log.classes = classes
+    
     # create a list of families instructed to be scraped
     families = []
     for key in config_dict:
@@ -370,43 +361,49 @@ def log_scrape_in_db(time_stamp, session, config_dict, args):
         if config_dict[key] is not None:
             families.append(config_dict[key])
 
-    families = str(families)
-    families = families.replace("[", "")
-    families = families.replace("]", "")
-    families = families.replace("'", "")
+    if len(families) != 0:
+        families = str(families).replace("[", "").replace("]", "").replace("'", "")
+        new_log.families = families
 
-    # families, classes, cmd_line <-- for binary representation of if statement checks
-    if (len(families) == 0) and (classes is None) and (len(cmd_line) == 0):  # 0 0 0
-        scrape_log = sql_orm.Log(date=date, time=time)
+    if len(taxonomy_filters["genera"]) != 0:
+        genera = str(taxonomy_filters["genera"]).replace("[", "").replace("]", "").replace("'", "")
+        new_log.genera = genera
 
-    elif (len(families) != 0) and (classes is None) and (len(cmd_line) == 0):  # 1 0 0
-        scrape_log = sql_orm.Log(date=date, time=time, families=families)
+    if len(taxonomy_filters["species"]) != 0:
+        species = str(taxonomy_filters["species"]).replace("[", "").replace("]", "").replace("'", "")
+        new_log.species = species
 
-    elif (len(families) != 0) and (classes is not None) and (len(cmd_line) == 0):  # 1 1 0
-        scrape_log = sql_orm.Log(date=date, time=time, classes=classes, families=families)
+    if len(taxonomy_filters["strains"]) != 0:
+        strains = str(taxonomy_filters["strains"]).replace("[", "").replace("]", "").replace("'", "")
+        new_log.strains = strains
 
-    elif (len(families) != 0) and (classes is None) and (len(cmd_line) != 0):  # 1 0 1
-        scrape_log = sql_orm.Log(date=date, time=time, families=families, cmd_line=cmd_line)
+    # retrieve commands from the command line
+    cmd_line = ""
+    try:
+        cmd_line = cmd_line + "--classes '" + args.classes + "'"
+    except TypeError:
+        pass
+    try:
+        cmd_line = cmd_line + "--families '" + args.families + "'"
+    except TypeError:
+        pass
+    try:
+        cmd_line = cmd_line + "--genera '" + args.genera + "'"
+    except TypeError:
+        pass
+    try:
+        cmd_line = cmd_line + "--species '" + args.species + "'"
+    except TypeError:
+        pass
+    try:
+        cmd_line = cmd_line + "--strains '" + args.strains + "'"
+    except TypeError:
+        pass
 
-    elif (len(families) == 0) and (classes is not None) and (len(cmd_line) == 0):  # 0 1 0
-        scrape_log = sql_orm.Log(date=date, time=time, classes=classes)
+    if len(cmd_line) != 0:
+        new_log.cmd_line = cmd_line
 
-    elif (len(families) == 0) and (classes is not None) and (len(cmd_line) != 0):  # 0 1 1
-        scrape_log = sql_orm.Log(date=date, time=time, classes=classes, cmd_line=cmd_line)
-
-    elif (len(families) == 0) and (classes is None) and (len(cmd_line) != 0):  # 0 0 1
-        scrape_log = sql_orm.Log(date=date, time=time, cmd_line=cmd_line)
-
-    else:  # 1 1 1
-        scrape_log = sql_orm.Log(
-            date=date,
-            time=time,
-            classes=classes,
-            families=families,
-            cmd_line=cmd_line,
-        )
-
-    session.add(scrape_log)
+    session.add(new_log)
     session.commit()
 
     return
