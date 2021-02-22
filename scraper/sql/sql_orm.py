@@ -313,7 +313,7 @@ class Cazymes_Genbanks(Base):
     by the GenBank accession because duplicate entries for CAZyme can be found within CAZy.
     """
     __tablename__ = "cazymes_genbanks"
-    __table_args__ = (UniqueConstraint("cazyme_id", "genbank_id")
+    __table_args__ = (UniqueConstraint("cazyme_id", "genbank_id"))
 
     link_id = Column(Integer, primary_key=True)  # unique ID of the CAZyme-GenBank relationship
     cazyme_id = Column(Integer, ForeignKey("cazymes.cazyme_id"))
@@ -417,6 +417,7 @@ class Log(Base):
     """Record what data was added to the database and when."""
     __tablename__ = "logs"
 
+    log_id = Column(Integer, primary_key=True)
     date = Column(String)  # date CAZy scrape was initiated
     classes = Column(String)  # CAZy classes scraped
     families = Column(String)  # CAZy families scraped
