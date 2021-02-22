@@ -116,6 +116,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # log scraping of CAZy in local db
     log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, session, args)
 
+    # convert taxonomy_filters to a set for quicker identification of species to scrape
+    taxonomy_filters = get_filter_set(taxonomy_filters)
+
     logger.info(
         "Finished program preparation. Starting retrieval of data from CAZy"
     )
@@ -407,6 +410,28 @@ def log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, session, args):
     session.commit()
 
     return
+
+
+def get_filter_set(taxonomy_filters_dict):
+    """Create a set of all taxonomy filters from a dictionary.
+
+    :param taxonomy_filers: dict of taxonomy filters
+
+    Return a set.
+    """
+    taxonomy_filters = []
+
+    for key in taxonomy_filters_dict:
+        if len(taxonomy_filters_dict[key]) != 0:
+            taxonomy_filters += taxonomy_filters_dict[key]
+    
+    if len(taxonomy_filters) == 0:
+        taxonomy_filters = None
+    
+    else:
+        taxonomy_filters = set(taxonomy_filters)
+    
+    return taxonomy_filters
 
 
 if __name__ == "__main__":
