@@ -355,7 +355,7 @@ def log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, session, args):
     if classes is not None:
         classes = str(classes).replace("[", "").replace("]", "").replace("'", "")
         new_log.classes = classes
-    
+
     # create a list of families instructed to be scraped
     families = []
     for key in config_dict:
@@ -373,11 +373,13 @@ def log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, session, args):
         new_log.genera = genera
 
     if len(taxonomy_filters["species"]) != 0:
-        species = str(taxonomy_filters["species"]).replace("[", "").replace("]", "").replace("'", "")
+        species = str(taxonomy_filters["species"])
+        species = species.replace("[", "").replace("]", "").replace("'", "")
         new_log.species = species
 
     if len(taxonomy_filters["strains"]) != 0:
-        strains = str(taxonomy_filters["strains"]).replace("[", "").replace("]", "").replace("'", "")
+        strains = str(taxonomy_filters["strains"])
+        strains = strains.replace("[", "").replace("]", "").replace("'", "")
         new_log.strains = strains
 
     # retrieve commands from the command line
@@ -424,13 +426,13 @@ def get_filter_set(taxonomy_filters_dict):
     for key in taxonomy_filters_dict:
         if len(taxonomy_filters_dict[key]) != 0:
             taxonomy_filters += taxonomy_filters_dict[key]
-    
+
     if len(taxonomy_filters) == 0:
         taxonomy_filters = None
-    
+
     else:
         taxonomy_filters = set(taxonomy_filters)
-    
+
     return taxonomy_filters
 
 

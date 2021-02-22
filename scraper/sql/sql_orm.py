@@ -76,6 +76,7 @@ class ReString(String):
 class RegexMatchExpression(BinaryExpression):
     """Represents matching of a column againsts a regular expression."""
 
+
 @compiles(RegexMatchExpression, 'sqlite')
 def sqlite_regex_match(element, compiler, **kw):
     """Compile the SQL expression representing a regular expression match for the SQLite engine."""
@@ -96,6 +97,7 @@ def sqlite_regex_match(element, compiler, **kw):
     regex_func_call = regex_func(element.left, element.right)
     return compiler.process(regex_func_call)
 
+
 @event.listens_for(Engine, 'connect')
 def sqlite_engine_connect(dbapi_connection, connection_record):
     """Listener for the event of establishing connection to a SQLite database.
@@ -108,6 +110,7 @@ def sqlite_engine_connect(dbapi_connection, connection_record):
 
     for name, function in SQLITE_REGEX_FUNCTIONS.values():
         dbapi_connection.create_function(name, 2, function)
+
 
 # Mapping from the regular expression matching operators
 # to named Python functions that implement them for SQLite.
