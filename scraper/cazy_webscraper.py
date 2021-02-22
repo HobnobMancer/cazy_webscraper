@@ -398,7 +398,13 @@ def log_scrape_in_db(time_stamp, session, config_dict, args):
         scrape_log = sql_orm.Log(date=date, time=time, cmd_line=cmd_line)
 
     else:  # 1 1 1
-        scrape_log = sql_orm.Log(date=date, time=time, classes=classes, families=families, cmd_line=cmd_line)
+        scrape_log = sql_orm.Log(
+            date=date,
+            time=time,
+            classes=classes,
+            families=families,
+            cmd_line=cmd_line,
+        )
 
     session.add(scrape_log)
     session.commit()

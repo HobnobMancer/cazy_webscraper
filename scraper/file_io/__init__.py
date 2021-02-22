@@ -158,6 +158,8 @@ def get_genera_species_strains(args):
 
     Return set contain user specificed genera, species and strains.
     """
+    logger = logging.getLogger(__name__)
+
     taxonomy_filter = []
 
     # open config dict
@@ -171,28 +173,28 @@ def get_genera_species_strains(args):
                 "Terminating programme"
             )
             sys.exit(1)
-        
+
         for key in ["genera", "species", "strain"]:
             try:
                 if raw_config_dict[key] is not None:
                     taxonomy_filter += raw_config_dict[key]
             except KeyError:
                 pass
-    
+
     if args.genera is not None:
         taxonomy_filter += args.genera
-    
+
     if args.species is not None:
         taxonomy_filter += args.species
-    
+
     if args.strains is not None:
         taxonomy_filter += args.strains
-    
+
     if len(taxonomy_filter) == 0:
         taxonomy_filter = None
     else:
         taxonomy_filter = set(taxonomy_filter)
-    
+
     return taxonomy_filter
 
 
