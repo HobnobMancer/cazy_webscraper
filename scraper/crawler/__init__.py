@@ -323,7 +323,7 @@ def get_subfamily_links(family_h3_element, cazy_home):
         return urls
 
 
-def parse_family(family, cazy_home, max_tries, session):
+def parse_family(family, cazy_home, taxonomy_filters, max_tries, session):
     """Returns a Family object with Protein members, scraped from CAZy.
 
     Returns a Family object populated with Proteins and URLs of paginiation pages for which the
@@ -333,6 +333,9 @@ def parse_family(family, cazy_home, max_tries, session):
 
     :param family: Family class object, representation of CAZy family
     :param cazy_home: str, URL to CAZy home page
+    :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
+    :param max_tries: int, number of times to reattempt scrape if an error is raised
+    :param session: open SQL database session
 
     Return Family object, Boolean whether to scrape the family again, a list of URLs which couldn't
     connect to CAZy (and no have re-try attempts left) and list of proteins that could not be added
@@ -409,6 +412,7 @@ def parse_family(family, cazy_home, max_tries, session):
             parse_proteins(
                 url,
                 family.name,
+                taxonomy_filters,
                 session,
             ) for url in protein_page_urls
         ) for y in x),
@@ -498,7 +502,7 @@ def get_protein_page_urls(first_pagination_url, first_pagination_page, cazy_home
     return protein_page_urls, protein_total
 
 
-def parse_proteins(protein_page_url, family_name, session):
+def parse_proteins(protein_page_url, family_name, taxonomy_filters, session):
     """Returns generator of Protein objects for all protein rows on a single CAZy family page.
 
     Returns a dictionary containing any errors that arose. If it an attempt to connect to CAZy
@@ -507,6 +511,8 @@ def parse_proteins(protein_page_url, family_name, session):
 
     :param protein_page_url, str, URL to the CAZy family page containing protein records
     :param family_name: str, name of CAZy family
+    :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
+    :param session: open SQL database session
 
     Return generator object.
     """
@@ -535,10 +541,10 @@ def parse_proteins(protein_page_url, family_name, session):
     ]
 
     for row in protein_rows:
-        yield row_to_protein(row, family_name, session)
+        yield row_to_protein(row, family_name, taxonomy_filters, session)
 
 
-def row_to_protein(row, family_name, session):
+def row_to_protein(row, family_name, taxonomy_filters, session):
     """Returns a Protein object representing a single protein row from a CAZy family protein page.
 
     Each row, in order, contains the protein name, EC number, source organism, GenBank ID(s),
@@ -546,6 +552,7 @@ def row_to_protein(row, family_name, session):
 
     :param row: tr element from CAZy family protein page
     :param family_name: str, name of CAZy family
+    :param taxonomy_filters: set of genera, species and strains to restrict the search to
     :param session: open sqlalchemy database session
 
     Returns a dictionary to store and reflect any errors that may have occurred during the parsing
@@ -561,6 +568,11 @@ def row_to_protein(row, family_name, session):
     protein_name = tds[0].contents[0].strip()
 
     source_organism = tds[2].a.get_text()
+
+    if taxonomy_filters is not None:  # apply taxonomy filter
+        if any(filter in source_organism for filter in taxonomy_filters) is False:
+            # CAZyme does not match any taxonomy filters
+            return {"url": None, "error": None, "sql": None}
 
     ec_numbers = []
     all_links = None

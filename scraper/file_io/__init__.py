@@ -78,8 +78,12 @@ def parse_configuration(file_io_path, args):
     :param file_io_path: str, path to directory where file_io is installed
     :param args: parser arguments
 
-    Return list of classes not to scrape, dict of families to scrape, and dict of class synonoms.
+    Return list of classes not to scrape, dict of families to scrape, dict of class synonoms, and
+    a set of taxonomy filters (genera, species and strains) to restrict the scrape to.
     """
+    # retrieve taxonomy filters
+    taxonomy_filter = get_genera_species_strains(args)
+
     # Get dictionary of accepted CAZy class synonyms
     cazy_dict, std_class_names = get_cazy_dict_std_names(file_io_path)
 
@@ -108,7 +112,7 @@ def parse_configuration(file_io_path, args):
             # convert empty lists to None type objects
             config_dict = convert_lists_to_none(config_dict)
 
-            return excluded_classes, config_dict, cazy_dict
+            return excluded_classes, config_dict, cazy_dict, taxonomy_filter
 
         else:  # get cmd defined configuration
             cmd_config = get_cmd_defined_fams_classes(cazy_dict, std_class_names, args)
@@ -128,12 +132,12 @@ def parse_configuration(file_io_path, args):
             # convert empty lists to None type objects
             config_dict = convert_lists_to_none(config_dict)
 
-            return excluded_classes, config_dict, cazy_dict
+            return excluded_classes, config_dict, cazy_dict, taxonomy_filter
 
     else:  # user did not pass config file
         if (args.classes is None) and (args.families is None):
             # No specific families or classes specified for scraping
-            return None, None, cazy_dict
+            return None, None, cazy_dict, taxonomy_filter
 
         else:  # configuration specified only via the cmd_line
             config_dict = get_cmd_defined_fams_classes(cazy_dict, std_class_names, args)
@@ -144,7 +148,52 @@ def parse_configuration(file_io_path, args):
             # convert empty lists to None type objects
             config_dict = convert_lists_to_none(config_dict)
 
-            return excluded_classes, config_dict, cazy_dict
+            return excluded_classes, config_dict, cazy_dict, taxonomy_filter
+
+
+def get_genera_species_strains(args):
+    """Retrieve Genera, Species and Strains to retrict the scrape to.
+
+    :param args: cmd-line arguments parser
+
+    Return set contain user specificed genera, species and strains.
+    """
+    taxonomy_filter = []
+
+    # open config dict
+    if args.config is not None:
+        try:
+            with open(args.config, "r") as fh:
+                raw_config_dict = json.load(fh)
+        except FileNotFoundError:
+            logger.error(
+                "Did not find the configuration file. Check the path is correct.\n"
+                "Terminating programme"
+            )
+            sys.exit(1)
+        
+        for key in ["genera", "species", "strain"]:
+            try:
+                if raw_config_dict[key] is not None:
+                    taxonomy_filter += raw_config_dict[key]
+            except KeyError:
+                pass
+    
+    if args.genera is not None:
+        taxonomy_filter += args.genera
+    
+    if args.species is not None:
+        taxonomy_filter += args.species
+    
+    if args.strains is not None:
+        taxonomy_filter += args.strains
+    
+    if len(taxonomy_filter) == 0:
+        taxonomy_filter = None
+    else:
+        taxonomy_filter = set(taxonomy_filter)
+    
+    return taxonomy_filter
 
 
 def get_cazy_dict_std_names(file_io_path):
@@ -206,7 +255,7 @@ def get_yaml_configuration(config_dict, cazy_dict, std_class_names, args):
     )
 
     for key in yaml_config_dict:
-        if key != "classes":
+        if (key != "classes") and (key != "genera") and (key != "species") and (key != "strains"):
             if yaml_config_dict[key] is not None:
                 for item in yaml_config_dict[key]:
                     if item not in config_dict[key]:  # do not add duplicates

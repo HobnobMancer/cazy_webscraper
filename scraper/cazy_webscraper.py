@@ -108,13 +108,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # retrieve configuration data
     file_io_path = file_io.__file__
-    excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
+    excluded_classes, config_dict, cazy_dict, taxonomy_filters = file_io.parse_configuration(
         file_io_path,
         args,
     )
 
     # log scraping of CAZy in local db
-    log_scrape_in_db(session, config_dict, args)
+    log_scrape_in_db(time_stamp, session, config_dict, args)
 
     logger.info(
         "Finished program preparation. Starting retrieval of data from CAZy"
@@ -127,6 +127,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         excluded_classes,
         config_dict,
         cazy_dict,
+        taxonomy_filters,
         max_tries,
         time_stamp,
         session,
@@ -158,6 +159,7 @@ def get_cazy_data(
     excluded_classes,
     config_dict,
     cazy_dict,
+    taxonomy_filters,
     max_tries,
     time_stamp,
     session,
@@ -172,6 +174,7 @@ def get_cazy_data(
     :param excluded_classes: list, list of classes to not scrape from CAZy
     :param config_dict: dict, user defined configuration of the scraper
     :param cazy_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
+    :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
     :param max_tries: int, maximum number of times to scrape CAZy if errors are encountered
     :param time_stamp: str, data and time scrape was initiated
     :param session: session, open database session
@@ -247,6 +250,7 @@ def get_cazy_data(
                 family, retry_scrape, failed_fam_pages, family_sql_failures = crawler.parse_family(
                     family,
                     cazy_home,
+                    taxonomy_filters,
                     max_tries,
                     session,
                 )
@@ -291,6 +295,7 @@ def get_cazy_data(
                 family, retry_scrape, failed_fam_pages, family_sql_failures = crawler.parse_family(
                     family,
                     cazy_home,
+                    taxonomy_filters,
                     max_tries,
                     session,
                 )
@@ -327,7 +332,7 @@ def get_cazy_data(
     return
 
 
-def log_scrape_in_db(session, config_dict, args):
+def log_scrape_in_db(time_stamp, session, config_dict, args):
     """Add a log of scraping CAZy to the local database.
 
     :param session: open SQL database session
@@ -335,9 +340,16 @@ def log_scrape_in_db(session, config_dict, args):
     :param args: cmd arguments
 
     Return nothing."""
-    date = datetime.now().strftime("%Y-%m-%d")  # date scrape was initated
+    date = time_stamp[:time_stamp.find("--")]
+    time = time_stamp[((time_stamp.find("--")) + 2):].replace("-", ":")
 
+    # get classes that user named to be scraped
     classes = config_dict["classes"]
+    if classes is not None:
+        classes = str(classes)
+        classes = classes.replace("[", "")
+        classes = classes.replace("]", "")
+        classes = classes.replace("'", "")
 
     # retrieve commands from the command line
     cmd_line = ""
@@ -358,38 +370,35 @@ def log_scrape_in_db(session, config_dict, args):
         if config_dict[key] is not None:
             families.append(config_dict[key])
 
+    families = str(families)
+    families = families.replace("[", "")
+    families = families.replace("]", "")
+    families = families.replace("'", "")
+
     # families, classes, cmd_line <-- for binary representation of if statement checks
-    # 0 0 0
-    if (len(families) == 0) and (classes is None) and (len(cmd_line) == 0):
-        scrape_log = sql_orm.Log(date=date)
+    if (len(families) == 0) and (classes is None) and (len(cmd_line) == 0):  # 0 0 0
+        scrape_log = sql_orm.Log(date=date, time=time)
 
-    # 1 0 0
-    elif (len(families) != 0) and (classes is None) and (len(cmd_line) == 0):
-        scrape_log = sql_orm.Log(date=date, families=families)
+    elif (len(families) != 0) and (classes is None) and (len(cmd_line) == 0):  # 1 0 0
+        scrape_log = sql_orm.Log(date=date, time=time, families=families)
 
-    # 1 1 0
-    elif (len(families) != 0) and (classes is not None) and (len(cmd_line) == 0):
-        scrape_log = sql_orm.Log(date=date, classes=config_dict[classes], families=families)
+    elif (len(families) != 0) and (classes is not None) and (len(cmd_line) == 0):  # 1 1 0
+        scrape_log = sql_orm.Log(date=date, time=time, classes=classes, families=families)
 
-    # 1 0 1
-    elif (len(families) != 0) and (classes is None) and (len(cmd_line) != 0):
-        scrape_log = sql_orm.Log(date=date, families=families, cmd_line=cmd_line)
+    elif (len(families) != 0) and (classes is None) and (len(cmd_line) != 0):  # 1 0 1
+        scrape_log = sql_orm.Log(date=date, time=time, families=families, cmd_line=cmd_line)
 
-    # 0 1 0
-    elif (len(families) == 0) and (classes is not None) and (len(cmd_line) == 0):
-        scrape_log = sql_orm.Log(date=date, classes=config_dict[classes])
+    elif (len(families) == 0) and (classes is not None) and (len(cmd_line) == 0):  # 0 1 0
+        scrape_log = sql_orm.Log(date=date, time=time, classes=classes)
 
-    # 0 1 1
-    elif (len(families) == 0) and (classes is not None) and (len(cmd_line) != 0):
-        scrape_log = sql_orm.Log(date=date, classes=config_dict[classes], cmd_line=cmd_line)
+    elif (len(families) == 0) and (classes is not None) and (len(cmd_line) != 0):  # 0 1 1
+        scrape_log = sql_orm.Log(date=date, time=time, classes=classes, cmd_line=cmd_line)
 
-    # 0 0 1
-    elif (len(families) == 0) and (classes is None) and (len(cmd_line) != 0):
-        scrape_log = sql_orm.Log(date=date, cmd_line=cmd_line)
+    elif (len(families) == 0) and (classes is None) and (len(cmd_line) != 0):  # 0 0 1
+        scrape_log = sql_orm.Log(date=date, time=time, cmd_line=cmd_line)
 
-    # 1 1 1
-    else:
-        scrape_log = sql_orm.Log(date=date, classes=classes, families=families, cmd_line=cmd_line)
+    else:  # 1 1 1
+        scrape_log = sql_orm.Log(date=date, time=time, classes=classes, families=families, cmd_line=cmd_line)
 
     session.add(scrape_log)
     session.commit()
