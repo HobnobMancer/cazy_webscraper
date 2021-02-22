@@ -368,7 +368,9 @@ def add_new_protein_to_db(
         )
         session.add(relationship)
         session.commit()
-    except Exception:  # typically raised if CAZyme and GenBank accession are already linked
+    except Exception:
+        # typically Integrity Error
+        # raised if CAZyme and GenBank accession are already linked
         session.rollback()
 
     # add Family/Subfamily classifications
@@ -611,7 +613,9 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
                 )
                 session.add(relationship)
                 session.commit()
-            except Exception:  # typically raised if CAZyme and GenBank accession are already linked
+            except Exception:
+                # typically IntegrityError
+                # raised if CAZyme and GenBank accession are already linked
                 session.rollback()
 
         elif len(genbank_query) == 1:
@@ -624,7 +628,9 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
                 )
                 session.add(relationship)
                 session.commit()
-            except Exception:  # typically raised if CAZyme and GenBank accession are already linked
+            except Exception:
+                # Typically IntegrityError
+                # raised if CAZyme and GenBank accession are already linked
                 session.rollback()
 
         else:
@@ -641,7 +647,9 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
                 )
                 session.add(relationship)
                 session.commit()
-            except Exception:  # typically raised if CAZyme and GenBank accession are already linked
+            except Exception:
+                # Typically IntegrityError
+                # raised if CAZyme and GenBank accession are already linked
                 session.rollback()
 
     return
