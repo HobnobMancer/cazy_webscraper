@@ -360,12 +360,7 @@ def add_new_protein_to_db(
     session.commit()
 
     # establish relationship between the CAZyme and its primary GenBank accession
-    caz_gen_query = session.query(Cazymes_Genbanks).\
-        filter(Cazymes_Genbanks.cazyme_id == new_cazyme.cazyme_id).\
-        filter(Cazymes_Genbanks.genbank_id == new_primary_genbank.genbank_id).\
-        all()
-
-    if len(caz_gen_query) == 0:
+    try:
         relationship = Cazymes_Genbanks(
             cazymes=new_cazyme,
             genbanks=new_primary_genbank,
@@ -373,6 +368,8 @@ def add_new_protein_to_db(
         )
         session.add(relationship)
         session.commit()
+    except Exception:  # typically raised if CAZyme and GenBank accession are already linked
+        session.rollback()
 
     # add Family/Subfamily classifications
     if family.find("_") != -1:
@@ -591,14 +588,9 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
     :param cazyme: Cazymes class object
     :param session: open local database session connector
 
-    `caz_gen_query` is a query of the SQL database to check if the Cazyme and the
-    Genbank have not already been 
-
     Return nothing.
     """
     logger = logging.getLogger(__name__)
-
-    cazyme_id = cazyme.cazyme_id
 
     for accession in genbank_accessions:
         # check if accession is in the database already
@@ -606,34 +598,25 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
 
         if len(genbank_query) == 0:
             # add new genbank accession
-            new_accession = Genbank(genbank_accession=accession)
-            session.add(new_accession)
+            new_genbank = Genbank(genbank_accession=accession)
+            session.add(new_genbank)
             session.commit()
 
             # establish relationship between the CAZyme and its primary GenBank accession
-            genbank_id = new_accession.genbank_id
-            caz_gen_query = session.query(Cazymes_Genbanks).\
-                filter(Cazymes_Genbanks.cazyme_id == cazyme_id).\
-                filter(Cazymes_Genbanks.genbank_id == genbank_id).\
-                all()
-
-            if len(caz_gen_query) == 0:
+            try:
                 relationship = Cazymes_Genbanks(
                     cazymes=cazyme,
-                    genbanks=new_accession,
+                    genbanks=new_genbank,
                     primary=False,
                 )
                 session.add(relationship)
                 session.commit()
+            except Exception:  # typically raised if CAZyme and GenBank accession are already linked
+                session.rollback()
 
         elif len(genbank_query) == 1:
-            # add GenBank record to current working CAZyme
-            caz_gen_query = session.query(Cazymes_Genbanks).\
-                filter(Cazymes_Genbanks.cazyme_id == cazyme_id).\
-                filter(Cazymes_Genbanks.genbank_id == genbank_query[0].genbank_id).\
-                all()
-
-            if len(caz_gen_query) == 0:
+            # add existing GenBank record to current working CAZyme
+            try:
                 relationship = Cazymes_Genbanks(
                     cazymes=cazyme,
                     genbanks=genbank_query[0],
@@ -641,19 +624,16 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
                 )
                 session.add(relationship)
                 session.commit()
+            except Exception:  # typically raised if CAZyme and GenBank accession are already linked
+                session.rollback()
 
         else:
             logger.warning(
-                f"Duplicate entries for GenBank accession {accession}"
+                f"Duplicate entries for GenBank accession {accession} in the local database."
                 f"Adding the accession entry with the ID {genbank_query[0].genbank_id} to the\n"
                 f"cazyme {cazyme.cazyme_name} id={cazyme.cazyme_id}"
             )
-            caz_gen_query = session.query(Cazymes_Genbanks).\
-                filter(Cazymes_Genbanks.cazyme_id == cazyme_id).\
-                filter(Cazymes_Genbanks.genbank_id == genbank_query[0].genbank_id).\
-                all()
-
-            if len(caz_gen_query) == 0:
+            try:
                 relationship = Cazymes_Genbanks(
                     cazymes=cazyme,
                     genbanks=genbank_query[0],
@@ -661,6 +641,8 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
                 )
                 session.add(relationship)
                 session.commit()
+            except Exception:  # typically raised if CAZyme and GenBank accession are already linked
+                session.rollback()
 
     return
 
