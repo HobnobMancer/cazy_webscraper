@@ -75,22 +75,20 @@ def build_parser(argv: Optional[List] = None):
         help="Force file over writting",
     )
 
+    # Add option to restrict scrape to specific genera
+    parser.add_argument(
+        "--genera",
+        type=str,
+        default=None,
+        help="Genera to restrict the scrape to"
+    )
+
     # Add option to specify families to scrape
     parser.add_argument(
         "--families",
         type=str,
         default=None,
         help="Families to scrape. Separate families by commas 'GH1,GH2'"
-    )
-
-    # Add option to download FASTA file for protein from GenBank
-    parser.add_argument(
-        "-g",
-        "--genbank",
-        type=str,
-        metavar="Email address of user",
-        default=None,
-        help="Enable FASTA files from GenBank, and user email required for Entrez",
     )
 
     # Add log file name option
@@ -125,34 +123,6 @@ def build_parser(argv: Optional[List] = None):
         help="Output filename",
     )
 
-    # Add option to specify ouput directory for writing out fasta files from GenBank to
-    parser.add_argument(
-        "-genbank_output",
-        type=Path,
-        metavar="output file name",
-        default=sys.stdout,
-        help="Output filename",
-    )
-
-    # Add option to specift output directory for writing out PDB structure files to
-    parser.add_argument(
-        "-pdb_output",
-        type=Path,
-        metavar="output file name",
-        default=None,
-        help="Output filename",
-    )
-
-    # Add option to download FASTA file for protein from GenBank
-    parser.add_argument(
-        "-p",
-        "--pdb",
-        choices=[None, "mmCif", "pdb", "xml", "mmtf", "bundle"],
-        type=str,
-        default=None,
-        help="Enable downloading of protein structures in XXXX format from PDB",
-    )
-
     # Add option to enable number of times to retry scraping
     parser.add_argument(
         "-r",
@@ -170,6 +140,26 @@ def build_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help="Enable retrieval of subfamilies from CAZy",
+    )
+
+    # Add option to restrict the scrape to specific species. This will scrape CAZymes from
+    # all strains belonging to each listed species
+    parser.add_argument(
+        "--species",
+        type=str,
+        default=None,
+        help="Species (written as Genus Species) to restrict the scrape to"
+    )
+
+    # Add option to restrict scraping to specific strains of organisms
+    parser.add_argument(
+        "--strains",
+        type=str,
+        default=None,
+        help=(
+            "Specific strains of organisms to restrict the scrape to "
+            "(written as Genus Species Strain)"
+        ),
     )
 
     # Add option for more detail (verbose) logging
@@ -281,7 +271,6 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
 
     # Add option to specify families to retrieve protein sequences for
     parser.add_argument(
-        "-f",
         "--families",
         type=str,
         default=None,
@@ -449,19 +438,7 @@ def build_pdb_structures_parser(argv: Optional[List] = None):
         dest="primary",
         action="store_true",
         default=False,
-        help="Enable retrieveing protein sequences for only primary GenBank accessions",
-    )
-
-    # Add option to update sequences if the retrieved sequence is different
-    # If not enabled then sequences will only be retrieved and added for proteins that do not
-    # already have a protein sequence
-    parser.add_argument(
-        "-u",
-        "--update",
-        dest="update",
-        action="store_true",
-        default=False,
-        help="Enable overwriting sequences in the database if the retrieved sequence is different",
+        help="Enable retrieveing protein structures for only primary GenBank accessions",
     )
 
     # Add option for more detail (verbose) logging
