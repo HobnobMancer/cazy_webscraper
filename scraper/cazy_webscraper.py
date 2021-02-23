@@ -352,10 +352,13 @@ def log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, session, args):
 
     if config_dict is not None:
         # get classes that user named to be scraped
-        classes = config_dict["classes"]
-        if classes is not None:
-            classes = str(classes).replace("[", "").replace("]", "").replace("'", "")
-            new_log.classes = classes
+        try:
+            classes = config_dict["classes"]
+            if classes is not None:
+                classes = str(classes).replace("[", "").replace("]", "").replace("'", "")
+                new_log.classes = classes
+        except KeyError:
+            pass
 
         # create a list of families instructed to be scraped
         families = []
