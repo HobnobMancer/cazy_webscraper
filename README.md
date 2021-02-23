@@ -155,28 +155,31 @@ The `expand` module in `cazy_webscraper` manages the retrieval of CAZyme protein
 The `expand` module is invoked to act upon a local CAZy database, not invoked while scraping CAZy.
 
 **Protein Sequences**
-`genbank_sequences.py` retrieves protein sequences of CAZymes from GenBank.
+`get_genbank_sequences.py` retrieves protein sequences of CAZymes from GenBank.
 
 To invoke the script use the following command:  
-`python3 <path to genbank_sequences.py> <path to local CAZy database> <user email address>`  
+`python3 <path to get_genbank_sequences.py> <path to local CAZy database> <user email address>`  
 A user email address is not stored by `cazy_webscraper`, it is a requirement of NCBI to use the Entrez server for automating the retrieval of protein sequences from GenBank. For more information about Entrez and NCBI please refer to their documentation...
 
-Optional arguments are:
+Optional arguments are: _The format to pass arguments to the script is the same format use to pass the same argument to `cazy_webscraper`_
 - `c` `--config` Define path to a configuration yaml file to define CAZy classes and/or families to retrieve the protein sequences for
 - `--classes` Define CAZy classes to retrieve protein sequences for
 - `-e` `--epost` (Interget) Define the number of accessions to post to NCBI in each batch call. Default is 150. Adviced maximum is 200.
 - `--families` Define CAZy families to retrieve protein sequences for
+- `--genera` Genera of species to retrieve sequences for
 - `l` `--log` Path to write out a log file to
 - `p` `--primary` Default False. If enabled only retrieve protein sequences for **primary** GenBank accessions
+- `--species` Species to retrieve sequences for
+- `--strains` Specific species strains to retrieve sequences for
 - `u` `--update` Default False. Enables overwriting sequences in the database only if the sequence in GenBank has been updated since the sequence was added to the local database. It still retrieves protein sequences for proteins that do not have a sequence stored in the local database.
 - `w` `--write` Write out the protein sequences to FASTA file, one protein per FASTA file
 - `v` `--verbose` Default False. Enables verbose logging, changing the logger level from `WARNING` to `INFO`.
 
 **Protein Structures**
-`pdb_structures.py` retrieves protein structure files from PDB. The downloading of the structure files is handled by the `BioPython` `PDB` module, further information on the module can be found [here](https://biopython.org/docs/1.75/api/Bio.PDB.html).
+`get_pdb_structures.py` retrieves protein structure files from PDB. The downloading of the structure files is handled by the `BioPython` `PDB` module, further information on the module can be found [here](https://biopython.org/docs/1.75/api/Bio.PDB.html).
 
 to invoke the script, use the following command:  
-`python3 <path to pdb_structures.py> <path to local CAZy database> <file format of downloaded files>`  
+`python3 <path to get_pdb_structures.py> <path to local CAZy database> <file format of downloaded files>`  
 The file formats and descriptions are taken straight from the `BioPython` documentation [found here](https://biopython.org/docs/1.75/api/Bio.PDB.PDBList.html?highlight=pdblist#Bio.PDB.PDBList.PDBList.retrieve_pdb_file).
 - "mmCif" (default, PDBx/mmCif file),
 - "pdb" (format PDB),
@@ -184,15 +187,20 @@ The file formats and descriptions are taken straight from the `BioPython` docume
 - "mmtf" (highly compressed),
 - "bundle" (PDB formatted archive for large structure}
 
-Optional arguments:
+Optional arguments: _The format to pass arguments to the script is the same format use to pass the same argument to `cazy_webscraper`_
 - `c` `--config` Define path to a configuration yaml file to define CAZy classes and/or families to retrieve the protein sequences for
 - `--classes` Define CAZy classes to retrieve protein structures for
 - `--families` Define CAZy families to retrieve protein structures for
+- `--genera` Genera of species to retrieve sequences for
 - `f` `--force` Force writing to directory that already exists
 - `l` `--log` Path to write out a log file to
 - `n` `--nodelete` Default False. If enables it stops content in the existing output directory being deleted, else the contents in the existing output directory are deleted first before proceeding
 - `o` `--outdir` Default is the current working directory. Define path to output directory. If the output directory does not exist the program will create it.
 - `p` `--primary` Default False. If enabled only retrieve protein structures for **primary** GenBank accessions
+- `--species` Species to retrieve sequences for
+- `--strains` Specific species strains to retrieve sequences for
+- `v` `--verbose` Default False. Enables verbose logging, changing the logger level from `WARNING` to `INFO`.
+
 
 ## Directories
 
