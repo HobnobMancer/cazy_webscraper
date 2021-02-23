@@ -465,6 +465,7 @@ def test_parse_family_incorrect_url():
     crawler.parse_family(
         test_fam,
         "http://www.cazy.org/",
+        None,
         1,
         "sessions",
     )
@@ -487,6 +488,7 @@ def test_parse_family_no_page(monkeypatch):
     crawler.parse_family(
         test_fam,
         "http://www.cazy.org/",
+        None,
         1,
         "sessions",
     )
@@ -509,6 +511,7 @@ def test_parse_family_no_page_urls(monkeypatch):
     crawler.parse_family(
         test_fam,
         "http://www.cazy.org",
+        None,
         2,
         "session",
     )
@@ -538,6 +541,7 @@ def test_parse_family_success(protein_gen, monkeypatch):
     crawler.parse_family(
         test_family,
         "http://www.cazy.org/GH1.html",
+        None,
         2,
         "session",
     )
@@ -567,6 +571,7 @@ def test_parse_family_sql_url_errors(protein_gen, monkeypatch):
     crawler.parse_family(
         test_family,
         "http://www.cazy.org/GH1.html",
+        None,
         2,
         "session",
     )
@@ -610,7 +615,7 @@ def test_parse_proteins_none(monkeypatch):
 
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
 
-    crawler.parse_proteins("protein_page_url", "GH1", "session")
+    crawler.parse_proteins("protein_page_url", "GH1", None, "session")
 
 
 def test_parse_proteins(gh147_page, monkeypatch):
@@ -623,7 +628,7 @@ def test_parse_proteins(gh147_page, monkeypatch):
 
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
 
-    crawler.parse_proteins("protein_url", "family", "session")
+    crawler.parse_proteins("protein_url", "family", None, "session")
 
 
 # test row_to_protein()
@@ -639,7 +644,7 @@ def test_row_to_protein_no_ecs(protein_without_ec, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", "session")
+    crawler.row_to_protein(row, "GH147", set(["Bacteroides caccae"]),"session")
 
 
 def test_row_to_protein_ec(protein_with_ec, monkeypatch):
@@ -652,7 +657,7 @@ def test_row_to_protein_ec(protein_with_ec, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", "session")
+    crawler.row_to_protein(row, "GH147", set(["Bacteroides"]),"session")
 
 
 def test_row_to_protein_gb_synoymns(protein_with_gb_synonyms, monkeypatch):
@@ -665,7 +670,7 @@ def test_row_to_protein_gb_synoymns(protein_with_gb_synonyms, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", "session")
+    crawler.row_to_protein(row, "GH147", None, "session")
 
 
 def test_row_to_protein_no_gb(protein_with_no_gb, monkeypatch):
@@ -678,7 +683,7 @@ def test_row_to_protein_no_gb(protein_with_no_gb, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", "session")
+    crawler.row_to_protein(row, "GH147", None, "session")
 
 
 def test_row_to_protein_no_gb_sql_error(protein_with_no_gb, monkeypatch):
@@ -691,7 +696,7 @@ def test_row_to_protein_no_gb_sql_error(protein_with_no_gb, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", "session")
+    crawler.row_to_protein(row, "GH147", None, "session")
 
 
 def test_row_to_protein_no_uniprot_no_pdb(protein_with_no_uniprot_no_pdb, monkeypatch):
@@ -717,7 +722,7 @@ def test_row_to_protein_no_uniprot_no_pdb_sql_error(protein_with_no_uniprot_no_p
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", "session")
+    crawler.row_to_protein(row, "GH147", None, "session")
 
 
 def test_row_to_protein_gb_synoymns_raise_error(protein_with_gb_synonyms, monkeypatch):
@@ -730,7 +735,7 @@ def test_row_to_protein_gb_synoymns_raise_error(protein_with_gb_synonyms, monkey
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", "session")
+    crawler.row_to_protein(row, "GH147", None, "session")
 
 
 # browser decorator and get_page
