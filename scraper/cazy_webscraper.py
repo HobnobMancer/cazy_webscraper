@@ -350,23 +350,24 @@ def log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, session, args):
 
     new_log = sql_orm.Log(date=date, time=time)
 
-    # get classes that user named to be scraped
-    classes = config_dict["classes"]
-    if classes is not None:
-        classes = str(classes).replace("[", "").replace("]", "").replace("'", "")
-        new_log.classes = classes
+    if config_dict is not None:
+        # get classes that user named to be scraped
+        classes = config_dict["classes"]
+        if classes is not None:
+            classes = str(classes).replace("[", "").replace("]", "").replace("'", "")
+            new_log.classes = classes
 
-    # create a list of families instructed to be scraped
-    families = []
-    for key in config_dict:
-        if key == "classes":
-            continue
-        if config_dict[key] is not None:
-            families.append(config_dict[key])
+        # create a list of families instructed to be scraped
+        families = []
+        for key in config_dict:
+            if key == "classes":
+                continue
+            if config_dict[key] is not None:
+                families.append(config_dict[key])
 
-    if len(families) != 0:
-        families = str(families).replace("[", "").replace("]", "").replace("'", "")
-        new_log.families = families
+        if len(families) != 0:
+            families = str(families).replace("[", "").replace("]", "").replace("'", "")
+            new_log.families = families
 
     try:
         if len(taxonomy_filters["genera"]) != 0:
