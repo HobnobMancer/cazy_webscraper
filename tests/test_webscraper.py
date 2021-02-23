@@ -152,7 +152,7 @@ def test_main_existing_database(output_dir, null_logger, cazy_dictionary, db_pat
         return
 
     def mock_retrieving_configuration(*args, **kwargs):
-        return None, None, cazy_dictionary
+        return None, None, cazy_dictionary, None
 
     def mock_retrieving_cazy_data(*args, **kwargs):
         return
@@ -198,8 +198,8 @@ def test_main_new_database(output_dir, null_logger, cazy_dictionary, db_path, mo
         return
 
     def mock_retrieving_configuration(*args, **kwargs):
-        return None, None, cazy_dictionary
-    
+        return None, None, cazy_dictionary, None
+
     def mock_getting_db_session(*args, **kwargs):
         return "session"
 
@@ -354,6 +354,7 @@ def test_get_cazy_data_no_fam_urls(
         None,
         config_dict,
         cazy_dictionary,
+        None,
         2,
         time_stamp,
         "session",
@@ -392,6 +393,7 @@ def test_get_cazy_data_no_config_dict(
         None,
         None,
         cazy_dictionary,
+        None,
         2,
         time_stamp,
         "session",
@@ -435,6 +437,7 @@ def test_get_cazy_data_with_config_dict(
         None,
         config_dict,
         cazy_dictionary,
+        None,
         2,
         time_stamp,
         "session",
@@ -474,6 +477,7 @@ def test_get_cazy_data_witha_config_dict_subfam(
         None,
         config_dict,
         cazy_dictionary,
+        None,
         2,
         time_stamp,
         "session",
