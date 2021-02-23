@@ -26,6 +26,7 @@ import shutil
 import sys
 import yaml
 
+from Bio import SeqIO
 from pathlib import Path
 
 
@@ -502,5 +503,57 @@ def write_out_failed_proteins(sql_failures, time_stamp, args):
         logger.error("The following proteins were not entered into database:")
         for fail in sql_failures:
             logger.error(fail)
+
+    return
+
+
+def get_configuration(file_io_path, args):
+    """Get configuration for the Expand module.
+
+    :param file_io_path: Path to file_io module
+    :param args: cmd-line argument parser
+
+    Return configuration dictionary and set of taxonomy filters.
+    """
+    # retrieve inital parsing of configuration data
+    excluded_classes, config_dict, cazy_dict, taxonomy_filters_dict = parse_configuration(
+        file_io_path,
+        args,
+    )
+
+    # excluded_classes and cazy_dict are used in the crawler module but are not needed for the
+    # the expand module
+    taxonomy_filters = []
+
+    for key in taxonomy_filters_dict:
+        try:
+            if len(taxonomy_filters_dict[key]) != 0:
+                taxonomy_filters += taxonomy_filters_dict[key]
+        except (TypeError, KeyError) as e:
+            pass
+
+    if len(taxonomy_filters) == 0:
+        taxonomy_filters = None
+
+    else:
+        taxonomy_filters = set(taxonomy_filters)
+
+    return config_dict, taxonomy_filters
+
+
+def write_out_fasta(record, genbank_accession, args):
+    """Write out GenBank protein record to a FASTA file.
+
+    :param record: SeqIO parsed record
+    :param genbank_accession: str, accession number of the protein sequence in NCBI.GenBank
+    :param args: cmd-line arguments parser
+
+    Return nothing.
+    """
+    fasta_name = f"{genbank_accession}.fasta"
+    fasta_name = args.write / fasta_name
+
+    with open(fasta_name, "w") as fh:
+        SeqIO.write(record, fh, "fasta")
 
     return

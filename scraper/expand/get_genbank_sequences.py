@@ -38,6 +38,7 @@ from scraper.sql.sql_orm import (
     CazyFamily,
     Cazymes_Genbanks,
     Genbank,
+    Taxonomy,
     get_db_session,
 )
 from scraper.utilities import config_logger, build_genbank_sequences_parser
@@ -71,35 +72,37 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # create session to local database
     session = get_db_session(args)
 
-    # check if any classes or families were specified to retrieve the sequences only for them
-    if (args.classes is None) and (args.families is None) and (args.config is None):
-        config_dict = None
-
-    else:
-        # create dictionary of CAZy classes/families to retrieve sequences for
-        file_io_path = file_io.__file__
-        excluded_classes, config_dict, cazy_dict = file_io.parse_configuration(
-            file_io_path,
-            args,
-        )
-        # excluded_classes and cazy_dict are not needed, but required when the func is 
-        # called in cazy_webscraper.py
+    # retrieve configuration data
+    file_io_path = file_io.__file__
+    config_dict, taxonomy_filters = file_io.get_configuration(file_io_path, args)
 
     if config_dict is None:
         if args.update:
             # get sequence for everything without a sequence and those with newer remote sequence
-            add_and_update_all_sequences(date_today, session, args)
+            add_and_update_all_sequences(date_today, taxonomy_filters, session, args)
 
         else:
             # get sequences for everything without a sequence
-            get_missing_sequences_for_everything(date_today, session, args)
+            get_missing_sequences_for_everything(date_today, taxonomy_filters, session, args)
 
     else:
         # get sequences for only specified classes/families
         if args.update:
-            update_sequences_for_specific_records(date_today, config_dict, session, args)
+            update_sequences_for_specific_records(
+                date_today,
+                config_dict,
+                taxonomy_filters,
+                session,
+                args,
+            )
         else:
-            get_missing_sequences_for_specific_records(date_today, config_dict, session, args)
+            get_missing_sequences_for_specific_records(
+                date_today,
+                config_dict,
+                taxonomy_filters,
+                session,
+                args,
+            )
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
     end_time = pd.to_datetime(start_time)
@@ -128,10 +131,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 # The folowing functions are for querying the local database to get GenBank accessions
 
 
-def get_missing_sequences_for_everything(date_today, session, args):
+def get_missing_sequences_for_everything(date_today, taxonomy_filters, session, args):
     """Retrieve protein sequences for all CAZymes in the local CAZy database that don't have seq.
 
     :param date_today: str, today's date, used for logging the date the seq is retrieved in the db
+    :param taxonomy_filters: set of genera, species and strains to restrict sequence retrieval
     :param session: open SQLite db session
     :param args: cmd-line argument parser
 
@@ -144,24 +148,24 @@ def get_missing_sequences_for_everything(date_today, session, args):
         logger.warning(
             "Retrieving sequences for all primary GenBank accessions that do not have sequences"
         )
-        genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks).\
+        genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks, Taxonomy).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             filter(Cazymes_Genbanks.primary == True).\
             filter(Genbank.sequence == None).\
             all()
 
-    # retrieve sequences for all GenBank accessions
+    # retrieve sequences for all GenBank accessions without sequences
     else:
         logger.warning(
             "Retrieving sequences for all GenBank accessions that do not have sequences"
         )
-        genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks).\
+        genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks, Taxonomy).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             filter(Genbank.sequence == None).\
             all()
 
     # retrieve the genbank_accessions
-    accessions = extract_accessions(genbank_query)
+    accessions = extract_accessions(genbank_query, taxonomy_filters)
 
     if len(accessions) == 0:
         logger.warning(
@@ -177,7 +181,7 @@ def get_missing_sequences_for_everything(date_today, session, args):
     return
 
 
-def add_and_update_all_sequences(date_today, session, args):
+def add_and_update_all_sequences(date_today, taxonomy_filters, session, args):
     """Retrieve sequences for all proteins in the database.
 
     For records with no sequences, add the retrieved sequence.
@@ -185,6 +189,7 @@ def add_and_update_all_sequences(date_today, session, args):
     sequence. It it is, update the local sequence.
 
     :param date_today: str, today's date, used for logging the date the seq is retrieved in the db
+    :param taxonomy_filters: set of genera, species and strains to retrieve sequences for
     :param session: open SQLite db session
     :param args: cmd-line argument parser
 
@@ -199,7 +204,7 @@ def add_and_update_all_sequences(date_today, session, args):
             "and those whose sequences have been updated in NCBI "
             "since they were retrieved previously"
         )
-        genbank_query = session.query(Genbank, Cazymes_Genbanks).\
+        genbank_query = session.query(Genbank, Cazymes_Genbanks, Taxonomy).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             filter(Cazymes_Genbanks.primary == True).\
             all()
@@ -211,14 +216,14 @@ def add_and_update_all_sequences(date_today, session, args):
             "and those whose sequences have been updated in NCBI "
             "since they were retrieved previously"
         )
-        genbank_query = session.query(Genbank, Cazymes_Genbanks).\
+        genbank_query = session.query(Genbank, Cazymes_Genbanks, Taxonomy).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             all()
 
-    # create dictionary of genbank_accession: 'sequence update date' (str)
-    accessions = extract_accessions_and_dates(genbank_query)  # dictionary {accession:update_date}
+    # create dictionary of {genbank_accession: 'sequence update date' (str)}
+    accessions = extract_accessions_and_dates(genbank_query, taxonomy_filters)
 
-    if len(accessions) == 0:
+    if len(accessions.keys()) == 0:
         logger.warning(
             "Did not retrieve any GenBank accessions from the local database.\n"
             "Not adding sequences to the local database."
@@ -241,11 +246,18 @@ def add_and_update_all_sequences(date_today, session, args):
     return
 
 
-def get_missing_sequences_for_specific_records(date_today, config_dict, session, args):
+def get_missing_sequences_for_specific_records(
+    date_today,
+    config_dict,
+    taxonomy_filters,
+    session,
+    args,
+):
     """Coordinate getting the sequences for specific CAZymes, not with seqs in the db.
 
     :param date_today: str, today's date, used for logging the date the seq is retrieved in the db
     :param config_dict: dict, defines CAZy classes and families to get sequences for
+    :param taxonomy_filters: set of genera, species and strains to restrict sequence retrieval
     :param session: open SQL database session
     :param args: cmd-line args parser
 
@@ -273,7 +285,7 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
 
             # retrieve the GenBank accessions of the CAZymes in the CAZy class without seqs
             if args.primary:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
@@ -281,7 +293,7 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
                     filter(Genbank.sequence == None).\
                     all()
             else:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
@@ -289,7 +301,7 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
                     all()
 
             # retrieve the genbank_accessions from the sql collection object returned by the query
-            accessions = extract_accessions(genbank_query)
+            accessions = extract_accessions(genbank_query, taxonomy_filters)
 
             if len(accessions) == 0:
                 logger.warning(
@@ -329,7 +341,7 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
 
             # get the GenBank accessions of thes CAZymes, without sequences
             if args.primary:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(family_subquery)).\
@@ -337,7 +349,7 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
                     filter(Genbank.sequence == None).\
                     all()
             else:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(family_subquery)).\
@@ -345,7 +357,7 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
                     all()
 
             # retrieve a list of GenBank accessions from the sql collection returned from the query
-            accessions = extract_accessions(genbank_query)
+            accessions = extract_accessions(genbank_query, taxonomy_filters)
 
             if len(accessions) == 0:
                 logger.warning(
@@ -362,7 +374,7 @@ def get_missing_sequences_for_specific_records(date_today, config_dict, session,
     return
 
 
-def update_sequences_for_specific_records(date_today, config_dict, session, args):
+def update_sequences_for_specific_records(date_today, config_dict, taxonomy_filters, session, args):
     """Coordinate getting the sequences for specific CAZymes, not with seqs in the db nad those
     whose seq in NCBI has been updated since the last retrieval.
 
@@ -372,6 +384,7 @@ def update_sequences_for_specific_records(date_today, config_dict, session, args
 
     :param date_today: str, today's date, used for logging the date the seq is retrieved in the db
     :param config_dict: dict, defines CAZy classes and families to get sequences for
+    :param taxonomy_filters: set of genera, species and strains to restrict sequence retrieval
     :param session: open SQL database session
     :param args: cmd-line args parser
 
@@ -400,23 +413,23 @@ def update_sequences_for_specific_records(date_today, config_dict, session, args
 
             # retrieve the GenBank accessions of the CAZymes in the CAZy class without seqs
             if args.primary:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
                     filter(Cazymes_Genbanks.primary == True).\
                     all()
             else:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
                     all()
 
             # create dictionary of genbank_accession: 'sequence update date' (str)
-            accessions = extract_accessions_and_dates(genbank_query)  # dict {accession:update_date}
+            accessions = extract_accessions_and_dates(genbank_query, taxonomy_filters)
 
-            if len(accessions) == 0:
+            if len(accessions.keys()) == 0:
                 logger.warning(
                     f"Did not retrieve any GenBank accessions for the CAZy class {cazy_class}.\n"
                     "Not adding sequences to the local database."
@@ -462,7 +475,7 @@ def update_sequences_for_specific_records(date_today, config_dict, session, args
 
             # get the GenBank accessions of thes CAZymes, without sequences
             if args.primary:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(family_subquery)).\
@@ -470,17 +483,17 @@ def update_sequences_for_specific_records(date_today, config_dict, session, args
                     filter(Genbank.sequence == None).\
                     all()
             else:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
                     join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(family_subquery)).\
                     filter(Genbank.sequence == None).\
                     all()
 
-            # create dictionary of genbank_accession: 'sequence update date' (str)
-            accessions = extract_accessions_and_dates(genbank_query)  # dictionary {accession:date}
+            # create dictionary of {genbank_accession: 'sequence update date' (str)}
+            accessions = extract_accessions_and_dates(genbank_query, taxonomy_filters)
 
-            if len(accessions) == 0:
+            if len(accessions.keys()) == 0:
                 logger.warning(
                     f"Did not retrieve any GenBank accessions for the CAZy class {family}.\n"
                     "Not adding sequences to the local database."
@@ -508,29 +521,51 @@ def update_sequences_for_specific_records(date_today, config_dict, session, args
 # The following functions are retrieving the list of Genbank accessions to retrieve sequences for #
 
 
-def extract_accessions(genbank_query):
+def extract_accessions(genbank_query, taxonomy_filters):
     """The query contains GenBank accessions and Cazymes_Genbanks records, retrieve the accessions.
 
     :param genbank_query: sql collection
+    :param taxonomy_filters: set of genera, species and strains to restrict retrieval of sequences
 
     Return a list of GenBank accessions. Each element is a string of a unique accession.
     """
-    accessions = [item[0] for item in genbank_query]
-    return [x for x in accessions if "NA" != x]  # remove where no GenBank accession listed in CAZy
+    if taxonomy_filters is None:
+        accessions = [item[0] for item in genbank_query]
+        return [x for x in accessions if "NA" != x]
+
+    else:
+        accessions = []
+        for item in genbank_query:
+            if item[0] != "NA":  # if GenBank accession not stored as 'NA'
+                source_organism = item[-1].genus + item[-1].species
+                if any(filter in source_organism for filter in taxonomy_filters):
+                    accessions.append(item[0])
+    return accessions
 
 
-def extract_accessions_and_dates(genbank_query):
+def extract_accessions_and_dates(genbank_query, taxonomy_filters):
     """Retrieve the GenBank accessions and retrieval dates of existing sequences from the db query.
 
     :param genbank_query: sql collection
+    :param taxonomy_filters: set of genera, species and strains to restrict retrieval of sequences
 
     Return a dict {GenBank_accession: retrieval_date}
     """
     accessions = {}
-    for item in genbank_query:
-        if item[0].genbank_accession == "NA":  # no GenBank accession stored in CAZy
-            continue
-        accessions[item[0].genbank_accession] = item[0].seq_update_date
+
+    if taxonomy_filters is None:
+        for item in genbank_query:
+            if item[0].genbank_accession == "NA":  # no GenBank accession stored in CAZy
+                continue
+            accessions[item[0].genbank_accession] = item[0].seq_update_date
+
+    else:
+        for item in genbank_query:
+            if item[0].genbank_accession == "NA":  # no GenBank accession stored in CAZy
+                continue
+            source_organism = item[-1].genus + item[-1].species
+            if any(filter in source_organism for filter in taxonomy_filters):
+                accessions[item[0].genbank_accession] = item[0].seq_update_date
 
     return accessions
 
@@ -590,7 +625,11 @@ def get_accessions_for_new_sequences(accessions):
             previous_data = previous_data.split("/")  # Y=[0], M=[1], D=[]
             update_date = doc["UpdateDate"]
             update_date = update_date.split("/")  # Y=[0], M=[1], D=[]
-            if datetime.date(previous_data[0], previous_data[1], previous_data[2]) < datetime.data(update_date[0], update_date[1], update_date[2]) is False:
+            if datetime.date(
+                previous_data[0], previous_data[1], previous_data[2],
+            ) < datetime.data(
+                update_date[0], update_date[1], update_date[2],
+            ) is False:
                 # the sequence at NCBI has not been updated since the seq was retrieved
                 # thus no need to retrieve it again
                 accessions_list.remove(temp_accession)
@@ -655,7 +694,10 @@ def get_sequences_add_to_db(accessions, date_today, session, args):
                     # check if a accession number
                     try:
                         re.match(
-                            r"(\D{3}\d{5,7}\.\d+)|(\D\d(\D|\d){3}\d)|(\D\d(\D|\d){3}\d\D(\D|\d){2}\d)",
+                            (
+                                r"(\D{3}\d{5,7}\.\d+)|(\D\d(\D|\d){3}\d)|"
+                                r"(\D\d(\D|\d){3}\d\D(\D|\d){2}\d)"
+                            ),
                             item,
                         ).group()
                         temp_accession = item
@@ -694,7 +736,7 @@ def get_sequences_add_to_db(accessions, date_today, session, args):
             session.commit()
 
             if args.write is not None:
-                write_out_fasta(record, temp_accession, args)
+                file_io.write_out_fasta(record, temp_accession, args)
 
             # remove the accession from the list
             accessions.remove(temp_accession)
@@ -747,24 +789,6 @@ def entrez_retry(entrez_func, *func_args, **func_kwargs):
         return
 
     return record
-
-
-def write_out_fasta(record, genbank_accession, args):
-    """Write out GenBank protein record to a FASTA file.
-
-    :param record: SeqIO parsed record
-    :param genbank_accession: str, accession number of the protein sequence in NCBI.GenBank
-    :param args: cmd-line arguments parser
-
-    Return nothing.
-    """
-    fasta_name = f"{genbank_accession}.fasta"
-    fasta_name = args.write / fasta_name
-
-    with open(fasta_name, "w") as fh:
-        SeqIO.write(record, fh, "fasta")
-
-    return
 
 
 if __name__ == "__main__":
