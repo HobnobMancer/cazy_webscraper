@@ -229,6 +229,9 @@ class Cazyme(Base):
 class Taxonomy(Base):
     """Describes the source organism of CAZymes."""
     __tablename__ = "taxs"
+    __table_args__ = (
+        UniqueConstraint("genus", "species"),
+    )
 
     taxonomy_id = Column(Integer, primary_key=True)
     genus = Column(String)
@@ -248,12 +251,16 @@ class Taxonomy(Base):
 class CazyFamily(Base):
     """Describes a CAZy family.
 
-    Every unique CAZy family-subfamily pair will be given a unique family_id. For example, 
+    Every unique CAZy family-subfamily pair will be given a unique family_id. For example,
     if a CAZyme is catalogued under a subfamily, the parent CAZy family and the CAZy subfamily
     will be listed together, and given a single family_id. If another protein is catalogued
     under only the parent CAZy family, another entry with for the CAZy family will be made with
     a null value for the subfamily and a different family_id. """
     __tablename__ = "families"
+    __table_args__ = (
+        UniqueConstraint("family", "subfamily"),
+    )
+
     family_id = Column(Integer, primary_key=True)
     family = Column(ReString)
     subfamily = Column(String)
@@ -285,6 +292,9 @@ class Genbank(Base):
     protein sequence for the CAZyme.
     """
     __tablename__ = "genbanks"
+    __table_args__ = (
+        UniqueConstraint("genbank_accession"),
+    )
 
     genbank_id = Column(Integer, primary_key=True)
     genbank_accession = Column(String)
@@ -345,6 +355,9 @@ class Cazymes_Genbanks(Base):
 class EC(Base):
     """Describe EC numbers."""
     __tablename__ = "ecs"
+    __table_args__ = (
+        UniqueConstraint("ec_number"),
+    )
 
     ec_id = Column(Integer, primary_key=True)
     ec_number = Column(String)
@@ -365,11 +378,15 @@ class Uniprot(Base):
     the CAZyme.
     """
     __tablename__ = "uniprots"
+    __table_args__ = (
+        UniqueConstraint("uniprot_accession"),
+    )
 
     uniprot_id = Column(Integer, primary_key=True)
     uniprot_accession = Column(String)
     primary = Column(Boolean)
     sequence = Column(String)
+    seq_update_date = Column(String)  # 'YYYY/MM/DD'
 
     cazymes = relationship(
         "Cazyme",
@@ -398,6 +415,9 @@ class Pdb(Base):
     the CAZyme.
     """
     __tablename__ = "pdbs"
+    __table_args__ = (
+        UniqueConstraint("pdb_accession"),
+    )
 
     pdb_id = Column(Integer, primary_key=True)
     pdb_accession = Column(String)
