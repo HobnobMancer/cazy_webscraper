@@ -32,7 +32,6 @@ import re
 import sys
 import time
 
-from collections import defaultdict
 from tqdm import tqdm
 from requests.exceptions import ConnectionError, MissingSchema
 from urllib3.exceptions import HTTPError, RequestError
@@ -688,7 +687,9 @@ def browser_decorator(func):
     """Decorator to retry the wrapped function up to 'retries' times."""
 
     def wrapper(*args, retries=10, **kwargs):
+        logger = logging.getLogger(__name__)
         tries, success, err = 0, False, None
+
         while not success and (tries < retries):
             try:
                 response = func(*args, **kwargs)
@@ -699,6 +700,12 @@ def browser_decorator(func):
                 MissingSchema,
                 RequestError,
             ) as err_message:
+                if (tries < retries):
+                    logger.warning(
+                        f"Failed to connect to CAZy on try {tries}/{retries}.\n"
+                        f"Error: {err_message}"
+                        "Retrying connection to CAZy in 10s"
+                    )
                 success = False
                 response = None
                 err = err_message
@@ -708,6 +715,7 @@ def browser_decorator(func):
             tries += 1
             time.sleep(10)
         if (not success) or (response is None):
+            logger.warning(f"Failed to connect to CAZy.\nError: {err}")
             return [None, err]
         else:
             return [response, None]
