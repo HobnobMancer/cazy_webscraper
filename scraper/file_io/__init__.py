@@ -184,7 +184,7 @@ def get_genera_species_strains(args):
     if args.config is not None:
         try:
             with open(args.config, "r") as fh:
-                raw_config_dict = json.load(fh)
+                raw_config_dict = yaml.full_load(fh)
         except FileNotFoundError:
             logger.error(
                 "Did not find the configuration file. Check the path is correct.\n"
@@ -208,8 +208,7 @@ def get_genera_species_strains(args):
     if args.strains is not None:
         taxonomy_filter["strains"] += (args.strains).split(",")
 
-    else:
-        taxonomy_filter = convert_lists_to_none(taxonomy_filter)
+    taxonomy_filter = convert_lists_to_none(taxonomy_filter)
 
     return taxonomy_filter
 

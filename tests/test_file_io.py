@@ -24,6 +24,7 @@ pytest -v
 
 """
 
+
 import pytest
 import sys
 
@@ -115,7 +116,7 @@ def args_config_file(config_file_path):
 
 
 @pytest.fixture
-def args_config_cmd(config_file_path):
+def args_config_cmd():
     args_dict = {
         "args": Namespace(
             config=None,
@@ -163,14 +164,6 @@ def testing_df():
 
 
 @pytest.fixture
-def df_output_file(test_dir):
-    df_output = (
-        test_dir / "test_targets" / "file_io_test_targets" / "test_writing_df.csv"
-    )
-    return df_output
-
-
-@pytest.fixture
 def stdout_args(test_dir):
     args_dict = {
         "args": Namespace(
@@ -186,6 +179,32 @@ def output_args(test_dir):
     args_dict = {
         "args": Namespace(
             output=path,
+        )
+    }
+    return args_dict
+
+
+@pytest.fixture
+def tax_no_yaml_args():
+    args_dict = {
+        "args": Namespace(
+            config="fake_yaml",
+            genera="Bacillus,Priestia",
+            species="Arabidopsis thaliana",
+            strains="Bathycoccus prasinos RCC1105,Cyanidioschyzon merolae strain 10D",
+        )
+    }
+    return args_dict
+
+
+@pytest.fixture
+def tax_args(config_file_path):
+    args_dict = {
+        "args": Namespace(
+            config=config_file_path,
+            genera="Bacillus,Priestia",
+            species="Arabidopsis thaliana",
+            strains="Bathycoccus prasinos RCC1105,Cyanidioschyzon merolae strain 10D",
         )
     }
     return args_dict
@@ -275,6 +294,7 @@ def test_parse_config_file_only(args_config_file, cazy_dictionary, monkeypatch):
 
     def mock_cazy_dict(*args, **kwargs):
         return cazy_dictionary, std_classes
+
     def mock_get_tax_filter(*args, **kwargs):
         return
 
@@ -475,7 +495,7 @@ def test_get_no_excluded_classes(cazy_dictionary):
         'Carbohydrate-Binding Modules (CBMs)',
     ]}
 
-    assert None is file_io.get_excluded_classes(std_classes, config_dict, cazy_dictionary) 
+    assert None is file_io.get_excluded_classes(std_classes, config_dict, cazy_dictionary)
 
 
 # test write_out_failed_scrapes
@@ -518,3 +538,18 @@ def test_write_out_failed_proteins(output_args):
         "time_stamp",
         output_args["args"],
     )
+
+
+# test get_genera_species_strains()
+
+
+def test_get_tax_filter_no_yaml(tax_no_yaml_args):
+    """Test the get_genera_species_strains function when the config file can't be found."""
+    with pytest.raises(SystemExit) as pytest_wrapped_err:
+        file_io.get_genera_species_strains(tax_no_yaml_args["args"])
+    assert pytest_wrapped_err.type == SystemExit
+
+
+def test_get_tax_filter(tax_args):
+    """Test get_genera_species_strains when cmd-line and config file are parsed."""
+    file_io.get_genera_species_strains(tax_args["args"])
