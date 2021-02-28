@@ -44,28 +44,45 @@ def make_output_directory(output, force, nodelete):
     """
     logger = logging.getLogger(__name__)
 
-    if force is True:
-        logger.warning(
-            "Output directory %s exists, nodelete is %s", output, nodelete,
-        )
+    if output.exists():
+        if force is True:
 
-        if nodelete and output.exists():
-            logger.warning("Not deleting directory %s", output)
+            if nodelete is True:
+                logger.warning(
+                    f"Output directory {output} exists, nodelete is {nodelete}. "
+                    "Adding output to output directory."
+                )
+                return
 
-        elif output.exists():
-            logger.warning("Deleting directory %s", output)
-            shutil.rmtree(output)
+            else:
+                logger.warning(
+                    f"Output directory {output} exists, nodelete is {nodelete}. "
+                    "Deleting content currently in output directory."
+                )
+                shutil.rmtree(output)
+                try:
+                    output.mkdir(exist_ok=force)
+                except FileExistsError:
+                    pass
+                return
 
-    logger.info("Creating directory %s", output)
-    try:
-        output.mkdir(exist_ok=force)
-    except FileExistsError:
-        logger.warning(
-            (
-                "Out directory already exists."
-                "New directory not made, writing to existing directory."
+        else:
+            logger.warning(
+                f"Output directory {output} exists. 'force' is False, cannot write to existing "
+                "output directory.\nTerminating program."
             )
-        )
+            sys.exit(1)
+
+    else:
+        try:
+            output.mkdir(exist_ok=force)
+            logger.warning(f"Built output directory: {output}")
+        except FileExistsError:
+            logger.warning(
+                (
+                    f"Out directory {output} already exists. Writing to existing output directory."
+                )
+            )
 
     return
 
