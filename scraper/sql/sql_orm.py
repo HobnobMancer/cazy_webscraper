@@ -29,6 +29,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     ForeignKey,
+    Index,
     Integer,
     PrimaryKeyConstraint,
     String,
@@ -257,13 +258,21 @@ class CazyFamily(Base):
     under only the parent CAZy family, another entry with for the CAZy family will be made with
     a null value for the subfamily and a different family_id. """
     __tablename__ = "families"
-    __table_args__ = (
-        UniqueConstraint("family", "subfamily"),
-    )
 
     family_id = Column(Integer, primary_key=True)
-    family = Column(ReString)
-    subfamily = Column(String)
+    family = Column(ReString, nullable=False)
+    subfamily = Column(String, nullable=True)
+
+    __table_args__ = (
+        Index(
+            "subfamily_option",
+            "family",
+            "subfamily",
+            unique=True,
+            postgresql_where=(subfamily.isnot(None)),
+        ),
+        Index("family_option", "family", unique=True, postgresql_where=(subfamily.is_(None))),
+    )
 
     cazymes = relationship(
         "Cazyme",
@@ -297,7 +306,7 @@ class Genbank(Base):
     )
 
     genbank_id = Column(Integer, primary_key=True)
-    genbank_accession = Column(String)
+    genbank_accession = Column(String, index=True)
     sequence = Column(String)
     seq_update_date = Column(String)  # 'YYYY/MM/DD'
 
@@ -327,20 +336,20 @@ class Cazymes_Genbanks(Base):
     """
     __tablename__ = "cazymes_genbanks"
     __table_args__ = (
-        UniqueConstraint("cazyme_id", "genbank_id"),
+        UniqueConstraint("cazyme_id", "genbank_id", "primary"),
     )
 
     link_id = Column(Integer, primary_key=True)  # unique ID of the CAZyme-GenBank relationship
     cazyme_id = Column(Integer, ForeignKey("cazymes.cazyme_id"))
     genbank_id = Column(Integer, ForeignKey("genbanks.genbank_id"))
 
-    primary = Column(Boolean)  # indicate if primary or non-primary accession of the CAZyme
+    primary = Column(Boolean, index=True)
 
     cazymes = relationship("Cazyme", back_populates="cazymes_genbanks")
     genbanks = relationship("Genbank", back_populates="cazymes_genbanks")
 
     def __str__(self):
-        return f"cazyme_id={self.cazyme_id}--genbank_id={self.genbank_id}-primary={self.primary}-"
+        return f"cazyme_id={self.cazyme_id}--genbank_id={self.genbank_id}--primary={self.primary}-"
 
     def __repr__(self):
         return(
@@ -360,7 +369,7 @@ class EC(Base):
     )
 
     ec_id = Column(Integer, primary_key=True)
-    ec_number = Column(String)
+    ec_number = Column(String, index=True)
 
     cazymes = relationship("Cazyme", secondary=cazymes_ecs, back_populates="ecs", lazy="dynamic")
 
@@ -379,7 +388,7 @@ class Uniprot(Base):
     """
     __tablename__ = "uniprots"
     __table_args__ = (
-        UniqueConstraint("uniprot_accession"),
+        UniqueConstraint("uniprot_accession", "primary"),
     )
 
     uniprot_id = Column(Integer, primary_key=True)
@@ -387,6 +396,8 @@ class Uniprot(Base):
     primary = Column(Boolean)
     sequence = Column(String)
     seq_update_date = Column(String)  # 'YYYY/MM/DD'
+
+    Index('uniprot_idx', uniprot_accession, primary)
 
     cazymes = relationship(
         "Cazyme",
@@ -416,12 +427,14 @@ class Pdb(Base):
     """
     __tablename__ = "pdbs"
     __table_args__ = (
-        UniqueConstraint("pdb_accession"),
+        UniqueConstraint("pdb_accession", "primary"),
     )
 
     pdb_id = Column(Integer, primary_key=True)
     pdb_accession = Column(String)
     primary = Column(Boolean)
+
+    Index('pdb_idx', pdb_accession, primary)
 
     cazymes = relationship("Cazyme", secondary=cazymes_pdbs, back_populates="pdbs", lazy="dynamic")
 
