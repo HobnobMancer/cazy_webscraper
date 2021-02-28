@@ -47,12 +47,15 @@ def making_output_dir(test_output_dir):
 
 
 @pytest.fixture
-def args_config_None():
+def args_config_none():
     args_dict = {
         "args": Namespace(
             config=None,
             classes=None,
             families=None,
+            genera=None,
+            species=None,
+            strains=None,
         )
     }
     return args_dict
@@ -118,18 +121,9 @@ def args_config_cmd(config_file_path):
             config=None,
             classes="CE,AA",
             families="GH14,GT1,PL15,CE6,AA10,CBM50,DD21",
-        )
-    }
-    return args_dict
-
-
-@pytest.fixture
-def args_config_none(config_file_path):
-    args_dict = {
-        "args": Namespace(
-            config=None,
-            classes=None,
-            families=None,
+            genera=None,
+            species=None,
+            strains=None,
         )
     }
     return args_dict
@@ -212,7 +206,9 @@ def test_output_dir_creation_nd_false(making_output_dir):
 
 def test_output_dir_creation_exists(test_dir):
     """Test creation of output dir when already exists."""
-    file_io.make_output_directory(test_dir, False, False)
+    with pytest.raises(SystemExit) as pytest_wrapped_err:
+        file_io.make_output_directory(test_dir, False, False)
+    assert pytest_wrapped_err.type == SystemExit
 
 
 # test parse_configuration()
@@ -228,12 +224,16 @@ def test_parse_config_file_cmd(
 
     std_classes = list(cazy_dictionary.keys())
 
+    def mock_get_taxonomy_filter(*args, **kwargs):
+        return None
+
     def mock_cazy_dict(*args, **kwargs):
         return cazy_dictionary, std_classes
 
     monkeypatch.setattr(file_io, "get_cazy_dict_std_names", mock_cazy_dict)
+    monkeypatch.setattr(file_io, "get_genera_species_strains", mock_get_taxonomy_filter)
 
-    excluded_classes, config_dict, cazy_dictionary = file_io.parse_configuration(
+    excluded_classes, config_dict, cazy_dictionary, tax_filter = file_io.parse_configuration(
         file_io_path,
         args_config_file_cmd["args"],
     )
@@ -263,7 +263,8 @@ def test_parse_config_file_cmd(
         'Carbohydrate-Binding Modules (CBMs)': None,
     }
 
-    assert (expected_excluded_classes_1 == excluded_classes) or (expected_excluded_classes_2 == excluded_classes)
+    assert (expected_excluded_classes_1 == excluded_classes) or \
+           (expected_excluded_classes_2 == excluded_classes)
     assert expected_config_dict == config_dict
 
 
@@ -274,10 +275,13 @@ def test_parse_config_file_only(args_config_file, cazy_dictionary, monkeypatch):
 
     def mock_cazy_dict(*args, **kwargs):
         return cazy_dictionary, std_classes
+    def mock_get_tax_filter(*args, **kwargs):
+        return
 
     monkeypatch.setattr(file_io, "get_cazy_dict_std_names", mock_cazy_dict)
+    monkeypatch.setattr(file_io, "get_genera_species_strains", mock_get_tax_filter)
 
-    excluded_classes, config_dict, cazy_dictionary = file_io.parse_configuration(
+    excluded_classes, config_dict, cazy_dictionary, tax_filter = file_io.parse_configuration(
         file_io_path,
         args_config_file["args"],
     )
@@ -293,7 +297,7 @@ def test_parse_config_cmd_only(args_config_cmd, cazy_dictionary, monkeypatch):
 
     monkeypatch.setattr(file_io, "get_cazy_dict_std_names", mock_cazy_dict)
 
-    excluded_classes, config_dict, cazy_dictionary = file_io.parse_configuration(
+    excluded_classes, config_dict, cazy_dictionary, taxonomy_filters = file_io.parse_configuration(
         file_io_path,
         args_config_cmd["args"],
     )
@@ -309,7 +313,7 @@ def test_parse_config_no_config(args_config_none, cazy_dictionary, monkeypatch):
 
     monkeypatch.setattr(file_io, "get_cazy_dict_std_names", mock_cazy_dict)
 
-    excluded_classes, config_dict, cazy_dictionary = file_io.parse_configuration(
+    excluded_classes, config_dict, cazy_dictionary, taxonomy_filters = file_io.parse_configuration(
         file_io_path,
         args_config_none["args"],
     )
