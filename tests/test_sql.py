@@ -32,7 +32,7 @@ from datetime import datetime
 from pathlib import Path
 
 from scraper.sql import sql_orm, sql_interface
-from scraper.sql.sql_orm import Cazyme, CazyFamily
+from scraper.sql.sql_orm import Cazyme, CazyFamily, Genbank
 
 
 @pytest.fixture
@@ -245,7 +245,7 @@ def test_adding_new_protein_and_new_species(db_session, monkeypatch):
         "cazyme_name",
         "GH5_1",
         new_species,
-        "primary_genbank",
+        Genbank(genbank_accession=f"primary_genbank{time_stamp}"),
         db_session,
         ec_numbers=["EC number", "ec number"],
         genbank_accessions=["gen1", "gen2"],
@@ -268,12 +268,13 @@ def test_addding_new_protein_with_existing_species(db_session, monkeypatch):
     monkeypatch.setattr(sql_interface, "add_pdb_accessions", mock_return_none)
 
     existing_species = "test_existing_genus test_existing_species"
+    time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     sql_interface.add_new_protein_to_db(
         "cazyme_name",
         "GH5_1",
         existing_species,
-        "primary_genbank",
+        Genbank(genbank_accession=f"primary_genbank{time_stamp}"),
         db_session,
         ec_numbers=["EC number", "ec number"],
         genbank_accessions=["gen1", "gen2"],
@@ -296,12 +297,13 @@ def test_adding_new_protein_with_multiple_species(db_session, monkeypatch):
     monkeypatch.setattr(sql_interface, "add_pdb_accessions", mock_return_none)
 
     duplicate_species = "duplicate_genus duplicate_species"
+    time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     sql_interface.add_new_protein_to_db(
         "cazyme_name",
         "GH5_1",
         duplicate_species,
-        "primary_genbank",
+        Genbank(genbank_accession=f"primary_genbank{time_stamp}"),
         db_session,
         ec_numbers=["EC number", "ec number"],
         genbank_accessions=["gen1", "gen2"],
@@ -636,21 +638,6 @@ def test_existing_primary_uniprot(db_session):
     db_session.rollback()
 
 
-def test_duplicate_primary_uniprot(db_session):
-    """Test handling duplicate primary UniProt accessions."""
-
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
-
-    dup_uni = "dup_acc_test"
-
-    sql_interface.add_primary_uniprot(
-        dup_uni,
-        cazyme,
-        db_session,
-    )
-
-    db_session.rollback()
-
 
 # Unit tests for adding PDB accessions to the local database
 
@@ -724,22 +711,6 @@ def test_existing_prim_pdb(db_session):
     cazyme = Cazyme(cazyme_name="cazyme_name_test")
 
     acc = "existing"
-
-    sql_interface.add_primary_pdb(
-        acc,
-        cazyme,
-        db_session,
-    )
-
-    db_session.rollback()
-
-
-def test_handling_duplicate_primary_pdb(db_session):
-    """Test when multiple duplicate primary PDB accessions are found."""
-
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
-
-    acc = "dupPrimPDB"
 
     sql_interface.add_primary_pdb(
         acc,

@@ -488,8 +488,6 @@ def add_cazy_family(family, cazyme, session):
 
     Return nothing.
     """
-    logger = logging.getLogger(__name__)
-
     try:
         cazyme.families.append(CazyFamily(family=family))
         session.commit()
@@ -501,23 +499,11 @@ def add_cazy_family(family, cazyme, session):
     # get the record that caused raising the Integrity Error
     family_query = session.query(CazyFamily).filter(CazyFamily.family == family).all()
 
-    if len(family_query) == 1:
-        try:
-            cazyme.families.append(family_query[0])
-            session.commit()
-        except IntegrityError:
-            session.rollback()
-
-    else:
-        logger.warning(
-            f"Duplicate entries for CAZy family {family} found in the local database.\n"
-            f"Adding CAZyme to the family with family_id={family_query[0].family_id}"
-        )
-        try:
-            cazyme.families.append(family_query[0])
-            session.commit()
-        except IntegrityError:
-            session.rollback()
+    try:
+        cazyme.families.append(family_query[0])
+        session.commit()
+    except (IntegrityError, IndexError) as e:
+        session.rollback()
 
     return
 
@@ -531,12 +517,10 @@ def add_cazy_subfamily(subfamily, cazyme, session):
 
     Return nothing.
     """
-    logger = logging.getLogger(__name__)
-
     family = subfamily[:subfamily.find("_")]
 
     try:
-        cazyme.families.append(CazyFamily(family == family, subfamily == subfamily))
+        cazyme.families.append(CazyFamily(family=family, subfamily=subfamily))
         session.commit()
         return
 
@@ -547,23 +531,11 @@ def add_cazy_subfamily(subfamily, cazyme, session):
     subfam_query = session.query(CazyFamily).\
         filter(CazyFamily.family == family).filter(CazyFamily.subfamily == subfamily).all()
 
-    if len(subfam_query) == 1:
-        try:
-            cazyme.families.append(subfam_query[0])
-            session.commit()
-        except IntegrityError:
-            session.rollback()
-
-    else:
-        logger.warning(
-            f"Duplicate entries for CAZy family {subfamily} found in the local database.\n"
-            f"Adding CAZyme to the family with family_id={subfam_query[0].family_id}"
-        )
-        try:
-            cazyme.families.append(subfam_query[0])
-            session.commit()
-        except IntegrityError:
-            session.rollback()
+    try:
+        cazyme.families.append(subfam_query[0])
+        session.commit()
+    except (IntegrityError, IndexError) as e:
+        session.rollback()
 
     return
 
@@ -581,8 +553,6 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
 
     Return nothing.
     """
-    logger = logging.getLogger(__name__)
-
     for accession in genbank_accessions:
         try:
             new_genbank = Genbank(genbank_accession=accession)
@@ -596,34 +566,16 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
                 filter(Genbank.genbank_accession == accession).\
                 filter(Cazymes_Genbanks.primary == False).all()
 
-            if len(genbank_query) == 1:
-                try:
-                    relationship = Cazymes_Genbanks(
-                        cazymes=cazyme,
-                        genbanks=genbank_query[0],
-                        primary=False,
-                    )
-                    session.add(relationship)
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-
-            else:
-                logger.warning(
-                    f"Duplicate entries for non-primary GenBank accession {accession} in the local "
-                    f"database.\nLinking CAZyme to accession id={genbank_query[0].genbank_id}"
+            try:
+                relationship = Cazymes_Genbanks(
+                    cazyme_id=cazyme.cazyme_id,
+                    genbank_id=genbank_query[0][0].genbank_id,
+                    primary=False,
                 )
-                try:
-                    relationship = Cazymes_Genbanks(
-                        cazymes=cazyme,
-                        genbanks=genbank_query[0],
-                        primary=False,
-                    )
-                    session.add(relationship)
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-
+                session.add(relationship)
+                session.commit()
+            except (IntegrityError, IndexError) as e:
+                session.rollback()
             continue
 
         try:
@@ -649,8 +601,6 @@ def add_ec_numbers(ec_numbers, cazyme, session):
 
     Return nothing.
     """
-    logger = logging.getLogger(__name__)
-
     for ec in ec_numbers:
         try:
             new_ec = EC(ec_number=ec)
@@ -662,24 +612,11 @@ def add_ec_numbers(ec_numbers, cazyme, session):
 
             ec_query = session.query(EC).filter(EC.ec_number == ec).all()
 
-            if len(ec_query) == 1:
-                try:
-                    cazyme.ecs.append(ec_query[0])
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-
-            else:
-                logger.warning(
-                    f"Duplicate entries for EC# {ec} found in the local database.\n"
-                    f"Annotating CAZyme with the EC# with the id={ec_query[0].ec_id}"
-                )
-                try:
-                    cazyme.ecs.append(ec_query[0])
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-
+            try:
+                cazyme.ecs.append(ec_query[0])
+                session.commit()
+            except (IntegrityError, IndexError) as e:
+                session.rollback()
             continue
 
         try:
@@ -700,8 +637,6 @@ def add_uniprot_accessions(uniprot_accessions, cazyme, session):
 
     Return nothing.
     """
-    logger = logging.getLogger(__name__)
-
     if len(uniprot_accessions) == 1:
         add_primary_uniprot(uniprot_accessions[0], cazyme, session)
 
@@ -721,25 +656,11 @@ def add_uniprot_accessions(uniprot_accessions, cazyme, session):
                     filter(Uniprot.uniprot_accession == accession).\
                     filter(Uniprot.primary == False).all()
 
-                if len(uniprot_query) == 1:
-                    try:
-                        cazyme.uniprots.append(uniprot_query[0])
-                        session.commit()
-                    except IntegrityError:
-                        session.rollback()
-
-                else:
-                    logger.warning(
-                        f"Duplicate entries for non-primary UniProt accession {accession} found in "
-                        "the local database.\nAnnotating CAZyme with the UniProt with the id="
-                        f"{uniprot_query[0].uniprot_id}"
-                    )
-                    try:
-                        cazyme.uniprots.append(uniprot_query[0])
-                        session.commit()
-                    except IntegrityError:
-                        session.rollback()
-
+                try:
+                    cazyme.uniprots.append(uniprot_query[0])
+                    session.commit()
+                except (IntegrityError, IndexError) as e:
+                    session.rollback()
                 continue
 
             try:
@@ -760,8 +681,6 @@ def add_primary_uniprot(accession, cazyme, session):
 
     Return nothing.
     """
-    logger = logging.getLogger(__name__)
-
     try:
         new_uniprot = Uniprot(uniprot_accession=accession, primary=True)
         session.add(new_uniprot)
@@ -774,25 +693,11 @@ def add_primary_uniprot(accession, cazyme, session):
             filter(Uniprot.uniprot_accession == accession).\
             filter(Uniprot.primary == False).all()
 
-        if len(uniprot_query) == 1:
-            try:
-                cazyme.uniprots.append(uniprot_query[0])
-                session.commit()
-            except IntegrityError:
-                session.rollback()
-
-        else:
-            logger.warning(
-                f"Duplicate entries for primary UniProt accession {accession} found in the local "
-                "database.\nAnnotating CAZyme with the EC# with the id="
-                f"{uniprot_query[0].uniprot_id}"
-            )
-            try:
-                cazyme.uniprots.append(uniprot_query[0])
-                session.commit()
-            except IntegrityError:
-                session.rollback()
-
+        try:
+            cazyme.uniprots.append(uniprot_query[0])
+            session.commit()
+        except (IntegrityError, IndexError) as e:
+            session.rollback()
         return
 
     try:
@@ -813,8 +718,6 @@ def add_pdb_accessions(pdb_accessions, cazyme, session):
 
     Return nothing.
     """
-    logger = logging.getLogger(__name__)
-
     if len(pdb_accessions) == 1:
         add_primary_pdb(pdb_accessions[0], cazyme, session)
 
@@ -833,26 +736,12 @@ def add_pdb_accessions(pdb_accessions, cazyme, session):
                 pdb_query = session.query(Pdb).\
                     filter(Pdb.pdb_accession == accession).filter(Pdb.primary == False).all()
 
-                if len(pdb_query) == 1:
-                    try:
-                        cazyme.pdbs.append(pdb_query[0])
-                        session.commit()
-                    except IntegrityError:
-                        session.rollback()
-
-                else:
-                    logger.warning(
-                        f"Duplicate entries for non-primary PDB accession {accession} found in "
-                        "the local database.\nAnnotating CAZyme with the PDB accession with the id="
-                        f"{pdb_query[0].pdb_id}"
-                    )
-                    try:
-                        cazyme.pdbs.append(pdb_query[0])
-                        session.commit()
-                    except IntegrityError:
-                        session.rollback()
-
-                continue
+                try:
+                    cazyme.pdbs.append(pdb_query[0])
+                    session.commit()
+                except (IntegrityError, IndexError) as e:
+                    session.rollback()
+                    continue
 
             try:
                 cazyme.pdbs.append(new_pdb)
@@ -872,8 +761,7 @@ def add_primary_pdb(accession, cazyme, session):
 
     Return nothing.
     """
-    logger = logging.getLogger(__name__)
-
+    # add PDB to the database
     try:
         new_pdb = Pdb(pdb_accession=accession, primary=True)
         session.add(new_pdb)
@@ -885,27 +773,14 @@ def add_primary_pdb(accession, cazyme, session):
         pdb_query = session.query(Pdb).\
             filter(Pdb.pdb_accession == accession).filter(Pdb.primary == True).all()
 
-        if len(pdb_query) == 1:
-            try:
-                cazyme.pdbs.append(pdb_query[0])
-                session.commit()
-            except IntegrityError:
-                session.rollback()
+        try:
+            cazyme.pdbs.append(pdb_query[0])
+            session.commit()
+        except (IntegrityError, IndexError) as e:
+            session.rollback()
+            return
 
-        else:
-            logger.warning(
-                f"Duplicate entries for primary PDB accession {accession} found in "
-                "the local database.\nAnnotating CAZyme with the PDB accession with the id="
-                f"{pdb_query[0].pdb_id}"
-            )
-            try:
-                cazyme.pdbs.append(pdb_query[0])
-                session.commit()
-            except IntegrityError:
-                session.rollback()
-
-        return
-
+    # link PDB to CAZyme
     try:
         cazyme.pdbs.append(new_pdb)
         session.commit()
