@@ -98,6 +98,8 @@ def test_adding_a_new_protein(db_session):
         pdb_accessions=["PDB1", "PDB2"]
     )
 
+    db_session.rollback()
+
 
 def test_add_data_to_an_existing_record_in_db(db_session):
     """Test adding data to an existing CAZyme in the local database."""
@@ -112,6 +114,8 @@ def test_add_data_to_an_existing_record_in_db(db_session):
         genbank_accessions=["Genbank1", "Genbank2"],
         uniprot_accessions=["Uni1", "Uni2"],
     )
+
+    db_session.rollback()
 
 
 def test_genbank_no_cazymes(db_session, monkeypatch):
@@ -134,6 +138,8 @@ def test_genbank_no_cazymes(db_session, monkeypatch):
         genbank_accessions=["Genbank1", "Genbank2"],
         uniprot_accessions=["Uni1", "Uni2"],
     )
+
+    db_session.rollback()
 
 
 def test_one_genbank_multiple_cazymes(db_session, monkeypatch):
@@ -173,6 +179,8 @@ def test_multiple_genbanks_multiple_cazymes(db_session, monkeypatch):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_multiple_genbanks_one_cazyme(db_session, monkeypatch):
     """test adding protien to db when identical GenBank accessions with one CAZyme link."""
@@ -192,6 +200,8 @@ def test_multiple_genbanks_one_cazyme(db_session, monkeypatch):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_multiple_genbanks_no_cazymes(db_session, monkeypatch):
     """test adding protien to db when identical GenBank accessions are linked to no CAZymes."""
@@ -210,6 +220,8 @@ def test_multiple_genbanks_no_cazymes(db_session, monkeypatch):
         identical_genbanks_no_cazymes,
         db_session,
     )
+
+    db_session.rollback()
 
 
 # Unit tests for add_new_protein_to_db()
@@ -241,6 +253,8 @@ def test_adding_new_protein_and_new_species(db_session, monkeypatch):
         pdb_accessions=["pdb1", "pdb2"],
     )
 
+    db_session.rollback()
+
 
 def test_addding_new_protein_with_existing_species(db_session, monkeypatch):
     """Test add_new_protein_to_db when the species exists in the database."""
@@ -266,6 +280,8 @@ def test_addding_new_protein_with_existing_species(db_session, monkeypatch):
         uniprot_accessions=["uni1", "uni2"],
         pdb_accessions=["pdb1", "pdb2"],
     )
+
+    db_session.rollback()
 
 
 def test_adding_new_protein_with_multiple_species(db_session, monkeypatch):
@@ -293,6 +309,8 @@ def test_adding_new_protein_with_multiple_species(db_session, monkeypatch):
         pdb_accessions=["pdb1", "pdb2"],
     )
 
+    db_session.rollback()
+
 
 # Unit tests for add_cazy_family
 
@@ -311,6 +329,8 @@ def test_adding_new_family(db_session):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_add_existing_family(db_session):
     """Test adding an existing family to a CAZyme record."""
@@ -324,6 +344,8 @@ def test_add_existing_family(db_session):
         cazyme,
         db_session,
     )
+
+    db_session.rollback()
 
 
 def test_add_new_fam_cos_old_fam_has_subfam(db_session):
@@ -339,6 +361,8 @@ def test_add_new_fam_cos_old_fam_has_subfam(db_session):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_duplicate_families_no_nonsubfams(db_session):
     """Test when multiple families are found with none without subfamilies."""
@@ -352,6 +376,8 @@ def test_duplicate_families_no_nonsubfams(db_session):
         cazyme,
         db_session,
     )
+
+    db_session.rollback()
 
 
 def test_duplicate_families_one_with_no_subfams(db_session):
@@ -367,6 +393,8 @@ def test_duplicate_families_one_with_no_subfams(db_session):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_duplicate_families_multiple_with_no_subfams(db_session):
     """test when multiple families have no subfamily assoication."""
@@ -380,6 +408,8 @@ def test_duplicate_families_multiple_with_no_subfams(db_session):
         cazyme,
         db_session,
     )
+
+    db_session.rollback()
 
 
 # Unit tests for adding subfamilies
@@ -399,6 +429,8 @@ def test_adding_new_subfamily(db_session):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_adding_cazyme_to_existing_db(db_session):
     """Test adding a CAZyme to an existing subfamily in the local database."""
@@ -413,6 +445,8 @@ def test_adding_cazyme_to_existing_db(db_session):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_multiple_subfamilies_found(db_session):
     """Test when multiple identical subfamilies are found in the local database."""
@@ -426,6 +460,8 @@ def test_multiple_subfamilies_found(db_session):
         cazyme,
         db_session,
     )
+
+    db_session.rollback()
 
 
 # Unit tests for adding non-primary GenBank accessions
@@ -445,6 +481,8 @@ def test_adding_new_non_prim_gb_acc(db_session):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_duplicate_non_prim_db_acc(db_session):
     """Test when finding multiple identical non-primary duplicate GenBank accessions."""
@@ -458,6 +496,8 @@ def test_duplicate_non_prim_db_acc(db_session):
         cazyme,
         db_session,
     )
+
+    db_session.rollback()
 
 
 # Unit tests for adding EC numbers
@@ -477,6 +517,8 @@ def test_adding_new_ec_num(db_session):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_adding_existing_ec_num(db_session):
     """Testing adding an existing EC# to a CAZyme."""
@@ -491,6 +533,9 @@ def test_adding_existing_ec_num(db_session):
         db_session,
     )
 
+    db_session.rollback()
+
+
 
 def test_finding_multiple_ecs(db_session):
     """Testing handling when multiple duplicate EC#s are found."""
@@ -504,6 +549,8 @@ def test_finding_multiple_ecs(db_session):
         cazyme,
         db_session,
     )
+
+    db_session.rollback()
 
 
 # Unit tests for adding UniPro accessions
@@ -528,6 +575,8 @@ def test_adding_one_uniprot_acc(db_session, monkeypatch):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_adding_multiple_uniprot_accessions(db_session, monkeypatch):
     """Test adding multiple UniProt accessions."""
@@ -548,6 +597,8 @@ def test_adding_multiple_uniprot_accessions(db_session, monkeypatch):
         db_session,
     )
 
+    db_session.rollback()
+
 
 # Unit tests for adding primary UniProt accessions
 
@@ -566,6 +617,8 @@ def test_new_primary_uniprot(db_session):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_existing_primary_uniprot(db_session):
     """Test adding an existing primary UniProt accession to a CAZyme."""
@@ -580,6 +633,8 @@ def test_existing_primary_uniprot(db_session):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_duplicate_primary_uniprot(db_session):
     """Test handling duplicate primary UniProt accessions."""
@@ -593,6 +648,8 @@ def test_duplicate_primary_uniprot(db_session):
         cazyme,
         db_session,
     )
+
+    db_session.rollback()
 
 
 # Unit tests for adding PDB accessions to the local database
@@ -616,6 +673,8 @@ def test_one_pdb_accession(db_session, monkeypatch):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_multiple_pdb_accession(db_session, monkeypatch):
     """Test when multiple PDB accessions are added to the database."""
@@ -636,6 +695,8 @@ def test_multiple_pdb_accession(db_session, monkeypatch):
         db_session,
     )
 
+    db_session.rollback()
+
 
 # Unit tests for adding primary PDBs
 
@@ -654,6 +715,8 @@ def test_add_new_prim_pdb(db_session):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_existing_prim_pdb(db_session):
     """Test adding an existing primary PDB accession to a CAZyme."""
@@ -668,6 +731,8 @@ def test_existing_prim_pdb(db_session):
         db_session,
     )
 
+    db_session.rollback()
+
 
 def test_handling_duplicate_primary_pdb(db_session):
     """Test when multiple duplicate primary PDB accessions are found."""
@@ -681,3 +746,5 @@ def test_handling_duplicate_primary_pdb(db_session):
         cazyme,
         db_session,
     )
+
+    db_session.rollback()
