@@ -232,6 +232,7 @@ class Taxonomy(Base):
     __tablename__ = "taxs"
     __table_args__ = (
         UniqueConstraint("genus", "species"),
+        Index("organism_index", "genus", "species")
     )
 
     taxonomy_id = Column(Integer, primary_key=True)
