@@ -78,7 +78,7 @@ def time_stamp():
 @pytest.fixture
 def db_session():
     """Open session to local SQL database."""
-    db_path = "tests/test_outputs/test_outputs_sql/cazy_scrape_2021-02-08--10-58-51.db"
+    db_path = "tests/test_inputs/test_inputs_sql/unit_test_db_2021-03-01--15-06-59.db"
     engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
     Base.metadata.create_all(engine)
     Session.configure(bind=engine)
