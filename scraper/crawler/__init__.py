@@ -734,7 +734,7 @@ def get_page(url):
     # create browser object
     browser = mechanicalsoup.Browser()
     # create response object
-    page = browser.get(url)
+    page = browser.get(url, timeout=45)
     page = page.soup
 
     return page
