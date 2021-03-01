@@ -709,7 +709,7 @@ def test_row_to_protein_no_uniprot_no_pdb(protein_with_no_uniprot_no_pdb, monkey
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", "session")
+    crawler.row_to_protein(row, "GH147", set(), "session")
 
 
 def test_row_to_protein_no_uniprot_no_pdb_sql_error(protein_with_no_uniprot_no_pdb, monkeypatch):
