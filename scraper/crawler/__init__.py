@@ -348,7 +348,7 @@ def parse_family(family, cazy_home, taxonomy_filters, max_tries, session):
     # which a connection could not be made
     if len(list(family.failed_pages.keys())) != 0:
         protein_page_urls = list(family.failed_pages.keys())
-        total_proteins = len(property * 1000)
+        total_proteins = len(protein_page_urls * 1000)
 
     else:  # scraping family for the first time so retrieve the URLs to the pagination pages
         # compile URL to first family page of protein records
