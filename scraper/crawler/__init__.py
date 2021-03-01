@@ -78,7 +78,8 @@ class Family:
         self.cazy_class = cazy_class
         self.url = url
         if failed_pages is None:
-            self.failed_pages = {}  # keyed by URL, valued by number of attempted scrapes
+            # {pagination page URL which could not connect to previously: number of tries}
+            self.failed_pages = {}
         else:
             self.failed_pages = failed_pages
 
@@ -343,52 +344,59 @@ def parse_family(family, cazy_home, taxonomy_filters, max_tries, session):
     logger = logging.getLogger(__name__)
     logger.info(f"Starting retrieval of proteins for {family.name} from {family.url}")
 
-    # compile URL to first family page of protein records
-    first_pagination_url = family.url.replace(".html", "_all.html")
+    # check if family was attempted to be scrapped before and if there were pagination pages to
+    # which a connection could not be made
+    if len(list(family.failed_pages.keys())) != 0:
+        protein_page_urls = list(family.failed_pages.keys())
+        total_proteins = len(property * 1000)
 
-    # check url formating of first paginiation url
-    try:
-        re.match(
-            r"http://www.cazy.org/\D{2,3}(\d+|\d+_\d+)_all.html", first_pagination_url
-        ).group()
-    except AttributeError:
-        logger.warning(
-            f"Incorrect formatting of first protein table page URL: {first_pagination_url}\n"
-            "Will not try and connect to this URL."
-        )
-        return(
-            family,
-            f"Incorrect URL format for the first protein table page for {family.name}",
-            None,
-        )
+    else:  # scraping family for the first time so retrieve the URLs to the pagination pages
+        # compile URL to first family page of protein records
+        first_pagination_url = family.url.replace(".html", "_all.html")
 
-    first_pagination_page, error_message = get_page(first_pagination_url)
-
-    if first_pagination_page is None:
-        logger.warning(
-            (
-                f"Could not connect to {first_pagination_url} after 10 attempts\n"
-                "The following error was raised:\n"
-                f"{error_message}"
+        # check url formating of first paginiation url
+        try:
+            re.match(
+                r"http://www.cazy.org/\D{2,3}(\d+|\d+_\d+)_all.html", first_pagination_url
+            ).group()
+        except AttributeError:
+            logger.warning(
+                f"Incorrect formatting of first protein table page URL: {first_pagination_url}\n"
+                "Will not try and connect to this URL."
             )
-        )
-        return(
-            family,
-            [
-                f"{first_pagination_url}\t"
-                f"{family.cazy_class}\t"
-                f"Failed to connect to first page of proteins for {family.name}\t"
-                f"{error_message}"
-            ],
-            [],
-        )
+            return(
+                family,
+                f"Incorrect URL format for the first protein table page for {family.name}",
+                None,
+            )
 
-    # Get the URLS to all pages of proteins and the total number of proteins in the (sub)family
-    protein_page_urls, total_proteins = get_protein_page_urls(
-        first_pagination_url,
-        first_pagination_page,
-        cazy_home,
-    )
+        first_pagination_page, error_message = get_page(first_pagination_url)
+
+        if first_pagination_page is None:
+            logger.warning(
+                (
+                    f"Could not connect to {first_pagination_url} after 10 attempts\n"
+                    "The following error was raised:\n"
+                    f"{error_message}"
+                )
+            )
+            return(
+                family,
+                [
+                    f"{first_pagination_url}\t"
+                    f"{family.cazy_class}\t"
+                    f"Failed to connect to first page of proteins for {family.name}\t"
+                    f"{error_message}"
+                ],
+                [],
+            )
+
+        # Get the URLS to all pages of proteins and the total number of proteins in the (sub)family
+        protein_page_urls, total_proteins = get_protein_page_urls(
+            first_pagination_url,
+            first_pagination_page,
+            cazy_home,
+        )
 
     if len(protein_page_urls) == 0:
         return(
@@ -419,7 +427,7 @@ def parse_family(family, cazy_home, taxonomy_filters, max_tries, session):
         desc=f"Parsing protein pages for {family.name}",
     ):
         if protein["url"] is not None:
-            # Protein was note retrieved because could not connect to CAZy
+            # Protein was not retrieved because could not connect to CAZy
             try:
                 family.failed_pages[protein["url"]] += 1
             except KeyError:
