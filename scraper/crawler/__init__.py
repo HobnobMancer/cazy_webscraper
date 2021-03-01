@@ -84,10 +84,10 @@ class Family:
             self.failed_pages = failed_pages
 
     def __str__(self):
-        return f"CAZy family {self.name}: {len(self.members)} protein members"
+        return f"CAZy family {self.name}"
 
     def __repr__(self):
-        return f"<Family: {id(self)}: {self.name}, {len(self.members)} protein members"
+        return f"<Family: {id(self)}: {self.name}>"
 
 
 def get_cazy_classes(cazy_home, excluded_classes, max_tries, cazy_dict):
