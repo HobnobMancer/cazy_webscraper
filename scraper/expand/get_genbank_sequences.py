@@ -323,7 +323,7 @@ def get_missing_sequences_for_specific_records(
     for key in config_dict:
         if key == "classes":
             continue
-        if len(config_dict[key]) is None:
+        if config_dict[key] is None:
             continue  # no families to parse
 
         for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
