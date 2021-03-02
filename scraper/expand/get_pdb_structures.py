@@ -38,6 +38,7 @@ from tqdm import tqdm
 
 from scraper import file_io
 from scraper.sql.sql_orm import (
+    Cazyme,
     CazyFamily,
     Pdb,
     Taxonomy,
@@ -56,7 +57,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         parser = build_pdb_structures_parser()
         args = parser.parse_args()
     else:
-        args = build_pdb_structures_parser(argv).parse_args()
+        parser = build_pdb_structures_parser(argv)
+        args = parser.parse_args()
 
     # build logger
     if logger is None:
@@ -129,22 +131,26 @@ def get_every_cazymes_structures(outdir, taxonomy_filters, session, args):
     """
     # retrieve structures for only primary PDB accessions
     if args.primary is True:
-        pdb_query = session.query(Pdb, Taxonomy).filter(Pdb.primary == True).all()
+        pdb_query = session.query(Pdb, Cazyme, Taxonomy).\
+            join(Cazyme.pdbs).join(Cazyme.taxonomy).filter(Pdb.primary == True).all()
 
     # retrieve structures for all PDB accessions
     else:
-        pdb_query = session.query(Pdb, Taxonomy).all()
+        pdb_query = session.query(Pdb, Cazyme, Taxonomy).\
+            join(Cazyme.pdbs).join(Cazyme.taxonomy).all()
 
     if taxonomy_filters is None:
         for query_result in pdb_query:
-                pdb_accession = query_result[0].pdb_accession[:pdb_accession.find("[")]
-                download_pdb_structures(pdb_accession, outdir, args)
+            pdb_accession = query_result[0].pdb_accession
+            pdb_accession = pdb_accession[:pdb_accession.find("[")]
+            download_pdb_structures(pdb_accession, outdir, args)
 
     else:
         for query_result in pdb_query:
             source_organism = query_result[-1].genus + query_result[-1].species
             if any(filter in source_organism for filter in taxonomy_filters):
-                pdb_accession = query_result[0].pdb_accession[:pdb_accession.find("[")]
+                pdb_accession = query_result[0].pdb_accession
+                pdb_accession = pdb_accession[:pdb_accession.find("[")]
                 download_pdb_structures(pdb_accession, outdir, args)
 
     return
@@ -170,28 +176,35 @@ def get_structures_for_specific_cazymes(outdir, config_dict, taxonomy_filters, s
             # retrieve class name abbreviation
             cazy_class = cazy_class[((cazy_class.find("(")) + 1):((cazy_class.find(")")) - 1)]
 
-            # Retrieve PDB accessions under the current working CAZy class
+            # retrieve the CAZymes from the specified class
+            class_subquery = session.query(Cazyme.cazyme_id).\
+                join(CazyFamily, Cazyme.families).\
+                filter(CazyFamily.family.regexp(rf"{cazy_class}\d+")).\
+                subquery()
+
+            # Retrieve PDB accessions for the selected CAZymes
             if args.primary:
-                class_query = session.query(Pdb).\
-                    filter(CazyFamily.family.regexp(rf"{cazy_class}\d+")).\
-                    filter(Pdb.primary == True).\
-                    all()
+                pdb_query = session.query(Pdb, Cazyme, Taxonomy).\
+                    join(Cazyme.pdbs).join(Cazyme.taxonomy).\
+                    filter(Pdb.primary == True).filter(Cazyme.cazyme_id.in_(class_subquery)).all()
 
             else:
-                class_query = session.query(Pdb).\
-                    filter(CazyFamily.family.regexp(rf"{cazy_class}\d+")).\
-                    all()
+                pdb_query = session.query(Pdb, Cazyme, Taxonomy).\
+                    join(Cazyme.pdbs).join(Cazyme.taxonomy).\
+                    filter(Cazyme.cazyme_id.in_(class_subquery)).all()
 
             if taxonomy_filters is None:
                 for query_result in pdb_query:
-                        pdb_accession = query_result[0].pdb_accession[:pdb_accession.find("[")]
-                        download_pdb_structures(pdb_accession, outdir, args)
+                    pdb_accession = query_result[0].pdb_accession
+                    pdb_accession = pdb_accession[:pdb_accession.find("[")]
+                    download_pdb_structures(pdb_accession, outdir, args)
 
             else:
                 for query_result in pdb_query:
                     source_organism = query_result[-1].genus + query_result[-1].species
                     if any(filter in source_organism for filter in taxonomy_filters):
-                        pdb_accession = query_result[0].pdb_accession[:pdb_accession.find("[")]
+                        pdb_accession = query_result[0].pdb_accession
+                        pdb_accession = pdb_accession[:pdb_accession.find("[")]
                         download_pdb_structures(pdb_accession, outdir, args)
 
     # retrieve protein structure for specified families
@@ -202,40 +215,44 @@ def get_structures_for_specific_cazymes(outdir, config_dict, taxonomy_filters, s
             continue
 
         for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
+            # Select the CAZymes under the specified (sub)family
             if family.find("_") != -1:  # subfamily
-
-                if args.primary:
-                    family_query = session.query(Pdb).\
-                        filter(CazyFamily.subfamily == family).\
-                        filter(Pdb.primary == True).\
-                        all()
-                else:
-                    family_query = session.query(Pdb).\
-                        filter(CazyFamily.subfamily == family).\
-                        all()
+                # Retrieve GenBank accessions catalogued under the subfamily
+                family_subquery = session.query(Cazyme.cazyme_id).\
+                    join(CazyFamily, Cazyme.families).\
+                    filter(CazyFamily.subfamily == family).\
+                    subquery()
 
             else:  # family
+                # Retrieve GenBank accessions catalogued under the family
+                family_subquery = session.query(Cazyme.cazyme_id).\
+                    join(CazyFamily, Cazyme.families).\
+                    filter(CazyFamily.family == family).\
+                    subquery()
 
-                if args.primary:
-                    family_query = session.query(Pdb).\
-                        filter(CazyFamily.subfamily == family).\
-                        filter(Pdb.primary == True).\
-                        all()
-                else:
-                    family_query = session.query(Pdb).\
-                        filter(CazyFamily.subfamily == family).\
-                        all()
+            # Retrieve PDB accessions of the selected CAZymes
+            if args.primary:
+                pdb_query = session.query(Pdb, Cazyme, Taxonomy).\
+                    join(Cazyme.pdbs).join(Cazyme.taxonomy).\
+                    filter(Pdb.primary == True).filter(Cazyme.cazyme_id.in_(family_subquery)).all()
+
+            else:
+                pdb_query = session.query(Pdb, Cazyme, Taxonomy).\
+                    join(Cazyme.pdbs).join(Cazyme.taxonomy).\
+                    filter(Cazyme.cazyme_id.in_(family_subquery)).all()
 
             if taxonomy_filters is None:
                 for query_result in pdb_query:
-                        pdb_accession = query_result[0].pdb_accession[:pdb_accession.find("[")]
-                        download_pdb_structures(pdb_accession, outdir, args)
+                    pdb_accession = query_result[0].pdb_accession
+                    pdb_accession = pdb_accession[:pdb_accession.find("[")]
+                    download_pdb_structures(pdb_accession, outdir, args)
 
             else:
                 for query_result in pdb_query:
                     source_organism = query_result[-1].genus + query_result[-1].species
                     if any(filter in source_organism for filter in taxonomy_filters):
-                        pdb_accession = query_result[0].pdb_accession[:pdb_accession.find("[")]
+                        pdb_accession = query_result[0].pdb_accession
+                        pdb_accession = pdb_accession[:pdb_accession.find("[")]
                         download_pdb_structures(pdb_accession, outdir, args)
 
     return
