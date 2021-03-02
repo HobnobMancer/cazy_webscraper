@@ -179,7 +179,7 @@ def parse_unique_genbank_conflict(
             pdb_accessions,
         )
 
-    elif len(primary_genbank_query) == 1:
+    else:
         # Primary GenBank accession found, add additional data to the respective CAZyme
         cazyme_query = session.query(Cazyme, Genbank, Cazymes_Genbanks).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
@@ -239,99 +239,6 @@ def parse_unique_genbank_conflict(
                 pdb_accessions,
             )
 
-    else:
-        # The primary GenBank accession was found multiple times
-        logger.warning(
-            f"Multiple copies of the primary GenBank accession {primary_genbank} found.\n"
-            "Checking for potentially duplicate CAZymes in the local database"
-        )
-
-        duplicate_cazymes = []  # CAZymes with the same primary GenBank accession
-
-        for genbank_object in primary_genbank_query:
-            # retrieve CAZymes with the same primary GenBank accession
-            cazyme_query = session.query(Cazyme).\
-                filter(Genbank.genbank_accession == primary_genbank).\
-                filter(Cazymes_Genbanks.primary == True).all()
-
-            if len(cazyme_query) == 0:
-                logger.warning(
-                    f"The GenBank accession {primary_genbank} id={genbank_object.genbank_id},\n"
-                    "was previously add to the local database as a primary GenBank accession\n"
-                    "but NOT associated with a CAZyme."
-                )
-
-            elif len(cazyme_query) == 1:
-                duplicate_cazymes.append(cazyme_query[0])
-
-            else:
-                # multiple CAZymes have the same primary GenBank accession
-                logger.warning(
-                    "The following CAZymes have the same primary GenBank accession"
-                    f"{genbank_object.genbank_accession}, genbank_id={genbank_object.genbank_id}\n"
-                    "infering they are duplicates of each other"
-                )
-                for cazyme in cazyme_query:
-                    logger.warning(f"Name={cazyme.cazyme_name}, cazyme_id={cazyme.cazyme_id}")
-                    duplicate_cazymes.append(cazyme)
-
-        # check how many CAZyme duplicates there are
-        if len(duplicate_cazymes) == 0:
-            logger.warning(
-                f"Primary GenBank accession {primary_genbank} has been entered multiple times into "
-                "the local CAZy database but NOT associated with any CAZymes\n"
-                f"Adding new CAZyme to the GenBank id={primary_genbank_query[0].genbank_id}."
-            )
-            error_message = add_new_protein_to_db(
-                cazyme_name,
-                family,
-                source_organism,
-                primary_genbank_query[0],
-                session,
-                ec_numbers,
-                genbank_accessions,
-                uniprot_accessions,
-                pdb_accessions,
-            )
-
-        elif len(duplicate_cazymes) == 1:
-            logger.warning(
-                f"Primary GenBank accession {primary_genbank} has been entered multiple times into "
-                "the local CAZy database\nBUT associated with only ONE CAZyme: "
-                f"{duplicate_cazymes[0].cazyme_name}, id={duplicate_cazymes[0].cazyme_id}"
-            )
-            add_data_to_protein_record(
-                duplicate_cazymes[0],
-                family,
-                session,
-                ec_numbers,
-                genbank_accessions,
-                uniprot_accessions,
-                pdb_accessions,
-            )
-
-        else:
-            logger.warning(
-                "The following CAZymes appear to be duplicates in the local database, with primary "
-                f" GenBank accession {primary_genbank}"
-            )
-            for cazyme in duplicate_cazymes:
-                logger.warning(f"Name={cazyme.cazyme_name}, id={cazyme.cazyme_id}")
-            logger.warning(
-                f"Protein data added to {duplicate_cazymes[0].cazyme_name} "
-                f"id={duplicate_cazymes[0].cazyme_id}"
-            )
-            # add the protein data scraped from CAZy to the first duplicate CAZyme
-            add_data_to_protein_record(
-                duplicate_cazymes[0],
-                family,
-                session,
-                ec_numbers,
-                genbank_accessions,
-                uniprot_accessions,
-                pdb_accessions,
-            )
-
     return error_message
 
 
@@ -383,18 +290,8 @@ def add_new_protein_to_db(
             new_cazyme = Cazyme(cazyme_name=cazyme_name)
             tax_query = session.query(Taxonomy).\
                 filter(Taxonomy.genus == genus).filter(Taxonomy.species == species).all()
-
-            if len(tax_query) == 1:
-                tax_query[0].cazymes.append(new_cazyme)
-                session.commit()
-
-            else:
-                logger.warning(
-                    f"Duplicate records of {genus} {species} found in the local database.\n"
-                    f"Adding CAZyme to the record tax_id={tax_query[0].taxonomy_id}"
-                )
-                tax_query[0].cazymes.append(new_cazyme)
-                session.commit()
+            tax_query[0].cazymes.append(new_cazyme)
+            session.commit()
 
         except IntegrityError:
             logger.warning(

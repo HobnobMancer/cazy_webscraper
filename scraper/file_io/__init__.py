@@ -60,10 +60,7 @@ def make_output_directory(output, force, nodelete):
                     "Deleting content currently in output directory."
                 )
                 shutil.rmtree(output)
-                try:
-                    output.mkdir(exist_ok=force)
-                except FileExistsError:
-                    pass
+                output.mkdir(exist_ok=force)
                 return
 
         else:
@@ -74,15 +71,8 @@ def make_output_directory(output, force, nodelete):
             sys.exit(1)
 
     else:
-        try:
-            output.mkdir(exist_ok=force)
-            logger.warning(f"Built output directory: {output}")
-        except FileExistsError:
-            logger.warning(
-                (
-                    f"Out directory {output} already exists. Writing to existing output directory."
-                )
-            )
+        output.mkdir(exist_ok=force)
+        logger.warning(f"Built output directory: {output}")
 
     return
 
