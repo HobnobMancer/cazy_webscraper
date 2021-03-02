@@ -200,6 +200,8 @@ def test_cazy_class():
 
     assert new_class.name == "GH"
     assert new_class_failed_families.name == "GH"
+    new_class
+    repr(new_class)
 
 
 def test_family_get_name():
@@ -209,6 +211,8 @@ def test_family_get_name():
 
     assert "GH1" == fam_1.name
     assert "GH2" == fam_2.name
+    fam_1
+    repr(fam_1)
 
 
 # test get_cazy_class_urls
@@ -577,6 +581,41 @@ def test_parse_family_sql_url_errors(protein_gen, monkeypatch):
     )
 
 
+def test_parse_family_previous_failed_pages(protein_gen, monkeypatch):
+    """Test parse_family() when the family has previously failed families."""
+
+    def mock_get_page(*args, **kwargs):
+        return "mock_page", None
+
+    def mock_page_urls(*args, **kwargs):
+        return [], 0
+
+    def mock_parse_proteins(*args, **kwargs):
+        return [
+            {"url": None, "error": None, "sql": None},
+            {"url": None, "error": None, "sql": None},
+        ]
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+    monkeypatch.setattr(crawler, "get_protein_page_urls", mock_page_urls)
+    monkeypatch.setattr(crawler, "parse_proteins", mock_parse_proteins)
+
+    test_family = crawler.Family(
+        "GH1",
+        "Glycoside Hydrolases (GH)",
+        "www.cazy.org/GH1.html",
+        {"pageURL1": 1, "pageURL2":2}
+    )
+
+    crawler.parse_family(
+        test_family,
+        "http://www.cazy.org/GH1.html",
+        None,
+        2,
+        "session",
+    )
+
+
 # test get_protein_page_urls()
 
 
@@ -613,7 +652,11 @@ def test_parse_proteins_none(monkeypatch):
     def mock_get_page(*args, **kwargs):
         return None, "error message"
 
+    def mock_row(*args, **kwargs):
+        return {"url": None, "error": None, "sql": None}
+
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
+    monkeypatch.setattr(crawler, "row_to_protein", mock_row)
 
     crawler.parse_proteins("protein_page_url", "GH1", None, "session")
 
@@ -626,7 +669,11 @@ def test_parse_proteins(gh147_page, monkeypatch):
     def mock_get_page(*args, **kwargs):
         return soup, None
 
+    def mock_row(*args, **kwargs):
+        return {"url": None, "error": None, "sql": None}
+
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
+    monkeypatch.setattr(crawler, "row_to_protein", mock_row)
 
     crawler.parse_proteins("protein_url", "family", None, "session")
 
