@@ -169,6 +169,126 @@ def test_main(db_path, output_dir, monkeypatch):
     get_pdb_structures.main()
 
 
+def test_main_argv(db_path, output_dir, monkeypatch):
+    """Test main()."""
+
+    def mock_building_parser(*args, **kwargs):
+        parser_args = ArgumentParser(
+            prog="cazy_webscraper.py",
+            usage=None,
+            description="Scrape the CAZy database",
+            conflict_handler="error",
+            add_help=True,
+        )
+        return parser_args
+
+    def mock_parser(*args, **kwargs):
+        parser = Namespace(
+            database=db_path,
+            outdir=output_dir,
+            verbose=False,
+            log=None,
+            force=True,
+            nodelete=True,
+        )
+        return parser
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    def mock_config(*args, **kwargs):
+        return {}, set()
+
+    monkeypatch.setattr(utilities, "build_pdb_structures_parser", mock_building_parser)
+    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
+    monkeypatch.setattr(utilities, "config_logger", mock_no_return)
+    monkeypatch.setattr(file_io, "get_configuration", mock_config)
+    monkeypatch.setattr(file_io, "make_output_directory", mock_no_return)
+    monkeypatch.setattr(get_pdb_structures, "get_structures_for_specific_cazymes", mock_no_return)
+
+    get_pdb_structures.main()
+
+
+def test_get_every_cazymes_structures_primary(db_session, output_dir, monkeypatch):
+    """Test get_every_cazymes_structures() when primary is True and taxonomy filter is given."""
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(get_pdb_structures, "download_pdb_structures", mock_no_return)
+
+    args = {"args": Namespace(primary=True)}
+    tax_filter = set(["Nonlabens"])
+
+    get_pdb_structures.get_every_cazymes_structures(
+        output_dir,
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
+def test_get_every_cazymes_structures_all(db_session, output_dir, monkeypatch):
+    """Test get_every_cazymes_structures() when primary is False and no taxonomy filter is given."""
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(get_pdb_structures, "download_pdb_structures", mock_no_return)
+
+    args = {"args": Namespace(primary=False)}
+    tax_filter = None
+
+    get_pdb_structures.get_every_cazymes_structures(
+        output_dir,
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
+def test_get_structures_for_specific_cazymes_primary(db_session, output_dir, monkeypatch):
+    """Test get_structures_for_specific_cazymes when primary is true and tax filter is given."""
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(get_pdb_structures, "download_pdb_structures", mock_no_return)
+
+    args = {"args": Namespace(primary=True)}
+    tax_filter = set(["Nonlabens"])
+    config_dict = {"classes": ["PL"], "Polysaccharide Lyases (PLs)": ["PL28"]}
+
+    get_pdb_structures.get_structures_for_specific_cazymes(
+        output_dir,
+        config_dict,
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
+def test_get_structures_for_specific_cazymes(db_session, output_dir, monkeypatch):
+    """Test get_structures_for_specific_cazymes when primary is False and tax filter not given."""
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(get_pdb_structures, "download_pdb_structures", mock_no_return)
+
+    args = {"args": Namespace(primary=False)}
+    tax_filter = None
+    config_dict = {"classes": ["PL"], "Polysaccharide Lyases (PLs)": ["PL28"]}
+
+    get_pdb_structures.get_structures_for_specific_cazymes(
+        output_dir,
+        config_dict,
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
 # test for get_genbank_sequences
 
 
