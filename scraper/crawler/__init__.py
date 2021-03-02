@@ -614,6 +614,14 @@ def row_to_protein(row, family_name, taxonomy_filters, session):
     except AttributeError:
         pass
 
+    # try to get all data from the GenBank's cell, this is important for retrieving GenBank
+    # accessions when only one is listed and it is not hyperlinked
+    try:
+        new_accession = tds[3].contents[0].strip()
+        links["GenBank"].append(new_accession)
+    except TypeError:
+        pass
+
     # check if UniProt or PDB accessions were retrieved. If not store as empty lists
     # this avoids KeyErros when invoking add_protein_to_db
     try:
