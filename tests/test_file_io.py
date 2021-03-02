@@ -26,11 +26,15 @@ pytest -v
 
 
 import pytest
+import shutil
 import sys
 
 import pandas as pd
 
 from argparse import Namespace
+
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 from scraper import file_io, sql
 
@@ -121,7 +125,7 @@ def args_config_cmd():
         "args": Namespace(
             config=None,
             classes="CE,AA",
-            families="GH14,GT1,PL15,CE6,AA10,CBM50,DD21",
+            families="GH14,GT1,PL15,CE6,AA10,CBM50,DD21,CBMAA1",
             genera=None,
             species=None,
             strains=None,
@@ -211,6 +215,20 @@ def tax_args(config_file_path):
 
 
 # test make_output_directory()
+
+
+def test_making_new_dir_1(making_output_dir):
+    """Test making a new directory."""
+    path_ = making_output_dir / "test_build"
+    file_io.make_output_directory(path_, True, True)
+    shutil.rmtree(path_)
+
+
+def test_making_new_dir_2(making_output_dir):
+    """Test making a new directory."""
+    path_ = making_output_dir / "test_build"
+    file_io.make_output_directory(path_, False, True)
+    shutil.rmtree(path_)
 
 
 def test_output_dir_creation_nd_true(making_output_dir):
@@ -553,3 +571,47 @@ def test_get_tax_filter_no_yaml(tax_no_yaml_args):
 def test_get_tax_filter(tax_args):
     """Test get_genera_species_strains when cmd-line and config file are parsed."""
     file_io.get_genera_species_strains(tax_args["args"])
+
+
+# test get_configuration() - retrieves configuraiton for the expand module
+
+
+def test_get_configuraiton_0(cazy_dictionary, file_io_path, monkeypatch):
+    """Tests getting configuration for the expand module when NO tax filters are given."""
+
+    def mock_parse_config(*args, **kwargs):
+        return None, None, cazy_dictionary, {}
+
+    monkeypatch.setattr(file_io, "parse_configuration", mock_parse_config)
+
+    file_io.get_configuration(file_io_path, "args")
+
+
+def test_get_configuraiton_1(cazy_dictionary, file_io_path, monkeypatch):
+    """Tests getting configuration for the expand module when ARE tax filters are given."""
+
+    def mock_parse_config(*args, **kwargs):
+        return None, None, cazy_dictionary, {"genera": ["Trichoderma", "Aspergillus"]}
+
+    monkeypatch.setattr(file_io, "parse_configuration", mock_parse_config)
+
+    file_io.get_configuration(file_io_path, "args")
+
+
+# test writing out FASTA files
+
+
+def test_write_out_fasta(making_output_dir):
+    """Test writing out FASTA file."""
+    path_ = making_output_dir / "fasta_test"
+    file_io.make_output_directory(path_, True, True)
+    genbank_accession = "test_accession"
+    record = SeqRecord(
+        Seq("MKQHKAMIVALIVTAVVAALVTRKDLCEHIRTGQTEVAVAVF"),
+        id="fake_protein.1",
+        name="fake",
+        description="test protein record",
+    )
+    args = {"args": Namespace(write=path_)}
+    file_io.write_out_fasta(record, genbank_accession, args["args"])
+    shutil.rmtree(path_)
