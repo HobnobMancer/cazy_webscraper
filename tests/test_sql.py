@@ -25,11 +25,13 @@ pytest -v
 
 
 import pytest
+import shutil
 
 from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
 
+from scraper import file_io
 from scraper.sql import sql_orm, sql_interface
 from scraper.sql.sql_orm import (
     Cazyme,
@@ -91,40 +93,54 @@ def test_regex_search(db_session):
 def test_calling_class_instances():
     """Test calling Class instances strs and reprs."""
     cazyme = Cazyme(cazyme_name="test_cazyme")
-    cazyme
+    str(cazyme)
     repr(cazyme)
 
     tax = Taxonomy(genus="genus", species="species")
-    tax
+    str(tax)
     repr(tax)
 
     fam = CazyFamily(family="family")
-    fam
+    str(fam)
+    repr(fam)
+
+    fam = CazyFamily(family="family", subfamily="subfamily")
+    str(fam)
     repr(fam)
 
     gb = Genbank(genbank_accession="accession")
-    gb
+    str(gb)
     repr(gb)
 
     cg = Cazymes_Genbanks(cazyme_id=1, genbank_id=2)
-    cg
+    str(cg)
     repr(cg)
 
     ec = EC(ec_number="EC1.2.3.4")
-    ec
+    str(ec)
     repr(ec)
 
     up = Uniprot(uniprot_accession="accession")
-    up
+    str(up)
     repr(up)
 
     pdb = Pdb(pdb_accession="accession")
-    pdb
+    str(pdb)
     repr(pdb)
 
     log = Log(date="date", time="time", classes="classes", families="families")
-    log
+    str(log)
     repr(log)
+
+
+def test_build_db():
+    """Test building a database."""
+    path_ = Path("tests")
+    path_ = path_ / "test_outputs" / "test_outputs_sql" / "temp_dir"
+    file_io.make_output_directory(path_, True, False)
+    args = {"args": Namespace(output=path_)}
+    sql_orm.build_db("time_stamp", args["args"])
+    shutil.rmtree(path_)
 
 
 # Unit tests for sql_interface
