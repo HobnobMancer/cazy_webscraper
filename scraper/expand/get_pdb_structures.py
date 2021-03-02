@@ -25,6 +25,7 @@
 
 import logging
 import os
+import sys
 import time
 
 import pandas as pd
@@ -67,6 +68,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger.error(
             "Could not find local CAZy database. Check path is correct. Terminating programme."
         )
+        sys.exit(1)
     session = get_db_session(args)
 
     # create output directory

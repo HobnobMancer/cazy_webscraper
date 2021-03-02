@@ -22,6 +22,7 @@
 import logging
 import os
 import re
+import sys
 import time
 
 import pandas as pd
@@ -66,6 +67,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger.error(
             "Could not find local CAZy database. Check path is correct. Terminating programme."
         )
+        sys.exit(1)
 
     Entrez.email = args.email
 
