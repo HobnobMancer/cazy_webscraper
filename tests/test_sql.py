@@ -21,7 +21,6 @@
 
 These test are intened to be run from the root of the repository using:
 pytest -v
-
 """
 
 
@@ -32,7 +31,17 @@ from datetime import datetime
 from pathlib import Path
 
 from scraper.sql import sql_orm, sql_interface
-from scraper.sql.sql_orm import Cazyme, CazyFamily, Genbank
+from scraper.sql.sql_orm import (
+    Cazyme,
+    CazyFamily,
+    Genbank,
+    Taxonomy,
+    EC,
+    Uniprot,
+    Pdb,
+    Log,
+    Cazymes_Genbanks,
+)
 
 
 @pytest.fixture
@@ -79,7 +88,53 @@ def test_regex_search(db_session):
     assert len(class_query) == 24
 
 
+def test_calling_class_instances():
+    """Test calling Class instances strs and reprs."""
+    cazyme = Cazyme(cazyme_name="test_cazyme")
+    cazyme
+    repr(cazyme)
+
+    tax = Taxonomy(genus="genus", species="species")
+    tax
+    repr(tax)
+
+    fam = CazyFamily(family="family")
+    fam
+    repr(fam)
+
+    gb = Genbank(genbank_accession="accession")
+    gb
+    repr(gb)
+
+    cg = Cazymes_Genbanks(cazyme_id=1, genbank_id=2)
+    cg
+    repr(cg)
+
+    ec = EC(ec_number="EC1.2.3.4")
+    ec
+    repr(ec)
+
+    up = Uniprot(uniprot_accession="accession")
+    up
+    repr(up)
+
+    pdb = Pdb(pdb_accession="accession")
+    pdb
+    repr(pdb)
+
+    log = Log(date="date", time="time", classes="classes", families="families")
+    log
+    repr(log)
+
+
 # Unit tests for sql_interface
+
+
+def test_custom_error():
+    """Test custom error."""
+    with pytest.raises(sql_interface.SqlInterfaceException) as pytest_wrapped_err:
+        raise sql_interface.SqlInterfaceException("message")
+    assert pytest_wrapped_err.type == sql_interface.SqlInterfaceException
 
 
 def test_adding_a_new_protein(db_session):
@@ -123,6 +178,30 @@ def test_genbank_no_cazymes(db_session, monkeypatch):
 
     def mock_adding_a_new_protein(*args, **kwargs):
         return
+
+    monkeypatch.setattr(sql_interface, "add_new_protein_to_db", mock_adding_a_new_protein)
+
+    existing_genbank_with_no_cazyme = "test_genbank_no_cazyme"
+
+    sql_interface.add_protein_to_db(
+        "test_cazyme_name",
+        "cazy_family",
+        "source_genus organism",
+        existing_genbank_with_no_cazyme,
+        db_session,
+        ec_numbers=["EC4.2.2.-"],
+        genbank_accessions=["Genbank1", "Genbank2"],
+        uniprot_accessions=["Uni1", "Uni2"],
+    )
+
+    db_session.rollback()
+
+
+def test_genbank_no_cazymes_raise_error(db_session, monkeypatch):
+    """test adding a protein to a database, GenBank accession is found with no linked CAZymes."""
+
+    def mock_adding_a_new_protein(*args, **kwargs):
+        return "error_message"
 
     monkeypatch.setattr(sql_interface, "add_new_protein_to_db", mock_adding_a_new_protein)
 
@@ -256,6 +335,35 @@ def test_adding_new_protein_and_new_species(db_session, monkeypatch):
     db_session.rollback()
 
 
+def test_adding_new_protein_and_new_species_and_fam(db_session, monkeypatch):
+    """Test add_new_protein_to_db and a new species to the database."""
+
+    def mock_return_none(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(sql_interface, "add_ec_numbers", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_genbank_accessions", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_uniprot_accessions", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_pdb_accessions", mock_return_none)
+
+    time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    new_species = f"genus-{time_stamp} species-{time_stamp}"
+
+    sql_interface.add_new_protein_to_db(
+        "cazyme_name",
+        "GH5",
+        new_species,
+        Genbank(genbank_accession=f"primary_genbank{time_stamp}"),
+        db_session,
+        ec_numbers=["EC number", "ec number"],
+        genbank_accessions=["gen1", "gen2"],
+        uniprot_accessions=["uni1", "uni2"],
+        pdb_accessions=["pdb1", "pdb2"],
+    )
+
+    db_session.rollback()
+
+
 def test_addding_new_protein_with_existing_species(db_session, monkeypatch):
     """Test add_new_protein_to_db when the species exists in the database."""
 
@@ -312,6 +420,27 @@ def test_adding_new_protein_with_multiple_species(db_session, monkeypatch):
     )
 
     db_session.rollback()
+
+
+# test add_data_to_protein_record()
+
+
+def test_add_data_to_protein_record(db_session, monkeypatch):
+    """Test add_data_to_protein_record()."""
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(sql_interface, "add_cazy_family", mock_no_return)
+    monkeypatch.setattr(sql_interface, "add_pdb_accessions", mock_no_return)
+
+    sql_interface.add_data_to_protein_record(
+        Cazyme(cazyme_name="test_cazyme"),
+        "GH3",
+        db_session,
+        pdb_accessions=["pdb1", "pdb2"],
+    )
+    db_session.rollback()
+
 
 
 # Unit tests for add_cazy_family
