@@ -278,7 +278,11 @@ def test_get_structures_for_specific_cazymes(db_session, output_dir, monkeypatch
 
     args = {"args": Namespace(primary=False)}
     tax_filter = None
-    config_dict = {"classes": ["PL"], "Polysaccharide Lyases (PLs)": ["PL28"]}
+    config_dict = {
+        "classes": ["PL"],
+        "Polysaccharide Lyases (PLs)": ["PL28","GH3_1"],
+        "CAZyclass": None,
+    }
 
     get_pdb_structures.get_structures_for_specific_cazymes(
         output_dir,
@@ -515,3 +519,5 @@ def test_main_yes_config_yes_update(db_path, monkeypatch):
     )
 
     get_genbank_sequences.main()
+
+

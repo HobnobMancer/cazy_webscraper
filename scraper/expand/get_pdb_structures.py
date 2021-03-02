@@ -211,7 +211,7 @@ def get_structures_for_specific_cazymes(outdir, config_dict, taxonomy_filters, s
     for key in config_dict:
         if key == "classes":
             continue
-        if len(config_dict[key]) is None:
+        if config_dict[key] is None:
             continue
 
         for family in tqdm(config_dict[key], desc=f"Parsing families in {key}"):
