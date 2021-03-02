@@ -619,7 +619,7 @@ def row_to_protein(row, family_name, taxonomy_filters, session):
             new_accession = tds[ref[0]].contents[0].strip()
             if len(new_accession) != 0:
                 links[ref[1]].append(new_accession)
-        except TypeError:
+        except (TypeError, IndexError) as e:
             pass
 
     # check if UniProt or PDB accessions were retrieved. If not store as empty lists
