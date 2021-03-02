@@ -594,7 +594,7 @@ def row_to_protein(row, family_name, taxonomy_filters, session):
     else:
         ec_numbers = None
 
-    links = {"GenBank": []}
+    links = {"GenBank": [], "UniProt": [], "PDB/3D": []}
     # test for len(tds[x].contents) in case there is no link,
     # the check of .name then ensures link is captured
     if len(tds[3].contents) and tds[3].contents[0].name == "a":
@@ -604,23 +604,23 @@ def row_to_protein(row, family_name, taxonomy_filters, session):
     if len(tds[5].contents) and tds[5].contents[0].name == "a":
         links["PDB/3D"] = [f"{_.get_text()}" for _ in tds[5].contents if _.name == "a"]
 
-    # Retrieve non-primary GenBank accession
-    # these are the accessions that are not hyerlinked in CAZy
-    try:
-        genbank_synonyms = tds[3].find('br').next_siblings
-        for i in genbank_synonyms:
-            if type(i) is bs4.element.NavigableString:
-                links["GenBank"].append(i)
-    except AttributeError:
-        pass
-
-    # try to get all data from the GenBank's cell, this is important for retrieving GenBank
-    # accessions when only one is listed and it is not hyperlinked
-    try:
-        new_accession = tds[3].contents[0].strip()
-        links["GenBank"].append(new_accession)
-    except TypeError:
-        pass
+    # Retrieve accessions that are not hyerlinked
+    for ref in [[3, "GenBank"], [4, "UniProt"], [5, "PDB/3D"]]:
+        try:
+            accessions = tds[ref[0]].find('br').next_siblings
+            for i in accessions:
+                if type(i) is bs4.element.NavigableString:
+                    links[ref[1]].append(i)
+        except AttributeError:
+            pass
+        # try to get all data from the cell, this is important for retrieving GenBank
+        # accessions when only one is listed and it is not hyperlinked
+        try:
+            new_accession = tds[ref[0]].contents[0].strip()
+            if len(new_accession) != 0:
+                links[ref[1]].append(new_accession)
+        except TypeError:
+            pass
 
     # check if UniProt or PDB accessions were retrieved. If not store as empty lists
     # this avoids KeyErros when invoking add_protein_to_db
