@@ -88,7 +88,17 @@ def build_parser(argv: Optional[List] = None):
         "--families",
         type=str,
         default=None,
-        help="Families to scrape. Separate families by commas 'GH1,GH2'"
+        help="Families to scrape. Separate families by commas 'GH1,GH2' (case sensitive)"
+    )
+
+    # Add option to restrict the scrape to specific kingdoms
+    parser.add_argument(
+        "--kingdoms",
+        type=str,
+        default=None,
+        help=(
+            "Kingdoms to scrape. Separate by a single comma.\n"
+            "Options= archaea, bacteria, eukaryota, viruses, unclassified (not case sensitive)"
     )
 
     # Add log file name option
