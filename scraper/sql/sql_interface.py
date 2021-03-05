@@ -48,8 +48,9 @@ def add_protein_to_db(
     primary_genbank,
     session,
     ec_numbers=[],
-    genbank_accessions=[],
-    uniprot_accessions=[],
+    gbk_nonprimary=[],
+    uni_primary=[],
+    uni_nonprimary=[],
     pdb_accessions=[],
 ):
     """Coordinate adding protein (CAZyme) data to the SQL database (db).
@@ -77,8 +78,9 @@ def add_protein_to_db(
 
     ::optional parameters::
     :param ec_numbers: list of EC numbers which the CAZyme is annotated with
-    :param genbank_accessions: list of non-primary GenBank accessions
-    :param uniprot_accessions: list, accessions of associated records in UniProtKB
+    :param gbk_nonprimary: list of non-primary GenBank accessions
+    :param uni_primary: list, primary accessions of associated records in UniProtKB
+    :param uni_nonprimary: list, non-primary accessions of associated records in UniProtKB
     :param pdb_accessions: list, accessions of associated records in PDB
 
     Return nothing.
@@ -101,8 +103,9 @@ def add_protein_to_db(
             primary_genbank,
             session,
             ec_numbers,
-            genbank_accessions,
-            uniprot_accessions,
+            gbk_nonprimary,
+            uni_primary,
+            uni_nonprimary,
             pdb_accessions,
         )
 
@@ -115,8 +118,9 @@ def add_protein_to_db(
         primary_genbank_object,
         session,
         ec_numbers,
-        genbank_accessions,
-        uniprot_accessions,
+        gbk_nonprimary,
+        uni_primary,
+        uni_nonprimary,
         pdb_accessions,
     )
 
@@ -133,8 +137,9 @@ def parse_unique_genbank_conflict(
     primary_genbank,
     session,
     ec_numbers=[],
-    genbank_accessions=[],
-    uniprot_accessions=[],
+    gbk_nonprimary=[],
+    uni_primary=[],
+    uni_nonprimary=[],
     pdb_accessions=[],
 ):
     """Called when primary GenBank accession is already in the local database.
@@ -150,9 +155,10 @@ def parse_unique_genbank_conflict(
 
     ::optional parameters::
     :param ec_numbers: list of EC numbers which the CAZyme is annotated with
-    :param genbank_accessions: list of non-primary GenBank accessions
-    :param uniprot_accessions: list, accessions of associated records in UniProtKB
-    :param pdb_accessions: list, accessions of associated records in PDB
+    :param gbk_nonprimary: list of non-primary GenBank accessions
+    :param uni_primary: list, primary accessions of associated records in UniProtKB
+    :param uni_nonprimary: list, non-primary accessions of associated records in UniProtKB
+    :param pdb_acccessions: list, accessions of associated records in PDB
 
     Return nothing.
     """
@@ -161,12 +167,10 @@ def parse_unique_genbank_conflict(
 
     # check if the local GenBank object is for a primary GenBank accession
     primary_genbank_query = session.query(Genbank).\
-        filter(Genbank.genbank_accession == primary_genbank).\
-        filter(Cazymes_Genbanks.primary == True).all()
+        filter(Genbank.genbank_accession == primary_genbank).filter(Cazymes_Genbanks.primary == True).all()
 
     if len(primary_genbank_query) == 0:
-        # GenBank accession was not found as a primary accession in the database, inferring the
-        # protein is not in the local database
+        # Accession was not found as a primary accession, inferring the protein is not in the db
         error_message = add_new_protein_to_db(
             cazyme_name,
             family,
@@ -174,8 +178,9 @@ def parse_unique_genbank_conflict(
             primary_genbank_query[0],
             session,
             ec_numbers,
-            genbank_accessions,
-            uniprot_accessions,
+            gbk_nonprimary,
+            uni_primary,
+            uni_nonprimary,
             pdb_accessions,
         )
 
@@ -200,8 +205,9 @@ def parse_unique_genbank_conflict(
                 primary_genbank_query[0],
                 session,
                 ec_numbers,
-                genbank_accessions,
-                uniprot_accessions,
+                gbk_nonprimary,
+                uni_primary,
+                uni_nonprimary,
                 pdb_accessions,
             )
 
@@ -211,17 +217,17 @@ def parse_unique_genbank_conflict(
                 family,
                 session,
                 ec_numbers,
-                genbank_accessions,
-                uniprot_accessions,
+                gbk_nonprimary,
+                uni_primary,
+                uni_nonprimary,
                 pdb_accessions,
             )
 
         else:
             # multiple CAZymes have the same primary GenBank accession, inferring duplicates
             logger.warning(
-                "Potential duplicate CAZymes found in the local database.\n"
-                "The following CAZymes found with the same primary GenBank accession "
-                f"{primary_genbank}\n inferring they are the same protein:"
+                "Potential duplicate CAZymes found in the local database, because they have the "
+                f"same primary GenBank accession {primary_genbank}\nPotential duplicate CAZymes:"
             )
             for cazyme in cazyme_query:
                 logger.warning(f"Name={cazyme[0].cazyme_name}, id={cazyme[0].cazyme_id}")
@@ -234,8 +240,9 @@ def parse_unique_genbank_conflict(
                 family,
                 session,
                 ec_numbers,
-                genbank_accessions,
-                uniprot_accessions,
+                gbk_nonprimary,
+                uni_primary,
+                uni_nonprimary,
                 pdb_accessions,
             )
 
@@ -249,8 +256,9 @@ def add_new_protein_to_db(
     primary_genbank_object,
     session,
     ec_numbers=[],
-    genbank_accessions=[],
-    uniprot_accessions=[],
+    gbk_nonprimary=[],
+    uni_primary=[],
+    uni_nonprimary=[],
     pdb_accessions=[],
 ):
     """Add a new protein (a CAZyme) record to the database.
@@ -263,9 +271,10 @@ def add_new_protein_to_db(
 
     ::optional parameters::
     :param ec_numbers: list of EC numbers which the CAZyme is annotated with
-    :param genbank_accessions: list of non-primary GenBank accessions
-    :param uniprot_accessions: list, accessions of associated records in UniProtKB
-    :param pdb_accessions: list, accessions of associated records in PDB
+    :param gbk_nonprimary: list of non-primary GenBank accessions
+    :param uni_primary: list, primary accessions of associated records in UniProtKB
+    :param uni_nonprimary: list, non-primary accessions of associated records in UniProtKB
+    :param pdb_accessions: list, =accessions of associated records in PDB
 
     Return nothing.
     """
@@ -321,11 +330,14 @@ def add_new_protein_to_db(
     if len(ec_numbers) != 0:
         add_ec_numbers(ec_numbers, new_cazyme, session)
 
-    if len(genbank_accessions) != 0:
-        add_genbank_accessions(genbank_accessions, new_cazyme, session)
+    if len(gbk_nonprimary) != 0:
+        add_nonprimary_gbk_accessions(gbk_nonprimary, new_cazyme, session)
 
-    if len(uniprot_accessions) != 0:
-        add_uniprot_accessions(uniprot_accessions, new_cazyme, session)
+    if len(uni_primary) != 0:
+        add_uniprot_accessions(uni_primary, new_cazyme, True, session)
+
+    if len(uni_nonprimary) != 0:
+        add_uniprot_accessions(uni_nonprimary, new_cazyme, False, session)
 
     if len(pdb_accessions) != 0:
         add_pdb_accessions(pdb_accessions, new_cazyme, session)
@@ -338,8 +350,9 @@ def add_data_to_protein_record(
     family,
     session,
     ec_numbers=[],
-    genbank_accessions=[],
-    uniprot_accessions=[],
+    gbk_nonprimary=[],
+    uni_primary=[],
+    uni_nonprimary=[],
     pdb_accessions=[],
 ):
     """Add data to an existing record in the SQL database.
@@ -350,8 +363,9 @@ def add_data_to_protein_record(
 
     ::optional parameters::
     :param ec_numbers: list of EC numbers which the CAZyme is annotated with
-    :param genbank_accessions: list of non-primary GenBank accessions
-    :param uniprot_accessions: list, accessions of associated records in UniProtKB
+    :param gbk_nonprimary: list of non-primary GenBank accessions
+    :param uni_primary: list, primary accessions of associated records in UniProtKB
+    :param uni_nonprimary: list, non-primary accessions of associated records in UniProtKB
     :param pdb_accessions: list, accessions of associated records in PDB
 
     Return nothing.
@@ -364,14 +378,17 @@ def add_data_to_protein_record(
     if len(ec_numbers) != 0:
         add_ec_numbers(ec_numbers, cazyme, session)
 
-    if len(genbank_accessions) != 0:
-        add_genbank_accessions(genbank_accessions, cazyme, session)
+    if len(gbk_nonprimary) != 0:
+        add_nonprimary_gbk_accessions(gbk_nonprimary, cazyme, session)
 
-    if len(uniprot_accessions) != 0:
-        add_uniprot_accessions(uniprot_accessions, cazyme, session)
+    if len(uni_primary) != 0:
+        add_uniprot_accessions(uni_primary, cazyme, True, session)
+
+    if len(uni_nonprimary) != 0:
+        add_uniprot_accessions(uni_nonprimary, cazyme, False, session)
 
     if len(pdb_accessions) != 0:
-        add_pdb_accessions(pdb_accessions, cazyme, session)
+        add_pdb_accessions(pdb_accessions, new_cazyme, session)
 
     return
 
@@ -441,7 +458,7 @@ def add_cazy_subfamily(subfamily, cazyme, session):
 # PDB accessions
 
 
-def add_genbank_accessions(genbank_accessions, cazyme, session):
+def add_nonprimary_gbk_accessions(genbank_accessions, cazyme, session):
     """Add non-primary GenBank protein accessions to the local database.
 
     :param genbank_accessions: list of non-primary GenBank protein accession numbers (str)
@@ -476,11 +493,7 @@ def add_genbank_accessions(genbank_accessions, cazyme, session):
             continue
 
         try:
-            relationship = Cazymes_Genbanks(
-                cazymes=cazyme,
-                genbanks=new_genbank,
-                primary=False,
-            )
+            relationship = Cazymes_Genbanks(cazymes=cazyme, genbanks=new_genbank, primary=False)
             session.add(relationship)
             session.commit()
         except IntegrityError:
@@ -508,7 +521,6 @@ def add_ec_numbers(ec_numbers, cazyme, session):
             session.rollback()
 
             ec_query = session.query(EC).filter(EC.ec_number == ec).all()
-
             try:
                 cazyme.ecs.append(ec_query[0])
                 session.commit()
@@ -525,83 +537,39 @@ def add_ec_numbers(ec_numbers, cazyme, session):
     return
 
 
-def add_uniprot_accessions(uniprot_accessions, cazyme, session):
-    """Add UniProt protein accessions to CAZyme record in the local CAZy database.
+def add_uniprot_accessions(uniprot_accessions, cazyme, primary, session):
+    """Add primary UniProt accessions to CAZyme record in local CAZy database.
 
-    :param uniprot_accessions: list of UniProt protein accession numbers (str)
-    :param cazyme: Cazymes class object
+    :param uniprot_accessions: list of Uniprot accessions
+    :param cazyme: Cazyme class instance
+    :param primary: boolean, True = primary accessions, False non-primary accessions
     :param session: open local database session connector
 
     Return nothing.
     """
-    if len(uniprot_accessions) == 1:
-        add_primary_uniprot(uniprot_accessions[0], cazyme, session)
+    for accession in uniprot_accessions:
+        try:
+            new_uniprot = Uniprot(uniprot_accession=accession, primary=primary)
+            session.add(new_uniprot)
+            session.commit()
+        except IntegrityError:
+            session.rollback()
 
-    else:
-        add_primary_uniprot(uniprot_accessions[0], cazyme, session)
-
-        for accession in uniprot_accessions[1:]:
-            try:
-                new_uniprot = Uniprot(uniprot_accession=accession, primary=False)
-                session.add(new_uniprot)
-                session.commit()
-
-            except IntegrityError:
-                session.rollback()
-
-                uniprot_query = session.query(Uniprot).\
-                    filter(Uniprot.uniprot_accession == accession).\
-                    filter(Uniprot.primary == False).all()
-
-                try:
-                    cazyme.uniprots.append(uniprot_query[0])
-                    session.commit()
-                except (IntegrityError, IndexError) as e:
-                    session.rollback()
-                continue
+            uniprot_query = session.query(Uniprot).filter(Uniprot.uniprot_accession == accession).\
+                filter(Uniprot.primary == primary).all()
 
             try:
-                cazyme.uniprots.append(new_uniprot)
+                cazyme.uniprots.append(uniprot_query[0])
                 session.commit()
-            except IntegrityError:
+            except (IntegrityError, IntegrityError) as e:
                 session.rollback()
-
-    return
-
-
-def add_primary_uniprot(accession, cazyme, session):
-    """Add primary UniProt accession for CAZyme to the local CAZy database.
-
-    :param accession: str, primary UniProt accession of a CAZyme
-    :param cazyme: Cazymes class object
-    :param session: open local database session connector
-
-    Return nothing.
-    """
-    try:
-        new_uniprot = Uniprot(uniprot_accession=accession, primary=True)
-        session.add(new_uniprot)
-        session.commit()
-
-    except IntegrityError:
-        session.rollback()
-
-        uniprot_query = session.query(Uniprot).\
-            filter(Uniprot.uniprot_accession == accession).\
-            filter(Uniprot.primary == False).all()
+            continue
 
         try:
-            cazyme.uniprots.append(uniprot_query[0])
+            cazyme.uniprots.append(new_uniprot)
             session.commit()
-        except (IntegrityError, IndexError) as e:
+        except IntegrityError:
             session.rollback()
-        return
-
-    try:
-        cazyme.uniprots.append(new_uniprot)
-        session.commit()
-    except IntegrityError:
-        session.rollback()
 
     return
 
@@ -615,73 +583,27 @@ def add_pdb_accessions(pdb_accessions, cazyme, session):
 
     Return nothing.
     """
-    if len(pdb_accessions) == 1:
-        add_primary_pdb(pdb_accessions[0], cazyme, session)
+    for accession in pdb_accessions:
+        try:
+            new_pdb = Pdb(pdb_accession=accession)
+            session.add(new_pdb)
+            session.commit()
+        except IntegrityError:
+            session.rollback()
 
-    else:
-        add_primary_pdb(pdb_accessions[0], cazyme, session)
-
-        for accession in pdb_accessions[1:]:
-            try:
-                new_pdb = Pdb(pdb_accession=accession, primary=False)
-                session.add(new_pdb)
-                session.commit()
-
-            except IntegrityError:
-                session.rollback()
-
-                pdb_query = session.query(Pdb).\
-                    filter(Pdb.pdb_accession == accession).filter(Pdb.primary == False).all()
-
-                try:
-                    cazyme.pdbs.append(pdb_query[0])
-                    session.commit()
-                except (IntegrityError, IndexError) as e:
-                    session.rollback()
-                    continue
+            pdb_query = session.query(Pdb).filter(Pdb.pdb_accession == accession).all()
 
             try:
-                cazyme.pdbs.append(new_pdb)
+                cazyme.pdbs.append(pdb_query[0])
                 session.commit()
-            except IntegrityError:
+            except (IntegrityError, IntegrityError) as e:
                 session.rollback()
-
-    return
-
-
-def add_primary_pdb(accession, cazyme, session):
-    """Add primary PDB/3D accession for CAZyme to the local CAZy database.
-
-    :param accession: str, primary UniProt accession of a CAZyme
-    :param cazyme: Cazymes class object
-    :param session: open local database session connector
-
-    Return nothing.
-    """
-    # add PDB to the database
-    try:
-        new_pdb = Pdb(pdb_accession=accession, primary=True)
-        session.add(new_pdb)
-        session.commit()
-
-    except IntegrityError:
-        session.rollback()
-
-        pdb_query = session.query(Pdb).\
-            filter(Pdb.pdb_accession == accession).filter(Pdb.primary == True).all()
+            continue
 
         try:
-            cazyme.pdbs.append(pdb_query[0])
+            cazyme.pdbs.append(new_pdb)
             session.commit()
-        except (IntegrityError, IndexError) as e:
+        except IntegrityError:
             session.rollback()
-            return
-
-    # link PDB to CAZyme
-    try:
-        cazyme.pdbs.append(new_pdb)
-        session.commit()
-    except IntegrityError:
-        session.rollback()
 
     return
