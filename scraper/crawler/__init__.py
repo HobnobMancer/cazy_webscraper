@@ -539,15 +539,18 @@ def parse_proteins(protein_page_url, family_name, taxonomy_filters, session):
         )
         return {"url": protein_page_url, "error": error, "sql": None}
 
-    # retrieve protein record table
-    protein_table = protein_page.find_all("table", {"class": "listing"})[0]
-    protein_rows = [
-        _ for _ in protein_table.descendants if (
-            (_.name == "tr") and ("id" not in _.attrs) and ("class" not in _.attrs)
-        )
+    # Get the table on the page corresponding to CAZymes
+    cazyme_table = pdb_page.soup.select("table")[1]
+
+    # Get all rows in the table, exluding those that are header/navigation roes
+    # Each row has an .attrs attribute, and this holds the selector options, such as
+    # "class" and "id"; CAZyme rows don't have these attributes
+    cazyme_rows = [
+        _ for _ in cazyme_table.select("tr") if "class" not in _.attrs and "id" not in _.attrs,
     ]
 
-    for row in protein_rows:
+    # Loop overal all rows and add data to the local database
+    for row in cazyme_rows:
         yield row_to_protein(row, family_name, taxonomy_filters, session)
 
 
@@ -594,85 +597,81 @@ def row_to_protein(row, family_name, taxonomy_filters, session):
     else:
         ec_numbers = None
 
-    links = {"GenBank": [], "UniProt": [], "PDB/3D": []}
-    # test for len(tds[x].contents) in case there is no link,
-    # the check of .name then ensures link is captured
-    if len(tds[3].contents) and tds[3].contents[0].name == "a":
-        links["GenBank"] = [f"{_.get_text()}" for _ in tds[3].contents if _.name == "a"]
-    if len(tds[4].contents) and tds[4].contents[0].name == "a":
-        links["UniProt"] = [f"{_.get_text()}" for _ in tds[4].contents if _.name == "a"]
-    if len(tds[5].contents) and tds[5].contents[0].name == "a":
-        links["PDB/3D"] = [f"{_.get_text()}" for _ in tds[5].contents if _.name == "a"]
+    # get all GenBank (gbk), UniProt (uni) and PDB (pdb, listed as PDB/3D in CAZy) accessions
+    gbk_accessions = [_ for _ in row.select("td")[3].contents if getattr(_, "name", None) != "br"]
+    uni_accessions = [_ for _ in row.select("td")[4].contents if getattr(_, "name", None) != "br"]
+    pdb_accessions = [_ for _ in row.select("td")[5].contents if getattr(_, "name", None) != "br"]
 
-    # Retrieve accessions that are not hyerlinked
-    for ref in [[3, "GenBank"], [4, "UniProt"], [5, "PDB/3D"]]:
-        try:
-            accessions = tds[ref[0]].find('br').next_siblings
-            for i in accessions:
-                if type(i) is bs4.element.NavigableString:
-                    links[ref[1]].append(i)
-        except AttributeError:
-            pass
-        # try to get all data from the cell, this is important for retrieving GenBank
-        # accessions when only one is listed and it is not hyperlinked
-        try:
-            new_accession = tds[ref[0]].contents[0].strip()
-            if len(new_accession) != 0:
-                links[ref[1]].append(new_accession)
-        except (TypeError, IndexError) as e:
-            pass
+    # Retrieve primary GenBank and UniProt accessions (identified by being written in bold)
+    # CAZy defines the 'best' GenBank and UniProt models by writting them in bold
+    gbk_primary = [_.text for _ in row.select("td")[3].find_all('b')]
+    uni_primary = [_.text for _ in row.select("td")[4].find_all('b')]
 
-    # check if UniProt or PDB accessions were retrieved. If not store as empty lists
-    # this avoids KeyErros when invoking add_protein_to_db
-    try:
-        uniprot_accessions = links["UniProt"]
-    except KeyError:
-        uniprot_accessions = []
-    try:
-        pdb_accessions = links["PDB/3D"]
-    except KeyError:
-        pdb_accessions = []
+    # Retrieve all accessions listed for each database
+    gbk_nonprimary = get_accessions(gbk_accessions)
+    uni_nonprimary = get_accessions(uni_accessions)
+    pdb_accessions = get_accessions(pdb_accessions)
 
-    if len(links["GenBank"]) == 0:
-        logger.warning(
-            f"Did not retrieve any GenBank accessions for {protein_name} in {family_name}.\n"
-            "The primary GenBank accession determines what unique protein the current working "
-            "protein is.\n"
-            "Adding protein with the GenBank accession: 'NA' as a new protein to the db."
-        )
-        links["GenBank"] = ["NA"]
+    # create dict for storing error messages for writing to the failed_to_scrape output file
+    report_dict = {"url": None, "error": None, "sql": None}
 
-        try:
-            sql_interface.add_protein_to_db(
-                protein_name,
-                family_name,
-                source_organism,
-                'NA',
-                session,
-                ec_numbers=ec_numbers,
-                uniprot_accessions=uniprot_accessions,
-                pdb_accessions=pdb_accessions,
+    # Remove primary GenBank accessions from the non-primary accessions list
+    if len(gbk_primary) == 0:
+        if len(gbk_nonprimary) == 0:
+            warning = (
+                f"NO GenBank accessions retrieved for {protein_name} in {family_name}.\n"
+                "Adding protein with the GenBank accession: 'NA' as a new protein to the db."
             )
+            logger.warning(warning)
+            gbk_primary = ["NA"]
+            report_dict["error"] = warning
+            report_dict["sql"] = protein_name
 
-        except Exception as error_message:
-            logger.warning(f"Failed to add {protein_name} to SQL database", exc_info=1)
-            return {
-                "url": None,
-                "error": (
-                    f"Failed to add to SQL database, this error was raised: {error_message},\n"
-                    f"and no GenBank listed in CAZy for this protein {protein_name}"
-                ),
-                "sql": protein_name,
-            }
+        elif len(gbk_nonprimary) == 1:
+            gbk_primary = gbk_nonprimary
+            gbk_nonprimary.remove(gbk_nonprimary[0])
+        
+        else:
+            warning = (
+                f"Multiple primary GenBank accessions retrieved for {protein_name} in "
+                f"{family_name}.\n"
+                f"The first listed primary accession {gbk_primary[0]} listed as the primary.\n"
+                f"Remaining primary accessions listed as non-primary accessions for {protein_name}"
+            )
+            logger.warning(warning)
+            report_dict["error"] = warning
+            report_dict["sql"] = protein_name
 
-        return {
-            "url": None,
-            "error": (
-                f"No GenBank accession listed for protein {protein_name} in CAZy,\n"
-                "Protein added with the GenBank accesion 'NA'"
-            ),
-            "sql": f"{protein_name}",
-        }
+    else:
+        for acc in gbk_primary:
+            try:
+                gbk_nonprimary.remove(acc)
+            except ValueError:
+                pass
+
+    # Remove primary UniProt accessions from the non-primary accessions list
+    if len(uni_primary) == 0:        
+        if len(uni_nonprimary) == 1:
+            uni_primary = uni_nonprimary
+            uni_nonprimary.remove(uni_nonprimary[0])
+        
+        elif len(uni_primary) > 1:
+            warning = (
+                f"Multiple primary UniProt accessions retrieved for {protein_name} in "
+                f"{family_name}.\n"
+                f"The first listed primary accession {gbk_primary[0]} listed as the primary.\n"
+                f"Remaining primary accessions listed as non-primary accessions for {protein_name}"
+            )
+            logger.warning(warning)
+            report_dict["error"] = warning
+            report_dict["sql"] = protein_name
+    
+    else:
+        for acc in uni_primary:
+            try:
+                uni_nonprimary.remove(acc)
+            except ValueError:
+                pass
 
     # add protein to database
     try:
@@ -680,23 +679,42 @@ def row_to_protein(row, family_name, taxonomy_filters, session):
             protein_name,
             family_name,
             source_organism,
-            links["GenBank"][0],
+            gbk_primary[0],
             session,
             ec_numbers,
-            links["GenBank"][1:],
-            uniprot_accessions,
-            pdb_accessions,
+            gbk_nonprimary=gbk_nonprimary,
+            uni_primary=uni_primary,
+            uni_nonprimary=uni_nonprimary
+            pdb_accessions=pdb_accessions,
         )
 
     except Exception as error_message:
-        logger.warning(f"Failed to add {protein_name} to SQL database", exc_info=1)
-        return {
-            "url": None,
-            "error": f"Failed to add to SQL database. {error_message}",
-            "sql": protein_name,
-        }
+        warning = (
+            f"Failed to add {protein_name} to SQL database, "
+            f"the following error was raised:\n{error_message}"
+        )
+        logger.warning(warning)
+        report_dict["error"] = warning
+        report_dict["sql"] = protein_name
 
     return {"url": None, "error": None, "sql": None}
+
+
+def get_accessions(bs_element_lst):
+    """Retrieve all accessions listed in a cell from a CAZyme table.
+
+    :param bs_element_list: list of BeautifulSoup element from cell in HTML table
+
+    Return list of accessions."""
+    accessions = []
+    
+    for bs_element in bs_element_lst:
+        if bs_element.name == "a":  # Hyperlinked, extract accession and add to primary
+            accessions.append(bs_element.text)
+        elif bs_element.strip() != "":  # There is text in element
+            accessions.append(bs_element)
+
+    return accessions
 
 
 def browser_decorator(func):
