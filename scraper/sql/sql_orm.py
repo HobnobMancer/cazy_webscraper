@@ -433,23 +433,16 @@ class Pdb(Base):
 
     pdb_id = Column(Integer, primary_key=True)
     pdb_accession = Column(String)
-    primary = Column(Boolean)
 
     Index('pdb_idx', pdb_accession, primary)
 
     cazymes = relationship("Cazyme", secondary=cazymes_pdbs, back_populates="pdbs", lazy="dynamic")
 
     def __str__(self):
-        return(
-            f"-PDB accession={self.pdb_accession}, "
-            f"id={self.pdb_id}, primary={self.primary}-"
-        )
+        return f"-PDB accession={self.pdb_accession}, id={self.pdb_id}-"
 
     def __repr__(self):
-        return(
-            f"<Class Pdb accession={self.pdb_accession}, "
-            f"id={self.pdb_id}, primary={self.primary}>"
-        )
+        return f"<Class Pdb accession={self.pdb_accession}, id={self.pdb_id}>"
 
 
 class Log(Base):
