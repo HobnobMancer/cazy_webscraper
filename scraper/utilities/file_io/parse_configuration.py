@@ -22,59 +22,10 @@
 import json
 import logging
 import re
-import shutil
 import sys
 import yaml
 
-from Bio import SeqIO
 from pathlib import Path
-
-
-def make_output_directory(output, force, nodelete):
-    """Create output directory for genomic files.
-
-    :param output: path, path of dir to be created
-    :param force: bool, enable/disable creating dir if already exists
-    :param nodelete: bool, enable/disable deleting content in existing dir
-
-    Raises FileExistsError if an attempt is made to create a directory that already
-    exist and force (force overwrite) is False.
-
-    Return Nothing
-    """
-    logger = logging.getLogger(__name__)
-
-    if output.exists():
-        if force is True:
-
-            if nodelete is True:
-                logger.warning(
-                    f"Output directory {output} exists, nodelete is {nodelete}. "
-                    "Adding output to output directory."
-                )
-                return
-
-            else:
-                logger.warning(
-                    f"Output directory {output} exists, nodelete is {nodelete}. "
-                    "Deleting content currently in output directory."
-                )
-                shutil.rmtree(output)
-                output.mkdir(exist_ok=force)
-                return
-
-        else:
-            logger.warning(
-                f"Output directory {output} exists. 'force' is False, cannot write to existing "
-                "output directory.\nTerminating program."
-            )
-            sys.exit(1)
-
-    else:
-        output.mkdir(exist_ok=force)
-        logger.warning(f"Built output directory: {output}")
-
-    return
 
 
 def parse_configuration(file_io_path, args):
@@ -545,21 +496,3 @@ def get_configuration(file_io_path, args):
         taxonomy_filters = set(taxonomy_filters)
 
     return config_dict, taxonomy_filters
-
-
-def write_out_fasta(record, genbank_accession, args):
-    """Write out GenBank protein record to a FASTA file.
-
-    :param record: SeqIO parsed record
-    :param genbank_accession: str, accession number of the protein sequence in NCBI.GenBank
-    :param args: cmd-line arguments parser
-
-    Return nothing.
-    """
-    fasta_name = f"{genbank_accession}.fasta"
-    fasta_name = args.write / fasta_name
-
-    with open(fasta_name, "w") as fh:
-        SeqIO.write(record, fh, "fasta")
-
-    return
