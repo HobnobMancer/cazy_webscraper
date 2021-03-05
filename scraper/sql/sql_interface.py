@@ -167,7 +167,8 @@ def parse_unique_genbank_conflict(
 
     # check if the local GenBank object is for a primary GenBank accession
     primary_genbank_query = session.query(Genbank).\
-        filter(Genbank.genbank_accession == primary_genbank).filter(Cazymes_Genbanks.primary == True).all()
+        filter(Genbank.genbank_accession == primary_genbank).\
+        filter(Cazymes_Genbanks.primary == True).all()
 
     if len(primary_genbank_query) == 0:
         # Accession was not found as a primary accession, inferring the protein is not in the db

@@ -630,7 +630,7 @@ def row_to_protein(row, family_name, taxonomy_filters, session):
         elif len(gbk_nonprimary) == 1:
             gbk_primary = gbk_nonprimary
             gbk_nonprimary.remove(gbk_nonprimary[0])
-        
+
         else:
             warning = (
                 f"Multiple primary GenBank accessions retrieved for {protein_name} in "
@@ -650,11 +650,11 @@ def row_to_protein(row, family_name, taxonomy_filters, session):
                 pass
 
     # Remove primary UniProt accessions from the non-primary accessions list
-    if len(uni_primary) == 0:        
+    if len(uni_primary) == 0:
         if len(uni_nonprimary) == 1:
             uni_primary = uni_nonprimary
             uni_nonprimary.remove(uni_nonprimary[0])
-        
+
         elif len(uni_primary) > 1:
             warning = (
                 f"Multiple primary UniProt accessions retrieved for {protein_name} in "
@@ -665,7 +665,7 @@ def row_to_protein(row, family_name, taxonomy_filters, session):
             logger.warning(warning)
             report_dict["error"] = warning
             report_dict["sql"] = protein_name
-    
+
     else:
         for acc in uni_primary:
             try:
@@ -684,7 +684,7 @@ def row_to_protein(row, family_name, taxonomy_filters, session):
             ec_numbers,
             gbk_nonprimary=gbk_nonprimary,
             uni_primary=uni_primary,
-            uni_nonprimary=uni_nonprimary
+            uni_nonprimary=uni_nonprimary,
             pdb_accessions=pdb_accessions,
         )
 
@@ -707,7 +707,7 @@ def get_accessions(bs_element_lst):
 
     Return list of accessions."""
     accessions = []
-    
+
     for bs_element in bs_element_lst:
         if bs_element.name == "a":  # Hyperlinked, extract accession and add to primary
             accessions.append(bs_element.text)
