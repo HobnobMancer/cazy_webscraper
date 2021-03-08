@@ -29,8 +29,10 @@ import pytest
 from argparse import Namespace, ArgumentParser
 from pathlib import Path
 
-from scraper import expand, utilities, file_io
+from scraper import expand
 from scraper.expand import get_pdb_structures, get_genbank_sequences
+from scraper.sql.sql_orm import Cazyme, Cazymes_Genbanks, Genbank, Taxonomy
+from scraper.utilities import file_io, parse_configuration
 
 
 @pytest.fixture
@@ -46,9 +48,23 @@ def output_dir(test_dir):
     return path_
 
 
+@pytest.fixture
+def tax_filter():
+    return set(["Nonlabens"])
+
+
+@pytest.fixture
+def genbank_query(db_session):
+    query = db_session.query(Genbank, Cazymes_Genbanks, Taxonomy).\
+        join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
+        filter(Cazymes_Genbanks.primary == True).all()
+    return query
+
+
 # tests for get_pdb_structures
 
 
+@pytest.mark.skip()
 def test_main_no_db(monkeypatch):
     """Test main() when an the database file cannot be found."""
 
@@ -81,7 +97,7 @@ def test_main_no_db(monkeypatch):
 
     monkeypatch.setattr(utilities, "build_pdb_structures_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(file_io, "get_configuration", mock_config)
+    monkeypatch.setattr(parse_configuration, "get_configuration", mock_config)
     monkeypatch.setattr(file_io, "make_output_directory", mock_no_return)
 
     with pytest.raises(SystemExit) as pytest_wrapped_e:
@@ -89,6 +105,7 @@ def test_main_no_db(monkeypatch):
     assert pytest_wrapped_e.type == SystemExit
 
 
+@pytest.mark.skip()
 def test_main_outdir_is_none(db_path, monkeypatch):
     """Test main() when outdir=None."""
 
@@ -122,13 +139,14 @@ def test_main_outdir_is_none(db_path, monkeypatch):
     monkeypatch.setattr(utilities, "build_pdb_structures_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_no_return)
-    monkeypatch.setattr(file_io, "get_configuration", mock_config)
+    monkeypatch.setattr(parse_configuration, "get_configuration", mock_config)
     monkeypatch.setattr(file_io, "make_output_directory", mock_no_return)
     monkeypatch.setattr(get_pdb_structures, "get_every_cazymes_structures", mock_no_return)
 
     get_pdb_structures.main()
 
 
+@pytest.mark.skip()
 def test_main(db_path, output_dir, monkeypatch):
     """Test main()."""
 
@@ -162,13 +180,14 @@ def test_main(db_path, output_dir, monkeypatch):
     monkeypatch.setattr(utilities, "build_pdb_structures_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_no_return)
-    monkeypatch.setattr(file_io, "get_configuration", mock_config)
+    monkeypatch.setattr(parse_configuration, "get_configuration", mock_config)
     monkeypatch.setattr(file_io, "make_output_directory", mock_no_return)
     monkeypatch.setattr(get_pdb_structures, "get_every_cazymes_structures", mock_no_return)
 
     get_pdb_structures.main()
 
 
+@pytest.mark.skip()
 def test_main_argv(db_path, output_dir, monkeypatch):
     """Test main()."""
 
@@ -202,13 +221,14 @@ def test_main_argv(db_path, output_dir, monkeypatch):
     monkeypatch.setattr(utilities, "build_pdb_structures_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_no_return)
-    monkeypatch.setattr(file_io, "get_configuration", mock_config)
+    monkeypatch.setattr(parse_configuration, "get_configuration", mock_config)
     monkeypatch.setattr(file_io, "make_output_directory", mock_no_return)
     monkeypatch.setattr(get_pdb_structures, "get_structures_for_specific_cazymes", mock_no_return)
 
     get_pdb_structures.main()
 
 
+@pytest.mark.skip()
 def test_get_every_cazymes_structures_primary(db_session, output_dir, monkeypatch):
     """Test get_every_cazymes_structures() when primary is True and taxonomy filter is given."""
 
@@ -228,6 +248,7 @@ def test_get_every_cazymes_structures_primary(db_session, output_dir, monkeypatc
     )
 
 
+@pytest.mark.skip()
 def test_get_every_cazymes_structures_all(db_session, output_dir, monkeypatch):
     """Test get_every_cazymes_structures() when primary is False and no taxonomy filter is given."""
 
@@ -247,6 +268,7 @@ def test_get_every_cazymes_structures_all(db_session, output_dir, monkeypatch):
     )
 
 
+@pytest.mark.skip()
 def test_get_structures_for_specific_cazymes_primary(db_session, output_dir, monkeypatch):
     """Test get_structures_for_specific_cazymes when primary is true and tax filter is given."""
 
@@ -268,6 +290,7 @@ def test_get_structures_for_specific_cazymes_primary(db_session, output_dir, mon
     )
 
 
+@pytest.mark.skip()
 def test_get_structures_for_specific_cazymes(db_session, output_dir, monkeypatch):
     """Test get_structures_for_specific_cazymes when primary is False and tax filter not given."""
 
@@ -296,6 +319,7 @@ def test_get_structures_for_specific_cazymes(db_session, output_dir, monkeypatch
 # test for get_genbank_sequences
 
 
+@pytest.mark.skip()
 def test_main_no_db_genbank(monkeypatch):
     """Test main() when an the database file cannot be found."""
 
@@ -329,7 +353,7 @@ def test_main_no_db_genbank(monkeypatch):
 
     monkeypatch.setattr(utilities, "build_genbank_sequences_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(file_io, "get_configuration", mock_config)
+    monkeypatch.setattr(parse_configuration, "get_configuration", mock_config)
     monkeypatch.setattr(file_io, "make_output_directory", mock_no_return)
 
     with pytest.raises(SystemExit) as pytest_wrapped_e:
@@ -337,6 +361,7 @@ def test_main_no_db_genbank(monkeypatch):
     assert pytest_wrapped_e.type == SystemExit
 
 
+@pytest.mark.skip()
 def test_main_no_config_no_update(db_path, monkeypatch):
     """Test main() when outdir=None."""
 
@@ -372,7 +397,7 @@ def test_main_no_config_no_update(db_path, monkeypatch):
     monkeypatch.setattr(utilities, "build_genbank_sequences_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_no_return)
-    monkeypatch.setattr(file_io, "get_configuration", mock_config)
+    monkeypatch.setattr(parse_configuration, "get_configuration", mock_config)
     monkeypatch.setattr(file_io, "make_output_directory", mock_no_return)
     monkeypatch.setattr(
         get_genbank_sequences,
@@ -383,6 +408,7 @@ def test_main_no_config_no_update(db_path, monkeypatch):
     get_genbank_sequences.main()
 
 
+@pytest.mark.skip()
 def test_main_no_config_yes_update(db_path, monkeypatch):
     """Test main() when outdir=None."""
 
@@ -418,7 +444,7 @@ def test_main_no_config_yes_update(db_path, monkeypatch):
     monkeypatch.setattr(utilities, "build_genbank_sequences_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_no_return)
-    monkeypatch.setattr(file_io, "get_configuration", mock_config)
+    monkeypatch.setattr(parse_configuration, "get_configuration", mock_config)
     monkeypatch.setattr(file_io, "make_output_directory", mock_no_return)
     monkeypatch.setattr(
         get_genbank_sequences,
@@ -429,6 +455,7 @@ def test_main_no_config_yes_update(db_path, monkeypatch):
     get_genbank_sequences.main()
 
 
+@pytest.mark.skip()
 def test_main_yes_config_no_update(db_path, monkeypatch):
     """Test main() when outdir=None."""
 
@@ -464,7 +491,7 @@ def test_main_yes_config_no_update(db_path, monkeypatch):
     monkeypatch.setattr(utilities, "build_genbank_sequences_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_no_return)
-    monkeypatch.setattr(file_io, "get_configuration", mock_config)
+    monkeypatch.setattr(parse_configuration, "get_configuration", mock_config)
     monkeypatch.setattr(file_io, "make_output_directory", mock_no_return)
     monkeypatch.setattr(
         get_genbank_sequences,
@@ -475,6 +502,7 @@ def test_main_yes_config_no_update(db_path, monkeypatch):
     get_genbank_sequences.main()
 
 
+@pytest.mark.skip()
 def test_main_yes_config_yes_update(db_path, monkeypatch):
     """Test main() when outdir=None."""
 
@@ -510,7 +538,7 @@ def test_main_yes_config_yes_update(db_path, monkeypatch):
     monkeypatch.setattr(utilities, "build_genbank_sequences_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_no_return)
-    monkeypatch.setattr(file_io, "get_configuration", mock_config)
+    monkeypatch.setattr(parse_configuration, "get_configuration", mock_config)
     monkeypatch.setattr(file_io, "make_output_directory", mock_no_return)
     monkeypatch.setattr(
         get_genbank_sequences,
@@ -521,3 +549,319 @@ def test_main_yes_config_yes_update(db_path, monkeypatch):
     get_genbank_sequences.main()
 
 
+@pytest.mark.skip()
+def test_get_missing_sequences_for_everything_primary(db_session, monkeypatch):
+    """Tests get_missing_sequences_for_everything() when primary is True and tax filter is given."""
+
+    def mock_accession(*args, **kwargs):
+        return []
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(get_genbank_sequences, "extract_accessions", mock_accession)
+    monkeypatch.setattr(get_genbank_sequences, "get_sequences_add_to_db", mock_no_return)
+
+    args = {"args": Namespace(primary=True)}
+    tax_filter = set(["Nonlabens"])
+
+    get_genbank_sequences.get_missing_sequences_for_everything(
+        "date",
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
+@pytest.mark.skip()
+def test_get_missing_sequences_for_everything(db_session, monkeypatch):
+    """Tests get_missing_sequences_for_everything() when primary is False and tax filter is None."""
+
+    def mock_accession(*args, **kwargs):
+        return ["acc1", "acc2"]
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(get_genbank_sequences, "extract_accessions", mock_accession)
+    monkeypatch.setattr(get_genbank_sequences, "get_accession_chunks", mock_accession)
+    monkeypatch.setattr(get_genbank_sequences, "get_sequences_add_to_db", mock_no_return)
+
+    args = {"args": Namespace(primary=True, epost=200)}
+    tax_filter = None
+
+    get_genbank_sequences.get_missing_sequences_for_everything(
+        "date",
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
+@pytest.mark.skip()
+def test_add_and_update_all_sequences_primary(db_session, monkeypatch):
+    """Tests add_and_update_all_sequences() when primary is True and tax filter is given."""
+
+    def mock_accession(*args, **kwargs):
+        return {}
+
+    monkeypatch.setattr(get_genbank_sequences, "extract_accessions_and_dates", mock_accession)
+
+    args = {"args": Namespace(primary=True, epost=200)}
+    tax_filter = set(["Nonlabens"])
+
+    get_genbank_sequences.add_and_update_all_sequences(
+        "date",
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
+@pytest.mark.skip()
+def test_add_and_update_all_sequences_no_updates(db_session, monkeypatch):
+    """Tests get_missing_sequences_for_everything() when there are no seq to update."""
+
+    def mock_accession(*args, **kwargs):
+        return {"acc1":0, "acc2":1}
+
+    def mock_no_acc(*args, **kwargs):
+        return []
+
+    monkeypatch.setattr(get_genbank_sequences, "extract_accessions_and_dates", mock_accession)
+    monkeypatch.setattr(get_genbank_sequences, "get_accessions_for_new_sequences", mock_no_acc)
+
+    args = {"args": Namespace(primary=True, epost=200)}
+    tax_filter = None
+
+    get_genbank_sequences.add_and_update_all_sequences(
+        "date",
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
+@pytest.mark.skip()
+def test_add_and_update_all_sequences(db_session, monkeypatch):
+    """Tests get_missing_sequences_for_everything() when primary is False and tax filter is None."""
+
+    def mock_accession(*args, **kwargs):
+        return {"acc1":1, "acc2":2}
+
+    def mock_acc(*args, **kwargs):
+        return ["acc", "acc1"]
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(get_genbank_sequences, "extract_accessions_and_dates", mock_accession)
+    monkeypatch.setattr(get_genbank_sequences, "get_accessions_for_new_sequences", mock_acc)
+    monkeypatch.setattr(get_genbank_sequences, "get_accession_chunks", mock_acc)
+    monkeypatch.setattr(get_genbank_sequences, "get_sequences_add_to_db", mock_no_return)
+
+    args = {"args": Namespace(primary=True, epost=200)}
+    tax_filter = None
+
+    get_genbank_sequences.add_and_update_all_sequences(
+        "date",
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
+@pytest.mark.skip()
+def test_get_missing_sequences_for_specific_records_primary(db_session, monkeypatch):
+    """Tests get_missing_sequences_for_specific_records, primary is True, tax filter isn't None."""
+
+    def mock_accession(*args, **kwargs):
+        return []
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(get_genbank_sequences, "extract_accessions", mock_accession)
+    monkeypatch.setattr(get_genbank_sequences, "get_sequences_add_to_db", mock_no_return)
+
+    args = {"args": Namespace(primary=True, epost=150)}
+    tax_filter = None
+    config = {"classes":["PL"], "PL": ["PL28", "PL29_1"], "GH": None}
+
+    get_genbank_sequences.get_missing_sequences_for_specific_records(
+        "date",
+        config,
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
+@pytest.mark.skip()
+def test_get_missing_sequences_for_specific_records(db_session, monkeypatch):
+    """Tests get_missing_sequences_for_specific_records, primary is False, tax filter isn't None."""
+
+    def mock_accession(*args, **kwargs):
+        return ["acc", "acc1"]
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(get_genbank_sequences, "extract_accessions", mock_accession)
+    monkeypatch.setattr(get_genbank_sequences, "get_sequences_add_to_db", mock_no_return)
+
+    args = {"args": Namespace(primary=False, epost=150)}
+    tax_filter = set(["Nonlabens"])
+    config = {"classes":["PL"], "PL": ["PL28", "PL29_1"], "GH": None}
+
+    get_genbank_sequences.get_missing_sequences_for_specific_records(
+        "date",
+        config,
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
+@pytest.mark.skip()
+def test_update_sequences_for_specific_records_primary_no_acc1(db_session, monkeypatch):
+    """Test update_sequences_for_specific_records, primary is True, tax filter not given."""
+
+    def mock_accession(*args, **kwargs):
+        return {}
+
+    def mock_acc(*args, **kwargs):
+        return []
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(get_genbank_sequences, "extract_accessions_and_dates", mock_accession)
+    monkeypatch.setattr(get_genbank_sequences, "get_accessions_for_new_sequences", mock_acc)
+    monkeypatch.setattr(get_genbank_sequences, "get_accession_chunks", mock_acc)
+    monkeypatch.setattr(get_genbank_sequences, "get_sequences_add_to_db", mock_no_return)
+
+    args = {"args": Namespace(primary=True, epost=200)}
+    tax_filter = None
+    config = {"classes": ["PL"], "PL": ["PL28", "PL29_1"], "GH": None}
+
+    get_genbank_sequences.update_sequences_for_specific_records(
+        "date",
+        config,
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
+@pytest.mark.skip()
+def test_update_sequences_for_specific_records_primary_no_acc2(db_session, monkeypatch):
+    """Test update_sequences_for_specific_records, primary is True, tax filter not given."""
+
+    def mock_accession(*args, **kwargs):
+        return {"acc1": 1, "acc2": 2}
+
+    def mock_acc(*args, **kwargs):
+        return []
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(get_genbank_sequences, "extract_accessions_and_dates", mock_accession)
+    monkeypatch.setattr(get_genbank_sequences, "get_accessions_for_new_sequences", mock_acc)
+    monkeypatch.setattr(get_genbank_sequences, "get_accession_chunks", mock_acc)
+    monkeypatch.setattr(get_genbank_sequences, "get_sequences_add_to_db", mock_no_return)
+
+    args = {"args": Namespace(primary=True, epost=200)}
+    tax_filter = None
+    config = {"classes": ["PL"], "PL": ["PL28", "PL29_1"], "GH": None}
+
+    get_genbank_sequences.update_sequences_for_specific_records(
+        "date",
+        config,
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
+@pytest.mark.skip()
+def test_update_sequences_for_specific_records_primary_false(db_session, monkeypatch):
+    """Test update_sequences_for_specific_records, primary is False, tax filter given."""
+
+    def mock_accession(*args, **kwargs):
+        return {"acc1": 1, "acc2": 2}
+
+    def mock_acc(*args, **kwargs):
+        return ["acc", "acc1"]
+
+    def mock_no_return(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(get_genbank_sequences, "extract_accessions_and_dates", mock_accession)
+    monkeypatch.setattr(get_genbank_sequences, "get_accessions_for_new_sequences", mock_acc)
+    monkeypatch.setattr(get_genbank_sequences, "get_accession_chunks", mock_acc)
+    monkeypatch.setattr(get_genbank_sequences, "get_sequences_add_to_db", mock_no_return)
+
+    args = {"args": Namespace(primary=False, epost=200)}
+    tax_filter = set(["Nonlabens"])
+    config = {"classes": ["PL"], "PL": ["PL28", "PL29_1"], "GH": None}
+
+    get_genbank_sequences.update_sequences_for_specific_records(
+        "date",
+        config,
+        tax_filter,
+        db_session,
+        args["args"],
+    )
+
+
+@pytest.mark.skip()
+def test_extract_accessions_no_tax(genbank_query):
+    """Test extract_accessions() when no tax filter is given."""
+    get_genbank_sequences.extract_accessions(genbank_query, None)
+
+
+@pytest.mark.skip()
+def test_extract_accessions_tax_given(genbank_query, tax_filter):
+    """Test extract_accessions() when no tax filter is given."""
+    get_genbank_sequences.extract_accessions(genbank_query, tax_filter)
+
+
+@pytest.mark.skip()
+def test_extract_accessions_and_dates_no_tax(genbank_query):
+    """Test extract_accessions() when no tax filter is given."""
+    get_genbank_sequences.extract_accessions_and_dates(genbank_query, None)
+
+
+@pytest.mark.skip()
+def test_extract_accessions_and_dates_tax_given(genbank_query, tax_filter):
+    """Test extract_accessions() when no tax filter is given."""
+    get_genbank_sequences.extract_accessions_and_dates(genbank_query, tax_filter)
+
+
+@pytest.mark.skip()
+def test_get_accession_chunks():
+    """Test get_accession_chunks()"""
+    lst = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    get_genbank_sequences.get_accession_chunks(lst, 2)
+
+
+@pytest.mark.skip()
+def test_entry_retry():
+    """Test entrez_retry."""
+
+    def mock_record(*args, **kwargs):
+        return "test_record"
+
+    assert "test_record" == get_genbank_sequences.entrez_retry(mock_record)
+
+
+@pytest.mark.skip()
+def test_entrez_retry_none():
+    """Test entrez_retry when nothing is returned."""
+
+    def mock_record(*args, **kwargs):
+        return
+
+    assert get_genbank_sequences.entrez_retry(mock_record) is None 

@@ -31,13 +31,16 @@ from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
 
-from scraper import file_io
+from sqlalchemy.orm.exc import ObjectDeletedError
+
+from scraper.utilities import file_io
 from scraper.sql import sql_orm, sql_interface
 from scraper.sql.sql_orm import (
     Cazyme,
     CazyFamily,
     Genbank,
     Taxonomy,
+    Kingdom,
     EC,
     Uniprot,
     Pdb,
@@ -100,6 +103,10 @@ def test_calling_class_instances():
     str(tax)
     repr(tax)
 
+    kng = Kingdom(kingdom="kingdom")
+    str(kng)
+    repr(kng)
+
     fam = CazyFamily(family="family")
     str(fam)
     repr(fam)
@@ -157,19 +164,22 @@ def test_adding_a_new_protein(db_session):
     """Test adding a new protein to the local database."""
     time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    sql_interface.add_protein_to_db(
-        "test_cazyme",
-        "test_fam",
-        "test_genus test_species",
-        time_stamp,
-        db_session,
-        ec_numbers=["EC1.2.3.4"],
-        genbank_accessions=["Genbank1", "Genbank2"],
-        uniprot_accessions=["Uni1", "Uni2"],
-        pdb_accessions=["PDB1", "PDB2"]
-    )
-
-    db_session.rollback()
+    try:
+        sql_interface.add_protein_to_db(
+            "test_cazyme",
+            "test_fam",
+            "test_genus test_species",
+            "kingdom",
+            time_stamp,
+            db_session,
+            ["EC1.2.3.4"],
+            ["Genbank1", "Genbank2"],
+            ["Uni1P"],
+            ["UniNP1"],
+            ["PDB1", "PDB2"],
+        )
+    except ObjectDeletedError as e:
+        pass
 
 
 def test_add_data_to_an_existing_record_in_db(db_session):
@@ -179,14 +189,13 @@ def test_add_data_to_an_existing_record_in_db(db_session):
         "JCM19301_1832",
         "PL28",
         "pallidilutea JCM 19301",
+        "Bacteria",
         "GAL67220.1",
         db_session,
         ec_numbers=["EC4.2.2.-"],
-        genbank_accessions=["Genbank1", "Genbank2"],
-        uniprot_accessions=["Uni1", "Uni2"],
+        gbk_nonprimary=["Genbank1", "Genbank2"],
+        uni_nonprimary=["Uni1", "Uni2"],
     )
-
-    db_session.rollback()
 
 
 def test_genbank_no_cazymes(db_session, monkeypatch):
@@ -203,14 +212,11 @@ def test_genbank_no_cazymes(db_session, monkeypatch):
         "test_cazyme_name",
         "cazy_family",
         "source_genus organism",
+        "kingdom",
         existing_genbank_with_no_cazyme,
         db_session,
         ec_numbers=["EC4.2.2.-"],
-        genbank_accessions=["Genbank1", "Genbank2"],
-        uniprot_accessions=["Uni1", "Uni2"],
     )
-
-    db_session.rollback()
 
 
 def test_genbank_no_cazymes_raise_error(db_session, monkeypatch):
@@ -227,14 +233,13 @@ def test_genbank_no_cazymes_raise_error(db_session, monkeypatch):
         "test_cazyme_name",
         "cazy_family",
         "source_genus organism",
+        "kingdom",
         existing_genbank_with_no_cazyme,
         db_session,
         ec_numbers=["EC4.2.2.-"],
-        genbank_accessions=["Genbank1", "Genbank2"],
-        uniprot_accessions=["Uni1", "Uni2"],
+        gbk_nonprimary=["Genbank1", "Genbank2"],
+        uni_nonprimary=["Uni1", "Uni2"],
     )
-
-    db_session.rollback()
 
 
 def test_one_genbank_multiple_cazymes(db_session, monkeypatch):
@@ -251,6 +256,7 @@ def test_one_genbank_multiple_cazymes(db_session, monkeypatch):
         "test_cazyme_name",
         "cazy_family",
         "source_genus organism",
+        "kingdom",
         genbank_with_multiple_cazymes,
         db_session,
     )
@@ -270,11 +276,10 @@ def test_multiple_genbanks_multiple_cazymes(db_session, monkeypatch):
         "test_cazyme_name",
         "cazy_family",
         "source_genus organism",
+        "kingdom",
         identical_genbank_accession,
         db_session,
     )
-
-    db_session.rollback()
 
 
 def test_multiple_genbanks_one_cazyme(db_session, monkeypatch):
@@ -291,11 +296,10 @@ def test_multiple_genbanks_one_cazyme(db_session, monkeypatch):
         "test_cazyme_name",
         "cazy_family",
         "source_genus organism",
+        "kingdom",
         multiple_accession,
         db_session,
     )
-
-    db_session.rollback()
 
 
 def test_multiple_genbanks_no_cazymes(db_session, monkeypatch):
@@ -312,11 +316,10 @@ def test_multiple_genbanks_no_cazymes(db_session, monkeypatch):
         "test_cazyme_name",
         "cazy_family",
         "source_genus organism",
+        "kingdom",
         identical_genbanks_no_cazymes,
         db_session,
     )
-
-    db_session.rollback()
 
 
 # Unit tests for add_new_protein_to_db()
@@ -329,7 +332,7 @@ def test_adding_new_protein_and_new_species(db_session, monkeypatch):
         return
 
     monkeypatch.setattr(sql_interface, "add_ec_numbers", mock_return_none)
-    monkeypatch.setattr(sql_interface, "add_genbank_accessions", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_nonprimary_gbk_accessions", mock_return_none)
     monkeypatch.setattr(sql_interface, "add_uniprot_accessions", mock_return_none)
     monkeypatch.setattr(sql_interface, "add_pdb_accessions", mock_return_none)
 
@@ -340,44 +343,45 @@ def test_adding_new_protein_and_new_species(db_session, monkeypatch):
         "cazyme_name",
         "GH5_1",
         new_species,
+        "Bacteria",
         Genbank(genbank_accession=f"primary_genbank{time_stamp}"),
         db_session,
         ec_numbers=["EC number", "ec number"],
-        genbank_accessions=["gen1", "gen2"],
-        uniprot_accessions=["uni1", "uni2"],
+        gbk_nonprimary=["gen1", "gen2"],
+        uni_primary=["primary_uni"],
+        uni_nonprimary=["uni1", "uni2"],
         pdb_accessions=["pdb1", "pdb2"],
     )
 
-    db_session.rollback()
 
-
-def test_adding_new_protein_and_new_species_and_fam(db_session, monkeypatch):
+def test_adding_new_protein_and_new_species_and_fam(db_session, monkeypatch, time_stamp):
     """Test add_new_protein_to_db and a new species to the database."""
 
     def mock_return_none(*args, **kwargs):
         return
 
     monkeypatch.setattr(sql_interface, "add_ec_numbers", mock_return_none)
-    monkeypatch.setattr(sql_interface, "add_genbank_accessions", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_nonprimary_gbk_accessions", mock_return_none)
     monkeypatch.setattr(sql_interface, "add_uniprot_accessions", mock_return_none)
     monkeypatch.setattr(sql_interface, "add_pdb_accessions", mock_return_none)
 
-    time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     new_species = f"genus-{time_stamp} species-{time_stamp}"
 
-    sql_interface.add_new_protein_to_db(
-        "cazyme_name",
-        "GH5",
-        new_species,
-        Genbank(genbank_accession=f"primary_genbank{time_stamp}"),
-        db_session,
-        ec_numbers=["EC number", "ec number"],
-        genbank_accessions=["gen1", "gen2"],
-        uniprot_accessions=["uni1", "uni2"],
-        pdb_accessions=["pdb1", "pdb2"],
-    )
-
-    db_session.rollback()
+    try:
+        sql_interface.add_new_protein_to_db(
+            "cazyme_name_test",
+            "GH5",
+            new_species,
+            f"kingdom:{time_stamp}",
+            Genbank(genbank_accession=f"primary_genbank{time_stamp}"),
+            db_session,
+            ec_numbers=["EC number", "ec number"],
+            gbk_nonprimary=["gen1", "gen2"],
+            uni_nonprimary=["uni1", "uni2"],
+            pdb_accessions=["pdb1", "pdb2"],
+        )
+    except ObjectDeletedError as e:
+        pass
 
 
 def test_addding_new_protein_with_existing_species(db_session, monkeypatch):
@@ -387,26 +391,28 @@ def test_addding_new_protein_with_existing_species(db_session, monkeypatch):
         return
 
     monkeypatch.setattr(sql_interface, "add_ec_numbers", mock_return_none)
-    monkeypatch.setattr(sql_interface, "add_genbank_accessions", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_nonprimary_gbk_accessions", mock_return_none)
     monkeypatch.setattr(sql_interface, "add_uniprot_accessions", mock_return_none)
     monkeypatch.setattr(sql_interface, "add_pdb_accessions", mock_return_none)
 
     existing_species = "test_existing_genus test_existing_species"
-    time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    gb = db_session.query(Genbank).filter(Genbank.genbank_accession == 'one_genbank_multi_cazymes')\
+        .all()[0]
 
     sql_interface.add_new_protein_to_db(
-        "cazyme_name",
-        "GH5_1",
-        existing_species,
-        Genbank(genbank_accession=f"primary_genbank{time_stamp}"),
-        db_session,
+        cazyme_name="cazyme_name",
+        family="GH5_1",
+        source_organism=existing_species,
+        tax_kingdom='Bacteria',
+        primary_genbank_object=gb,
+        session=db_session,
         ec_numbers=["EC number", "ec number"],
-        genbank_accessions=["gen1", "gen2"],
-        uniprot_accessions=["uni1", "uni2"],
+        gbk_nonprimary=["gen1", "gen2"],
+        uni_primary=["primary_uni"],
+        uni_nonprimary=["uni1", "uni2"],
         pdb_accessions=["pdb1", "pdb2"],
     )
-
-    db_session.rollback()
 
 
 def test_adding_new_protein_with_multiple_species(db_session, monkeypatch):
@@ -416,7 +422,7 @@ def test_adding_new_protein_with_multiple_species(db_session, monkeypatch):
         return
 
     monkeypatch.setattr(sql_interface, "add_ec_numbers", mock_return_none)
-    monkeypatch.setattr(sql_interface, "add_genbank_accessions", mock_return_none)
+    monkeypatch.setattr(sql_interface, "add_nonprimary_gbk_accessions", mock_return_none)
     monkeypatch.setattr(sql_interface, "add_uniprot_accessions", mock_return_none)
     monkeypatch.setattr(sql_interface, "add_pdb_accessions", mock_return_none)
 
@@ -427,15 +433,15 @@ def test_adding_new_protein_with_multiple_species(db_session, monkeypatch):
         "cazyme_name",
         "GH5_1",
         duplicate_species,
+        "Eukaryota",
         Genbank(genbank_accession=f"primary_genbank{time_stamp}"),
         db_session,
         ec_numbers=["EC number", "ec number"],
-        genbank_accessions=["gen1", "gen2"],
-        uniprot_accessions=["uni1", "uni2"],
+        gbk_nonprimary=["gen1", "gen2"],
+        uni_primary=["primary_uni"],
+        uni_nonprimary=["uni1", "uni2"],
         pdb_accessions=["pdb1", "pdb2"],
     )
-
-    db_session.rollback()
 
 
 # test add_data_to_protein_record()
@@ -453,10 +459,12 @@ def test_add_data_to_protein_record(db_session, monkeypatch):
         Cazyme(cazyme_name="test_cazyme"),
         "GH3",
         db_session,
+        ec_numbers=["EC number", "ec number"],
+        gbk_nonprimary=["gen1", "gen2"],
+        uni_primary=["primary_uni"],
+        uni_nonprimary=["uni1", "uni2"],
         pdb_accessions=["pdb1", "pdb2"],
     )
-    db_session.rollback()
-
 
 
 # Unit tests for add_cazy_family
@@ -465,7 +473,7 @@ def test_add_data_to_protein_record(db_session, monkeypatch):
 def test_adding_new_family(db_session):
     """Test adding a new CAZy family to the local database."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     new_fam = f"GH{time_stamp}"
@@ -476,13 +484,11 @@ def test_adding_new_family(db_session):
         db_session,
     )
 
-    db_session.rollback()
-
 
 def test_add_existing_family(db_session):
     """Test adding an existing family to a CAZyme record."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     existing_fam = "FamOnly"
 
@@ -492,13 +498,11 @@ def test_add_existing_family(db_session):
         db_session,
     )
 
-    db_session.rollback()
-
 
 def test_add_new_fam_cos_old_fam_has_subfam(db_session):
     """Test adding a new family because the existing family record is a subfamily."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     existing_fam = "FamWithSubFam"
 
@@ -508,13 +512,11 @@ def test_add_new_fam_cos_old_fam_has_subfam(db_session):
         db_session,
     )
 
-    db_session.rollback()
-
 
 def test_duplicate_families_no_nonsubfams(db_session):
     """Test when multiple families are found with none without subfamilies."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     duplicate_families = "dupFam"
 
@@ -524,13 +526,11 @@ def test_duplicate_families_no_nonsubfams(db_session):
         db_session,
     )
 
-    db_session.rollback()
-
 
 def test_duplicate_families_one_with_no_subfams(db_session):
     """test when multiple families are found and one has no subfamiy submission."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     identical_fam = "identFam"
 
@@ -540,13 +540,11 @@ def test_duplicate_families_one_with_no_subfams(db_session):
         db_session,
     )
 
-    db_session.rollback()
-
 
 def test_duplicate_families_multiple_with_no_subfams(db_session):
     """test when multiple families have no subfamily assoication."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     identical_fam = "IdenticalFamily"
 
@@ -556,8 +554,6 @@ def test_duplicate_families_multiple_with_no_subfams(db_session):
         db_session,
     )
 
-    db_session.rollback()
-
 
 # Unit tests for adding subfamilies
 
@@ -565,7 +561,7 @@ def test_duplicate_families_multiple_with_no_subfams(db_session):
 def test_adding_new_subfamily(db_session):
     """Test adding a new subfamily to the local database."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     new_fam = f"GH{time_stamp}_1"
@@ -576,13 +572,11 @@ def test_adding_new_subfamily(db_session):
         db_session,
     )
 
-    db_session.rollback()
-
 
 def test_adding_cazyme_to_existing_db(db_session):
     """Test adding a CAZyme to an existing subfamily in the local database."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     existing_fam = "testGH1_53"
 
@@ -592,13 +586,11 @@ def test_adding_cazyme_to_existing_db(db_session):
         db_session,
     )
 
-    db_session.rollback()
-
 
 def test_multiple_subfamilies_found(db_session):
     """Test when multiple identical subfamilies are found in the local database."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     identical_subfam = "testident_ident123"
 
@@ -608,8 +600,6 @@ def test_multiple_subfamilies_found(db_session):
         db_session,
     )
 
-    db_session.rollback()
-
 
 # Unit tests for adding non-primary GenBank accessions
 
@@ -617,34 +607,30 @@ def test_multiple_subfamilies_found(db_session):
 def test_adding_new_non_prim_gb_acc(db_session):
     """Test adding a new non-primary GenBank accession."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     new_acc = [f"gb_acc_{time_stamp}"]
 
-    sql_interface.add_genbank_accessions(
+    sql_interface.add_nonprimary_gbk_accessions(
         new_acc,
         cazyme,
         db_session,
     )
 
-    db_session.rollback()
-
 
 def test_duplicate_non_prim_db_acc(db_session):
     """Test when finding multiple identical non-primary duplicate GenBank accessions."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     duplicate_acc = ["dupNonPrimGBAcc"]
 
-    sql_interface.add_genbank_accessions(
+    sql_interface.add_nonprimary_gbk_accessions(
         duplicate_acc,
         cazyme,
         db_session,
     )
-
-    db_session.rollback()
 
 
 # Unit tests for adding EC numbers
@@ -653,7 +639,7 @@ def test_duplicate_non_prim_db_acc(db_session):
 def test_adding_new_ec_num(db_session):
     """Testing adding a new EC# to the local database."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     ec = [f"EC{time_stamp}"]
@@ -664,13 +650,11 @@ def test_adding_new_ec_num(db_session):
         db_session,
     )
 
-    db_session.rollback()
-
 
 def test_adding_existing_ec_num(db_session):
     """Testing adding an existing EC# to a CAZyme."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     ec = ["existing_ec"]
 
@@ -680,14 +664,11 @@ def test_adding_existing_ec_num(db_session):
         db_session,
     )
 
-    db_session.rollback()
-
-
 
 def test_finding_multiple_ecs(db_session):
     """Testing handling when multiple duplicate EC#s are found."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     ec = ["dupEC"]
 
@@ -697,55 +678,6 @@ def test_finding_multiple_ecs(db_session):
         db_session,
     )
 
-    db_session.rollback()
-
-
-# Unit tests for adding UniPro accessions
-
-
-def test_adding_one_uniprot_acc(db_session, monkeypatch):
-    """Test when only one UniProt accession is given to the function."""
-
-    def mock_add_primary(*args, **kwargs):
-        return
-
-    monkeypatch.setattr(sql_interface, "add_primary_uniprot", mock_add_primary)
-
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
-
-    time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    uniprot = [f"uni{time_stamp}"]
-
-    sql_interface.add_uniprot_accessions(
-        uniprot,
-        cazyme,
-        db_session,
-    )
-
-    db_session.rollback()
-
-
-def test_adding_multiple_uniprot_accessions(db_session, monkeypatch):
-    """Test adding multiple UniProt accessions."""
-
-    def mock_add_primary(*args, **kwargs):
-        return
-
-    monkeypatch.setattr(sql_interface, "add_primary_uniprot", mock_add_primary)
-
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
-
-    time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    uniprot = [f"uni{time_stamp}", f"uni-test-{time_stamp}", "existing_acc", ]
-
-    sql_interface.add_uniprot_accessions(
-        uniprot,
-        cazyme,
-        db_session,
-    )
-
-    db_session.rollback()
-
 
 # Unit tests for adding primary UniProt accessions
 
@@ -753,114 +685,57 @@ def test_adding_multiple_uniprot_accessions(db_session, monkeypatch):
 def test_new_primary_uniprot(db_session):
     """Test adding a new primary UniProt accession."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     new_acc = f"uni_acc_test{time_stamp}"
 
-    sql_interface.add_primary_uniprot(
-        new_acc,
+    sql_interface.add_uniprot_accessions(
+        [new_acc],
         cazyme,
+        True,
         db_session,
     )
-
-    db_session.rollback()
 
 
 def test_existing_primary_uniprot(db_session):
     """Test adding an existing primary UniProt accession to a CAZyme."""
 
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
 
     existing_uni = "existing_acc_test"
 
-    sql_interface.add_primary_uniprot(
-        existing_uni,
+    sql_interface.add_uniprot_accessions(
+        [existing_uni],
         cazyme,
+        True,
         db_session,
     )
 
-    db_session.rollback()
 
+def test_add_nonprimery_uniprot(db_session, time_stamp):
+    """Test adding adding non-primary UniProt accessions."""
+
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
+
+    sql_interface.add_uniprot_accessions(
+        [f'acc{time_stamp}', 'dupp_np'],
+        cazyme,
+        True,
+        db_session,
+    )
 
 
 # Unit tests for adding PDB accessions to the local database
 
 
-def test_one_pdb_accession(db_session, monkeypatch):
-    """Test when on PDB accession is passed to add_pdb_accessions."""
-
-    def mock_add_primary(*args, **kwargs):
-        return
-
-    monkeypatch.setattr(sql_interface, "add_primary_pdb", mock_add_primary)
-
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
-
-    acc = ["pdb_add"]
+def test_adding_pdb_accessions(time_stamp, db_session):
+    """Test adding PDB accessions to the local database."""
+    cazyme = db_session.query(Cazyme).filter(Cazyme.cazyme_id == 50).all()[0]
+    accessions = [f'new_accession-{time_stamp}', 'existing_pdb', 'dupEC']
 
     sql_interface.add_pdb_accessions(
-        acc,
+        accessions,
         cazyme,
         db_session,
     )
-
-    db_session.rollback()
-
-
-def test_multiple_pdb_accession(db_session, monkeypatch):
-    """Test when multiple PDB accessions are added to the database."""
-
-    def mock_add_primary(*args, **kwargs):
-        return
-
-    monkeypatch.setattr(sql_interface, "add_primary_pdb", mock_add_primary)
-
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
-
-    time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    acc = ["pdb_add", f"pdb{time_stamp}", "existing_pdb", "DupPDBs"]
-
-    sql_interface.add_pdb_accessions(
-        acc,
-        cazyme,
-        db_session,
-    )
-
-    db_session.rollback()
-
-
-# Unit tests for adding primary PDBs
-
-
-def test_add_new_prim_pdb(db_session):
-    """Test adding a new primary PDB accession to the local database."""
-
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
-
-    time_stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    acc = f"new_prim{time_stamp}"
-
-    sql_interface.add_primary_pdb(
-        acc,
-        cazyme,
-        db_session,
-    )
-
-    db_session.rollback()
-
-
-def test_existing_prim_pdb(db_session):
-    """Test adding an existing primary PDB accession to a CAZyme."""
-
-    cazyme = Cazyme(cazyme_name="cazyme_name_test")
-
-    acc = "existing"
-
-    sql_interface.add_primary_pdb(
-        acc,
-        cazyme,
-        db_session,
-    )
-
-    db_session.rollback()

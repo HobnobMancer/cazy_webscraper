@@ -27,7 +27,8 @@ import pytest
 
 from argparse import Namespace, ArgumentParser
 
-from scraper import cazy_webscraper, crawler, file_io, sql, utilities
+from scraper import cazy_webscraper, crawler, sql, utilities
+from scraper.utilities import file_io, parse_configuration, parsers
 
 
 @pytest.fixture
@@ -53,6 +54,8 @@ def args_get_cazy_data():
     argsdict = {
         "args": Namespace(
             subfamilies=True,
+            retries=2,
+            timeout=5,
         )
     }
     return argsdict
@@ -94,6 +97,8 @@ def test_main_invalid_db_path(output_dir, null_logger, cazy_dictionary, monkeypa
             nodelete=False,
             retries=1,
             database="fake_database_path",
+            verbose=False,
+            log=None,
         )
         return parser
 
@@ -104,13 +109,13 @@ def test_main_invalid_db_path(output_dir, null_logger, cazy_dictionary, monkeypa
         return
 
     def mock_retrieving_configuration(*args, **kwargs):
-        return None, None, cazy_dictionary
+        return None, None, cazy_dictionary, [], []
 
-    monkeypatch.setattr(utilities, "build_parser", mock_building_parser)
+    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
     monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
-    monkeypatch.setattr(file_io, "parse_configuration", mock_retrieving_configuration)
+    monkeypatch.setattr(parse_configuration, "parse_configuration", mock_retrieving_configuration)
 
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         cazy_webscraper.main()
@@ -142,6 +147,8 @@ def test_main_existing_database(output_dir, null_logger, cazy_dictionary, db_pat
             nodelete=False,
             retries=1,
             database=db_path,
+            verbose=True,
+            log=None,
         )
         return parser
 
@@ -152,7 +159,7 @@ def test_main_existing_database(output_dir, null_logger, cazy_dictionary, db_pat
         return
 
     def mock_retrieving_configuration(*args, **kwargs):
-        return None, None, cazy_dictionary, None
+        return None, None, cazy_dictionary, None, []
 
     def mock_adding_log(*args, **kwargs):
         return
@@ -163,11 +170,11 @@ def test_main_existing_database(output_dir, null_logger, cazy_dictionary, db_pat
     def mock_retrieving_cazy_data(*args, **kwargs):
         return
 
-    monkeypatch.setattr(utilities, "build_parser", mock_building_parser)
+    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
     monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
-    monkeypatch.setattr(file_io, "parse_configuration", mock_retrieving_configuration)
+    monkeypatch.setattr(parse_configuration, "parse_configuration", mock_retrieving_configuration)
     monkeypatch.setattr(cazy_webscraper, "log_scrape_in_db", mock_adding_log)
     monkeypatch.setattr(cazy_webscraper, "get_filter_set", mock_get_filter_set)
     monkeypatch.setattr(cazy_webscraper, "get_cazy_data", mock_retrieving_cazy_data)
@@ -196,6 +203,8 @@ def test_main_new_database(output_dir, null_logger, cazy_dictionary, db_path, mo
             nodelete=False,
             retries=1,
             database=None,
+            verbose=False,
+            log=None,
         )
         return parser
 
@@ -206,7 +215,7 @@ def test_main_new_database(output_dir, null_logger, cazy_dictionary, db_path, mo
         return
 
     def mock_retrieving_configuration(*args, **kwargs):
-        return None, None, cazy_dictionary, None
+        return None, None, cazy_dictionary, None, []
 
     def mock_getting_db_session(*args, **kwargs):
         return "session"
@@ -220,11 +229,11 @@ def test_main_new_database(output_dir, null_logger, cazy_dictionary, db_path, mo
     def mock_retrieving_cazy_data(*args, **kwargs):
         return
 
-    monkeypatch.setattr(utilities, "build_parser", mock_building_parser)
+    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
     monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
-    monkeypatch.setattr(file_io, "parse_configuration", mock_retrieving_configuration)
+    monkeypatch.setattr(parse_configuration, "parse_configuration", mock_retrieving_configuration)
     monkeypatch.setattr(sql.sql_orm, "build_db", mock_getting_db_session)
     monkeypatch.setattr(cazy_webscraper, "log_scrape_in_db", mock_adding_log)
     monkeypatch.setattr(cazy_webscraper, "get_filter_set", mock_tax_set)
@@ -254,6 +263,8 @@ def test_main_build_sql_error(output_dir, null_logger, cazy_dictionary, db_path,
             nodelete=False,
             retries=1,
             database=None,
+            verbose=False,
+            log=None,
         )
         return parser
 
@@ -264,7 +275,7 @@ def test_main_build_sql_error(output_dir, null_logger, cazy_dictionary, db_path,
         return
 
     def mock_retrieving_configuration(*args, **kwargs):
-        return None, None, cazy_dictionary
+        return None, None, cazy_dictionary, [], None
 
     def mock_adding_log(*args, **kwargs):
         return
@@ -272,11 +283,11 @@ def test_main_build_sql_error(output_dir, null_logger, cazy_dictionary, db_path,
     def mock_retrieving_cazy_data(*args, **kwargs):
         return
 
-    monkeypatch.setattr(utilities, "build_parser", mock_building_parser)
+    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
     monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
-    monkeypatch.setattr(file_io, "parse_configuration", mock_retrieving_configuration)
+    monkeypatch.setattr(parse_configuration, "parse_configuration", mock_retrieving_configuration)
     monkeypatch.setattr(cazy_webscraper, "log_scrape_in_db", mock_adding_log)
     monkeypatch.setattr(cazy_webscraper, "get_cazy_data", mock_retrieving_cazy_data)
 
@@ -308,6 +319,8 @@ def test_main_get_sql_error(output_dir, null_logger, cazy_dictionary, db_path, m
             nodelete=False,
             retries=1,
             database=path_,
+            verbose=True,
+            log=None,
         )
         return parser
 
@@ -318,7 +331,7 @@ def test_main_get_sql_error(output_dir, null_logger, cazy_dictionary, db_path, m
         return
 
     def mock_retrieving_configuration(*args, **kwargs):
-        return None, None, cazy_dictionary
+        return None, None, cazy_dictionary, [], []
 
     def mock_retrieving_cazy_data(*args, **kwargs):
         return
@@ -326,11 +339,11 @@ def test_main_get_sql_error(output_dir, null_logger, cazy_dictionary, db_path, m
     def mock_getting_db_session(*args, **kwargs):
         raise TypeError
 
-    monkeypatch.setattr(utilities, "build_parser", mock_building_parser)
+    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
     monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
-    monkeypatch.setattr(file_io, "parse_configuration", mock_retrieving_configuration)
+    monkeypatch.setattr(parse_configuration, "parse_configuration", mock_retrieving_configuration)
     monkeypatch.setattr(cazy_webscraper, "get_cazy_data", mock_retrieving_cazy_data)
     monkeypatch.setattr(sql.sql_orm, "get_db_session", mock_getting_db_session)
 
@@ -354,6 +367,8 @@ def test_get_cazy_data_no_fam_urls(
     a class.
     """
 
+    fam1 = crawler.Family("test_fam", "test_class", "test_url")
+
     def mock_get_classes(*args, **kwargs):
         class1 = crawler.CazyClass("test_class", "test_class_url.html", 0)
         class2 = crawler.CazyClass("test_class2", "test_class_url2.html", 0)
@@ -362,11 +377,15 @@ def test_get_cazy_data_no_fam_urls(
     def mock_get_families(*args, **kwargs):
         return None, "test error message", ["test_url1", "test_url2"]
 
+    def mock_parse_family(*args, **kwargs):
+        return fam1, True, ["fail1", "fail2"], ["sqlFail1", "sqlFail2"]
+
     def mock_no_return(*args, **kwargs):
         return
 
     monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
     monkeypatch.setattr(crawler, "get_cazy_family_urls", mock_get_families)
+    monkeypatch.setattr(crawler, "parse_family", mock_parse_family)
     monkeypatch.setattr(file_io, "write_out_failed_scrapes", mock_no_return)
 
     cazy_webscraper.get_cazy_data(
@@ -516,6 +535,7 @@ def test_get_cazy_data_witha_config_dict_subfam(
 def test_add_db_log_no_config(db_session):
     config_dict = None
     taxonomy_filters = {"genera": None, "species": None, "strains": None}
+    kingdoms = ["Archaea", "Bacteria", "Eukaryota", "Viruses", "Unclassified"]
     args = {
         "args": Namespace(
             classes=None,
@@ -523,6 +543,7 @@ def test_add_db_log_no_config(db_session):
             genera=None,
             species=None,
             strains=None,
+            kingdoms=None,
         )
     }
 
@@ -530,6 +551,7 @@ def test_add_db_log_no_config(db_session):
         "YYYY-MM-DD--HH-MM-SS",
         config_dict,
         taxonomy_filters,
+        kingdoms,
         db_session,
         args["args"],
     )
@@ -542,6 +564,7 @@ def test_add_db_log_with_config(db_session):
         "species": ["Pyrococcus furiosus"],
         "strains": ["Saccharolobus solfataricus POZ149", "Saccharolobus solfataricus SULB"]
     }
+    kingdoms = ["Archaea"]
     args = {
         "args": Namespace(
             classes="GH,PL",
@@ -549,6 +572,7 @@ def test_add_db_log_with_config(db_session):
             genera="Trichoderma",
             species="Aspergillus Niger",
             strains="Acidianus ambivalens LEI 10",
+            kingdoms="Archaea,Bacteria"
         )
     }
 
@@ -556,6 +580,7 @@ def test_add_db_log_with_config(db_session):
         "YYYY-MM-DD--HH-MM-SS",
         config_dict,
         taxonomy_filters,
+        kingdoms,
         db_session,
         args["args"],
     )

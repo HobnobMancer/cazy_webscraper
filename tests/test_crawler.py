@@ -26,7 +26,6 @@ pytest -v
 import types
 import pytest
 
-
 from argparse import Namespace
 from requests.exceptions import MissingSchema
 
@@ -34,6 +33,15 @@ from bs4 import BeautifulSoup
 
 from scraper import crawler
 from scraper.sql import sql_interface
+
+
+@pytest.fixture
+def args():
+    args = {"args": Namespace(
+        retries=2,
+        timeout=45,
+    )}
+    return args
 
 
 @pytest.fixture
@@ -59,6 +67,8 @@ def args_subfam_true():
     argsdict = {
         "args": Namespace(
             subfamilies=True,
+            retries=2,
+            timeout=45,
         )
     }
     return argsdict
@@ -69,6 +79,8 @@ def args_subfam_false():
     argsdict = {
         "args": Namespace(
             subfamilies=False,
+            retries=2,
+            timeout=45,
         )
     }
     return argsdict
@@ -155,6 +167,12 @@ def gh147_page(input_dir):
 
 
 @pytest.fixture
+def pag_page(input_dir):
+    file_page = input_dir / "pagination_page.html"
+    return file_page
+
+
+@pytest.fixture
 def no_links_page(input_dir):
     file_path = input_dir / "cazy_no_links.html"
     return file_path
@@ -223,6 +241,7 @@ def test_get_class_urls_exclusions_none(
     cazy_home_page,
     cazy_dictionary,
     monkeypatch,
+    args,
 ):
     """Test get_cazy_class_urls when excluded_classess is None."""
     with open(cazy_home_page, "r") as fp:
@@ -236,13 +255,13 @@ def test_get_class_urls_exclusions_none(
     result = crawler.get_cazy_classes(
         cazy_home_url,
         None,
-        1,
         cazy_dictionary,
+        args["args"],
     )
     assert len(result) == 6
 
 
-def test_get_class_urls_fail(cazy_home_url, cazy_dictionary, monkeypatch):
+def test_get_class_urls_fail(cazy_home_url, cazy_dictionary, monkeypatch, args):
     """Test get_cazy_class_urls home_page not returned"""
 
     def mock_get_home_page(*args, **kwargs):
@@ -251,7 +270,7 @@ def test_get_class_urls_fail(cazy_home_url, cazy_dictionary, monkeypatch):
     monkeypatch.setattr(crawler, "get_page", mock_get_home_page)
 
     with pytest.raises(SystemExit) as pytest_wrapped_e:
-        crawler.get_cazy_classes(cazy_home_url, None, 1, cazy_dictionary)
+        crawler.get_cazy_classes(cazy_home_url, None, cazy_dictionary, args["args"])
     assert pytest_wrapped_e.type == SystemExit
 
 
@@ -260,6 +279,7 @@ def test_get_class_urls_exclusions_given(
     cazy_home_page,
     monkeypatch,
     cazy_dictionary,
+    args,
 ):
     """Test get_cazy_class_urls when excluded_classess is not None."""
     with open(cazy_home_page) as fp:
@@ -275,8 +295,8 @@ def test_get_class_urls_exclusions_given(
     result = crawler.get_cazy_classes(
         cazy_home_url,
         exclusions,
-        1,
         cazy_dictionary,
+        args["args"],
     )
 
     assert len(result) == 5
@@ -287,6 +307,7 @@ def test_get_class_urls_attribute(
     cazy_home_no_spip,
     monkeypatch,
     cazy_dictionary,
+    args,
 ):
     """Test get_cazy_class_urls when attribute error is raised."""
     with open(cazy_home_no_spip) as fp:
@@ -303,8 +324,8 @@ def test_get_class_urls_attribute(
         crawler.get_cazy_classes(
             cazy_home_url,
             exclusions,
-            1,
             cazy_dictionary,
+            args["args"],
         )
     assert pytest_wrapped_e.type == SystemExit
 
@@ -312,7 +333,7 @@ def test_get_class_urls_attribute(
 # test get_cazy_family_urls
 
 
-def test_get_family_urls_fail(args_subfam_true, monkeypatch):
+def test_get_family_urls_fail(args_subfam_true, monkeypatch, cazy_home_url):
     """Test get_cazy_family_urls when no page is returned."""
 
     def mock_get_page(*args, **kwargs):
@@ -322,8 +343,8 @@ def test_get_family_urls_fail(args_subfam_true, monkeypatch):
 
     assert crawler.get_cazy_family_urls(
         "class_url",
-        "cazy_home_url",
         "class_name",
+        cazy_home_url,
         args_subfam_true["args"],
     ) == (None, 'error', None)
 
@@ -457,7 +478,7 @@ def test_get_subfam_links_urls(no_subfam_h3_element, ):
 # test parse_family()
 
 
-def test_parse_family_incorrect_url():
+def test_parse_family_incorrect_url(args):
     """Tests parse_family() when the first page URL is in the incorrect format."""
 
     test_fam = crawler.Family(
@@ -470,12 +491,13 @@ def test_parse_family_incorrect_url():
         test_fam,
         "http://www.cazy.org/",
         None,
-        1,
+        ['bacteria'],
+        args['args'],
         "sessions",
     )
 
 
-def test_parse_family_no_page(monkeypatch):
+def test_parse_family_no_page(monkeypatch, args):
     """Test parse_family() no page is returned."""
 
     def mock_get_page(*args, **kwargs):
@@ -493,12 +515,13 @@ def test_parse_family_no_page(monkeypatch):
         test_fam,
         "http://www.cazy.org/",
         None,
-        1,
+        ['bacteria'],
+        args['args'],
         "sessions",
     )
 
 
-def test_parse_family_no_page_urls(monkeypatch):
+def test_parse_family_no_page_urls(monkeypatch, args):
     """Tests parse_family() when protein page URLs are retrieved"""
 
     def mock_get_page(*args, **kwargs):
@@ -516,12 +539,13 @@ def test_parse_family_no_page_urls(monkeypatch):
         test_fam,
         "http://www.cazy.org",
         None,
-        2,
+        ['bacteria'],
+        args['args'],
         "session",
     )
 
 
-def test_parse_family_success(protein_gen, monkeypatch):
+def test_parse_family_success(protein_gen, monkeypatch, args):
     """Test parse_family() when successful."""
 
     def mock_get_page(*args, **kwargs):
@@ -546,12 +570,13 @@ def test_parse_family_success(protein_gen, monkeypatch):
         test_family,
         "http://www.cazy.org/GH1.html",
         None,
-        2,
+        ['bacteria'],
+        args['args'],
         "session",
     )
 
 
-def test_parse_family_sql_url_errors(protein_gen, monkeypatch):
+def test_parse_family_sql_url_errors(protein_gen, monkeypatch, args):
     """Test parse_family() when URL and SQL errors are raised when parsing a protein."""
 
     def mock_get_page(*args, **kwargs):
@@ -576,12 +601,13 @@ def test_parse_family_sql_url_errors(protein_gen, monkeypatch):
         test_family,
         "http://www.cazy.org/GH1.html",
         None,
-        2,
+        ['bacteria'],
+        args['args'],
         "session",
     )
 
 
-def test_parse_family_previous_failed_pages(protein_gen, monkeypatch):
+def test_parse_family_previous_failed_pages(protein_gen, monkeypatch, args):
     """Test parse_family() when the family has previously failed families."""
 
     def mock_get_page(*args, **kwargs):
@@ -611,7 +637,8 @@ def test_parse_family_previous_failed_pages(protein_gen, monkeypatch):
         test_family,
         "http://www.cazy.org/GH1.html",
         None,
-        2,
+        ['bacteria'],
+        args['args'],
         "session",
     )
 
@@ -624,7 +651,13 @@ def test_get_protein_page_urls_no_links(gh147_page):
     with open(gh147_page) as fp:
         soup = BeautifulSoup(fp, features="lxml")
 
-    crawler.get_protein_page_urls("http://www.cazy.org/GH147_all.html", soup, "http://www.cazy.org")
+    crawler.get_protein_page_urls(
+        "http://www.cazy.org/GH147_bacteria.html",
+        soup,
+        'bacteria',
+        "http://www.cazy.org",
+        'GH147',
+    )
 
 
 def test_get_protein_page_urls_no_pag(gh147_page):
@@ -632,21 +665,33 @@ def test_get_protein_page_urls_no_pag(gh147_page):
     with open(gh147_page) as fp:
         soup = BeautifulSoup(fp, features="lxml")
 
-    crawler.get_protein_page_urls("http://www.cazy.org/GH147_all.html", soup, "http://www.cazy.org")
+    crawler.get_protein_page_urls(
+        "http://www.cazy.org/GH147_bacteria.html",
+        soup,
+        'bacteria',
+        "http://www.cazy.org",
+        'GH147',
+    )
 
 
-def test_get_protein_page_urls_pag(gh1_page):
+def test_get_protein_page_urls_page(pag_page):
     """Test get_protein_page_urls() on page with pagination of proteins."""
-    with open(gh1_page) as fp:
+    with open(pag_page) as fp:
         soup = BeautifulSoup(fp, features="lxml")
 
-    crawler.get_protein_page_urls("http://www.cazy.org/GH1_all.html", soup, "http://www.cazy.org")
+    crawler.get_protein_page_urls(
+        "http://www.cazy.org/GH1_bacteria.html",
+        soup,
+        'bacteria',
+        "http://www.cazy.org",
+        'GH147',
+    )
 
 
 # test parse_proteins
 
 
-def test_parse_proteins_none(monkeypatch):
+def test_parse_proteins_none(monkeypatch, args):
     """Test parse_proteins when no page is returned."""
 
     def mock_get_page(*args, **kwargs):
@@ -658,10 +703,10 @@ def test_parse_proteins_none(monkeypatch):
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
     monkeypatch.setattr(crawler, "row_to_protein", mock_row)
 
-    crawler.parse_proteins("protein_page_url", "GH1", None, "session")
+    crawler.parse_proteins("protein_page_url", "GH1", None, 'bacteria', args['args'], "session")
 
 
-def test_parse_proteins(gh147_page, monkeypatch):
+def test_parse_proteins(gh147_page, monkeypatch, args):
     """Tests parse_proteins when successful."""
     with open(gh147_page) as fp:
         soup = BeautifulSoup(fp, features="lxml")
@@ -675,7 +720,14 @@ def test_parse_proteins(gh147_page, monkeypatch):
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
     monkeypatch.setattr(crawler, "row_to_protein", mock_row)
 
-    crawler.parse_proteins("protein_url", "family", None, "session")
+    crawler.parse_proteins("protein_url", "family", None, 'bacteria', args['args'], "session")
+
+
+def test_parse_proteins_full(args, db_session, gh147_page):
+    """Test parsing proteins and adding to a database."""
+    with open(gh147_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+        crawler.parse_proteins("protein_url", "family", None, 'bacteria', args['args'], "session")
 
 
 # test row_to_protein()
@@ -691,7 +743,7 @@ def test_row_to_protein_no_ecs(protein_without_ec, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", set(["Bacteroides caccae"]),"session")
+    crawler.row_to_protein(row, "GH147", set(["Bacteroides caccae"]), 'bacteria', "session")
 
 
 def test_row_to_protein_ec(protein_with_ec, monkeypatch):
@@ -704,7 +756,7 @@ def test_row_to_protein_ec(protein_with_ec, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", set(["Bacteroides"]),"session")
+    crawler.row_to_protein(row, "GH147", set(["Bacteroides"]), 'bacteria', "session")
 
 
 def test_row_to_protein_gb_synoymns(protein_with_gb_synonyms, monkeypatch):
@@ -717,7 +769,7 @@ def test_row_to_protein_gb_synoymns(protein_with_gb_synonyms, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", None, "session")
+    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session")
 
 
 def test_row_to_protein_no_gb(protein_with_no_gb, monkeypatch):
@@ -730,7 +782,7 @@ def test_row_to_protein_no_gb(protein_with_no_gb, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", None, "session")
+    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session")
 
 
 def test_row_to_protein_no_gb_sql_error(protein_with_no_gb, monkeypatch):
@@ -743,7 +795,7 @@ def test_row_to_protein_no_gb_sql_error(protein_with_no_gb, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", None, "session")
+    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session")
 
 
 def test_row_to_protein_no_uniprot_no_pdb(protein_with_no_uniprot_no_pdb, monkeypatch):
@@ -756,7 +808,7 @@ def test_row_to_protein_no_uniprot_no_pdb(protein_with_no_uniprot_no_pdb, monkey
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", set(), "session")
+    crawler.row_to_protein(row, "GH147", set(), 'bacteria', "session")
 
 
 def test_row_to_protein_no_uniprot_no_pdb_sql_error(protein_with_no_uniprot_no_pdb, monkeypatch):
@@ -769,7 +821,7 @@ def test_row_to_protein_no_uniprot_no_pdb_sql_error(protein_with_no_uniprot_no_p
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", None, "session")
+    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session")
 
 
 def test_row_to_protein_gb_synoymns_raise_error(protein_with_gb_synonyms, monkeypatch):
@@ -782,7 +834,7 @@ def test_row_to_protein_gb_synoymns_raise_error(protein_with_gb_synonyms, monkey
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", None, "session")
+    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session")
 
 
 # browser decorator and get_page
@@ -790,6 +842,6 @@ def test_row_to_protein_gb_synoymns_raise_error(protein_with_gb_synonyms, monkey
 
 def test_browser_decorator():
     """Test browser_decorator to ensure proper handling if unsuccessful."""
-
-    result = crawler.get_page('www.caz!!!!!!!!y.org')
+    args = {"args": Namespace(timeout=10)}
+    result = crawler.get_page('www.caz!!!!!!!!y.org', args["args"], max_tries=1)
     assert True == (result[0] is None) and (type(result[1]) is MissingSchema)

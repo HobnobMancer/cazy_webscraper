@@ -30,12 +30,11 @@ from pathlib import Path
 import pytest
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 
 
 Base = declarative_base()
-Session = sessionmaker()
 
 
 @pytest.fixture
@@ -75,12 +74,35 @@ def time_stamp():
     return time_stamp
 
 
-@pytest.fixture
-def db_session():
-    """Open session to local SQL database."""
-    db_path = "tests/test_inputs/test_inputs_sql/unit_test_db_2021-03-01--15-06-59.db"
-    engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
-    Base.metadata.create_all(engine)
-    Session.configure(bind=engine)
+# Define fixtures for testing SQL ORM and interface
 
-    return Session()
+
+@pytest.fixture(scope="session")
+def engine():
+    db_path = "tests/test_inputs/test_inputs_sql/unit_test_db_2021-03-01--15-06-59.db"
+    return create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
+
+
+@pytest.fixture(scope="session")
+def tables(engine):
+    Base.metadata.create_all(engine)
+    yield
+    Base.metadata.drop_all(engine)
+
+
+@pytest.fixture
+def db_session(engine, tables):
+    """Returns an sqlalchemy session, and after the test tears down everything properly."""
+    connection = engine.connect()
+    # begin the nested transaction
+    transaction = connection.begin()
+    # use the connection with the already started transaction
+    session = Session(bind=connection)
+
+    yield session
+
+    session.close()
+    # roll back the broader transaction
+    transaction.rollback()
+    # put back the connection to the connection pool
+    connection.close()
