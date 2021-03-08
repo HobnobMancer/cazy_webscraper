@@ -627,6 +627,13 @@ def row_to_protein(row, family_name, taxonomy_filters, kingdom, session):
     # create dict for storing error messages for writing to the failed_to_scrape output file
     report_dict = {"url": None, "error": None, "sql": None}
 
+    # if a single UniProt accession is listed, and not in bold, write as primary accession
+    # if multiple UniProt accessions are listed and none are in bold, the first is the priarmy
+    if len(uni_primary) == 0:
+        if len(uni_nonprimary) != 0:
+            uni_primary.append(uni_nonprimary[0])
+            uni_nonprimary.remove(uni_nonprimary[0])
+
     # Remove primary GenBank accessions from the non-primary accessions list
     if len(gbk_primary) == 0:
         if len(gbk_nonprimary) == 0:
