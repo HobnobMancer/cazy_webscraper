@@ -44,8 +44,8 @@ def output_dir(test_dir):
 
 
 @pytest.fixture
-def db_path(test_input_dir):
-    db_path = test_input_dir / "test_db" / "test_cazy.db"
+def db_path():
+    db_path = "tests/test_inputs/test_inputs_sql/unit_test_db_2021-03-01--15-06-59.db"
     return db_path
 
 
