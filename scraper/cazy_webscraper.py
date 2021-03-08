@@ -37,6 +37,7 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 :class Family: A single family from CAZy containing proteins
 """
 
+
 import logging
 import os
 import sys
@@ -48,8 +49,9 @@ from typing import List, Optional
 
 from tqdm import tqdm
 
-from scraper import crawler, file_io, utilities
+from scraper import crawler
 from scraper.sql import sql_orm
+from scraper.utilities import config_logger, file_io, parsers, parse_configuration
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -66,14 +68,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     start_time = pd.to_datetime(start_time)
 
     if argv is None:
-        parser = utilities.build_parser()
+        parser = parsers.build_parser()
         args = parser.parse_args()
     else:
-        args = utilities.build_parser(argv).parse_args()
+        parser = parsers.build_parser(argv)
+        args = parser.parse_args()
 
     if logger is None:
         logger = logging.getLogger(__name__)
-        utilities.config_logger(args)
+        config_logger(args)
 
     logger.info("Run initiated")
 
@@ -82,8 +85,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     if args.subfamilies is True:
         logger.warning("Enabled to retrieve subfamilies")
-
-    max_tries = args.retries + 1  # maximum number of times to try scraping a CAZy
 
     # build database and return open database session
     if args.database is not None:  # open session for existing local database
@@ -96,25 +97,28 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         try:
             session = sql_orm.get_db_session(args)
         except Exception:
-            logger.error("Failed to build SQL database. Terminating program", exc_info=1)
+            logger.error("Failed to build SQL database. Terminating program", exc_info=True)
             sys.exit(1)
 
     else:  # create a new empty database to populate
         try:
             session = sql_orm.build_db(time_stamp, args)
         except Exception:
-            logger.error("Failed to build SQL database. Terminating program", exc_info=1)
+            logger.error("Failed to build SQL database. Terminating program", exc_info=True)
             sys.exit(1)
 
     # retrieve configuration data
-    file_io_path = file_io.__file__
-    excluded_classes, config_dict, cazy_dict, taxonomy_filters = file_io.parse_configuration(
-        file_io_path,
-        args,
-    )
+    parse_configuration_path = parse_configuration.__file__
+    (
+        excluded_classes,
+        config_dict,
+        cazy_dict,
+        taxonomy_filters,
+        kingdoms,
+    ) = parse_configuration.parse_configuration(parse_configuration_path, args)
 
     # log scraping of CAZy in local db
-    log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, session, args)
+    log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, kingdoms, session, args)
 
     # convert taxonomy_filters to a set for quicker identification of species to scrape
     taxonomy_filters = get_filter_set(taxonomy_filters)
@@ -131,7 +135,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         config_dict,
         cazy_dict,
         taxonomy_filters,
-        max_tries,
+        kingdoms,
         time_stamp,
         session,
         args,
@@ -163,7 +167,7 @@ def get_cazy_data(
     config_dict,
     cazy_dict,
     taxonomy_filters,
-    max_tries,
+    kingdoms,
     time_stamp,
     session,
     args,
@@ -178,10 +182,9 @@ def get_cazy_data(
     :param config_dict: dict, user defined configuration of the scraper
     :param cazy_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
     :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
-    :param max_tries: int, maximum number of times to scrape CAZy if errors are encountered
+    :param kingdoms: list of taxonomy kingdoms to restrict the scrape to
     :param time_stamp: str, data and time scrape was initiated
     :param session: session, open database session
-    :param logger: logger object
     :param args: cmd args parser
 
     Return nothing.
@@ -198,8 +201,8 @@ def get_cazy_data(
     cazy_classes = crawler.get_cazy_classes(
         cazy_home,
         excluded_classes,
-        max_tries,
         cazy_dict,
+        args,
     )
 
     logger.info("Starting retrieval of CAZy families")
@@ -226,7 +229,7 @@ def get_cazy_data(
                 cazy_class.tries += 1
 
                 # check if maximum number of attempts to connect have been met
-                if cazy_class.tries == max_tries:
+                if cazy_class.tries == (args.retries + 1):
                     failed_url_scrapes += (
                         f"{cazy_class.url}\t"
                         f"{cazy_class.name}\t"
@@ -254,7 +257,8 @@ def get_cazy_data(
                     family,
                     cazy_home,
                     taxonomy_filters,
-                    max_tries,
+                    kingdoms,
+                    args,
                     session,
                 )
 
@@ -267,7 +271,7 @@ def get_cazy_data(
                         cazy_class.failed_families[family] = 1  # first attempt
 
                     # check if max number of attempts to connect family pages has been met
-                    if cazy_class.failed_families[family] == max_tries:
+                    if cazy_class.failed_families[family] == (args.retries + 1):
                         del cazy_class.failed_families[family]  # do not try another scrape
                         continue
 
@@ -299,7 +303,8 @@ def get_cazy_data(
                     family,
                     cazy_home,
                     taxonomy_filters,
-                    max_tries,
+                    kingdoms,
+                    args,
                     session,
                 )
 
@@ -312,7 +317,7 @@ def get_cazy_data(
                         cazy_class.failed_families[family] = 1  # first attempt
 
                     # check if max number of attempts to connect family pages has been met
-                    if cazy_class.failed_families[family] == max_tries:
+                    if cazy_class.failed_families[family] == (args.retries + 1):
                         del cazy_class.failed_families[family]  # do not try another scrape
                         continue
 
@@ -335,12 +340,13 @@ def get_cazy_data(
     return
 
 
-def log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, session, args):
+def log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, kingdoms, session, args):
     """Add a log of scraping CAZy to the local database.
 
     :param time_stamp: str, date and time cazy_webscraper was invoked
     :param config_dict: dict of CAZy classes and families to be scraped
     :param taxonomy_filters: dict of genera, species and strains to restrict the scrape to
+    :param kingdoms: list of taxonomy Kingdoms to restrict scrape to
     :param session: open SQL database session
     :param args: cmd arguments
 
@@ -374,7 +380,8 @@ def log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, session, args):
 
     try:
         if len(taxonomy_filters["genera"]) != 0:
-            genera = str(taxonomy_filters["genera"]).replace("[", "").replace("]", "").replace("'", "")
+            genera = str(taxonomy_filters["genera"]).replace("[", "").\
+                replace("]", "").replace("'", "")
             new_log.genera = genera
     except TypeError:
         pass
@@ -395,28 +402,25 @@ def log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, session, args):
     except TypeError:
         pass
 
+    if kingdoms is not None:
+        new_log.kingdoms = str(kingdoms).replace("[", "").replace("]", "").replace("'", "")
+    else:
+        new_log.kingdoms = "ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified"
+
     # retrieve commands from the command line
     cmd_line = ""
-    try:
-        cmd_line = cmd_line + " --classes '" + args.classes + "'"
-    except TypeError:
-        pass
-    try:
-        cmd_line = cmd_line + " --families '" + args.families + "'"
-    except TypeError:
-        pass
-    try:
-        cmd_line = cmd_line + " --genera '" + args.genera + "'"
-    except TypeError:
-        pass
-    try:
-        cmd_line = cmd_line + " --species '" + args.species + "'"
-    except TypeError:
-        pass
-    try:
-        cmd_line = cmd_line + " --strains '" + args.strains + "'"
-    except TypeError:
-        pass
+    for cmd in [
+        [args.classes, " --classes '"],
+        [args.families, " --families '"],
+        [args.kingdoms, " --kingdoms"],
+        [args.genera, " --genera '"],
+        [args.species, " --species '"],
+        [args.strains, " --strains '"],
+    ]:
+        try:
+            cmd_line = cmd_line + cmd[1] + cmd[0] + "'"
+        except TypeError:
+            pass
 
     if len(cmd_line) != 0:
         cmd_line = cmd_line.strip()

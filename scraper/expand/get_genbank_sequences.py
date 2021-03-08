@@ -33,7 +33,6 @@ from typing import List, Optional
 from Bio import Entrez, SeqIO
 from tqdm import tqdm
 
-from scraper import file_io
 from scraper.sql.sql_orm import (
     Cazyme,
     CazyFamily,
@@ -42,7 +41,8 @@ from scraper.sql.sql_orm import (
     Taxonomy,
     get_db_session,
 )
-from scraper.utilities import config_logger, build_genbank_sequences_parser
+from scraper.utilities import config_logger, file_io, parse_configuration
+from scraper.utilities.parsers import build_genbank_sequences_parser
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -76,7 +76,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # retrieve configuration data
     file_io_path = file_io.__file__
-    config_dict, taxonomy_filters = file_io.get_configuration(file_io_path, args)
+    config_dict, taxonomy_filters = parse_configuration.get_configuration(file_io_path, args)
 
     if config_dict is None:
         if args.update:
@@ -609,7 +609,7 @@ def get_accessions_for_new_sequences(accessions):
         rettype="docsum",
         retmode="xml",
     ) as handle:
-        summary_docs = handle
+        summary_docs = Entrez.read(handle)
 
     for doc in summary_docs:
         try:

@@ -29,6 +29,7 @@ from scraper.sql.sql_orm import (
     Cazymes_Genbanks,
     EC,
     Genbank,
+    Kingdom,
     Uniprot,
     Pdb,
 )
@@ -45,6 +46,7 @@ def add_protein_to_db(
     cazyme_name,
     family,
     source_organism,
+    kingdom,
     primary_genbank,
     session,
     ec_numbers=[],
@@ -73,6 +75,7 @@ def add_protein_to_db(
     :param cazyme_name: str, name of the protein/CAZyme
     :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
     :param source_organism: str, the scientific name of the organism from which the CAZy is derived
+    :param kingdom: str, taxonomy Kingdom of the source organism
     :param primary_genbank: str, the hyperlinked GenBank accession from CAZy
     :param session: open sqlalchemy session to database
 
@@ -100,6 +103,7 @@ def add_protein_to_db(
             cazyme_name,
             family,
             source_organism,
+            kingdom,
             primary_genbank,
             session,
             ec_numbers,
@@ -115,6 +119,7 @@ def add_protein_to_db(
         cazyme_name,
         family,
         source_organism,
+        kingdom,
         primary_genbank_object,
         session,
         ec_numbers,
@@ -134,6 +139,7 @@ def parse_unique_genbank_conflict(
     cazyme_name,
     family,
     source_organism,
+    kingdom,
     primary_genbank,
     session,
     ec_numbers=[],
@@ -150,6 +156,7 @@ def parse_unique_genbank_conflict(
     :param cazyme_name: str, name of the protein/CAZyme
     :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
     :param source_organism: str, the scientific name of the organism from which the CAZy is derived
+    :param kingdom: str, taxonomy Kingdom of the source_organism
     :param primary_genbank: str, the hyperlinked GenBank accession from CAZy
     :param session: open sqlalchemy session to database
 
@@ -176,6 +183,7 @@ def parse_unique_genbank_conflict(
             cazyme_name,
             family,
             source_organism,
+            kingdom,
             primary_genbank_query[0],
             session,
             ec_numbers,
@@ -203,6 +211,7 @@ def parse_unique_genbank_conflict(
                 cazyme_name,
                 family,
                 source_organism,
+                kingdom,
                 primary_genbank_query[0],
                 session,
                 ec_numbers,
@@ -254,6 +263,7 @@ def add_new_protein_to_db(
     cazyme_name,
     family,
     source_organism,
+    tax_kingdom,
     primary_genbank_object,
     session,
     ec_numbers=[],
@@ -267,6 +277,7 @@ def add_new_protein_to_db(
     :param cazyme_name: str, name of the protein/CAZyme
     :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
     :param source_organism: str, the scientific name of the organism from which the CAZy is derived
+    :param tax_kingdom: str, taxonomy Kingdom of the source organism
     :param primary_genbank_object: sql_orm.Genbank instance, represents the primary accession
     :param session: open sqlalchemy session to database
 
@@ -282,14 +293,29 @@ def add_new_protein_to_db(
     logger = logging.getLogger(__name__)
     error_message = None
 
+    # add the taxonomy Kingdom
+    try:
+        new_kingdom = Kingdom(kingdom=f'{tax_kingdom[0].upper()}{tax_kingdom[1:]}')
+        session.add(new_kingdom)
+        session.commit()
+    except IntegrityError:  # raised when Kingdom is already in the Kingdom table
+        session.rollback()
+        # retrieve the existing Kingdom instance
+        new_kingdom = session.query(Kingdom).filter(Kingdom.kingdom == tax_kingdom).all()[0]
+
     # define source organism
     genus_sp_separator = source_organism.find(" ")
     genus = source_organism[:genus_sp_separator]
     species = source_organism[genus_sp_separator:]
 
+    # Add the CAZyme and its taxonomy data
     try:
+        new_tax = Taxonomy(genus=genus, species=species)
+        new_tax.tax_kingdom = new_kingdom
+
         new_cazyme = Cazyme(cazyme_name=cazyme_name)
-        new_cazyme.taxonomy = Taxonomy(genus=genus, species=species)
+        new_cazyme.taxonomy = new_tax
+
         session.add(new_cazyme)
         session.commit()
 
@@ -389,7 +415,7 @@ def add_data_to_protein_record(
         add_uniprot_accessions(uni_nonprimary, cazyme, False, session)
 
     if len(pdb_accessions) != 0:
-        add_pdb_accessions(pdb_accessions, new_cazyme, session)
+        add_pdb_accessions(pdb_accessions, cazyme, session)
 
     return
 

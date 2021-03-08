@@ -139,7 +139,7 @@ def build_parser(argv: Optional[List] = None):
         "-r",
         "--retries",
         type=int,
-        default=0,
+        default=10,
         help="Number of times to retry scraping a family or class page if error encountered",
     )
 
@@ -171,6 +171,15 @@ def build_parser(argv: Optional[List] = None):
             "Specific strains of organisms to restrict the scrape to "
             "(written as Genus Species Strain)"
         ),
+    )
+
+    # Add option to define time out limit for trying to connect to CAZy
+    parser.add_argument(
+        "-t",
+        "--timeout",
+        type=int,
+        default=45,
+        help="Connection timeout limit (seconds)"
     )
 
     # Add option for more detail (verbose) logging

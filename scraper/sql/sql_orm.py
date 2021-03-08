@@ -232,22 +232,44 @@ class Taxonomy(Base):
     __tablename__ = "taxs"
     __table_args__ = (
         UniqueConstraint("genus", "species"),
-        Index("organism_index", "genus", "species")
+        Index("organism_index", "genus", "species", "kingdom_id")
     )
 
     taxonomy_id = Column(Integer, primary_key=True)
     genus = Column(String)
     species = Column(String)
+    kingdom_id = Column(Integer, ForeignKey("kingdoms.kingdom_id"))
+
+    tax_kingdom = relationship("Kingdom", back_populates="taxonomy")
 
     cazymes = relationship("Cazyme", back_populates="taxonomy")
 
     def __str__(self):
-        return f"-Source organism, Genus={self.genus}, Species={self.species}"
+        return f"-Source organism, Genus={self.genus}, Species={self.species}-"
 
     def __repr__(self):
         return (
             f"<Class Taxonomy: genus={self.genus}, species={self.species}, id={self.taxonomy_id}>"
         )
+
+
+class Kingdom(Base):
+    """Describes a taxonomy Kingdom."""
+    __tablename__ = "kingdoms"
+    __table_args__ = (
+        UniqueConstraint("kingdom"),
+    )
+
+    kingdom_id = Column(Integer, primary_key=True)
+    kingdom = Column(String)
+
+    taxonomy = relationship("Taxonomy", back_populates="tax_kingdom")
+
+    def __str__(self):
+        return f"-Kingdom, taxonomy_kingdom={self.kingdom}-"
+
+    def __repr__(self):
+        return f"<Class Kingdom, taxonomy_kingdom={self.kingdom}, id={self.kingdom_id}>"
 
 
 class CazyFamily(Base):
@@ -421,20 +443,16 @@ class Uniprot(Base):
 
 
 class Pdb(Base):
-    """Describe a PDB accession number of protein structure.
-
-    The primary PDB accession is the first PDB accession that is lsited in UniProt for
-    the CAZyme.
-    """
+    """Describe a PDB accession number of protein structure."""
     __tablename__ = "pdbs"
     __table_args__ = (
-        UniqueConstraint("pdb_accession", "primary"),
+        UniqueConstraint("pdb_accession"),
     )
 
     pdb_id = Column(Integer, primary_key=True)
     pdb_accession = Column(String)
 
-    Index('pdb_idx', pdb_accession, primary)
+    Index('pdb_idx', pdb_accession)
 
     cazymes = relationship("Cazyme", secondary=cazymes_pdbs, back_populates="pdbs", lazy="dynamic")
 
@@ -454,6 +472,7 @@ class Log(Base):
     time = Column(String)  # time scrape was initated
     classes = Column(String)  # CAZy classes scraped
     families = Column(String)  # CAZy families scraped
+    kingdoms = Column(String)  # Taxonomy Kingdoms to retrieve CAZymes from
     genera_filter = Column(String)
     species_filter = Column(String)
     strains_filter = Column(String)
@@ -486,7 +505,7 @@ def build_db(time_stamp, args):
     if args.output is sys.stdout:
         # write to cwd, this is deleted in scrape is successful
         cwd = os.getcwd()
-        db_path = cwd / f"cazy_scrape_temp_{time_stamp}.db"
+        db_path = cwd + f"cazy_scrape_temp_{time_stamp}.db"
 
     else:
         # write to specified output directory
