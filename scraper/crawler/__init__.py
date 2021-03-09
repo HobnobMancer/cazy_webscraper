@@ -645,47 +645,62 @@ def row_to_protein(row, family_name, taxonomy_filters, kingdom, session):
 
         else:
             warning = (
-                f"Multiple primary GenBank accessions retrieved for {protein_name} in "
-                f"{family_name}.\n"
+                f"Multiple GenBank accessions retrieved for {protein_name} in "
+                f"{family_name}.\nBut none were defined as primary.\n"
                 f"The first listed non-primary accession {gbk_nonprimary[0]} listed as the primary.\n"
                 f"Remaining primary accessions listed as non-primary accessions for {protein_name}"
             )
             logger.warning(warning)
             report_dict["error"] = warning
             report_dict["sql"] = protein_name
-            gbk_primary = gbk_nonprimary
+            gbk_primary.append(gbk_nonprimary[0])
             gbk_nonprimary.remove(gbk_nonprimary[0])
+    
+    elif len(gbk_primary) > 1:
+        logger.warning(
+            f"Multiple primary GenBank acccessions retrieved for {protein_name} in "
+            f"{family_name}.\nOnly the first listed accession will be written as primary."
+        )
+        report_dict["error"] = warning
+        report_dict["sql"] = protein_name
+        for gbk_acc in gbk_primary[1:]:
+            warning = (
+                f"GenBank accession {gbk_acc} written as primary in CAZy,\n"
+                "but listed as non-primary in the local database."
+            )
+            logger.warning(warning)
+            gbk_nonprimary.append(gbk_acc)
+            gbk_primary.remove(gbk_acc)
+            logger.warning(warning)
 
-    else:
-        for acc in gbk_primary:
-            try:
-                gbk_nonprimary.remove(acc)
-            except ValueError:
-                pass
+
+    for acc in gbk_primary:
+        try:
+            gbk_nonprimary.remove(acc)
+        except ValueError:
+            pass
 
     # Remove primary UniProt accessions from the non-primary accessions list
     if len(uni_primary) == 0:
-        if len(uni_nonprimary) == 1:
+        if len(uni_nonprimary) >= 1:
             uni_primary = uni_nonprimary
             uni_nonprimary.remove(uni_nonprimary[0])
 
-        elif len(uni_primary) > 1:
-            warning = (
-                f"Multiple primary UniProt accessions retrieved for {protein_name} in "
-                f"{family_name}.\n"
-                f"The first listed primary accession {gbk_primary[0]} listed as the primary.\n"
-                f"Remaining primary accessions listed as non-primary accessions for {protein_name}"
-            )
-            logger.warning(warning)
-            report_dict["error"] = warning
-            report_dict["sql"] = protein_name
+    elif len(uni_primary) > 1:
+        warning = (
+            f"Multiple UniProt primary accessions retrieved for {protein_name} in "
+            f"{family_name}.\n"
+            f"All will be listed as primary UniProt accessions."
+        )
+        logger.warning(warning)
+        report_dict["error"] = warning
+        report_dict["sql"] = protein_name
 
-    else:
-        for acc in uni_primary:
-            try:
-                uni_nonprimary.remove(acc)
-            except ValueError:
-                pass
+    for acc in uni_primary:
+        try:
+            uni_nonprimary.remove(acc)
+        except ValueError:
+            pass
 
     # add protein to database
     try:
