@@ -210,7 +210,7 @@ def get_kingdoms(args, raw_config_dict):
 
         else:
             # user did not specify any Kingdoms
-            kingdoms = cazy_kingdoms  # scrape CAZymes from all Kingdoms
+            kingdoms = 'all'  # scrape CAZymes from all Kingdoms
 
     return kingdoms
 
