@@ -657,10 +657,11 @@ def row_to_protein(row, family_name, taxonomy_filters, kingdom, session):
             gbk_nonprimary.remove(gbk_nonprimary[0])
     
     elif len(gbk_primary) > 1:
-        logger.warning(
+        warning = (
             f"Multiple primary GenBank acccessions retrieved for {protein_name} in "
             f"{family_name}.\nOnly the first listed accession will be written as primary."
         )
+        logger.warning(warning)
         report_dict["error"] = warning
         report_dict["sql"] = protein_name
         for gbk_acc in gbk_primary[1:]:
@@ -723,7 +724,7 @@ def row_to_protein(row, family_name, taxonomy_filters, kingdom, session):
             f"Failed to add {protein_name} to SQL database, "
             f"the following error was raised:\n{error_message}"
         )
-        logger.warning(warning,exc_info=1)
+        logger.warning(warning, exc_info=1)
         report_dict["error"] = warning
         report_dict["sql"] = protein_name
 
