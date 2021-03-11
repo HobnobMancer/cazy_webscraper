@@ -301,6 +301,7 @@ def add_new_protein_to_db(
     except IntegrityError:  # raised when Kingdom is already in the Kingdom table
         session.rollback()
         # retrieve the existing Kingdom instance
+        tax_kingdom = f'{tax_kingdom[0].upper()}{tax_kingdom[1:]}'
         new_kingdom = session.query(Kingdom).filter(Kingdom.kingdom == tax_kingdom).all()[0]
 
     # define source organism
