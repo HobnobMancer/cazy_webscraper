@@ -305,9 +305,14 @@ def add_new_protein_to_db(
         new_kingdom = session.query(Kingdom).filter(Kingdom.kingdom == tax_kingdom).all()[0]
 
     # define source organism
-    genus_sp_separator = source_organism.find(" ")
-    genus = source_organism[:genus_sp_separator]
-    species = source_organism[genus_sp_separator:]
+    if source_organism == 'unidentified':
+        genus = source_organism
+        species = source_organism
+
+    else:
+        genus_sp_separator = source_organism.find(" ")
+        genus = source_organism[:genus_sp_separator]
+        species = source_organism[genus_sp_separator:]
 
     # Add the CAZyme and its taxonomy data
     try:
