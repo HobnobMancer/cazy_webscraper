@@ -531,7 +531,7 @@ def test_parse_family_no_page_urls(monkeypatch, args):
         return [], 0
 
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
-    monkeypatch.setattr(crawler, "get_protein_page_urls", mock_page_urls)
+    monkeypatch.setattr(crawler, "get_tax_page_urls", mock_page_urls)
 
     test_fam = crawler.Family("GH3", "Glycoside Hydrolases (GHs)", "http://www.cazy.org/GH1.html")
 
@@ -561,7 +561,7 @@ def test_parse_family_success(protein_gen, monkeypatch, args):
         ]
 
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
-    monkeypatch.setattr(crawler, "get_protein_page_urls", mock_page_urls)
+    monkeypatch.setattr(crawler, "get_tax_page_urls", mock_page_urls)
     monkeypatch.setattr(crawler, "parse_proteins", mock_parse_proteins)
 
     test_family = crawler.Family("GH1", "Glycoside Hydrolases (GH)", "www.cazy.org/GH1.html")
@@ -592,7 +592,7 @@ def test_parse_family_sql_url_errors(protein_gen, monkeypatch, args):
         ]
 
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
-    monkeypatch.setattr(crawler, "get_protein_page_urls", mock_page_urls)
+    monkeypatch.setattr(crawler, "get_tax_page_urls", mock_page_urls)
     monkeypatch.setattr(crawler, "parse_proteins", mock_parse_proteins)
 
     test_family = crawler.Family("GH1", "Glycoside Hydrolases (GH)", "www.cazy.org/GH1.html")
@@ -623,7 +623,7 @@ def test_parse_family_previous_failed_pages(protein_gen, monkeypatch, args):
         ]
 
     monkeypatch.setattr(crawler, "get_page", mock_get_page)
-    monkeypatch.setattr(crawler, "get_protein_page_urls", mock_page_urls)
+    monkeypatch.setattr(crawler, "get_tax_page_urls", mock_page_urls)
     monkeypatch.setattr(crawler, "parse_proteins", mock_parse_proteins)
 
     test_family = crawler.Family(
@@ -643,15 +643,15 @@ def test_parse_family_previous_failed_pages(protein_gen, monkeypatch, args):
     )
 
 
-# test get_protein_page_urls()
+# test get_tax_page_urls()
 
 
-def test_get_protein_page_urls_no_links(gh147_page):
-    """Test get_protein_page_urls() on page with no links."""
+def test_get_tax_page_urls_no_links(gh147_page):
+    """Test get_tax_page_urls() on page with no links."""
     with open(gh147_page) as fp:
         soup = BeautifulSoup(fp, features="lxml")
 
-    crawler.get_protein_page_urls(
+    crawler.get_tax_page_urls(
         "http://www.cazy.org/GH147_bacteria.html",
         soup,
         'bacteria',
@@ -660,12 +660,12 @@ def test_get_protein_page_urls_no_links(gh147_page):
     )
 
 
-def test_get_protein_page_urls_no_pag(gh147_page):
-    """Test get_protein_page_urls() on page with no pagination of proteins."""
+def test_get_tax_page_urls_no_pag(gh147_page):
+    """Test get_tax_page_urls() on page with no pagination of proteins."""
     with open(gh147_page) as fp:
         soup = BeautifulSoup(fp, features="lxml")
 
-    crawler.get_protein_page_urls(
+    crawler.get_tax_page_urls(
         "http://www.cazy.org/GH147_bacteria.html",
         soup,
         'bacteria',
@@ -674,12 +674,12 @@ def test_get_protein_page_urls_no_pag(gh147_page):
     )
 
 
-def test_get_protein_page_urls_page(pag_page):
-    """Test get_protein_page_urls() on page with pagination of proteins."""
+def test_get_tax_page_urls_page(pag_page):
+    """Test get_tax_page_urls() on page with pagination of proteins."""
     with open(pag_page) as fp:
         soup = BeautifulSoup(fp, features="lxml")
 
-    crawler.get_protein_page_urls(
+    crawler.get_tax_page_urls(
         "http://www.cazy.org/GH1_bacteria.html",
         soup,
         'bacteria',
