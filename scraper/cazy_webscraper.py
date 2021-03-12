@@ -40,21 +40,21 @@
 Web scraper to scrape CAZy website and retrieve all protein data.
 
 :cmd_args --config: path to configruration file
-:cmd args --data_split: [None, class, family] how data is to be split/separated into dataframes
+:cmd_args --classes: specify CAZy classes to scrape
+:cmd_args --database: provide path to a local SQL database to add additional data to
+:cmd_args --families: specify CAZy families to retrieve CAZymes from
 :cmd_args --force: force overwriting content in exisiting output directory
+:cmd_args --genera: specify Genera to retrieve CAZymes from
+:cmd_args --kingdoms: specify taxonomy Kingdoms to scrape proteins from
 :cmd_args --log: path to log file, enables writing out log messages to a log file
 :cmd_args --nodelete: if true does not delete content in pre-existing output directory
 :cmd_args --output: path to output directory
-:cmd_args --subfamily: enable retrieval of subfamilies from CAZy
+:cmd_args --retries: specify the number of times to try scraping a page if connection fails
+:cmd_args --subfamilies: enable retrieval of subfamilies from CAZy
+:cmd_args --species: specify species to retrieve CAZymes from
+:cmd_args --strains: specify specific strains of species to retrieve CAZymes from
+:cmd_args --timeout: specify the maximum time (in seconds) before determining connection timed out
 :cmd_args --verbose: change logger level from warning to info, verbose logging
-
-:func main: coordinate scraping of CAZy database
-:func get_class_urls: retrieve URLs to CAZy class summary pages from CAZy homepage
-:func browser_decorator: decorator for get_page() to coordinate retrying failed connections
-:func get_page: connect to webpage and retrieval page as BeautifulSoup4 object
-
-:class Protein: A single protein from CAZy database
-:class Family: A single family from CAZy containing proteins
 """
 
 

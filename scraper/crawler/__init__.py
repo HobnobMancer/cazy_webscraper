@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# (c) University of St Andrews 2020-2021
+# (c) University of Strathclyde 2020-2021
 # Author:
 # Emma E. M. Hobbs
 
@@ -16,15 +18,25 @@
 # UK
 
 # The MIT License
-"""Module for crawling through the CAZy website and parsing HTML from the CAZy website.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 
-:func get_cazy_family_urls: retrieve URLs to families on CAZy class summary page
-:func get_subfamily_links: retrieve URLs to subfamilies on CAZy class summary page
-:func parse_family: build Family class object to represent CAZy family
-:func parse_family_pages: retrieve all URLs to pages containing protein records for CAZy family
-:func parse_proteins: retrieve protein records from protein table page
-:func row_to_protein: parse the protein record to build a Protein class object
-"""
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+"""Module for crawling through the CAZy website and parsing HTML from the CAZy website."""
 
 
 import logging
