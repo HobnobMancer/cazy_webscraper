@@ -208,6 +208,12 @@ def protein_with_no_uniprot_no_pdb(input_dir):
     return file_path
 
 
+@pytest.fixture
+def test_fam():
+    test_fam = crawler.Family("GH3", "Glycoside Hydrolases (GHs)", "http://www.cazy.org/GH1.html")
+    return test_fam
+
+
 # test classes
 
 
@@ -845,3 +851,186 @@ def test_browser_decorator():
     args = {"args": Namespace(timeout=10)}
     result = crawler.get_page('www.caz!!!!!!!!y.org', args["args"], max_tries=1)
     assert True == (result[0] is None) and (type(result[1]) is MissingSchema)
+
+
+# unit tests for parsing HTML pages labelled under 'all'
+
+
+def test_parse_fam_kingdom_all(monkeypatch, cazy_home_url, args_subfam_false, test_fam):
+    """Test parse_family() when kingdoms = 'all'."""
+
+    def mock_parse_all(*args, **kwargs):
+        return test_fam, False, "failed scrapes", "sql_failures"
+
+    monkeypatch.setattr(crawler, "parse_family_via_all_pages", mock_parse_all)
+
+    crawler.parse_family(
+        test_fam,
+        cazy_home_url,
+        None,
+        'all',
+        args_subfam_false['args'],
+        'session',
+    )
+
+
+def test_parsing_all_incorrect_url(cazy_home_url, args_subfam_false):
+    """Test parse_family_via_all_pages() when the URL format is wrong"""
+
+    test_fam = crawler.Family("GH3", "Glycoside Hydrolases (GHs)", "http://www.cssazy.org/GH1.html")
+
+    crawler.parse_family_via_all_pages(
+        test_fam,
+        cazy_home_url,
+        None,
+        args_subfam_false['args'],
+        'session'
+    )
+
+
+def test_parsing_all_no_first_paginiation(test_fam, cazy_home_url, args_subfam_true, monkeypatch):
+    """Test parse_family_via_all_pages() when no page retured for the first pagination page."""
+
+    def mock_get_page(*args, **kwargs):
+        return None, "error message"
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+
+    crawler.parse_family_via_all_pages(
+        test_fam,
+        cazy_home_url,
+        None,
+        args_subfam_true['args'],
+        'session'
+    )
+
+
+def test_parsing_all_no_paginiation_urls(
+    test_fam,
+    cazy_home_url,
+    args_subfam_true,
+    monkeypatch,
+    gh1_page,
+):
+    """Test parse_family_via_all_pages() when no paginiation page URLs returned."""
+
+    with open(gh1_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_pages(*args, **kwargs):
+        return soup, None
+
+    def mock_get_urls(*args, **kwargs):
+        return [], 0
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_pages)
+    monkeypatch.setattr(crawler, "get_paginiation_page_urls", mock_get_urls)
+
+    crawler.parse_family_via_all_pages(
+        test_fam,
+        cazy_home_url,
+        None,
+        args_subfam_true['args'],
+        'session'
+    )
+
+
+def test_successful_parse_all(test_fam, gh1_page, monkeypatch, args_subfam_true, cazy_home_url):
+    """Test parse_family_via_all_pages() when parse is successful."""
+
+    with open(gh1_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_page(*args, **kwargs):
+        return soup, None
+
+    def mock_page_urls(*args, **kwargs):
+        return ["url1", "url2"], 0
+
+    def mock_parse_proteins(*args, **kwargs):
+        return [
+            {"url": None, "error": None, "sql": None},
+            {"url": None, "error": None, "sql": None},
+        ]
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+    monkeypatch.setattr(crawler, "get_paginiation_page_urls", mock_page_urls)
+    monkeypatch.setattr(crawler, "parse_proteins_from_all", mock_parse_proteins)
+
+    crawler.parse_family(
+        test_fam,
+        cazy_home_url,
+        None,
+        'all',
+        args_subfam_true['args'],
+        "session",
+    )
+
+
+def test_get_paginiation_urls(monkeypatch, cazy_home_url, gh1_page):
+    """Test get_paginiation_page_urls() when urls successfully retrieved."""
+
+    with open(gh1_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    crawler.get_paginiation_page_urls(
+        "http://www.cazy.org/GH1_all.html",
+        soup,
+        cazy_home_url,
+        "GH147"
+    )
+
+
+def test_get_paginiation_no_last(monkeypatch, cazy_home_url, gh147_page):
+    """Test get_paginiation_page_urls() when urls successfully retrieved."""
+
+    with open(gh147_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    crawler.get_paginiation_page_urls(
+        "http://www.cazy.org/GH147_all.html",
+        soup,
+        cazy_home_url,
+        "GH147",
+    )
+
+
+def test_parse_proteins_all_no_page(monkeypatch, args_subfam_true):
+    """Test parse_proteins_from_all() when no connection is made to CAZy."""
+
+    def mock_get_page(*args, **kwargs):
+        return None, "error message"
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+
+    crawler.parse_proteins_from_all(
+        "page_url",
+        "GH147",
+        None,
+        "session",
+        args_subfam_true["args"],
+    )
+
+
+def test_parse_proteins_from_all_successfully(monkeypatch, args_subfam_true, gh147_page):
+    """Test parse_proteins_from_all() when successful."""
+
+    with open(gh147_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_page(*args, **kwargs):
+        return soup, None
+
+    def mock_adding_to_db(*args, **kwargs):
+        return {"url": None, "error": None, "sql": None}
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+    monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_adding_to_db)
+
+    crawler.parse_proteins_from_all(
+        "http://www.cazy.org/GH147_all.html",
+        "GH147",
+        None,
+        "session",
+        args_subfam_true['args'],
+    )
