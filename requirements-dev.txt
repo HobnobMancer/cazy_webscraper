@@ -3,7 +3,6 @@ bandit
 black
 coverage
 flake8
-lxml
 mypy
 pydocstyle
 pycodestyle

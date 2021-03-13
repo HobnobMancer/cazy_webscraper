@@ -1,0 +1,19 @@
+classes:
+  - 'GH'
+  - 'PL'
+Glycoside Hydrolases (GHs):
+  - 'GH147'
+GlycosylTransferases (GTs):
+Polysaccharide Lyases (PLs):
+  - 'PL17'
+Carbohydrate Esterases (CEs):
+Auxiliary Activities (AAs):
+Carbohydrate-Binding Modules (CBMs):
+genera:
+  - 'Trichoderma'
+species:
+  - 'Trichoderma reesei'
+  - 'Aspergillus niger'
+strains:
+  - 'Clostridium botulinum IBCA10-7060'
+  - 'Bacillus endophyticus Hbe603'

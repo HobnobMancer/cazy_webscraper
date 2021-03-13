@@ -13,3 +13,9 @@ Polysaccharide Lyases (PLs):
 Carbohydrate Esterases (CEs):
 Auxiliary Activities (AAs):
 Carbohydrate-Binding Modules (CBMs):
+genera:  # list genera to be scraped
+ - "Trichoderma"
+species:  # list species, this will scrape all strains under the species
+strains:  # list specific strains to be scraped
+kingdom:  # Archaea, Bacteria, Eukaryota, Viruses, Unclassified
+ - "Bacteria"

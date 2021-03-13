@@ -20,12 +20,21 @@
 Contains fixtures used by multiple test files.
 """
 
+
 import logging
+import json
 
 from datetime import datetime
 from pathlib import Path
 
 import pytest
+
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
+
+
+Base = declarative_base()
 
 
 @pytest.fixture
@@ -54,10 +63,46 @@ def cazy_home_url():
 @pytest.fixture
 def cazy_dictionary(test_input_dir):
     dict_path = test_input_dir / "cazy_dictionary.json"
-    return dict_path
+    with open(dict_path, "r") as fh:
+        cazy_dict = json.load(fh)
+    return cazy_dict
 
 
 @pytest.fixture
 def time_stamp():
     time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")  # used in naming files
     return time_stamp
+
+
+# Define fixtures for testing SQL ORM and interface
+
+
+@pytest.fixture(scope="session")
+def engine():
+    db_path = "tests/test_inputs/test_inputs_sql/unit_test_db_2021-03-01--15-06-59.db"
+    return create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
+
+
+@pytest.fixture(scope="session")
+def tables(engine):
+    Base.metadata.create_all(engine)
+    yield
+    Base.metadata.drop_all(engine)
+
+
+@pytest.fixture
+def db_session(engine, tables):
+    """Returns an sqlalchemy session, and after the test tears down everything properly."""
+    connection = engine.connect()
+    # begin the nested transaction
+    transaction = connection.begin()
+    # use the connection with the already started transaction
+    session = Session(bind=connection)
+
+    yield session
+
+    session.close()
+    # roll back the broader transaction
+    transaction.rollback()
+    # put back the connection to the connection pool
+    connection.close()
