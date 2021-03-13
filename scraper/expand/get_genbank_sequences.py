@@ -170,7 +170,10 @@ def get_missing_sequences_for_everything(date_today, taxonomy_filters, session, 
         logger.warning(
             "Retrieving sequences for all primary GenBank accessions that do not have sequences"
         )
-        genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks, Taxonomy).\
+        genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy, Kingdom).\
+            join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+            join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+            join(Cazymes_Genbanks, (Cazymes_Genbanks.cazyme_id == Cazyme.cazyme_id)).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             filter(Cazymes_Genbanks.primary == True).\
             filter(Genbank.sequence == None).\
@@ -181,7 +184,10 @@ def get_missing_sequences_for_everything(date_today, taxonomy_filters, session, 
         logger.warning(
             "Retrieving sequences for all GenBank accessions that do not have sequences"
         )
-        genbank_query = session.query(Genbank.genbank_accession, Cazymes_Genbanks, Taxonomy).\
+        genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy, Kingdom).\
+            join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+            join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+            join(Cazymes_Genbanks, (Cazymes_Genbanks.cazyme_id == Cazyme.cazyme_id)).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             filter(Genbank.sequence == None).\
             all()
@@ -226,7 +232,10 @@ def add_and_update_all_sequences(date_today, taxonomy_filters, session, args):
             "and those whose sequences have been updated in NCBI "
             "since they were retrieved previously"
         )
-        genbank_query = session.query(Genbank, Cazymes_Genbanks, Taxonomy).\
+        genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy, Kingdom).\
+            join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+            join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+            join(Cazymes_Genbanks, (Cazymes_Genbanks.cazyme_id == Cazyme.cazyme_id)).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             filter(Cazymes_Genbanks.primary == True).\
             all()
@@ -238,7 +247,10 @@ def add_and_update_all_sequences(date_today, taxonomy_filters, session, args):
             "and those whose sequences have been updated in NCBI "
             "since they were retrieved previously"
         )
-        genbank_query = session.query(Genbank, Cazymes_Genbanks, Taxonomy).\
+        genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy, Kingdom).\
+            join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+            join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+            join(Cazymes_Genbanks, (Cazymes_Genbanks.cazyme_id == Cazyme.cazyme_id)).\
             join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
             all()
 
@@ -307,17 +319,21 @@ def get_missing_sequences_for_specific_records(
 
             # retrieve the GenBank accessions of the CAZymes in the CAZy class without seqs
             if args.primary:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy, Kingdom).\
+                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(Cazymes_Genbanks, (Cazymes_Genbanks.cazyme_id == Cazyme.cazyme_id)).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
                     filter(Cazymes_Genbanks.primary == True).\
                     filter(Genbank.sequence == None).\
                     all()
             else:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy, Kingdom).\
+                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(Cazymes_Genbanks, (Cazymes_Genbanks.cazyme_id == Cazyme.cazyme_id)).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
                     filter(Genbank.sequence == None).\
                     all()
@@ -363,17 +379,21 @@ def get_missing_sequences_for_specific_records(
 
             # get the GenBank accessions of thes CAZymes, without sequences
             if args.primary:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy, Kingdom).\
+                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(Cazymes_Genbanks, (Cazymes_Genbanks.cazyme_id == Cazyme.cazyme_id)).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(family_subquery)).\
                     filter(Cazymes_Genbanks.primary == True).\
                     filter(Genbank.sequence == None).\
                     all()
             else:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy, Kingdom).\
+                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(Cazymes_Genbanks, (Cazymes_Genbanks.cazyme_id == Cazyme.cazyme_id)).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(family_subquery)).\
                     filter(Genbank.sequence == None).\
                     all()
@@ -435,16 +455,20 @@ def update_sequences_for_specific_records(date_today, config_dict, taxonomy_filt
 
             # retrieve the GenBank accessions of the CAZymes in the CAZy class without seqs
             if args.primary:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy, Kingdom).\
+                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(Cazymes_Genbanks, (Cazymes_Genbanks.cazyme_id == Cazyme.cazyme_id)).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
                     filter(Cazymes_Genbanks.primary == True).\
                     all()
             else:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy, Kingdom).\
+                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(Cazymes_Genbanks, (Cazymes_Genbanks.cazyme_id == Cazyme.cazyme_id)).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).\
                     all()
 
@@ -497,17 +521,21 @@ def update_sequences_for_specific_records(date_today, config_dict, taxonomy_filt
 
             # get the GenBank accessions of thes CAZymes, without sequences
             if args.primary:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy, Kingdom).\
+                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(Cazymes_Genbanks, (Cazymes_Genbanks.cazyme_id == Cazyme.cazyme_id)).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(family_subquery)).\
                     filter(Cazymes_Genbanks.primary == True).\
                     filter(Genbank.sequence == None).\
                     all()
             else:
-                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy).\
+                genbank_query = session.query(Genbank, Cazymes_Genbanks, Cazyme, Taxonomy, Kingdom).\
+                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(Cazymes_Genbanks, (Cazymes_Genbanks.cazyme_id == Cazyme.cazyme_id)).\
                     join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
-                    join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
                     filter(Cazyme.cazyme_id.in_(family_subquery)).\
                     filter(Genbank.sequence == None).\
                     all()
