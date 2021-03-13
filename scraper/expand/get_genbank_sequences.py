@@ -58,6 +58,7 @@ from scraper.sql.sql_orm import (
     CazyFamily,
     Cazymes_Genbanks,
     Genbank,
+    Kingdom,
     Taxonomy,
     get_db_session,
 )
