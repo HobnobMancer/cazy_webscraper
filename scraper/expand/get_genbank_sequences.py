@@ -97,12 +97,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # retrieve configuration data
     file_io_path = file_io.__file__
-    config_dict, taxonomy_filters = parse_configuration.get_configuration(file_io_path, args)
+    config_dict, taxonomy_filters, kingdoms = parse_configuration.get_configuration(
+        file_io_path,
+        args,
+    )
 
     if config_dict is None:
         if args.update:
             # get sequence for everything without a sequence and those with newer remote sequence
-            add_and_update_all_sequences(date_today, taxonomy_filters, session, args)
+            add_and_update_all_sequences(date_today, taxonomy_filters, kingdoms, session, args)
 
         else:
             # get sequences for everything without a sequence
@@ -115,6 +118,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 date_today,
                 config_dict,
                 taxonomy_filters,
+                kingdoms,
                 session,
                 args,
             )
@@ -123,6 +127,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 date_today,
                 config_dict,
                 taxonomy_filters,
+                kingdoms,
                 session,
                 args,
             )
@@ -154,11 +159,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 # The folowing functions are for querying the local database to get GenBank accessions
 
 
-def get_missing_sequences_for_everything(date_today, taxonomy_filters, session, args):
+def get_missing_sequences_for_everything(date_today, taxonomy_filters, kingdoms, session, args):
     """Retrieve protein sequences for all CAZymes in the local CAZy database that don't have seq.
 
     :param date_today: str, today's date, used for logging the date the seq is retrieved in the db
     :param taxonomy_filters: set of genera, species and strains to restrict sequence retrieval
+    :param kingdoms: set of taxonomy Kingdoms to retrieve sequences for
     :param session: open SQLite db session
     :param args: cmd-line argument parser
 
@@ -210,7 +216,7 @@ def get_missing_sequences_for_everything(date_today, taxonomy_filters, session, 
     return
 
 
-def add_and_update_all_sequences(date_today, taxonomy_filters, session, args):
+def add_and_update_all_sequences(date_today, taxonomy_filters, kingdoms, session, args):
     """Retrieve sequences for all proteins in the database.
 
     For records with no sequences, add the retrieved sequence.
@@ -219,6 +225,7 @@ def add_and_update_all_sequences(date_today, taxonomy_filters, session, args):
 
     :param date_today: str, today's date, used for logging the date the seq is retrieved in the db
     :param taxonomy_filters: set of genera, species and strains to retrieve sequences for
+    :param kingdoms: set of taxonomy Kingdoms to retrieve sequences for
     :param session: open SQLite db session
     :param args: cmd-line argument parser
 
@@ -285,6 +292,7 @@ def get_missing_sequences_for_specific_records(
     date_today,
     config_dict,
     taxonomy_filters,
+    kingdoms,
     session,
     args,
 ):
@@ -293,6 +301,7 @@ def get_missing_sequences_for_specific_records(
     :param date_today: str, today's date, used for logging the date the seq is retrieved in the db
     :param config_dict: dict, defines CAZy classes and families to get sequences for
     :param taxonomy_filters: set of genera, species and strains to restrict sequence retrieval
+    :param kingdoms: set of taxonomy Kingdoms to retrieve sequences for
     :param session: open SQL database session
     :param args: cmd-line args parser
 
@@ -417,7 +426,14 @@ def get_missing_sequences_for_specific_records(
     return
 
 
-def update_sequences_for_specific_records(date_today, config_dict, taxonomy_filters, session, args):
+def update_sequences_for_specific_records(
+    date_today,
+    config_dict,
+    taxonomy_filters,
+    kingdoms,
+    session,
+    args,
+):
     """Coordinate getting the sequences for specific CAZymes, not with seqs in the db nad those
     whose seq in NCBI has been updated since the last retrieval.
 
@@ -428,6 +444,7 @@ def update_sequences_for_specific_records(date_today, config_dict, taxonomy_filt
     :param date_today: str, today's date, used for logging the date the seq is retrieved in the db
     :param config_dict: dict, defines CAZy classes and families to get sequences for
     :param taxonomy_filters: set of genera, species and strains to restrict sequence retrieval
+    :param kingdoms: set of taxonomy Kingdoms to retrieve sequences for
     :param session: open SQL database session
     :param args: cmd-line args parser
 

@@ -16,7 +16,7 @@
 # KY16 9ST
 # Scotland,
 # UK
-
+#
 # The MIT License
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,10 +25,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -104,17 +104,27 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # check if any classes or families were specified to retrieve the sequences only for them
     file_io_path = file_io.__file__
-    config_dict, taxonomy_filters = parse_configuration.get_configuration(file_io_path, args)
+    config_dict, taxonomy_filters, kingdoms = parse_configuration.get_configuration(
+        file_io_path,
+        args,
+    )
 
     # retrieve protein structures from PDB
 
     # retrieve sequences for all CAZymes
     if config_dict is None:
-        get_every_cazymes_structures(outdir, taxonomy_filters, session, args)
+        get_every_cazymes_structures(outdir, taxonomy_filters, kingdoms, session, args)
 
     # retrieve sequences for specific CAZy classes and/or families
     else:
-        get_structures_for_specific_cazymes(outdir, config_dict, taxonomy_filters, session, args)
+        get_structures_for_specific_cazymes(
+            outdir,
+            config_dict,
+            taxonomy_filters,
+            kingdoms,
+            session,
+            args,
+        )
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
     end_time = pd.to_datetime(start_time)
@@ -140,31 +150,23 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
 
 
-def get_every_cazymes_structures(outdir, taxonomy_filters, session, args):
+def get_every_cazymes_structures(outdir, taxonomy_filters, kingdoms, session, args):
     """Get PDB accessions in the db, and coordinate downloading the structure from pdb.
 
     :param outdir: path to output directory
     :param taxonomy_filters: set of genera, species, and strains to retrieve structures for
+    :param kingdoms: set of taxonomy Kingdoms to retrieve structures for
     :param session: open SQLite db session
     :param args: cmd-line argument parser
 
     Return nothing.
     """
-    # retrieve structures for only primary PDB accessions
-    if args.primary is True:
-        pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
-            join(Cazyme.pdbs).\
-            join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
-            join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
-            filter(Pdb.primary == True).all()
-
-    # retrieve structures for all PDB accessions
-    else:
-        pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
-            join(Cazyme.pdbs).\
-            join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
-            join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
-            all()
+    # retrieve PDB accessions
+    pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
+        join(Cazyme.pdbs).\
+        join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+        join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+        all()
 
     if taxonomy_filters is None:
         for query_result in pdb_query:
@@ -174,8 +176,12 @@ def get_every_cazymes_structures(outdir, taxonomy_filters, session, args):
 
     else:
         for query_result in pdb_query:
-            source_organism = query_result[-1].genus + query_result[-1].species
+            source_organism = query_result[-2].genus + query_result[-2].species
             if any(filter in source_organism for filter in taxonomy_filters):
+                pdb_accession = query_result[0].pdb_accession
+                pdb_accession = pdb_accession[:pdb_accession.find("[")]
+                download_pdb_structures(pdb_accession, outdir, args)
+            elif query_result[-1].kingdom in kingdoms:
                 pdb_accession = query_result[0].pdb_accession
                 pdb_accession = pdb_accession[:pdb_accession.find("[")]
                 download_pdb_structures(pdb_accession, outdir, args)
@@ -183,12 +189,13 @@ def get_every_cazymes_structures(outdir, taxonomy_filters, session, args):
     return
 
 
-def get_structures_for_specific_cazymes(outdir, config_dict, taxonomy_filters, session, args):
+def get_structures_for_specific_cazymes(outdir, config_dict, taxonomy_filters, kingdoms, session, args):
     """Retrieve primary PDB accessions for CAZymes meeting criteria in the config_dict.
 
     :param outdir: path to output directory
     :param config_dict: dict, defines CAZy classes and families to retrieve accessions from
     :param taxonomy_filters: set of genera, species, and strains to retrieve structures for
+    :param kingdoms: set of taxonomy Kingdoms to retrieve structures for
     :param session: open SQLite db session
     :param args: cmd-line argument parser
 
@@ -210,19 +217,11 @@ def get_structures_for_specific_cazymes(outdir, config_dict, taxonomy_filters, s
                 subquery()
 
             # Retrieve PDB accessions for the selected CAZymes
-            if args.primary:
-                pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
-                    join(Cazyme.pdbs).\
-                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
-                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
-                    filter(Pdb.primary == True).filter(Cazyme.cazyme_id.in_(class_subquery)).all()
-
-            else:
-                pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
-                    join(Cazyme.pdbs).\
-                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
-                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
-                    filter(Cazyme.cazyme_id.in_(class_subquery)).all()
+            pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
+                join(Cazyme.pdbs).\
+                join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+                filter(Cazyme.cazyme_id.in_(class_subquery)).all()
 
             if taxonomy_filters is None:
                 for query_result in pdb_query:
@@ -232,8 +231,12 @@ def get_structures_for_specific_cazymes(outdir, config_dict, taxonomy_filters, s
 
             else:
                 for query_result in pdb_query:
-                    source_organism = query_result[-1].genus + query_result[-1].species
+                    source_organism = query_result[-2].genus + query_result[-2].species
                     if any(filter in source_organism for filter in taxonomy_filters):
+                        pdb_accession = query_result[0].pdb_accession
+                        pdb_accession = pdb_accession[:pdb_accession.find("[")]
+                        download_pdb_structures(pdb_accession, outdir, args)
+                    elif query_result[-1].kingdom in kingdoms:
                         pdb_accession = query_result[0].pdb_accession
                         pdb_accession = pdb_accession[:pdb_accession.find("[")]
                         download_pdb_structures(pdb_accession, outdir, args)
@@ -262,19 +265,11 @@ def get_structures_for_specific_cazymes(outdir, config_dict, taxonomy_filters, s
                     subquery()
 
             # Retrieve PDB accessions of the selected CAZymes
-            if args.primary:
-                pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
-                    join(Cazyme.pdbs).\
-                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
-                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
-                    filter(Pdb.primary == True).filter(Cazyme.cazyme_id.in_(family_subquery)).all()
-
-            else:
-                pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
-                    join(Cazyme.pdbs).\
-                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
-                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
-                    filter(Cazyme.cazyme_id.in_(family_subquery)).all()
+            pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
+                join(Cazyme.pdbs).\
+                join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+                filter(Cazyme.cazyme_id.in_(family_subquery)).all()
 
             if taxonomy_filters is None:
                 for query_result in pdb_query:
@@ -284,8 +279,12 @@ def get_structures_for_specific_cazymes(outdir, config_dict, taxonomy_filters, s
 
             else:
                 for query_result in pdb_query:
-                    source_organism = query_result[-1].genus + query_result[-1].species
+                    source_organism = query_result[-2].genus + query_result[-2].species
                     if any(filter in source_organism for filter in taxonomy_filters):
+                        pdb_accession = query_result[0].pdb_accession
+                        pdb_accession = pdb_accession[:pdb_accession.find("[")]
+                        download_pdb_structures(pdb_accession, outdir, args)
+                    elif query_result[-1].kingdom in kingdoms:
                         pdb_accession = query_result[0].pdb_accession
                         pdb_accession = pdb_accession[:pdb_accession.find("[")]
                         download_pdb_structures(pdb_accession, outdir, args)
