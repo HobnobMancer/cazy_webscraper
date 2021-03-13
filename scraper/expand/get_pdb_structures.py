@@ -59,6 +59,7 @@ from tqdm import tqdm
 from scraper.sql.sql_orm import (
     Cazyme,
     CazyFamily,
+    Kingdom,
     Pdb,
     Taxonomy,
     get_db_session,
@@ -151,13 +152,19 @@ def get_every_cazymes_structures(outdir, taxonomy_filters, session, args):
     """
     # retrieve structures for only primary PDB accessions
     if args.primary is True:
-        pdb_query = session.query(Pdb, Cazyme, Taxonomy).\
-            join(Cazyme.pdbs).join(Cazyme.taxonomy).filter(Pdb.primary == True).all()
+        pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
+            join(Cazyme.pdbs).\
+            join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+            join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+            filter(Pdb.primary == True).all()
 
     # retrieve structures for all PDB accessions
     else:
-        pdb_query = session.query(Pdb, Cazyme, Taxonomy).\
-            join(Cazyme.pdbs).join(Cazyme.taxonomy).all()
+        pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
+            join(Cazyme.pdbs).\
+            join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+            join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+            all()
 
     if taxonomy_filters is None:
         for query_result in pdb_query:
@@ -204,13 +211,17 @@ def get_structures_for_specific_cazymes(outdir, config_dict, taxonomy_filters, s
 
             # Retrieve PDB accessions for the selected CAZymes
             if args.primary:
-                pdb_query = session.query(Pdb, Cazyme, Taxonomy).\
-                    join(Cazyme.pdbs).join(Cazyme.taxonomy).\
+                pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
+                    join(Cazyme.pdbs).\
+                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
                     filter(Pdb.primary == True).filter(Cazyme.cazyme_id.in_(class_subquery)).all()
 
             else:
-                pdb_query = session.query(Pdb, Cazyme, Taxonomy).\
-                    join(Cazyme.pdbs).join(Cazyme.taxonomy).\
+                pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
+                    join(Cazyme.pdbs).\
+                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
                     filter(Cazyme.cazyme_id.in_(class_subquery)).all()
 
             if taxonomy_filters is None:
@@ -252,13 +263,17 @@ def get_structures_for_specific_cazymes(outdir, config_dict, taxonomy_filters, s
 
             # Retrieve PDB accessions of the selected CAZymes
             if args.primary:
-                pdb_query = session.query(Pdb, Cazyme, Taxonomy).\
-                    join(Cazyme.pdbs).join(Cazyme.taxonomy).\
+                pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
+                    join(Cazyme.pdbs).\
+                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
                     filter(Pdb.primary == True).filter(Cazyme.cazyme_id.in_(family_subquery)).all()
 
             else:
-                pdb_query = session.query(Pdb, Cazyme, Taxonomy).\
-                    join(Cazyme.pdbs).join(Cazyme.taxonomy).\
+                pdb_query = session.query(Pdb, Cazyme, Taxonomy, Kingdom).\
+                    join(Cazyme.pdbs).\
+                    join(Cazyme, (Cazyme.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
                     filter(Cazyme.cazyme_id.in_(family_subquery)).all()
 
             if taxonomy_filters is None:

@@ -551,10 +551,10 @@ def get_configuration(file_io_path, args):
     :param file_io_path: Path to file_io module
     :param args: cmd-line argument parser
 
-    Return configuration dictionary and set of taxonomy filters.
+    Return configuration dictionary, set of taxonomy filters and set of Taxonomy Kingdoms.
     """
     # retrieve inital parsing of configuration data
-    excluded_classes, config_dict, cazy_dict, taxonomy_filters_dict = parse_configuration(
+    excluded_classes, config_dict, cazy_dict, taxonomy_filters_dict, kingdoms = parse_configuration(
         file_io_path,
         args,
     )
@@ -576,4 +576,9 @@ def get_configuration(file_io_path, args):
     else:
         taxonomy_filters = set(taxonomy_filters)
 
-    return config_dict, taxonomy_filters
+    if kingdoms == "all":
+        kingdoms = ['Archaea', 'Bacteria', 'Eukaryota', 'Viruses', 'Unclassified']
+
+    kingdoms = set(kingdoms)
+
+    return config_dict, taxonomy_filters, kingdoms
