@@ -211,12 +211,6 @@ def get_cazy_data(
     """
     logger = logging.getLogger(__name__)
 
-    # List of urls that were failed to be scraped
-    failed_url_scrapes = []
-
-    # List of proteins that were not added to the database and attempting to do so raised an error
-    sql_failures = []
-
     # retrieve links to CAZy class pages, return list of CazyClass objects
     cazy_classes = crawler.get_cazy_classes(
         cazy_home,
@@ -242,7 +236,7 @@ def get_cazy_data(
             )
 
             if incorrect_urls is not None:
-                failed_url_scrapes += incorrect_urls
+                file_io.write_out_failed_scrapes(incorrect_urls, time_stamp, args)
 
             if class_families is None:  # couldn't retrieve URLs to families for working CAZy class
                 # add one to the number of scrapping attempts
@@ -250,12 +244,13 @@ def get_cazy_data(
 
                 # check if maximum number of attempts to connect have been met
                 if cazy_class.tries == (args.retries + 1):
-                    failed_url_scrapes += (
+                    message = (
                         f"{cazy_class.url}\t"
                         f"{cazy_class.name}\t"
                         "No CAZy familes from this class were scraped\t"
                         f"{error_message}"
                     )
+                    file_io.write_out_failed_scrapes([message], time_stamp, args)
                     continue
 
                 else:
@@ -300,8 +295,13 @@ def get_cazy_data(
                     # and remaining tries, retry connection after working through other classes
                     cazy_classes.append(cazy_class)
 
-                failed_url_scrapes += failed_fam_pages  # urls with no attempts left for retrying
-                sql_failures += family_sql_failures
+                # write out URLs which failed to be scaped
+                if len(failed_fam_pages) != 0:
+                    file_io.write_out_failed_scrapes(failed_fam_pages, time_stamp, args)
+
+                # write out Proteins which failed to be be added to the database
+                if len(family_sql_failures) != 0:
+                    file_io.write_out_failed_proteins(family_sql_failures, time_stamp, args)
 
         else:
             # scrape only (sub)families specified in the config file
@@ -346,16 +346,13 @@ def get_cazy_data(
                     # and remaining tries, retry connection after working through other classes
                     cazy_classes.append(cazy_class)
 
-                failed_url_scrapes += failed_fam_pages  # urls with no attempts left for retrying
-                sql_failures += family_sql_failures
+                # write out URLs which failed to be scaped
+                if len(failed_fam_pages) != 0:
+                    file_io.write_out_failed_scrapes(failed_fam_pages, time_stamp, args)
 
-    # write out URLs which failed to be scaped
-    if len(failed_url_scrapes) != 0:
-        file_io.write_out_failed_scrapes(failed_url_scrapes, time_stamp, args)
-
-    # write out Proteins which failed to be be added to the database
-    if len(sql_failures) != 0:
-        file_io.write_out_failed_proteins(sql_failures, time_stamp, args)
+                # write out Proteins which failed to be be added to the database
+                if len(family_sql_failures) != 0:
+                    file_io.write_out_failed_proteins(family_sql_failures, time_stamp, args)
 
     return
 

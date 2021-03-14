@@ -94,10 +94,10 @@ def make_output_directory(output, force, nodelete):
     return
 
 
-def write_out_failed_scrapes(failed_urls, time_stamp, args):
+def write_out_failed_scrapes(failures, time_stamp, args):
     """Write out the URLs for which a connection to CAZy failed.
 
-    :param failed_urls: list, contains the URL and reason for the failed scrape
+    :param failures: list, contains the URL and reason for the failed scrape
     :param args: cmd args parser
 
     Return nothing.
@@ -108,13 +108,13 @@ def write_out_failed_scrapes(failed_urls, time_stamp, args):
         output_path = args.output / f"failed_cazy_scrapes_{time_stamp}.txt"
 
         with open(output_path, "a") as fh:
-            for url in failed_urls:
-                fh.write(f"{url}\n")
+            for failure in failures:
+                fh.write(f"{failure}\n")
 
     else:
         logger.error("The following items were not scraped:")
-        for url in failed_urls:
-            logger.error(url)
+        for failure in failures:
+            logger.error(failure)
 
     return
 
