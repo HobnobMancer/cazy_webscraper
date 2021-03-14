@@ -95,20 +95,20 @@ def build_parser(argv: Optional[List] = None):
         help="Force file over writting",
     )
 
-    # Add option to restrict scrape to specific genera
-    parser.add_argument(
-        "--genera",
-        type=str,
-        default=None,
-        help="Genera to restrict the scrape to"
-    )
-
     # Add option to specify families to scrape
     parser.add_argument(
         "--families",
         type=str,
         default=None,
         help="Families to scrape. Separate families by commas 'GH1,GH2' (case sensitive)"
+    )
+
+    # Add option to restrict scrape to specific genera
+    parser.add_argument(
+        "--genera",
+        type=str,
+        default=None,
+        help="Genera to restrict the scrape to"
     )
 
     # Add option to restrict the scrape to specific kingdoms
@@ -246,6 +246,16 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
 
     # Add optional arguments to parser
 
+    # Add option for building a BLAST database of retrieved protein sequences
+    parser.add_argument(
+        "-b",
+        "--blastdb",
+        dest="blastdb",
+        action="store_true",
+        default=False,
+        help="Create BLAST database of retrieved GenBank protein sequences",
+    )
+
     # Add option to specify path to configuration file
     parser.add_argument(
         "-c",
@@ -273,12 +283,49 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
         help="Number of accessions posted to NCBI per epost, advice to be max 200. Default=150"
     )
 
+    # Add option to force file over writting
+    parser.add_argument(
+        "-f",
+        "--force",
+        dest="force",
+        action="store_true",
+        default=False,
+        help="Force file over writting",
+    )
+
     # Add option to specify families to retrieve protein sequences for
     parser.add_argument(
         "--families",
         type=str,
         default=None,
-        help="Families to scrape. Separate families by commas 'GH1,GH2'"
+        help="Families to scrape. Separate families by commas 'GH1,GH2'",
+    )
+
+    # Add option to enable writing sequences to FASTA file or files, or not at all
+    parser.add_argument(
+        "--fasta"
+        choices=[None, "separate", "one"],
+        type=str,
+        help="Enable writing out retrieved sequences to FASTA file(s)",
+    )
+
+    # Add option to restrict the scrape to specific kingdoms
+    parser.add_argument(
+        "--kingdoms",
+        type=str,
+        default=None,
+        help=(
+            "Kingdoms to scrape. Separate by a single comma.\n"
+            "Options= archaea, bacteria, eukaryota, viruses, unclassified (not case sensitive)"
+        ),
+    )
+
+    # Add option to restrict scrape to specific genera
+    parser.add_argument(
+        "--genera",
+        type=str,
+        default=None,
+        help="Genera to restrict the scrape to"
     )
 
     # Add log file name option
@@ -302,6 +349,26 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
         help="Enable retrieveing protein sequences for only primary GenBank accessions",
     )
 
+    # Add option to restrict the scrape to specific species. This will scrape CAZymes from
+    # all strains belonging to each listed species
+    parser.add_argument(
+        "--species",
+        type=str,
+        default=None,
+        help="Species (written as Genus Species) to restrict the scrape to"
+    )
+
+    # Add option to restrict scraping to specific strains of organisms
+    parser.add_argument(
+        "--strains",
+        type=str,
+        default=None,
+        help=(
+            "Specific strains of organisms to restrict the scrape to "
+            "(written as Genus Species Strain)"
+        ),
+    )
+
     # Add option to update sequences if the retrieved sequence is different
     # If not enabled then sequences will only be retrieved and added for proteins that do not
     # already have a protein sequence
@@ -312,16 +379,6 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help="Enable overwriting sequences in the database if the retrieved sequence is different",
-    )
-
-    # Add option to specify output directory to write output dataframes to
-    parser.add_argument(
-        "-w",
-        "--write",
-        type=Path,
-        metavar="path to FASTA file dire",
-        default=None,
-        help="Enable writing out protein sequences to a FASTA file",
     )
 
     # Add option for more detail (verbose) logging
@@ -386,14 +443,6 @@ def build_pdb_structures_parser(argv: Optional[List] = None):
         help="Classes from which all families are to be scraped. Separate classes by ','"
     )
 
-    # Add option to specify families to retrieve protein sequences for
-    parser.add_argument(
-        "--families",
-        type=str,
-        default=None,
-        help="Families to scrape. Separate families by commas 'GH1,GH2'"
-    )
-
     # enable force writing in an existing directory
     parser.add_argument(
         "-f"
@@ -402,6 +451,33 @@ def build_pdb_structures_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help="Force file over writting",
+    )
+
+    # Add option to specify families to retrieve protein sequences for
+    parser.add_argument(
+        "--families",
+        type=str,
+        default=None,
+        help="Families to scrape. Separate families by commas 'GH1,GH2'"
+    )
+
+    # Add option to restrict the scrape to specific kingdoms
+    parser.add_argument(
+        "--kingdoms",
+        type=str,
+        default=None,
+        help=(
+            "Kingdoms to scrape. Separate by a single comma.\n"
+            "Options= archaea, bacteria, eukaryota, viruses, unclassified (not case sensitive)"
+        ),
+    )
+
+    # Add option to restrict scrape to specific genera
+    parser.add_argument(
+        "--genera",
+        type=str,
+        default=None,
+        help="Genera to restrict the scrape to"
     )
 
     # Add log file name option
@@ -435,14 +511,24 @@ def build_pdb_structures_parser(argv: Optional[List] = None):
         help="Path to output directory to which downloaded structures are retrieved",
     )
 
-    # enable retrieving protein sequences for only primary GenBank accessions
+    # Add option to restrict the scrape to specific species. This will scrape CAZymes from
+    # all strains belonging to each listed species
     parser.add_argument(
-        "-p",
-        "--primary",
-        dest="primary",
-        action="store_true",
-        default=False,
-        help="Enable retrieveing protein structures for only primary GenBank accessions",
+        "--species",
+        type=str,
+        default=None,
+        help="Species (written as Genus Species) to restrict the scrape to"
+    )
+
+    # Add option to restrict scraping to specific strains of organisms
+    parser.add_argument(
+        "--strains",
+        type=str,
+        default=None,
+        help=(
+            "Specific strains of organisms to restrict the scrape to "
+            "(written as Genus Species Strain)"
+        ),
     )
 
     # Add option for more detail (verbose) logging
