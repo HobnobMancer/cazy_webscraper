@@ -109,7 +109,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
         else:
             # get sequences for everything without a sequence
-            get_missing_sequences_for_everything(date_today, taxonomy_filters, session, args)
+            get_missing_sequences_for_everything(
+                date_today,
+                taxonomy_filters,
+                kingdoms,
+                session,
+                args,
+            )
 
     else:
         # get sequences for only specified classes/families
@@ -131,6 +137,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 session,
                 args,
             )
+
+    if args.blastdb is not None:
+        file_io.build_blast_db(args)
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
     end_time = pd.to_datetime(start_time)
@@ -803,8 +812,11 @@ def get_sequences_add_to_db(accessions, date_today, session, args):
             genbank_record.seq_update_date = date_today
             session.commit()
 
-            if args.write is not None:
+            if args.fasta is not None:
                 file_io.write_out_fasta(record, temp_accession, args)
+
+            if args.blastdb is not None:
+                file_io.write_fasta_for_db(record, temp_accession, args)
 
             # remove the accession from the list
             accessions.remove(temp_accession)
