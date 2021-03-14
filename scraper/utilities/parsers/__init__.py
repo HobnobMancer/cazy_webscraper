@@ -303,7 +303,7 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
 
     # Add option to enable writing sequences to FASTA file or files, or not at all
     parser.add_argument(
-        "--fasta"
+        "--fasta",
         choices=[None, "separate", "one"],
         type=str,
         help="Enable writing out retrieved sequences to FASTA file(s)",
