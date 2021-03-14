@@ -250,10 +250,12 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
     parser.add_argument(
         "-b",
         "--blastdb",
-        dest="blastdb",
-        action="store_true",
-        default=False,
-        help="Create BLAST database of retrieved GenBank protein sequences",
+        type=Path,
+        default=None,
+        help=(
+            "Create BLAST database of retrieved GenBank protein sequences.\n"
+            "Give the path to the directory to store the database"
+        ),
     )
 
     # Add option to specify path to configuration file
@@ -304,9 +306,14 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
     # Add option to enable writing sequences to FASTA file or files, or not at all
     parser.add_argument(
         "--fasta",
-        choices=[None, "separate", "one"],
         type=str,
-        help="Enable writing out retrieved sequences to FASTA file(s)",
+        default=None,
+        help=(
+            "Enable writing out retrieved sequences to FASTA file(s).\n"
+            "Writing 'separate' produces a single FASTA file per retrieved protein sequence,\n"
+            "else, write the path to the FASTA to add retrieved protein sequences to\n"
+            "(this can be a pre-existing or non-existing FASTA file."
+        ),
     )
 
     # Add option to restrict the scrape to specific kingdoms
