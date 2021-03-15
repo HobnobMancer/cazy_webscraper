@@ -268,6 +268,7 @@ def test_main_build_sql_error(output_dir, null_logger, cazy_dictionary, db_path,
             database=None,
             verbose=False,
             log=None,
+            streamline=None,
         )
         return parser
 
@@ -328,6 +329,7 @@ def test_main_get_sql_error(output_dir, null_logger, cazy_dictionary, db_path, m
             database=path_,
             verbose=True,
             log=None,
+            streamline='genbank,pdb,uniprot,ec'
         )
         return parser
 

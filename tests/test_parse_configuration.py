@@ -543,7 +543,7 @@ def test_get_configuraiton_0(cazy_dictionary, parse_configuration_path, monkeypa
     """Tests getting configuration for the expand module when NO tax filters are given."""
 
     def mock_parse_config(*args, **kwargs):
-        return None, None, cazy_dictionary, {}
+        return None, None, cazy_dictionary, {}, set()
 
     monkeypatch.setattr(parse_configuration, "parse_configuration", mock_parse_config)
 
@@ -554,7 +554,7 @@ def test_get_configuraiton_1(cazy_dictionary, parse_configuration_path, monkeypa
     """Tests getting configuration for the expand module when ARE tax filters are given."""
 
     def mock_parse_config(*args, **kwargs):
-        return None, None, cazy_dictionary, {"genera": ["Trichoderma", "Aspergillus"]}
+        return None, None, cazy_dictionary, {"genera": ["Trichoderma", "Aspergillus"]}, set(['viruses'])
 
     monkeypatch.setattr(parse_configuration, "parse_configuration", mock_parse_config)
 

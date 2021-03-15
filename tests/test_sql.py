@@ -174,6 +174,7 @@ def test_custom_error():
 def test_adding_a_new_protein(db_session):
     """Test adding a new protein to the local database."""
     time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    args = {'args': Namespace(streamline=None)}
 
     try:
         sql_interface.add_protein_to_db(
@@ -183,6 +184,7 @@ def test_adding_a_new_protein(db_session):
             "kingdom",
             time_stamp,
             db_session,
+            args['args'],
             ["EC1.2.3.4"],
             ["Genbank1", "Genbank2"],
             ["Uni1P"],
@@ -195,7 +197,7 @@ def test_adding_a_new_protein(db_session):
 
 def test_add_data_to_an_existing_record_in_db(db_session):
     """Test adding data to an existing CAZyme in the local database."""
-
+    args = {'args': Namespace(streamline=None)}
     sql_interface.add_protein_to_db(
         "JCM19301_1832",
         "PL28",
@@ -203,6 +205,7 @@ def test_add_data_to_an_existing_record_in_db(db_session):
         "Bacteria",
         "GAL67220.1",
         db_session,
+        args['args'],
         ec_numbers=["EC4.2.2.-"],
         gbk_nonprimary=["Genbank1", "Genbank2"],
         uni_nonprimary=["Uni1", "Uni2"],
@@ -218,7 +221,7 @@ def test_genbank_no_cazymes(db_session, monkeypatch):
     monkeypatch.setattr(sql_interface, "add_new_protein_to_db", mock_adding_a_new_protein)
 
     existing_genbank_with_no_cazyme = "test_genbank_no_cazyme"
-
+    args = {'args': Namespace(streamline=None)}
     sql_interface.add_protein_to_db(
         "test_cazyme_name",
         "cazy_family",
@@ -226,6 +229,7 @@ def test_genbank_no_cazymes(db_session, monkeypatch):
         "kingdom",
         existing_genbank_with_no_cazyme,
         db_session,
+        args['args'],
         ec_numbers=["EC4.2.2.-"],
     )
 
@@ -239,7 +243,7 @@ def test_genbank_no_cazymes_raise_error(db_session, monkeypatch):
     monkeypatch.setattr(sql_interface, "add_new_protein_to_db", mock_adding_a_new_protein)
 
     existing_genbank_with_no_cazyme = "test_genbank_no_cazyme"
-
+    args = {'args': Namespace(streamline=None)}
     sql_interface.add_protein_to_db(
         "test_cazyme_name",
         "cazy_family",
@@ -247,6 +251,7 @@ def test_genbank_no_cazymes_raise_error(db_session, monkeypatch):
         "kingdom",
         existing_genbank_with_no_cazyme,
         db_session,
+        args['args'],
         ec_numbers=["EC4.2.2.-"],
         gbk_nonprimary=["Genbank1", "Genbank2"],
         uni_nonprimary=["Uni1", "Uni2"],
@@ -262,7 +267,7 @@ def test_one_genbank_multiple_cazymes(db_session, monkeypatch):
     monkeypatch.setattr(sql_interface, "add_data_to_protein_record", mock_add_protein_to_db)
 
     genbank_with_multiple_cazymes = "one_genbank_multi_cazymes"
-
+    args = {'args': Namespace(streamline=None)}
     sql_interface.add_protein_to_db(
         "test_cazyme_name",
         "cazy_family",
@@ -270,6 +275,7 @@ def test_one_genbank_multiple_cazymes(db_session, monkeypatch):
         "kingdom",
         genbank_with_multiple_cazymes,
         db_session,
+        args['args'],
     )
 
 
@@ -283,6 +289,8 @@ def test_multiple_genbanks_multiple_cazymes(db_session, monkeypatch):
 
     identical_genbank_accession = "identical_accession"
 
+    args = {'args': Namespace(streamline=None)}
+
     sql_interface.add_protein_to_db(
         "test_cazyme_name",
         "cazy_family",
@@ -290,11 +298,38 @@ def test_multiple_genbanks_multiple_cazymes(db_session, monkeypatch):
         "kingdom",
         identical_genbank_accession,
         db_session,
+        args['args'],
+    )
+
+
+def test_multiple_genbanks_multiple_cazymes_streamline(db_session, monkeypatch):
+    """test adding protein to db when finding multiple identical CAZymes and GenBank accesisons.
+    Streamline scraping is enabled."""
+
+    def mock_add_protein_to_db(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(sql_interface, "add_data_to_protein_record", mock_add_protein_to_db)
+
+    identical_genbank_accession = "identical_accession"
+
+    args = {'args': Namespace(streamline='uniprot,ec')}
+
+    sql_interface.add_protein_to_db(
+        "test_cazyme_name",
+        "cazy_family",
+        "source_genus organism",
+        "kingdom",
+        identical_genbank_accession,
+        db_session,
+        args['args'],
     )
 
 
 def test_multiple_genbanks_one_cazyme(db_session, monkeypatch):
     """test adding protien to db when identical GenBank accessions with one CAZyme link."""
+
+    args = {'args': Namespace(streamline=None)}
 
     def mock_add_protein_to_db(*args, **kwargs):
         return
@@ -310,11 +345,14 @@ def test_multiple_genbanks_one_cazyme(db_session, monkeypatch):
         "kingdom",
         multiple_accession,
         db_session,
+        args['args'],
     )
 
 
 def test_multiple_genbanks_no_cazymes(db_session, monkeypatch):
     """test adding protien to db when identical GenBank accessions are linked to no CAZymes."""
+
+    args = {'args': Namespace(streamline=None)}
 
     identical_genbanks_no_cazymes = "multi_accession_no_caz"
 
@@ -330,6 +368,7 @@ def test_multiple_genbanks_no_cazymes(db_session, monkeypatch):
         "kingdom",
         identical_genbanks_no_cazymes,
         db_session,
+        args['args'],
     )
 
 

@@ -303,6 +303,6 @@ def test_write_out_fasta(making_output_dir):
         name="fake",
         description="test protein record",
     )
-    args = {"args": Namespace(write=path_)}
+    args = {"args": Namespace(fasta=path_)}
     file_io.write_out_fasta(record, genbank_accession, args["args"])
     shutil.rmtree(path_)

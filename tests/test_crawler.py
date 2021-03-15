@@ -901,7 +901,7 @@ def test_row_to_protein_no_uniprot_no_pdb_sql_error(protein_with_no_uniprot_no_p
     crawler.row_to_protein(row, "GH147", None, 'bacteria', "session", args_subfam_true["args"])
 
 
-def test_row_to_protein_gb_synoymns_raise_error(protein_with_gb_synonyms, monkeypatch,):
+def test_row_to_protein_gb_synoymns_raise_error(protein_with_gb_synonyms, monkeypatch, args_subfam_true):
     """Test row_to_protein when protein has GenBank synonyms, and SQL raises an error."""
     with open(protein_with_gb_synonyms) as fp:
         row = BeautifulSoup(fp, features="lxml")
