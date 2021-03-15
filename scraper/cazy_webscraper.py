@@ -104,7 +104,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         file_io.make_output_directory(args.output, args.force, args.nodelete)
 
     if args.subfamilies is True:
-        logger.warning("Enabled to retrieve subfamilies")
+        logger.warning("Enabled retrieval of subfamily classifications")
+
+    if args.streamline is not None:
+        parse_configuration.create_streamline_scraping_warning(args)
 
     # build database and return open database session
     if args.database is not None:  # open session for existing local database
@@ -433,6 +436,7 @@ def log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, kingdoms, sessio
         [args.genera, " --genera '"],
         [args.species, " --species '"],
         [args.strains, " --strains '"],
+        [args.streamline, "--streamline '"],
     ]:
         try:
             cmd_line = cmd_line + cmd[1] + cmd[0] + "'"

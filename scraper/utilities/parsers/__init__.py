@@ -193,6 +193,19 @@ def build_parser(argv: Optional[List] = None):
         ),
     )
 
+    # Add option to streamline scraping, presumes that for each family HTML table a protein appears
+    # in, it's data will be identical
+    parser.add_argument(
+        "--streamline",
+        type=str,
+        default=None,
+        help=(
+            "Define attributes to presume are identical each family HTML table a protein"
+            " appears in\nThe options as: genbank, ec, uniprot, pdb\n"
+            "Any combination can be provided. GenBank refers to non-primary GenBank accessions."
+        )
+    )
+
     # Add option to define time out limit for trying to connect to CAZy
     parser.add_argument(
         "-t",

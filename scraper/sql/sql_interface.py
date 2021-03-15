@@ -69,6 +69,7 @@ def add_protein_to_db(
     kingdom,
     primary_genbank,
     session,
+    args,
     ec_numbers=[],
     gbk_nonprimary=[],
     uni_primary=[],
@@ -98,6 +99,7 @@ def add_protein_to_db(
     :param kingdom: str, taxonomy Kingdom of the source organism
     :param primary_genbank: str, the hyperlinked GenBank accession from CAZy
     :param session: open sqlalchemy session to database
+    :param args: cmd-line args parser
 
     ::optional parameters::
     :param ec_numbers: list of EC numbers which the CAZyme is annotated with
@@ -119,7 +121,24 @@ def add_protein_to_db(
         # raised when Genbank accession already in the database
         session.rollback()  # enable continued interation with the database
 
-        parse_unique_genbank_conflict(
+        # check if assuming for each family a protein appears, it's data is identical
+        if args.streamline is not None:
+            streamline_addition(
+                cazyme_name,
+                family,
+                source_organism,
+                kingdom,
+                primary_genbank,
+                session,
+                args,
+                ec_numbers,
+                gbk_nonprimary,
+                uni_primary,
+                uni_nonprimary,
+                pdb_accessions,
+            )
+
+        error_message = parse_unique_genbank_conflict(
             cazyme_name,
             family,
             source_organism,
@@ -153,6 +172,109 @@ def add_protein_to_db(
         raise SqlInterfaceException(error_message)
 
     return
+
+
+def streamline_addition(
+    cazyme_name,
+    family,
+    source_organism,
+    kingdom,
+    primary_genbank,
+    session,
+    args,
+    ec_numbers=[],
+    gbk_nonprimary=[],
+    uni_primary=[],
+    uni_nonprimary=[],
+    pdb_accessions=[],
+):
+    """Apply assumption that for each family a protein appears in, it's data is identcal.
+
+    Found protein already exists in the local database, check that the new family is associated,
+    and ignore all associated data user has specified to ignored in these cases.
+
+    :param cazyme_name: str, name of the protein/CAZyme
+    :param family: str, CAZy family or subfamily the protein is catalogued under in CAZy
+    :param source_organism: str, the scientific name of the organism from which the CAZy is derived
+    :param kingdom: str, taxonomy Kingdom of the source organism
+    :param primary_genbank: str, the hyperlinked GenBank accession from CAZy
+    :param session: open sqlalchemy session to database
+    :param args: cmd-line args parser
+
+    ::optional parameters::
+    :param ec_numbers: list of EC numbers which the CAZyme is annotated with
+    :param gbk_nonprimary: list of non-primary GenBank accessions
+    :param uni_primary: list, primary accessions of associated records in UniProtKB
+    :param uni_nonprimary: list, non-primary accessions of associated records in UniProtKB
+    :param pdb_accessions: list, accessions of associated records in PDB
+
+    Return nothing.
+    """
+    error_message = None
+
+    # double check the protein has been parsed before
+    cazyme_query = session.query(Cazyme, Genbank, Cazymes_Genbanks).\
+        join(Genbank, (Genbank.genbank_id == Cazymes_Genbanks.genbank_id)).\
+        join(Cazyme, (Cazyme.cazyme_id == Cazymes_Genbanks.cazyme_id)).\
+        filter(Genbank.genbank_accession == primary_genbank).\
+        filter(Cazymes_Genbanks.primary == True).\
+        filter(Cazyme.cazyme_name == cazyme_name).all()
+
+    if len(cazyme_query) == 0:  # couldn't find unique CAZyme so parse as per usual
+        error_message = parse_unique_genbank_conflict(
+            cazyme_name,
+            family,
+            source_organism,
+            kingdom,
+            primary_genbank,
+            session,
+            ec_numbers,
+            gbk_nonprimary,
+            uni_primary,
+            uni_nonprimary,
+            pdb_accessions,
+        )
+
+    elif len(cazyme_query) == 1:
+        cazyme = cazyme_query[0][0]
+
+        # check cazyme is associated with the current working family
+        add_cazy_family(family, cazyme, session)
+
+        # check if remaining associated data was set to be assumed to be identical each time
+        # the CAZyme is presented in a HTML table
+
+        if ((args.streamline).find("genbank") != -1) and (len(gbk_nonprimary) != 0):
+            add_nonprimary_gbk_accessions(gbk_nonprimary, cazyme, session)
+
+        if ((args.streamline).find("ec") != -1) and (len(ec_numbers) != 0):
+            add_ec_numbers(ec_numbers, cazyme, session)
+
+        if (args.streamline).find("uniprot") != -1:
+            if len(uni_primary) != 0:
+                add_uniprot_accessions(uni_primary, cazyme, True, session)
+            if len(uni_nonprimary) != 0:
+                add_uniprot_accessions(uni_nonprimary, cazyme, True, session)
+
+        if ((args.streamline).find("pdb") != -1) and (len(pdb_accessions) != 0):
+            add_pdb_accessions(pdb_accessions, cazyme, session)
+
+    else:  # found multiple CAZymes with the same primary GenBank accession
+        error_message = parse_unique_genbank_conflict(
+            cazyme_name,
+            family,
+            source_organism,
+            kingdom,
+            primary_genbank,
+            session,
+            ec_numbers,
+            gbk_nonprimary,
+            uni_primary,
+            uni_nonprimary,
+            pdb_accessions,
+        )
+
+    return error_message
 
 
 def parse_unique_genbank_conflict(

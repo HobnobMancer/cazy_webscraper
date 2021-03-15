@@ -829,10 +829,10 @@ def parse_proteins_from_all(protein_page_url, family_name, taxonomy_filters, ses
             pass
 
         if ('class' not in row.attrs) and ('id' not in row.attrs):  # row contains protein data
-            yield row_to_protein(row, family_name, taxonomy_filters, tax_kingdom, session)
+            yield row_to_protein(row, family_name, taxonomy_filters, tax_kingdom, session, args)
 
 
-def row_to_protein(row, family_name, taxonomy_filters, kingdom, session):
+def row_to_protein(row, family_name, taxonomy_filters, kingdom, session, args):
     """Returns a Protein object representing a single protein row from a CAZy family protein page.
 
     Each row, in order, contains the protein name, EC number, source organism, GenBank ID(s),
@@ -970,6 +970,7 @@ def row_to_protein(row, family_name, taxonomy_filters, kingdom, session):
             kingdom,
             gbk_primary[0],
             session,
+            args,
             ec_numbers,
             gbk_nonprimary,
             uni_primary,
@@ -1042,9 +1043,9 @@ def browser_decorator(func):
             time.sleep(10)
         if (not success) or (response is None):
             logger.warning(f"Failed to connect to CAZy.\nError: {err}")
-            return [None, err]
+            return None, err
         else:
-            return [response, None]
+            return response, None
 
     return wrapper
 

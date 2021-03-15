@@ -545,6 +545,34 @@ def write_out_failed_proteins(sql_failures, time_stamp, args):
     return
 
 
+def create_streamline_scraping_warning(args):
+    """Creating warning message to flag 'streamlined' scraping has been enabled.
+
+    :param args: cmd-line args parser
+
+    Return nothing.
+    """
+    logger = logging.getLogger(__name__)
+    streamline = (args.streamline).split(",")
+    index = 0
+    for index in range(len(streamline)):
+        if streamline[index] == "genbank":
+            streamline[index] = "GenBank primary and non-primary accessions"
+        if streamline[index] == "ec":
+            streamline[index] = "EC numbers"
+        if streamline[index] == "uniprot":
+            streamline[index] = "UniProt primary and non-primary accessions"
+        if streamline[index] == "pdb":
+            streamline[index] = "PDB accessions"
+
+    streamline = ',\n'.join(streamline)
+    logger.warning(
+        "Enabled 'streamlined' scraping. "
+        "Presuming the following data is identical for each family table a protein appears in\n"
+        f"{streamline}"
+    )
+
+
 def get_configuration(file_io_path, args):
     """Get configuration for the Expand module.
 
