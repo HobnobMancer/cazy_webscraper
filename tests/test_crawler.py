@@ -161,6 +161,12 @@ def gh1_page(input_dir):
 
 
 @pytest.fixture
+def gh1_page_no_count(input_dir):
+    file_path = input_dir / "cazy_gh1_page_no_count.html"
+    return file_path
+
+
+@pytest.fixture
 def gh147_page(input_dir):
     file_path = input_dir / "cazy_gh147_page.html"
     return file_path
@@ -169,6 +175,12 @@ def gh147_page(input_dir):
 @pytest.fixture
 def pag_page(input_dir):
     file_page = input_dir / "pagination_page.html"
+    return file_page
+
+
+@pytest.fixture
+def pag_page_no_kingdom(input_dir):
+    file_page = input_dir / "pagination_page_no_kingdom.html"
     return file_page
 
 
@@ -197,8 +209,20 @@ def protein_with_gb_synonyms(input_dir):
 
 
 @pytest.fixture
+def protein_no_primary_gbks(input_dir):
+    file_path = input_dir / "protein_no_primary_genbanks.html"
+    return file_path
+
+
+@pytest.fixture
 def protein_with_no_gb(input_dir):
     file_path = input_dir / "protein_no_genbank.html"
+    return file_path
+
+
+@pytest.fixture
+def protein_with_multi_primary(input_dir):
+    file_path = input_dir / "protein_with_multi_primary.html"
     return file_path
 
 
@@ -694,6 +718,20 @@ def test_get_tax_page_urls_page(pag_page):
     )
 
 
+def test_get_tax_pages_no_kingdom(pag_page_no_kingdom):
+    """Test get_tax_page_urls() when there are no proteins for the current Kingdom."""
+    with open(pag_page_no_kingdom) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    crawler.get_tax_page_urls(
+        "http://www.cazy.org/GH1_bacteria.html",
+        soup,
+        'bacteria',
+        "http://www.cazy.org",
+        'GH147',
+    )
+
+
 # test parse_proteins
 
 
@@ -729,17 +767,23 @@ def test_parse_proteins(gh147_page, monkeypatch, args):
     crawler.parse_proteins("protein_url", "family", None, 'bacteria', args['args'], "session")
 
 
-def test_parse_proteins_full(args, db_session, gh147_page):
+def test_parse_proteins_full(args, db_session, gh147_page, monkeypatch):
     """Test parsing proteins and adding to a database."""
     with open(gh147_page) as fp:
         soup = BeautifulSoup(fp, features="lxml")
-        crawler.parse_proteins("protein_url", "family", None, 'bacteria', args['args'], "session")
+
+    def mock_page(*args, **kwargs):
+        return soup, None
+
+    monkeypatch.setattr(crawler, "get_page", mock_page)
+
+    crawler.parse_proteins("protein_url", "family", None, 'bacteria', args['args'], db_session)
 
 
 # test row_to_protein()
 
 
-def test_row_to_protein_no_ecs(protein_without_ec, monkeypatch):
+def test_row_to_protein_no_ecs(protein_without_ec, monkeypatch, args_subfam_true):
     """Test row_to_protein when no EC#s are listed."""
     with open(protein_without_ec) as fp:
         row = BeautifulSoup(fp, features="lxml")
@@ -749,10 +793,10 @@ def test_row_to_protein_no_ecs(protein_without_ec, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", set(["Bacteroides caccae"]), 'bacteria', "session")
+    crawler.row_to_protein(row, "GH147", set(["Bacteroides caccae"]), 'bacteria', "session", args_subfam_true["args"])
 
 
-def test_row_to_protein_ec(protein_with_ec, monkeypatch):
+def test_row_to_protein_ec(protein_with_ec, monkeypatch, args_subfam_true):
     """Test row_to_protein when EC#s are listed."""
     with open(protein_with_ec) as fp:
         row = BeautifulSoup(fp, features="lxml")
@@ -762,10 +806,10 @@ def test_row_to_protein_ec(protein_with_ec, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", set(["Bacteroides"]), 'bacteria', "session")
+    crawler.row_to_protein(row, "GH147", set(["Bacteroides"]), 'bacteria', "session", args_subfam_true["args"])
 
 
-def test_row_to_protein_gb_synoymns(protein_with_gb_synonyms, monkeypatch):
+def test_row_to_protein_gb_synoymns(protein_with_gb_synonyms, monkeypatch, args_subfam_true):
     """Test row_to_protein when protein has GenBank synonyms."""
     with open(protein_with_gb_synonyms) as fp:
         row = BeautifulSoup(fp, features="lxml")
@@ -775,10 +819,37 @@ def test_row_to_protein_gb_synoymns(protein_with_gb_synonyms, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session")
+    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session", args_subfam_true["args"])
 
 
-def test_row_to_protein_no_gb(protein_with_no_gb, monkeypatch):
+def test_row_to_protein_no_primary_gbk(protein_no_primary_gbks, monkeypatch, args_subfam_true):
+    """Test row_to_protein when protein has GenBank synonyms."""
+    with open(protein_no_primary_gbks,) as fp:
+        row = BeautifulSoup(fp, features="lxml")
+
+    def mock_sql(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
+
+    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session", args_subfam_true["args"])
+
+
+def test_row_to_protein_with_multipl_primaries(protein_no_primary_gbks, monkeypatch, args_subfam_true):
+    """Test row_to_protein when protein has multiple primary GenBank and UniProt accessions."""
+    with open(protein_no_primary_gbks,) as fp:
+        row = BeautifulSoup(fp, features="lxml")
+
+    def mock_sql(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
+
+    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session", args_subfam_true["args"])
+
+
+
+def test_row_to_protein_no_gb(protein_with_no_gb, monkeypatch, args_subfam_true):
     """Test row_to_protein when protein has no GenBank accession."""
     with open(protein_with_no_gb) as fp:
         row = BeautifulSoup(fp, features="lxml")
@@ -788,12 +859,12 @@ def test_row_to_protein_no_gb(protein_with_no_gb, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session")
+    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session", args_subfam_true["args"])
 
 
-def test_row_to_protein_no_gb_sql_error(protein_with_no_gb, monkeypatch):
+def test_row_to_protein_no_gb_sql_error(protein_with_multi_primary, monkeypatch, args_subfam_true):
     """Test row_to_protein when protein has no GenBank accession and SQL raises an error."""
-    with open(protein_with_no_gb) as fp:
+    with open(protein_with_multi_primary) as fp:
         row = BeautifulSoup(fp, features="lxml")
 
     def mock_sql(*args, **kwargs):
@@ -801,10 +872,10 @@ def test_row_to_protein_no_gb_sql_error(protein_with_no_gb, monkeypatch):
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session")
+    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session", args_subfam_true["args"])
 
 
-def test_row_to_protein_no_uniprot_no_pdb(protein_with_no_uniprot_no_pdb, monkeypatch):
+def test_row_to_protein_no_uniprot_no_pdb(protein_with_no_uniprot_no_pdb, monkeypatch, args_subfam_true):
     """Test row_to_protein when protein has no UniProt or PDB accessions."""
     with open(protein_with_no_uniprot_no_pdb) as fp:
         row = BeautifulSoup(fp, features="lxml")
@@ -814,10 +885,10 @@ def test_row_to_protein_no_uniprot_no_pdb(protein_with_no_uniprot_no_pdb, monkey
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", set(), 'bacteria', "session")
+    crawler.row_to_protein(row, "GH147", set(), 'bacteria', "session", args_subfam_true["args"])
 
 
-def test_row_to_protein_no_uniprot_no_pdb_sql_error(protein_with_no_uniprot_no_pdb, monkeypatch):
+def test_row_to_protein_no_uniprot_no_pdb_sql_error(protein_with_no_uniprot_no_pdb, monkeypatch, args_subfam_true):
     """Test row_to_protein when protein has no UniProt or PDB accessions and SQL raises an error."""
     with open(protein_with_no_uniprot_no_pdb) as fp:
         row = BeautifulSoup(fp, features="lxml")
@@ -827,10 +898,10 @@ def test_row_to_protein_no_uniprot_no_pdb_sql_error(protein_with_no_uniprot_no_p
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session")
+    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session", args_subfam_true["args"])
 
 
-def test_row_to_protein_gb_synoymns_raise_error(protein_with_gb_synonyms, monkeypatch):
+def test_row_to_protein_gb_synoymns_raise_error(protein_with_gb_synonyms, monkeypatch,):
     """Test row_to_protein when protein has GenBank synonyms, and SQL raises an error."""
     with open(protein_with_gb_synonyms) as fp:
         row = BeautifulSoup(fp, features="lxml")
@@ -840,7 +911,7 @@ def test_row_to_protein_gb_synoymns_raise_error(protein_with_gb_synonyms, monkey
 
     monkeypatch.setattr(sql_interface, "add_protein_to_db", mock_sql)
 
-    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session")
+    crawler.row_to_protein(row, "GH147", None, 'bacteria', "session", args_subfam_true["args"])
 
 
 # browser decorator and get_page
@@ -967,10 +1038,58 @@ def test_successful_parse_all(test_fam, gh1_page, monkeypatch, args_subfam_true,
     )
 
 
+def test_successful_parse_retry(test_fam, gh1_page, monkeypatch, args_subfam_true, cazy_home_url):
+    """Test parse_family_via_all_pages() when not the first scrape attempt."""
+
+    test_fam.failed_pages = {"http://www.cazy.org/GH1.html": 1}
+
+    with open(gh1_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_page(*args, **kwargs):
+        return soup, None
+
+    def mock_page_urls(*args, **kwargs):
+        return ["url1", "url2"], 0
+
+    def mock_parse_proteins(*args, **kwargs):
+        return [
+            {"url": None, "error": None, "sql": None},
+            {"url": None, "error": None, "sql": None},
+        ]
+
+    monkeypatch.setattr(crawler, "get_page", mock_get_page)
+    monkeypatch.setattr(crawler, "get_paginiation_page_urls", mock_page_urls)
+    monkeypatch.setattr(crawler, "parse_proteins_from_all", mock_parse_proteins)
+
+    crawler.parse_family(
+        test_fam,
+        cazy_home_url,
+        None,
+        'all',
+        args_subfam_true['args'],
+        "session",
+    )
+
+
 def test_get_paginiation_urls(monkeypatch, cazy_home_url, gh1_page):
     """Test get_paginiation_page_urls() when urls successfully retrieved."""
 
     with open(gh1_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    crawler.get_paginiation_page_urls(
+        "http://www.cazy.org/GH1_all.html",
+        soup,
+        cazy_home_url,
+        "GH147"
+    )
+
+
+def test_get_paginiation_no_total(monkeypatch, cazy_home_url, gh1_page_no_count):
+    """Test get_paginiation_page_urls() when number of proteins unsuccessfully retrieved."""
+
+    with open(gh1_page_no_count) as fp:
         soup = BeautifulSoup(fp, features="lxml")
 
     crawler.get_paginiation_page_urls(
