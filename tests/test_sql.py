@@ -26,6 +26,7 @@ pytest -v
 
 import pytest
 import shutil
+import sys
 
 from argparse import Namespace
 from datetime import datetime
@@ -146,6 +147,16 @@ def test_build_db():
     path_ = path_ / "test_outputs" / "test_outputs_sql" / "temp_dir"
     file_io.make_output_directory(path_, True, False)
     args = {"args": Namespace(output=path_)}
+    sql_orm.build_db("time_stamp", args["args"])
+    shutil.rmtree(path_)
+
+
+def test_build_db_stdout():
+    """Test building a database when output is stdout"""
+    path_ = Path("tests")
+    path_ = path_ / "test_outputs" / "test_outputs_sql" / "temp_dir"
+    file_io.make_output_directory(path_, True, False)
+    args = {"args": Namespace(output=sys.stdout)}
     sql_orm.build_db("time_stamp", args["args"])
     shutil.rmtree(path_)
 
