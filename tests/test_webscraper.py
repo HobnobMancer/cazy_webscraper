@@ -99,6 +99,7 @@ def test_main_invalid_db_path(output_dir, null_logger, cazy_dictionary, monkeypa
             database="fake_database_path",
             verbose=False,
             log=None,
+            streamline=None,
         )
         return parser
 
@@ -149,6 +150,7 @@ def test_main_existing_database(output_dir, null_logger, cazy_dictionary, db_pat
             database=db_path,
             verbose=True,
             log=None,
+            streamline=None,
         )
         return parser
 
@@ -205,6 +207,7 @@ def test_main_new_database(output_dir, null_logger, cazy_dictionary, db_path, mo
             database=None,
             verbose=False,
             log=None,
+            streamline=None,
         )
         return parser
 
@@ -283,10 +286,14 @@ def test_main_build_sql_error(output_dir, null_logger, cazy_dictionary, db_path,
     def mock_retrieving_cazy_data(*args, **kwargs):
         return
 
+    def mock_building_db(*args, **kwargs):
+        raise TypeError
+
     monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
     monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
+    monkeypatch.setattr(sql.sql_orm, "get_db_session", mock_building_db)
     monkeypatch.setattr(parse_configuration, "parse_configuration", mock_retrieving_configuration)
     monkeypatch.setattr(cazy_webscraper, "log_scrape_in_db", mock_adding_log)
     monkeypatch.setattr(cazy_webscraper, "get_cazy_data", mock_retrieving_cazy_data)
@@ -544,6 +551,7 @@ def test_add_db_log_no_config(db_session):
             species=None,
             strains=None,
             kingdoms=None,
+            streamline=None,
         )
     }
 
@@ -558,7 +566,11 @@ def test_add_db_log_no_config(db_session):
 
 
 def test_add_db_log_with_config(db_session):
-    config_dict = {}
+    config_dict = {
+        'classes': None,
+        "Polysaccharide Lyases (PLs)": ["PL2", "PL3"],
+        "Glycoside Hydrolases (GHs)": None,
+    }
     taxonomy_filters = {
         "genera": ["Caldivirga", "Cuniculiplasma"],
         "species": ["Pyrococcus furiosus"],
@@ -572,7 +584,43 @@ def test_add_db_log_with_config(db_session):
             genera="Trichoderma",
             species="Aspergillus Niger",
             strains="Acidianus ambivalens LEI 10",
-            kingdoms="Archaea,Bacteria"
+            kingdoms="Archaea,Bacteria",
+            streamline="uniprot,pdb",
+        )
+    }
+
+    cazy_webscraper.log_scrape_in_db(
+        "YYYY-MM-DD--HH-MM-SS",
+        config_dict,
+        taxonomy_filters,
+        kingdoms,
+        db_session,
+        args["args"],
+    )
+
+
+def test_add_db_log_all_kingdoms(db_session):
+    """Test adding log to database when all Kingdoms are scraped."""
+    config_dict = {
+        'classes': None,
+        "Polysaccharide Lyases (PLs)": ["PL2", "PL3"],
+        "Glycoside Hydrolases (GHs)": None,
+    }
+    taxonomy_filters = {
+        "genera": ["Caldivirga", "Cuniculiplasma"],
+        "species": ["Pyrococcus furiosus"],
+        "strains": ["Saccharolobus solfataricus POZ149", "Saccharolobus solfataricus SULB"]
+    }
+    kingdoms = ["Archaea"]
+    args = {
+        "args": Namespace(
+            classes="GH,PL",
+            families="AA1,AA2",
+            genera="Trichoderma",
+            species="Aspergillus Niger",
+            strains="Acidianus ambivalens LEI 10",
+            kingdoms=None,
+            streamline="uniprot,pdb",
         )
     }
 
