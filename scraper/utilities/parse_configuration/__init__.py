@@ -495,56 +495,6 @@ def convert_lists_to_none(config_dict):
     return config_dict
 
 
-def write_out_failed_scrapes(failed_urls, time_stamp, args):
-    """Write out the URLs for which a connection to CAZy failed.
-
-    :param failed_urls: list, contains the URL and reason for the failed scrape
-    :param args: cmd args parser
-
-    Return nothing.
-    """
-    logger = logging.getLogger(__name__)
-
-    if args.output is not sys.stdout:
-        output_path = args.output / f"failed_cazy_scrapes_{time_stamp}.txt"
-
-        with open(output_path, "a") as fh:
-            for url in failed_urls:
-                fh.write(f"{url}\n")
-
-    else:
-        logger.error("The following items were not scraped:")
-        for url in failed_urls:
-            logger.error(url)
-
-    return
-
-
-def write_out_failed_proteins(sql_failures, time_stamp, args):
-    """Write out the names of proteins which raised errors when being added to the local db.
-
-    :param sql_failures: list, the names of proteins that were unsuccessfully added to the db
-    :param args: cmd args parser
-
-    Return nothing.
-    """
-    logger = logging.getLogger(__name__)
-
-    if args.output is not sys.stdout:
-        output_path = args.output / f"failed_db_protein_additions_{time_stamp}.txt"
-
-        with open(output_path, "a") as fh:
-            for fail in sql_failures:
-                fh.write(f"{fail}\n")
-
-    else:
-        logger.error("The following proteins were not entered into database:")
-        for fail in sql_failures:
-            logger.error(fail)
-
-    return
-
-
 def create_streamline_scraping_warning(args):
     """Creating warning message to flag 'streamlined' scraping has been enabled.
 

@@ -231,7 +231,17 @@ def raw_config_dict():
     }
     return raw_config_dict
 
+
 # test parse_configuration()
+
+
+def test_filenotfound_config(parse_configuration_path):
+    """Test parse_config when the path to the configuraiton file is wrong."""
+    args = {"args":Namespace(config="fake_page")}
+
+    with pytest.raises(SystemExit) as pytest_wrapped_err:
+        parse_configuration.parse_configuration(parse_configuration_path, args["args"])
+    assert pytest_wrapped_err.type == SystemExit
 
 
 def test_parse_config_file_cmd(
@@ -562,3 +572,31 @@ def test_get_tax_filter_no_yaml(tax_no_yaml_args, raw_config_dict):
 def test_get_tax_filter(tax_args, raw_config_dict):
     """Test get_genera_species_strains when cmd-line and config file are parsed."""
     parse_configuration.get_genera_species_strains(tax_args["args"], raw_config_dict)
+
+
+# test get_kingdoms
+
+
+def test_get_kingdoms(raw_config_dict, args_config_cmd):
+    """Test retrieving taxonomy Kingdoms."""
+    raw_config_dict["kingdoms"] = ["archaea", "jackjackjack", "bacteria"]
+    parse_configuration.get_kingdoms(args_config_cmd["args"], raw_config_dict)
+
+
+def test_get_kingdoms_all_wrong(raw_config_dict):
+    """Test retrieving taxonomy Kingdoms when none that were parsed are recognisable."""
+    raw_config_dict["kingdoms"] = ["jack", "jill", "sam"]
+    args = {"args": Namespace(kingdoms="milly")}
+
+    with pytest.raises(SystemExit) as pytest_wrapped_err:
+        parse_configuration.get_kingdoms(args["args"], raw_config_dict)
+    assert pytest_wrapped_err.type == SystemExit
+
+
+# test creating logger warning message when enabled streamlined scraping
+
+
+def test_creating_streamlined_warning_message():
+    """Test creating logger warning message when enabled streamlined scraping."""
+    args = {"args": Namespace(streamline="genbank,ec,uniprot,pdb")}
+    parse_configuration.create_streamline_scraping_warning(args["args"])
