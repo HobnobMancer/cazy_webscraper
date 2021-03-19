@@ -782,3 +782,28 @@ def add_pdb_accessions(pdb_accessions, cazyme, session):
             session.rollback()
 
     return
+
+
+def add_deleted_cazy_family(family, session):
+    """Add CAZy family to CAZyme record in the local CAZy database.
+
+    :param family: str, name of a CAZy family/subfamily
+    :param session: open local database session connector
+
+    Return nothing.
+    """
+    if family.find("_") != -1:
+        subfamily = family[:family.find("_")]
+        deleted_fam = CazyFamily(family=family[:family.find("_")], subfamily=subfamily)
+    else:
+        deleted_fam = CazyFamily(family=family)
+
+    try:
+        session.add(deleted_fam)
+        session.commit()
+        return
+
+    except IntegrityError:
+        session.rollback()
+
+    return

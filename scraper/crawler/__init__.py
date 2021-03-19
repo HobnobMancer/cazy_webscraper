@@ -671,6 +671,24 @@ def parse_family_via_all_pages(family, cazy_home, taxonomy_filters, args, sessio
             family.name,
         )
 
+        if total_proteins == 'Deleted family!':
+            # add family to the database
+            logger.warning(
+                f'{family.name} listed as "Deleted family" in CAZy.\n'
+                'Adding family name to the database'
+            )
+            sql_interface.add_deleted_cazy_family(family.name, session)
+            return(
+                family,
+                False,
+                [
+                    f"{first_pagination_url}\t{family.cazy_class}\t"
+                    f"{family.name} listed as 'Deleted family' in CAZy.\t"
+                    "Added family name to the database"
+                ],
+                [],
+            )
+
         if len(protein_page_urls) == 0:
             return(
                 family,
@@ -775,8 +793,34 @@ def get_paginiation_page_urls(first_pagination_url, first_pagination_page, cazy_
             r"all \(\d+\)", data[0].text, flags=re.IGNORECASE,
         )[0].split("(")[1][:-1])
     except IndexError:
-        logger.warning(f"No proteins found for 'all' in {family_name}")
-        protein_total = 0
+        # check if the family has been deleted
+        try:
+            family_activities_cell = first_pagination_page.select("table")[
+                0].select("tr")[0].select('td')[0].contents[0].strip()
+
+            if family_activities_cell == 'Deleted family!':
+                protein_total = 'Deleted family!'
+            else:
+                logger.warning(f"No proteins found for 'all' in {family_name}")
+                protein_total = 0
+        except Exception:
+            logger.warning(f"No proteins found for 'all' in {family_name}")
+            protein_total = 0
+
+    if protein_total == 0:
+        # check if the family has been deleted
+        try:
+            family_activities_cell = first_pagination_page.select("table")[
+                0].select("tr")[0].select('td')[0].contents[0].strip()
+
+            if family_activities_cell == 'Deleted family!':
+                protein_total = 'Deleted family!'
+            else:
+                logger.warning(f"No proteins found for 'all' in {family_name}")
+                protein_total = 0
+        except Exception:
+            logger.warning(f"No proteins found for 'all' in {family_name}")
+            protein_total = 0
 
     return protein_page_urls, protein_total
 
