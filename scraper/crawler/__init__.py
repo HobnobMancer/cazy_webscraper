@@ -1031,7 +1031,7 @@ def row_to_protein(row, family_name, taxonomy_filters, kingdom, session, args):
         report_dict["error"] = warning
         report_dict["sql"] = protein_name
 
-    return {"url": None, "error": None, "sql": None}
+    return report_dict
 
 
 def get_all_accessions(bs_element_lst):
