@@ -32,11 +32,13 @@ We're almost at the stage of releasing the first version of `cazy_webscraper`, b
 
 All this work is being done on the currently active `update_expand` branch.
 
-## Future releases
+## Future releases and features
 
 To make `cazy_webscraper` accessible to a wider audience, I will (after the release of version 1) add on a GUI for `cazy_webscraper`. This will likely be slow in development but it will come in the next 6-9 months.
 
 If there any additional features you would like to see added to `cazy_webscraper` or the documentation, please do raise an issue in the GitHub repo. All feedback is greatly appreciated and the aim is provide a tool users will find extremely useful!
+
+
 
 ## Requirements
 
