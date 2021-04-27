@@ -20,6 +20,22 @@ _For detailed documentation see the [full documentation](https://cazy-webscraper
 
 _An ER model can be found in the root of the `cazy_webscraper` GitHub repo, demonstrating the structure of the SQL database create by `cazy_webscraper`._
 
+## Our last developments before releasing version 1!
+
+We're almost at the stage of releasing the first version of `cazy_webscraper`, but there are a few things we want to do first.
+
+- Unit Tests: The coverage of the unit tests will be increased to cover at least 95% of the entire package
+
+- The Expand module: This module is retrieving protein sequences from GenBank and PDB structures from PDB. The code is workable but inefficient. The code will be factorised out into multiple submodules, and include allow applying an additional EC number filter for selecting CAZyme to retrieve structural and sequence data for.
+
+- Documentation: The ReadTheDocs documentation has been updated to include all cmd-line flag. However, I am working on developing written and video tutorials to help users will less experience using the cmd-line to get started with this tool!
+
+## Future releases
+
+To make `cazy_webscraper` accessible to a wider audience, I will (after the release of version 1) add on a GUI for `cazy_webscraper`. This will likely be slow in development but it will come in the next 6-9 months.
+
+If there any additional features you would like to see added to `cazy_webscraper` or the documentation, please do raise an issue in the GitHub repo. All feedback is greatly appreciated and the aim is provide a tool users will find extremely useful!
+
 ## Requirements
 
 POISx or Mac OS, or a Linux emulator  
