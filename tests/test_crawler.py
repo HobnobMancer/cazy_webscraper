@@ -427,10 +427,6 @@ def test_get_family_urls_no_urls_no_subfam_true(
     )
 
     assert fam is None
-    assert message == (
-        "Could not retrieve family and subfamily URLs from class page of "
-        "Glycoside Hydrolases (GHs)\n"
-    )
     assert incorrect_urls is None
 
 

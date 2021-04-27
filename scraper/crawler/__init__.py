@@ -329,7 +329,7 @@ def get_subfamily_links(family_h3_element, cazy_home):
         return urls
 
 
-def row_to_protein(row, family_name, taxonomy_filters, kingdom, ec_filters, session, args, data_dict):
+def row_to_protein(row, family_name, taxonomy_filters, kingdom, ec_filters, session, args):
     """Parses row and collates data to be added to records in the local CAZy database.
 
     Each row, in order, contains the protein name, EC number, source organism, GenBank ID(s),
