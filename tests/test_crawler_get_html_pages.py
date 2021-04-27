@@ -287,50 +287,50 @@ def test_pages_reparse_class_parse_kingdom_no_config(
     file_io.make_output_directory(logs_dir, True, False)
 
 
-def test_pages_reparse_class_parse_not_kingdom_config(
-    cazy_dictionary, cazy_home_url, logs_dir, args, start_time, monkeypatch,
-):
-    """Test get_cazy_pages when reparsing the CAZy class"""
+# def test_pages_reparse_class_parse_not_kingdom_config(
+#     cazy_dictionary, cazy_home_url, logs_dir, args, start_time, monkeypatch,
+# ):
+#     """Test get_cazy_pages when reparsing the CAZy class"""
 
-    file_io.make_output_directory(logs_dir, True, False)
+#     file_io.make_output_directory(logs_dir, True, False)
 
-    fam1 = crawler.Family("GH3_1", "test_class", "test_url")
+#     fam1 = crawler.Family("GH3_1", "test_class", "test_url")
 
-    config_dict = {"Glycoside Hydrolases": ["GH3"]}
+#     config_dict = {"Glycoside Hydrolases": ["GH3"]}
 
-    def mock_get_classes(*args, **kwargs):
-        class1 = crawler.CazyClass(
-            name="Glycoside Hydrolases",
-            url="test_class_url.html",
-            tries=0,
-            failed_families={fam1: 0}
-        )
-        return [class1]
+#     def mock_get_classes(*args, **kwargs):
+#         class1 = crawler.CazyClass(
+#             name="Glycoside Hydrolases",
+#             url="test_class_url.html",
+#             tries=0,
+#             failed_families={fam1: 0}
+#         )
+#         return [class1]
 
-    def mock_get_families(*args, **kwargs):
-        return [fam1], "error message", ["in", "cor", "rect", "urls"]
+#     def mock_get_families(*args, **kwargs):
+#         return [fam1], "error message", ["in", "cor", "rect", "urls"]
 
-    def mock_parse_family(*args, **kwargs):
-        return fam1, True, ["fail1", "fail2"], ["format error"]
+#     def mock_parse_family(*args, **kwargs):
+#         return fam1, True, ["fail1", "fail2"], ["format error"]
 
-    monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
-    monkeypatch.setattr(crawler, "get_cazy_family_urls", mock_get_families)
-    monkeypatch.setattr(get_cazy_pages, "parse_family_by_kingdom", mock_parse_family)
+#     monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
+#     monkeypatch.setattr(crawler, "get_cazy_family_urls", mock_get_families)
+#     monkeypatch.setattr(get_cazy_pages, "parse_family_by_kingdom", mock_parse_family)
 
-    with pytest.raises(SystemExit) as pytest_wrapped_e:
-        get_cazy_pages.get_cazy_pages(
-            args=args["args"],
-            cazy_home=cazy_home_url,
-            time_stamp="time_stamp",
-            excluded_classes=None,
-            cazy_dict=cazy_dictionary,
-            config_dict=config_dict,
-            kingdoms="all",
-            start_time=start_time,
-            )
-    assert pytest_wrapped_e.type == SystemExit
+#     with pytest.raises(SystemExit) as pytest_wrapped_e:
+#         get_cazy_pages.get_cazy_pages(
+#             args=args["args"],
+#             cazy_home=cazy_home_url,
+#             time_stamp="time_stamp",
+#             excluded_classes=None,
+#             cazy_dict=cazy_dictionary,
+#             config_dict=config_dict,
+#             kingdoms="all",
+#             start_time=start_time,
+#             )
+#     assert pytest_wrapped_e.type == SystemExit
 
-    file_io.make_output_directory(logs_dir, True, False)
+#     file_io.make_output_directory(logs_dir, True, False)
 
 
 def test_pages_reparse_class_parse_kingdom_config(
