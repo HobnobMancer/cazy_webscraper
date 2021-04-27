@@ -47,23 +47,6 @@ The python libraries listed within `requirements.txt`
 
 ## Installation
 
-### Quick and Easy 
-
-`cazy_webscraper` is available in the [`bioconda`](https://bioconda.github.io/user/install.html) channel of [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/), and can be installed from the command-line with:
-
-```bash
-conda install cazy_webscraper
-```
-
-if you have the `bioconda` channel available, or
-
-```bash
-conda install -c bioconda cazy_webscraper
-```
-
-if you do not. This installs the full cazy_webscraper and all dependencies.
-
-### From Source
 
 First clone the GitHub repository. This can be done at the command-line with the command:
 
@@ -77,6 +60,10 @@ Then change directory to the repository root, and use Python's setup tools to in
 cd cazy_webscraper
 python3 setup.py install
 ```
+
+## Getting started
+
+For a summary for getting started, have a look at the [getting started poster](https://hobnobmancer.github.io/cazy_webscraper/getting_started_poster.pdf).
 
 ## Best practise
 
