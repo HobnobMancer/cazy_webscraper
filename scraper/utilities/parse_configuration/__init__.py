@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 # (c) University of St Andrews 2020-2021
 # (c) University of Strathclyde 2020-2021
+# (c) James Hutton Institute 2020-2021
+#
 # Author:
 # Emma E. M. Hobbs
-
+#
 # Contact
 # eemh1@st-andrews.ac.uk
-
+#
 # Emma E. M. Hobbs,
 # Biomolecular Sciences Building,
 # University of St Andrews,
@@ -16,7 +18,7 @@
 # KY16 9ST
 # Scotland,
 # UK
-
+#
 # The MIT License
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,10 +27,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -59,7 +61,7 @@ def parse_configuration(file_io_path, args):
 
     Return list of classes not to scrape, dict of families to scrape, dict of class synonoms,
     a dict of taxonomy filters (genera, species and strains) to restrict the scrape to, list of
-    kingdoms to be scraped.
+    kingdoms to be scraped, a list of EC numbers to restrict the scrape to.
     """
     logger = logging.getLogger(__name__)
     # open config dict
@@ -77,6 +79,8 @@ def parse_configuration(file_io_path, args):
 
     # retrieve taxonomy filters
     taxonomy_filter = get_genera_species_strains(args, raw_config_dict)
+
+    ec_filter = get_ec_filter(args, raw_config_dict)
 
     # retrieve Kingdoms to scrape
     kingdoms = get_kingdoms(args, raw_config_dict)
@@ -109,7 +113,7 @@ def parse_configuration(file_io_path, args):
             # convert empty lists to None type objects
             config_dict = convert_lists_to_none(config_dict)
 
-            return excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms
+            return excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter
 
         else:  # get cmd defined configuration
             cmd_config = get_cmd_defined_fams_classes(cazy_dict, std_class_names, args)
@@ -129,12 +133,12 @@ def parse_configuration(file_io_path, args):
             # convert empty lists to None type objects
             config_dict = convert_lists_to_none(config_dict)
 
-            return excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms
+            return excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter
 
     else:  # user did not pass config file
         if (args.classes is None) and (args.families is None):
             # No specific families or classes specified for scraping
-            return None, None, cazy_dict, taxonomy_filter, kingdoms
+            return None, None, cazy_dict, taxonomy_filter, kingdoms, ec_filter
 
         else:  # configuration specified only via the cmd_line
             config_dict = get_cmd_defined_fams_classes(cazy_dict, std_class_names, args)
@@ -145,7 +149,7 @@ def parse_configuration(file_io_path, args):
             # convert empty lists to None type objects
             config_dict = convert_lists_to_none(config_dict)
 
-            return excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms
+            return excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter
 
 
 def get_genera_species_strains(args, raw_config_dict):
@@ -178,6 +182,36 @@ def get_genera_species_strains(args, raw_config_dict):
     taxonomy_filter = convert_lists_to_none(taxonomy_filter)
 
     return taxonomy_filter
+
+
+def get_ec_filter(args, raw_config_dict):
+    """Retrieve EC numbers to retrict the scrape to.
+
+    :param args: cmd-line arguments parser
+    :param raw_config_dict: dictionary of content from YAML config file
+
+    Return set containing user specificed EC numbers.
+    """
+    ecs = []
+
+    if raw_config_dict is not None:
+        try:
+            if raw_config_dict["ECs"] is not None:
+                ecs += raw_config_dict["ECs"]
+        except KeyError:
+            pass
+
+    if args.ec is not None:
+        ecs += (args.ec).split(",")
+    
+    i = 0
+    for i in range(len(ecs)):
+        ecs[i] = ecs[i].replace("EC", "")
+        ecs[i] = ecs[i].replace("ec", "")
+
+    ec_filter = set(ecs)
+
+    return ec_filter
 
 
 def get_kingdoms(args, raw_config_dict):
@@ -294,7 +328,11 @@ def get_yaml_configuration(config_dict, cazy_dict, std_class_names, args):
     )
 
     for key in yaml_config_dict:
-        if (key != "classes") and (key != "genera") and (key != "species") and (key != "strains"):
+        if (key != "classes") and \
+           (key != "genera") and \
+           (key != "species") and \
+           (key != "strains") and \
+           (key != "ECs"):
             if yaml_config_dict[key] is not None:
                 for item in yaml_config_dict[key]:
                     if item not in config_dict[key]:  # do not add duplicates
@@ -315,7 +353,7 @@ def get_yaml_cazy_classes(yaml_config_dict, cazy_dict, std_class_names):
 
     try:
         cazy_classes = yaml_config_dict["classes"]
-    except (KeyError, TypeError) as e:
+    except (KeyError, TypeError):
         logger.warning(
             (
                 "Did not find the 'classes' tag in the configuration files.\n"
@@ -532,20 +570,21 @@ def get_configuration(file_io_path, args):
     Return configuration dictionary, set of taxonomy filters and set of Taxonomy Kingdoms.
     """
     # retrieve inital parsing of configuration data
-    excluded_classes, config_dict, cazy_dict, taxonomy_filters_dict, kingdoms = parse_configuration(
-        file_io_path,
-        args,
+    (
+        excluded_classes, config_dict, cazy_dict, taxonomy_filters_dict, kingdoms, ec_filter,
+    ) = parse_configuration(
+        file_io_path, args,
     )
-
     # excluded_classes and cazy_dict are used in the crawler module but are not needed for the
     # the expand module
+
     taxonomy_filters = []
 
     for key in taxonomy_filters_dict:
         try:
             if len(taxonomy_filters_dict[key]) != 0:
                 taxonomy_filters += taxonomy_filters_dict[key]
-        except (TypeError, KeyError) as e:
+        except (TypeError, KeyError):
             pass
 
     if len(taxonomy_filters) == 0:

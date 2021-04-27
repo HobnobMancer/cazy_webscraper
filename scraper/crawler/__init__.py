@@ -329,555 +329,8 @@ def get_subfamily_links(family_h3_element, cazy_home):
         return urls
 
 
-def parse_family(family, cazy_home, taxonomy_filters, kingdoms, args, session):
-    """Returns a Family object with Protein members, scraped from CAZy.
-
-    Returns a Family object populated with Proteins and URLs of paginiation pages for which the
-    scrape failed, including the number of times a connection to CAZy has been attempted. Also
-    returns a list of strings containing URLs and associated error message of URLs for which a
-    a connection to CAZy could not be made.
-
-    :param family: Family class object, representation of CAZy family
-    :param cazy_home: str, URL to CAZy home page
-    :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
-    :param kingdoms: list of taxonomy Kingdoms to restrict the scrape to
-        OR a str if the user did not define any Kingdoms to scrape  (enables faster
-        scraping via the 'all' pages)
-    :param args: cmd-line args parser
-    :param session: open SQL database session
-
-    Return Family object, Boolean whether to scrape the family again, a list of URLs which couldn't
-    connect to CAZy (and no have re-try attempts left) and list of proteins that could not be added
-    to the SQL database.
-    """
-    logger = logging.getLogger(__name__)
-    logger.info(f"Starting retrieval of proteins for {family.name} from {family.url}")
-
-    if kingdoms == 'all':  # retrieve proteins from the proteins listed in 'all' pages
-        family, retry_scrape, failed_scrapes, sql_failures = parse_family_via_all_pages(
-            family,
-            cazy_home,
-            taxonomy_filters,
-            args,
-            session,
-        )
-        return family, retry_scrape, failed_scrapes, sql_failures
-
-    # else: scrape via the Taxonomy pages
-
-    if len(list(family.failed_pages.keys())) != 0:  # retrying scrape
-        kingdoms = list(family.failed_pages.keys())
-
-    # else, scraping for the first time so use user defined kingdoms
-
-    failed_scrapes = []  # URLs of pages for which maximum number of scrape attempts is MET
-    sql_failures = []
-
-    for kingdom in kingdoms:
-        # compile URL to first family page of protein records
-        first_pagination_url = family.url.replace(".html", f"_{kingdom}.html")
-
-        # check url formating of first paginiation url
-        try:
-            re.match(
-                rf"http://www.cazy.org/(\D\D|\D\D\D)(\d+_{kingdom}|\d+_\d+_{kingdom}).html",
-                first_pagination_url,
-            ).group()
-        except AttributeError:
-            logger.warning(
-                f"Incorrect formatting of first protein table page URL: {first_pagination_url}\n"
-                "Will not try and connect to this URL."
-            )
-            failed_scrapes.append(
-                f"{first_pagination_url}\tIncorrect URL format for the first protein table page "
-                f"for {family.name} in kingdom {kingdom}"
-            )
-            continue  # could not scrape any CAZymes for the Kingdom
-
-        # Retrieve the URLs to all paginiation pages of CAZymes
-        first_pagination_page, error_message = get_page(
-            first_pagination_url,
-            args,
-            max_tries=args.retries,
-        )
-
-        if first_pagination_page is None:
-            logger.warning(
-                f"Could not connect to {first_pagination_url} after 10 attempts\n"
-                f"The following error was raised:\n{error_message}"
-            )
-            failed_scrapes.append(
-                f"{first_pagination_url}\tCould not conenct to first paginiation page to get "
-                f"all paginiation page URLs for {family.name}, kingdom: {kingdom}.\n"
-                f"Therefore, did not scrape any CAZymes from {family.name}, kingdom: {kingdom}"
-            )
-            continue
-
-        protein_page_urls, total_proteins = get_tax_page_urls(
-            first_pagination_url,
-            first_pagination_page,
-            kingdom,
-            cazy_home,
-            family.name,
-        )
-        if total_proteins == 0:
-            logger.warning(f"Protein count for {family.name} retrieved == 0")
-            continue
-
-        # Retrieve the CAZymes (proteins) and write to the local database
-        for protein in tqdm(
-            (y for x in (
-                parse_proteins(
-                    url,
-                    family.name,
-                    taxonomy_filters,
-                    kingdom,
-                    args,
-                    session,
-                ) for url in protein_page_urls
-            ) for y in x),
-            total=total_proteins,
-            desc=f"Parsing protein pages for {family.name}: {kingdom}",
-        ):
-            if protein["url"] is not None:
-                # Protein was not retrieved because could not connect to CAZy
-                try:
-                    family.failed_pages[kingdom]
-
-                    try:
-                        family.failed_pages[kingdom][protein["url"]] += 1
-                    except KeyError:  # first failed scrape for the specific paginiation page
-                        family.failed_pages[kingdom][protein["url"]] = 1
-
-                except KeyError:  # first failed attempt for the family:kingdom
-                    family.failed_pages[kingdom] = {protein["url"]: 1}
-
-                if family.failed_pages[kingdom][protein["url"]] >= (args.retries + 1):
-                    # Reached maximum attempts number of attempted connections ...
-                    failed_scrapes.append(
-                        f"{protein['url']}\t{family.cazy_class}\t"
-                        f"Failed to connect to this page of proteins for {family.name}\t"
-                        f"{protein['error']}"
-                    )
-                    # ... and do no attempt to scrape again
-                    del family.failed_pages[kingdom][protein["url"]]
-
-            if protein["sql"] is not None:  # Error occured when adding Protein to SQL database
-                sql_failures.append(
-                    f"{protein['sql']} was not added to the database, and raised the following "
-                    f"error when atempting to do so:\n{protein['error']}"
-                )
-
-    # check if any pages have attempts left for retrying for a successful scrape
-    if len(list(family.failed_pages.keys())) == 0:
-        retry_scrape = False
-    else:
-        retry_scrape = True
-
-    return family, retry_scrape, failed_scrapes, sql_failures
-
-
-def get_tax_page_urls(
-    first_pagination_url,
-    first_pagination_page,
-    kingdom,
-    cazy_home,
-    family_name,
-):
-    """Retrieve the URLs to all pages containing proteins for the current working family.
-
-    Also retrieve the total number of proteins catagloued under the family.
-
-    :param first_pagination_url: str, URL to first page contaiing proteins
-    :param first_pagination_page: BS4 object, first page containing proteins
-    :param kingdom: str, taxonomy Kingdom
-    :param cazy_home: str, URL of CAZy homepage
-    :param family_name: str, name of the CAZy family
-
-    Return list of URLs, and number of proteins in the family.
-    """
-    logger = logging.getLogger(__name__)
-
-    protein_page_urls = [first_pagination_url]
-
-    try:  # retrieve the URL to the final page of protein records in the pagination listing
-        last_pagination_url = first_pagination_page.find_all(
-            "a", {"class": "lien_pagination", "rel": "nofollow"}
-        )[-1]
-    except IndexError:  # there is no pagination; there's only one page of proteins
-        last_pagination_url = None
-
-    if last_pagination_url is not None:
-        url_prefix = last_pagination_url["href"].split("TAXO=")[0] + "TAXO="
-        last_url_num = int(last_pagination_url["href"].split("TAXO=")[-1].split("#pagination")[0])
-        url_suffix = "#pagination" + last_pagination_url["href"].split("#pagination")[-1]
-
-        # Build list of urls to all pages in the pagination listing, increasing the PRINC increment
-        protein_page_urls.extend(
-            [f"{cazy_home}/{url_prefix}{_}{url_suffix}" for _ in range(
-                100, last_url_num + 100, 100
-            )]
-        )
-
-    # Retrieve the number of proteins in the family: kingdom from the hyperlinks to the start of
-    # each Kingdom's pagination pages
-    data = first_pagination_page.find_all("div", {"class": "pos_choix"})
-    # retrieve the text for the Kingdom's hyperlink, and retrieve the number within the brackets
-    try:
-        protein_total = int(re.findall(
-            rf"{kingdom} \(\d+\)", data[0].text, flags=re.IGNORECASE,
-        )[0].split("(")[1][:-1])
-    except IndexError:
-        logger.warning(
-            f"No proteins in {kingdom} in {family_name}"
-        )
-        protein_total = 0
-
-    return protein_page_urls, protein_total
-
-
-def parse_proteins(protein_page_url, family_name, taxonomy_filters, kingdom, args, session):
-    """Returns generator of Protein objects for all protein rows on a single CAZy family page.
-
-    Returns a dictionary containing any errors that arose. If it an attempt to connect to CAZy
-    failed the URL is stored under "url". The "sql" key is used to store the name of the protein
-    which raised an SQL error further down the pipeline.
-
-    :param protein_page_url, str, URL to the CAZy family page containing protein records
-    :param family_name: str, name of CAZy family
-    :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
-    :param kingdom: str, Taxonomy Kingdom of CAZymes currently being scraped
-    :param args: cmd-line args parser
-    :param session: open SQL database session
-
-    Return generator object.
-    """
-    logger = logging.getLogger(__name__)
-    logger.info(f"Retrieving proteins from {protein_page_url}")
-
-    protein_page, error = get_page(protein_page_url, args, max_tries=args.retries)
-
-    if protein_page is None:
-        logger.warning(
-            (
-                f"Could not connect to {protein_page_url} after 10 attempts\n"
-                "The following error was raised:\n"
-                f"{error}\n"
-                f"No protein records from this page will be retried."
-            )
-        )
-        return {"url": protein_page_url, "error": error, "sql": None}
-
-    # Get the table on the page corresponding to CAZymes
-    try:
-        cazyme_table = protein_page.select("table")[1]
-    except AttributeError:
-        logger.warning("NO PROTEIN TABLE!")
-        sys.exit(1)
-        # raised if there is not table of proteins
-        return {"url": 'No protein table', "error": None, "sql": None}
-
-    # Get all rows in the table, exluding those that are header/navigation roes
-    # Each row has an .attrs attribute, and this holds the selector options, such as
-    # "class" and "id"; CAZyme rows don't have these attributes
-    cazyme_rows = [
-        _ for _ in cazyme_table.select("tr") if "class" not in _.attrs and "id" not in _.attrs
-    ]
-
-    # Loop overal all rows and add data to the local database
-    for row in cazyme_rows:
-        yield row_to_protein(row, family_name, taxonomy_filters, kingdom, session)
-
-
-def parse_family_via_all_pages(family, cazy_home, taxonomy_filters, args, session):
-    """Parse the protein tables from the 'all' pages of CAZy family.
-
-    CAZy families have separate series of HTML tables for each taxonomy Kingdom, and a single series
-    of HTML tables containing all proteins from all Kingdoms, called 'all'. These 'all' pages
-    containing 1000 proteins per page and thus scraping these pages is significantly faster than
-    scraping all the specific Kingdom HTML tables (which hold only 100 proteins each, and thus
-    require more calls to CAZy).
-
-    :param family: Family class object, representation of CAZy family
-    :param cazy_home: str, URL to CAZy home page
-    :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
-    :param args: cmd-line args parser
-    :param session: open SQL database session
-
-    Return Family object, Boolean whether to scrape the family again, a list of URLs which couldn't
-    connect to CAZy (and no have re-try attempts left) and list of proteins that could not be added
-    to the SQL database.
-    """
-    logger = logging.getLogger(__name__)
-
-    # check if there were pagination pages to which a connection could not be made previously
-    if len(list(family.failed_pages.keys())) != 0:
-        protein_page_urls = list(family.failed_pages.keys())
-        total_proteins = len(protein_page_urls * 1000)
-
-    else:  # scraping family for the first time so retrieve the URLs to the pagination pages
-        # compile URL to first family page of protein records
-        first_pagination_url = family.url.replace(".html", "_all.html")
-        # check url formating of first paginiation url
-        try:
-            re.match(
-                r"http://www.cazy.org/\D{2,3}(\d+|\d+_\d+)_all.html", first_pagination_url
-            ).group()
-        except AttributeError:
-            logger.warning(
-                f"Incorrect formatting of first protein table page URL: {first_pagination_url}\n"
-                "Will not try and connect to this URL."
-            )
-            return(
-                family,
-                False,
-                [
-                    f"{first_pagination_url}\t{family.cazy_class}\t"
-                    f"Incorrect URL format, could not connect to CAZy for {family.name}"
-                ],
-                [],
-            )
-
-        # retrieve a list of all page urls of protein tables for the CAZy family
-        first_pagination_page, error_message = get_page(
-            first_pagination_url,
-            args,
-            max_tries=args.retries,
-        )
-
-        if first_pagination_page is None:
-            logger.warning(
-                    f"Could not connect to {first_pagination_url} after 10 attempts\n"
-                    f"The following error was raised:\n{error_message}\nTherefore, could not "
-                    "retrieve all pagination pages URLs, therefore, cannot scrape proteins from "
-                    f"{family.name}"
-            )
-            return(
-                family,
-                False,
-                [
-                    f"{first_pagination_url}\t{family.cazy_class}\t"
-                    f"Failed to connect to first pagination page for {family.name}, therefore "
-                    f"could not retrieve URLs to all paginiation pages\t{error_message}"
-                ],
-                [],
-            )
-
-        # Get the URLS to all pages of proteins and the total number of proteins in the (sub)family
-        protein_page_urls, total_proteins = get_paginiation_page_urls(
-            first_pagination_url,
-            first_pagination_page,
-            cazy_home,
-            family.name,
-        )
-
-        if total_proteins == 'Deleted family!':
-            # add family to the database
-            logger.warning(
-                f'{family.name} listed as "Deleted family" in CAZy.\n'
-                'Adding family name to the database'
-            )
-            sql_interface.add_deleted_cazy_family(family.name, session)
-            return(
-                family,
-                False,
-                [
-                    f"{first_pagination_url}\t{family.cazy_class}\t"
-                    f"{family.name} listed as 'Deleted family' in CAZy.\t"
-                    "Added family name to the database"
-                ],
-                [],
-            )
-
-        if len(protein_page_urls) == 0:
-            return(
-                family,
-                False,
-                [
-                    f"{first_pagination_url}\t{family.cazy_class}\t"
-                    f"Failed to retrieve URLs to protein table pages for {family.name}\t"
-                    f"No specific error message availble."
-                ],
-                [],
-            )
-
-    # Scrape proteins from CAZy
-    # define lists for storing error messages during scraping and parsing proteins
-    failed_scrapes = []  # URLs of pages for which maximum number of scrape attempts is MET
-    sql_failures = []
-
-    for protein in tqdm(
-        (y for x in (
-            parse_proteins_from_all(
-                url,
-                family.name,
-                taxonomy_filters,
-                session,
-                args,
-            ) for url in protein_page_urls
-        ) for y in x),
-        total=total_proteins,
-        desc=f"Parsing protein pages for {family.name}",
-    ):
-        if protein["url"] is not None:  # Protein was not retrieved because couldn't connect to CAZy
-            try:
-                family.failed_pages[protein["url"]] += 1
-            except KeyError:
-                family.failed_pages[protein["url"]] = 1  # First failed attempt to connect to page
-
-            if family.failed_pages[protein["url"]] == args.retries:
-                # maximum attempts to connect have been reached no more attempts made, write to file
-                failed_scrapes.append(
-                    f"{protein['url']}\t{family.cazy_class}\t"
-                    f"Failed to connect to this page of proteins for {family.name}, "
-                    f"and raised the following error message:\n{protein['error']}"
-                )
-                # ... and do no attempt to scrape again
-                del family.failed_paged[protein["url"]]
-
-        if protein["sql"] is not None:  # Error occured when adding Protein to SQL database
-            sql_failures.append(
-                f"{protein['sql']} was not added to the database\t"
-                f"and raised the following error when atempting to do so:\n{protein['error']}"
-            )
-
-    # check if any pages for the family still have attempts left for trying for a successful scrape
-    if len(list(family.failed_pages.keys())) == 0:
-        retry_scrape = False
-    else:
-        retry_scrape = True
-
-    return family, retry_scrape, failed_scrapes, sql_failures
-
-
-def get_paginiation_page_urls(first_pagination_url, first_pagination_page, cazy_home, family_name):
-    """Retrieve the URLs to all pages containing proteins for the current working family.
-
-    Also retrieve the total number of proteins catagloued under the family.
-
-    :param first_pagination_url: str, URL to first page contaiing proteins
-    :param first_pagination_page: BS4 object, first page containing proteins
-    :param cazy_home: str, URL of CAZy homepage
-
-    Return list of URLs, and number of proteins in the family.
-    """
-    logger = logging.getLogger(__name__)
-
-    protein_page_urls = [first_pagination_url]
-
-    # retrieve the URL to the final page of protein records in the pagination listing
-    try:
-        last_pagination_url = first_pagination_page.find_all(
-            "a", {"class": "lien_pagination", "rel": "nofollow"}
-        )[-1]
-    except IndexError:  # there is no pagination; a single-query entry
-        last_pagination_url = None
-
-    if last_pagination_url is not None:
-        url_prefix = last_pagination_url["href"].split("PRINC=")[0] + "PRINC="
-        last_princ_no = int(last_pagination_url["href"].split("PRINC=")[-1].split("#pagination")[0])
-        url_suffix = "#pagination" + last_pagination_url["href"].split("#pagination")[-1]
-        # Build list of urls to all pages in the pagination listing, increasing the PRINC increment
-        protein_page_urls.extend(
-            [f"{cazy_home}/{url_prefix}{_}{url_suffix}" for _ in range(
-                1000, last_princ_no + 1000, 1000
-            )]
-        )
-
-    # retrieve the data element that contains the links the sets of HTML tables
-    data = first_pagination_page.find_all("div", {"class": "pos_choix"})
-
-    # retrieve the number of proteins listed after 'all' in the data
-    try:
-        protein_total = int(re.findall(
-            r"all \(\d+\)", data[0].text, flags=re.IGNORECASE,
-        )[0].split("(")[1][:-1])
-    except IndexError:
-        # check if the family has been deleted
-        try:
-            family_activities_cell = first_pagination_page.select("table")[
-                0].select("tr")[0].select('td')[0].contents[0].strip()
-
-            if family_activities_cell == 'Deleted family!':
-                protein_total = 'Deleted family!'
-            else:
-                logger.warning(f"No proteins found for 'all' in {family_name}")
-                protein_total = 0
-        except Exception:
-            logger.warning(f"No proteins found for 'all' in {family_name}")
-            protein_total = 0
-
-    if protein_total == 0:
-        # check if the family has been deleted
-        try:
-            family_activities_cell = first_pagination_page.select("table")[
-                0].select("tr")[0].select('td')[0].contents[0].strip()
-
-            if family_activities_cell == 'Deleted family!':
-                protein_total = 'Deleted family!'
-            else:
-                logger.warning(f"No proteins found for 'all' in {family_name}")
-                protein_total = 0
-        except Exception:
-            logger.warning(f"No proteins found for 'all' in {family_name}")
-            protein_total = 0
-
-    return protein_page_urls, protein_total
-
-
-def parse_proteins_from_all(protein_page_url, family_name, taxonomy_filters, session, args):
-    """Parse proteins from the paginiation page.
-
-    Returns generator of Protein objects for all protein rows on a single CAZy family page. Returns
-    a dictionary containing any errors that arose. If it an attempt to connect to CAZy
-    failed the URL is stored under "url". The "sql" key is used to store the name of the protein
-    which raised an SQL error further down the pipeline.
-
-    :param protein_page_url, str, URL to the CAZy family page containing protein records
-    :param family_name: str, name of CAZy family
-    :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
-    :param session: open SQL database session
-    :param args: cmd-line args parser
-
-    Return generator object.
-    """
-    logger = logging.getLogger(__name__)
-    logger.info(f"Retrieving proteins from {protein_page_url}")
-
-    # connect to page
-    protein_page, error = get_page(protein_page_url, args, max_tries=args.retries)
-    if protein_page is None:
-        logger.warning(
-            (
-                f"Could not connect to {protein_page_url} after 10 attempts\n"
-                "The following error was raised:\n"
-                f"{error}\n"
-                f"No protein records from this page will be retried."
-            )
-        )
-        return {"url": protein_page_url, "error": error, "sql": None}
-
-    # retrive the table of proteins
-    cazyme_table = protein_page.select("table")[1]
-
-    tax_kingdom = ''  # Archaea, Bacteria, Eukaryota, Viruses, unclassified
-    for row in cazyme_table.select("tr"):
-        try:
-            if (row.attrs["class"] == ['royaume']) and (row.text.strip() != 'Top'):
-                # Row defines the taxonomy Kingdom
-                tax_kingdom = row.text.strip()
-                continue  # row does not contain protein
-            else:  # result when row containing 'Top', becuase reached end of the page
-                continue  # row does not contain protein
-        except KeyError:
-            pass
-
-        if ('class' not in row.attrs) and ('id' not in row.attrs):  # row contains protein data
-            yield row_to_protein(row, family_name, taxonomy_filters, tax_kingdom, session, args)
-
-
-def row_to_protein(row, family_name, taxonomy_filters, kingdom, session, args):
-    """Returns a Protein object representing a single protein row from a CAZy family protein page.
+def row_to_protein(row, family_name, taxonomy_filters, kingdom, ec_filters, session, args, data_dict):
+    """Parses row and collates data to be added to records in the local CAZy database.
 
     Each row, in order, contains the protein name, EC number, source organism, GenBank ID(s),
     UniProt ID(s), and PDB accession(s).
@@ -886,12 +339,13 @@ def row_to_protein(row, family_name, taxonomy_filters, kingdom, session, args):
     :param family_name: str, name of CAZy family
     :param taxonomy_filters: set of genera, species and strains to restrict the search to
     :param kingdom: str, Taxonomy Kingdom of CAZymes currently being scraped
+    :param ec_filters: set of EC filters to limit scrape to
     :param session: open sqlalchemy database session
 
     Returns a dictionary to store and reflect any errors that may have occurred during the parsing
     of the proteins.
 
-    Return dictionary.
+    Return dictionary, and session
     """
     logger = logging.getLogger(__name__)
 
@@ -905,7 +359,7 @@ def row_to_protein(row, family_name, taxonomy_filters, kingdom, session, args):
     if taxonomy_filters is not None:  # apply taxonomy filter
         if any(filter in source_organism for filter in taxonomy_filters) is False:
             # CAZyme does not match any taxonomy filters
-            return {"url": None, "error": None, "sql": None}
+            return {"url": None, "error": None, "sql": None, "format": None}
 
     ec_numbers = []
     all_links = None
@@ -919,6 +373,17 @@ def row_to_protein(row, family_name, taxonomy_filters, kingdom, session, args):
             ec_numbers.append(link.text)
     else:
         ec_numbers = None
+
+    if len(ec_filters) != 0:  # user had defined EC numbers to limit the scrape to, apply EC# filter
+        if ec_numbers is None:
+            return {"url": None, "error": None, "sql": None, "format": None}
+        scrape = False
+        for ec in ec_numbers:
+            if ec in ec_filters:
+                scrape = True
+                break
+        if scrape is False:
+            return {"url": None, "error": None, "sql": None, "format": None}
 
     # retrieve the BeautifulSoup elements of the cell containing accessions for the respective db
     gbk_bs_elements = [_ for _ in row.select("td")[3].contents if getattr(_, "name", None) != "br"]
@@ -1032,6 +497,143 @@ def row_to_protein(row, family_name, taxonomy_filters, kingdom, session, args):
         report_dict["sql"] = protein_name
 
     return report_dict
+
+
+def row_to_protein_in_dict(
+    row,
+    family_name,
+    taxonomy_filters,
+    ec_filters,
+    session,
+):
+    """Parses row and collates data to be added to records to dictionary of CAZymes.
+
+    Each row, in order, contains the protein name, EC number, source organism, GenBank ID(s),
+    UniProt ID(s), and PDB accession(s).
+
+    :param row: tr element from CAZy family protein page
+    :param family_name: str, name of CAZy family
+    :param taxonomy_filters: set of genera, species and strains to restrict the search to
+    :param kingdom: str, Taxonomy Kingdom of CAZymes currently being scraped
+    :param ec_filters: set of EC filters to limit scrape to
+    :param session: open sqlalchemy database session
+
+    Returns a dictionary to store and reflect any errors that may have occurred during the parsing
+    of the proteins.
+
+    Return dictionary.
+    """
+    logger = logging.getLogger(__name__)
+
+    # retrieve list of cells ('td' elements) in row
+    tds = list(row.find_all("td"))
+
+    protein_name = tds[0].contents[0].strip()
+
+    source_organism = tds[2].a.get_text()
+
+    if taxonomy_filters is not None:  # apply taxonomy filter
+        if any(filter in source_organism for filter in taxonomy_filters) is False:
+            # CAZyme does not match any taxonomy filters
+            return {"url": None, "error": None, "sql": None}
+
+    ec_numbers = []
+    all_links = None
+    try:
+        all_links = tds[1].find_all("a")
+    except TypeError:  # raised when no EC numbers are listed
+        pass
+
+    if all_links is not None:
+        for link in all_links:
+            ec_numbers.append(link.text)
+    else:
+        ec_numbers = None
+
+    if len(ec_filters) != 0:  # user had defined EC numbers to limit the scrape to, apply EC# filter
+        if ec_numbers is None:
+            return {"url": None, "error": None, "sql": None}
+        scrape = False
+        for ec in ec_numbers:
+            if ec in ec_filters:
+                scrape = True
+                break
+        if scrape is False:
+            return {"url": None, "error": None, "sql": None}
+
+    # retrieve the BeautifulSoup elements of the cell containing accessions for the respective db
+    gbk_bs_elements = [_ for _ in row.select("td")[3].contents if getattr(_, "name", None) != "br"]
+
+    # Retrieve primary GenBank and UniProt accessions (identified by being written in bold)
+    # CAZy defines the 'best' GenBank and UniProt models by writting them in bold
+    gbk_primary = [_.text for _ in row.select("td")[3].find_all('b')]
+
+    # Retrieve all accessions listed for each database
+    # At this stage the non-primary accession lists containg ALL accessions in the cell
+    gbk_nonprimary = get_all_accessions(gbk_bs_elements)
+
+    # create dict for storing error messages for writing to the failed_to_scrape output file
+    report_dict = {"url": None, "error": None, "sql": None}
+
+    # Ensure a single primary GenBank accession is retrieved
+    if len(gbk_primary) == 0:
+
+        if len(gbk_nonprimary) == 0:
+            warning = (
+                f"NO GenBank accessions retrieved for {protein_name} in {family_name}.\n"
+                "Adding protein with the GenBank accession: 'NA' as a new protein to the db."
+            )
+            logger.warning(warning)
+            gbk_primary = ["NA"]
+            report_dict["error"] = warning
+            report_dict["protein"] = protein_name
+
+        else:
+            warning = (
+                f"GenBank accessions retrieved for {protein_name} in {family_name} but none were "
+                f"written as primary in CAZy.\nThe first accession {gbk_nonprimary[0]} written "
+                "as primary in the db "
+            )
+            gbk_primary.append(gbk_nonprimary[0])
+            gbk_nonprimary.remove(gbk_nonprimary[0])
+
+    elif len(gbk_primary) == 1:
+        # Remove the primary accession from the non-primary accession list
+        if gbk_primary[0] in gbk_nonprimary:
+            gbk_nonprimary.remove(gbk_primary[0])
+
+    else:
+        warning = (
+            f"Multiple primary GenBank acccessions retrieved for {protein_name} in "
+            f"{family_name}.\nOnly the first listed accession will be written as primary, the "
+            "others are written as non-primary. These are:"
+        )
+        # remove all but first listed primary accession
+        for accession in gbk_primary[1:]:
+            warning += f"\nGenBank accession: {accession}"
+            gbk_primary.remove(accession)
+        # remove primary accession from the non-primary accession list
+        if gbk_primary[0] in gbk_nonprimary:
+            gbk_nonprimary.remove(gbk_primary[0])
+
+        logger.warning(warning)
+        report_dict["error"] = warning
+        report_dict["protein"] = protein_name
+
+    try:
+        session[gbk_primary[0]]
+        session[gbk_primary[0]].append(family_name)
+    except KeyError:
+        session[gbk_primary[0]] = [family_name]
+
+    for acc in gbk_nonprimary:
+        try:
+            session[acc]
+            session[acc].append(family_name)
+        except KeyError:
+            session[acc] = [family_name]
+
+    return report_dict, session
 
 
 def get_all_accessions(bs_element_lst):

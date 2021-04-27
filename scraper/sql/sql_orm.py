@@ -496,6 +496,7 @@ class Log(Base):
     genera_filter = Column(String)
     species_filter = Column(String)
     strains_filter = Column(String)
+    ec_numbers = Column(String)
     cmd_line = Column(String)  # command line arguments
 
     def __str__(self):

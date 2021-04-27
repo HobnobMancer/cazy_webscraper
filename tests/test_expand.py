@@ -38,7 +38,7 @@ from scraper.utilities import file_io, parse_configuration
 @pytest.fixture
 def db_path():
     path_ = Path("tests")
-    path_ = path_ / "test_inputs" / "test_inputs_sql" / "unit_test_db_2021-03-01--15-06-59.db"
+    path_ = path_ / "test_inputs" / "test_inputs_expand" / "unit_test_2021-03-11--13-06-42.db"
     return path_
 
 
@@ -64,7 +64,6 @@ def genbank_query(db_session):
 # tests for get_pdb_structures
 
 
-@pytest.mark.skip()
 def test_main_no_db(monkeypatch):
     """Test main() when an the database file cannot be found."""
 
@@ -105,7 +104,6 @@ def test_main_no_db(monkeypatch):
     assert pytest_wrapped_e.type == SystemExit
 
 
-@pytest.mark.skip()
 def test_main_outdir_is_none(db_path, monkeypatch):
     """Test main() when outdir=None."""
 
@@ -146,7 +144,6 @@ def test_main_outdir_is_none(db_path, monkeypatch):
     get_pdb_structures.main()
 
 
-@pytest.mark.skip()
 def test_main(db_path, output_dir, monkeypatch):
     """Test main()."""
 
@@ -187,7 +184,6 @@ def test_main(db_path, output_dir, monkeypatch):
     get_pdb_structures.main()
 
 
-@pytest.mark.skip()
 def test_main_argv(db_path, output_dir, monkeypatch):
     """Test main()."""
 
@@ -228,7 +224,6 @@ def test_main_argv(db_path, output_dir, monkeypatch):
     get_pdb_structures.main()
 
 
-@pytest.mark.skip()
 def test_get_every_cazymes_structures_primary(db_session, output_dir, monkeypatch):
     """Test get_every_cazymes_structures() when primary is True and taxonomy filter is given."""
 
@@ -248,7 +243,6 @@ def test_get_every_cazymes_structures_primary(db_session, output_dir, monkeypatc
     )
 
 
-@pytest.mark.skip()
 def test_get_every_cazymes_structures_all(db_session, output_dir, monkeypatch):
     """Test get_every_cazymes_structures() when primary is False and no taxonomy filter is given."""
 
@@ -268,7 +262,6 @@ def test_get_every_cazymes_structures_all(db_session, output_dir, monkeypatch):
     )
 
 
-@pytest.mark.skip()
 def test_get_structures_for_specific_cazymes_primary(db_session, output_dir, monkeypatch):
     """Test get_structures_for_specific_cazymes when primary is true and tax filter is given."""
 
@@ -290,7 +283,6 @@ def test_get_structures_for_specific_cazymes_primary(db_session, output_dir, mon
     )
 
 
-@pytest.mark.skip()
 def test_get_structures_for_specific_cazymes(db_session, output_dir, monkeypatch):
     """Test get_structures_for_specific_cazymes when primary is False and tax filter not given."""
 
@@ -319,7 +311,6 @@ def test_get_structures_for_specific_cazymes(db_session, output_dir, monkeypatch
 # test for get_genbank_sequences
 
 
-@pytest.mark.skip()
 def test_main_no_db_genbank(monkeypatch):
     """Test main() when an the database file cannot be found."""
 
@@ -361,7 +352,6 @@ def test_main_no_db_genbank(monkeypatch):
     assert pytest_wrapped_e.type == SystemExit
 
 
-@pytest.mark.skip()
 def test_main_no_config_no_update(db_path, monkeypatch):
     """Test main() when outdir=None."""
 
@@ -408,7 +398,6 @@ def test_main_no_config_no_update(db_path, monkeypatch):
     get_genbank_sequences.main()
 
 
-@pytest.mark.skip()
 def test_main_no_config_yes_update(db_path, monkeypatch):
     """Test main() when outdir=None."""
 
@@ -455,7 +444,6 @@ def test_main_no_config_yes_update(db_path, monkeypatch):
     get_genbank_sequences.main()
 
 
-@pytest.mark.skip()
 def test_main_yes_config_no_update(db_path, monkeypatch):
     """Test main() when outdir=None."""
 
@@ -502,7 +490,6 @@ def test_main_yes_config_no_update(db_path, monkeypatch):
     get_genbank_sequences.main()
 
 
-@pytest.mark.skip()
 def test_main_yes_config_yes_update(db_path, monkeypatch):
     """Test main() when outdir=None."""
 
@@ -549,7 +536,6 @@ def test_main_yes_config_yes_update(db_path, monkeypatch):
     get_genbank_sequences.main()
 
 
-@pytest.mark.skip()
 def test_get_missing_sequences_for_everything_primary(db_session, monkeypatch):
     """Tests get_missing_sequences_for_everything() when primary is True and tax filter is given."""
 
@@ -573,7 +559,6 @@ def test_get_missing_sequences_for_everything_primary(db_session, monkeypatch):
     )
 
 
-@pytest.mark.skip()
 def test_get_missing_sequences_for_everything(db_session, monkeypatch):
     """Tests get_missing_sequences_for_everything() when primary is False and tax filter is None."""
 
@@ -598,7 +583,6 @@ def test_get_missing_sequences_for_everything(db_session, monkeypatch):
     )
 
 
-@pytest.mark.skip()
 def test_add_and_update_all_sequences_primary(db_session, monkeypatch):
     """Tests add_and_update_all_sequences() when primary is True and tax filter is given."""
 
@@ -618,7 +602,6 @@ def test_add_and_update_all_sequences_primary(db_session, monkeypatch):
     )
 
 
-@pytest.mark.skip()
 def test_add_and_update_all_sequences_no_updates(db_session, monkeypatch):
     """Tests get_missing_sequences_for_everything() when there are no seq to update."""
 
@@ -642,7 +625,6 @@ def test_add_and_update_all_sequences_no_updates(db_session, monkeypatch):
     )
 
 
-@pytest.mark.skip()
 def test_add_and_update_all_sequences(db_session, monkeypatch):
     """Tests get_missing_sequences_for_everything() when primary is False and tax filter is None."""
 
@@ -671,7 +653,6 @@ def test_add_and_update_all_sequences(db_session, monkeypatch):
     )
 
 
-@pytest.mark.skip()
 def test_get_missing_sequences_for_specific_records_primary(db_session, monkeypatch):
     """Tests get_missing_sequences_for_specific_records, primary is True, tax filter isn't None."""
 
@@ -697,7 +678,6 @@ def test_get_missing_sequences_for_specific_records_primary(db_session, monkeypa
     )
 
 
-@pytest.mark.skip()
 def test_get_missing_sequences_for_specific_records(db_session, monkeypatch):
     """Tests get_missing_sequences_for_specific_records, primary is False, tax filter isn't None."""
 
@@ -723,7 +703,6 @@ def test_get_missing_sequences_for_specific_records(db_session, monkeypatch):
     )
 
 
-@pytest.mark.skip()
 def test_update_sequences_for_specific_records_primary_no_acc1(db_session, monkeypatch):
     """Test update_sequences_for_specific_records, primary is True, tax filter not given."""
 
@@ -754,7 +733,6 @@ def test_update_sequences_for_specific_records_primary_no_acc1(db_session, monke
     )
 
 
-@pytest.mark.skip()
 def test_update_sequences_for_specific_records_primary_no_acc2(db_session, monkeypatch):
     """Test update_sequences_for_specific_records, primary is True, tax filter not given."""
 
@@ -785,7 +763,6 @@ def test_update_sequences_for_specific_records_primary_no_acc2(db_session, monke
     )
 
 
-@pytest.mark.skip()
 def test_update_sequences_for_specific_records_primary_false(db_session, monkeypatch):
     """Test update_sequences_for_specific_records, primary is False, tax filter given."""
 
@@ -816,38 +793,32 @@ def test_update_sequences_for_specific_records_primary_false(db_session, monkeyp
     )
 
 
-@pytest.mark.skip()
 def test_extract_accessions_no_tax(genbank_query):
     """Test extract_accessions() when no tax filter is given."""
     get_genbank_sequences.extract_accessions(genbank_query, None)
 
 
-@pytest.mark.skip()
 def test_extract_accessions_tax_given(genbank_query, tax_filter):
     """Test extract_accessions() when no tax filter is given."""
     get_genbank_sequences.extract_accessions(genbank_query, tax_filter)
 
 
-@pytest.mark.skip()
 def test_extract_accessions_and_dates_no_tax(genbank_query):
     """Test extract_accessions() when no tax filter is given."""
     get_genbank_sequences.extract_accessions_and_dates(genbank_query, None)
 
 
-@pytest.mark.skip()
 def test_extract_accessions_and_dates_tax_given(genbank_query, tax_filter):
     """Test extract_accessions() when no tax filter is given."""
     get_genbank_sequences.extract_accessions_and_dates(genbank_query, tax_filter)
 
 
-@pytest.mark.skip()
 def test_get_accession_chunks():
     """Test get_accession_chunks()"""
     lst = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     get_genbank_sequences.get_accession_chunks(lst, 2)
 
 
-@pytest.mark.skip()
 def test_entry_retry():
     """Test entrez_retry."""
 
@@ -857,7 +828,6 @@ def test_entry_retry():
     assert "test_record" == get_genbank_sequences.entrez_retry(mock_record)
 
 
-@pytest.mark.skip()
 def test_entrez_retry_none():
     """Test entrez_retry when nothing is returned."""
 

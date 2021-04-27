@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 # (c) University of St Andrews 2020-2021
 # (c) University of Strathclyde 2020-2021
+# (c) James Hutton Institute 2020-2021
+#
 # Author:
 # Emma E. M. Hobbs
-
+#
 # Contact
 # eemh1@st-andrews.ac.uk
-
+#
 # Emma E. M. Hobbs,
 # Biomolecular Sciences Building,
 # University of St Andrews,
@@ -16,7 +18,7 @@
 # KY16 9ST
 # Scotland,
 # UK
-
+#
 # The MIT License
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,10 +27,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -85,6 +87,14 @@ def build_parser(argv: Optional[List] = None):
         help="path to an existing local CAZy SQL database",
     )
 
+    # Add option to limit scrape to CAZymes with specific EC numbers
+    parser.add_argument(
+        "--ec",
+        type=str,
+        default=None,
+        help="Defines EC numbers to restrict the scrape to"
+    )
+
     # Add option to force file over writting
     parser.add_argument(
         "-f",
@@ -109,6 +119,15 @@ def build_parser(argv: Optional[List] = None):
         type=str,
         default=None,
         help="Genera to restrict the scrape to"
+    )
+
+    # enable writing HTML pages of CAZy website to disk
+    parser.add_argument(
+        "--get_pages",
+        dest="get_pages",
+        action="store_true",
+        default=False,
+        help="Retrieve pages from CAZy and write out HTML files to disk",
     )
 
     # Add option to restrict the scrape to specific kingdoms
@@ -161,6 +180,14 @@ def build_parser(argv: Optional[List] = None):
         type=int,
         default=10,
         help="Number of times to retry scraping a family or class page if error encountered",
+    )
+
+    # Add option to scrape CAZy from local HTML files
+    parser.add_argument(
+        "--scrape_files",
+        type=Path,
+        default=None,
+        help="dir containing HTML files of CAZy webpages",
     )
 
     # Add option to enable retrieval of subfamilies

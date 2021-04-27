@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # (c) University of St Andrews 2020-2021
 # (c) University of Strathclyde 2020-2021
+# (c) James Hutton Institute 2020-2021
+#
 # Author:
 # Emma E. M. Hobbs
 
@@ -90,56 +92,6 @@ def make_output_directory(output, force, nodelete):
     else:
         output.mkdir(exist_ok=force)
         logger.warning(f"Built output directory: {output}")
-
-    return
-
-
-def write_out_failed_scrapes(failures, time_stamp, args):
-    """Write out the URLs for which a connection to CAZy failed.
-
-    :param failures: list, contains the URL and reason for the failed scrape
-    :param args: cmd args parser
-
-    Return nothing.
-    """
-    logger = logging.getLogger(__name__)
-
-    if args.output is not sys.stdout:
-        output_path = args.output / f"failed_cazy_scrapes_{time_stamp}.txt"
-
-        with open(output_path, "a") as fh:
-            for failure in failures:
-                fh.write(f"{failure}\n")
-
-    else:
-        logger.error("The following items were not scraped:")
-        for failure in failures:
-            logger.error(failure)
-
-    return
-
-
-def write_out_failed_proteins(sql_failures, time_stamp, args):
-    """Write out the names of proteins which raised errors when being added to the local db.
-
-    :param sql_failures: list, the names of proteins that were unsuccessfully added to the db
-    :param args: cmd args parser
-
-    Return nothing.
-    """
-    logger = logging.getLogger(__name__)
-
-    if args.output is not sys.stdout:
-        output_path = args.output / f"failed_db_protein_additions_{time_stamp}.txt"
-
-        with open(output_path, "a") as fh:
-            for fail in sql_failures:
-                fh.write(f"{fail}\n")
-
-    else:
-        logger.error("The following proteins were not entered into database:")
-        for fail in sql_failures:
-            logger.error(fail)
 
     return
 

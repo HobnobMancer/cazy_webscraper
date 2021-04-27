@@ -1,11 +1,15 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# (c) University of St Andrews 2020-2021
+# (c) University of Strathclyde 2020-2021
+# (c) James Hutton Institute 2020-2021
+#
 # Author:
 # Emma E. M. Hobbs
-
+#
 # Contact
 # eemh1@st-andrews.ac.uk
-
+#
 # Emma E. M. Hobbs,
 # Biomolecular Sciences Building,
 # University of St Andrews,
@@ -14,9 +18,26 @@
 # KY16 9ST
 # Scotland,
 # UK
-
+#
 # The MIT License
-
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 """Tests the submodule file_io from utilities.
 
 These test are intened to be run from the root of the repository using:
@@ -247,55 +268,17 @@ def test_output_dir_creation_exists(test_dir):
     assert pytest_wrapped_err.type == SystemExit
 
 
-# test write_out_failed_scrapes
-
-
-def test_write_out_failed_scrapes_stdout(stdout_args):
-    """Test write_out_failed_scrapes when args.output is sys.STDOUT"""
-    file_io.write_out_failed_scrapes(
-        ["url_1 - message", "url_2 - fail reason"],
-        "time_stamp",
-        stdout_args["args"],
-    )
-
-
-def test_write_out_failed_scrapes(output_args):
-    """Test write_out_failed_scrapes when args.output is sys.STDOUT"""
-    file_io.write_out_failed_scrapes(
-        ["url_1 - message", "url_2 - fail reason"],
-        "time_stamp",
-        output_args["args"],
-    )
-
-
-# test write_out_failed_proteins()
-
-
-def test_write_out_failed_proteins_stdout(stdout_args):
-    """Test write_out_failed_proteins when args.output is sys.STDOUT"""
-    file_io.write_out_failed_proteins(
-        ["sql_1 - message", "sql_2 - fail reason"],
-        "time_stamp",
-        stdout_args["args"],
-    )
-
-
-def test_write_out_failed_proteins(output_args):
-    """Test write_out_failed_proteins when args.output is sys.STDOUT"""
-    file_io.write_out_failed_proteins(
-        ["sql_1 - message", "sql_2 - fail reason"],
-        "time_stamp",
-        output_args["args"],
-    )
-
-
 # test writing out FASTA files
 
 
 def test_write_out_fasta(making_output_dir):
     """Test writing out FASTA file."""
+    # prepare dir for writing test output
     path_ = making_output_dir / "fasta_test"
-    file_io.make_output_directory(path_, True, True)
+    file_io.make_output_directory(path_, True, False)
+    # define path to write test output to
+    fasta_path = path_ / "test.fasta"
+
     genbank_accession = "test_accession"
     record = SeqRecord(
         Seq("MKQHKAMIVALIVTAVVAALVTRKDLCEHIRTGQTEVAVAVF"),
@@ -303,6 +286,28 @@ def test_write_out_fasta(making_output_dir):
         name="fake",
         description="test protein record",
     )
-    args = {"args": Namespace(fasta=path_)}
+    args = {"args": Namespace(fasta=fasta_path)}
+
     file_io.write_out_fasta(record, genbank_accession, args["args"])
+
+    shutil.rmtree(path_)
+
+
+def test_write_out_fasta_separate_files(making_output_dir):
+    """Test writing out FASTA file."""
+    # prepare dir for test
+    path_ = making_output_dir / "fasta_test"
+    file_io.make_output_directory(path_, True, False)
+
+    genbank_accession = "test_accession"
+    record = SeqRecord(
+        Seq("MKQHKAMIVALIVTAVVAALVTRKDLCEHIRTGQTEVAVAVF"),
+        id="fake_protein.1",
+        name="fake",
+        description="test protein record",
+    )
+    args = {"args": Namespace(fasta="separate", write=path_)}
+
+    file_io.write_out_fasta(record, genbank_accession, args["args"])
+
     shutil.rmtree(path_)

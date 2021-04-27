@@ -79,7 +79,7 @@ def time_stamp():
 
 @pytest.fixture(scope="session")
 def engine():
-    db_path = "tests/test_inputs/test_inputs_sql/unit_test_db_2021-03-01--15-06-59.db"
+    db_path = "tests/test_inputs/unit_test_database/unit_test_2021-04-27--11-54-58.db"
     return create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
 
 

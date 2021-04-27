@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 # (c) University of St Andrews 2020-2021
 # (c) University of Strathclyde 2020-2021
+# (c) James Hutton Institute 2020-2021
+#
 # Author:
 # Emma E. M. Hobbs
-
+#
 # Contact
 # eemh1@st-andrews.ac.uk
-
+#
 # Emma E. M. Hobbs,
 # Biomolecular Sciences Building,
 # University of St Andrews,
@@ -16,7 +18,7 @@
 # KY16 9ST
 # Scotland,
 # UK
-
+#
 # The MIT License
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,10 +27,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -58,6 +60,7 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 """
 
 
+import json
 import logging
 import os
 import sys
@@ -70,8 +73,10 @@ from typing import List, Optional
 from tqdm import tqdm
 
 from scraper import crawler
-from scraper.sql import sql_orm
-from scraper.utilities import config_logger, file_io, parsers, parse_configuration
+from scraper.crawler.cazy_html_pages import get_cazy_pages, parse_local_pages
+from scraper.crawler.parse_cazy_families import scrape_all, scrape_by_kingdom
+from scraper.sql import sql_orm, sql_interface
+from scraper.utilities import build_logger, config_logger, file_io, parsers, parse_configuration
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -98,37 +103,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger = logging.getLogger(__name__)
         config_logger(args)
 
-    logger.info("Run initiated")
-
     if args.output is not sys.stdout:
         file_io.make_output_directory(args.output, args.force, args.nodelete)
 
-    if args.subfamilies is True:
-        logger.warning("Enabled retrieval of subfamily classifications")
-
-    if args.streamline is not None:
-        parse_configuration.create_streamline_scraping_warning(args)
-
-    # build database and return open database session
-    if args.database is not None:  # open session for existing local database
-        # check the path exists
-        if os.path.isfile(args.database) is False:
-            logger.error(
-                "Could not find local CAZy database. Check path is correct. Terminating programme."
-            )
-            sys.exit(1)
-        try:
-            session = sql_orm.get_db_session(args)
-        except Exception:
-            logger.error("Failed to build SQL database. Terminating program", exc_info=True)
-            sys.exit(1)
-
-    else:  # create a new empty database to populate
-        try:
-            session = sql_orm.build_db(time_stamp, args)
-        except Exception:
-            logger.error("Failed to build SQL database. Terminating program", exc_info=True)
-            sys.exit(1)
+    cazy_home = "http://www.cazy.org"
 
     # retrieve configuration data
     parse_configuration_path = parse_configuration.__file__
@@ -136,33 +114,94 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         excluded_classes,
         config_dict,
         cazy_dict,
-        taxonomy_filters,
+        taxonomy_filters_dict,
         kingdoms,
+        ec_filters,
     ) = parse_configuration.parse_configuration(parse_configuration_path, args)
-
-    # log scraping of CAZy in local db
-    log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, kingdoms, session, args)
-
     # convert taxonomy_filters to a set for quicker identification of species to scrape
-    taxonomy_filters = get_filter_set(taxonomy_filters)
+    taxonomy_filters = get_filter_set(taxonomy_filters_dict)
 
-    logger.info(
-        "Finished program preparation. Starting retrieval of data from CAZy"
-    )
+    # Check if retrieving pages from CAZy and writing to disk for scraping later
+    if args.get_pages:
+        get_cazy_pages.get_cazy_pages(
+            args,
+            cazy_home,
+            time_stamp,
+            excluded_classes,
+            cazy_dict,
+            config_dict,
+            kingdoms,
+            start_time,
+        )
 
-    cazy_home = "http://www.cazy.org"
+    else:
+        # build database and return open database session
+        if args.database is not None:  # open session for existing local database
+            if args.database == "dict":  # build dictionary of {genbank_accession: CAZy families}
+                session = {}
 
-    get_cazy_data(
-        cazy_home,
-        excluded_classes,
-        config_dict,
-        cazy_dict,
-        taxonomy_filters,
-        kingdoms,
-        time_stamp,
-        session,
-        args,
-    )
+            else:
+                if os.path.isfile(args.database) is False:
+                    logger.error(
+                        "Could not find local CAZy database. Check path is correct.\n"
+                        "Terminating programme."
+                    )
+                    sys.exit(1)
+                try:
+                    session = sql_orm.get_db_session(args)
+                except Exception:
+                    logger.error("Failed to build SQL database. Terminating program", exc_info=True)
+                    sys.exit(1)
+
+        else:  # create a new empty database to populate
+            try:
+                session = sql_orm.build_db(time_stamp, args)
+            except Exception:
+                logger.error("Failed to build SQL database. Terminating program", exc_info=True)
+                sys.exit(1)
+
+        if args.subfamilies is True:
+            logger.warning("Enabled retrieval of subfamily classifications")
+
+        if args.streamline is not None:
+            parse_configuration.create_streamline_scraping_warning(args)
+
+        # log scraping of CAZy in local db
+        sql_interface.log_scrape_in_db(
+            time_stamp,
+            config_dict,
+            taxonomy_filters_dict,
+            kingdoms,
+            ec_filters,
+            session,
+            args,
+        )
+
+        # Check if scraping from local CAZy files
+        if args.scrape_files is not None:
+            parse_local_pages.parse_local_pages(
+                args,
+                cazy_home,
+                start_time,
+                time_stamp,
+                session,
+                taxonomy_filters,
+                ec_filters,
+            )
+
+        else:
+            get_cazy_data(
+                cazy_home,
+                excluded_classes,
+                config_dict,
+                cazy_dict,
+                taxonomy_filters,
+                kingdoms,
+                ec_filters,
+                time_stamp,
+                session,
+                args,
+            )
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     end_time = pd.to_datetime(end_time)
@@ -182,275 +221,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         f"Scrape finished at {end_time}\n"
         f"Total run time: {total_time}\n"
     )
-
-
-def get_cazy_data(
-    cazy_home,
-    excluded_classes,
-    config_dict,
-    cazy_dict,
-    taxonomy_filters,
-    kingdoms,
-    time_stamp,
-    session,
-    args,
-):
-    """Coordinate retrieval of data from the CAZy website.
-
-    This function coordinates the crawling through the CAZy website by calling the appropriate
-    functions, and then retrieving the protein data by calling to the appropriate data again.
-
-    :param cazy_home: str, url of CAZy home page
-    :param excluded_classes: list, list of classes to not scrape from CAZy
-    :param config_dict: dict, user defined configuration of the scraper
-    :param cazy_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
-    :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
-    :param kingdoms: list of taxonomy kingdoms to restrict the scrape to
-    :param time_stamp: str, data and time scrape was initiated
-    :param session: session, open database session
-    :param args: cmd args parser
-
-    Return nothing.
-    """
-    logger = logging.getLogger(__name__)
-
-    # retrieve links to CAZy class pages, return list of CazyClass objects
-    cazy_classes = crawler.get_cazy_classes(
-        cazy_home,
-        excluded_classes,
-        cazy_dict,
-        args,
-    )
-
-    logger.info("Starting retrieval of CAZy families")
-
-    # scrape each retrieved class page
-    for cazy_class in tqdm(cazy_classes, desc="Parsing CAZy classes"):
-
-        # first attempt of scraping, retrieve URLs to CAZy families
-        if len(list(cazy_class.failed_families.keys())) == 0:
-
-            # retrieve Family class instances, containing the Family page URL
-            class_families, error_message, incorrect_urls = crawler.get_cazy_family_urls(
-                cazy_class.url,
-                cazy_class.name,
-                cazy_home,
-                args,
-            )
-
-            if incorrect_urls is not None:
-                file_io.write_out_failed_scrapes(incorrect_urls, time_stamp, args)
-
-            if class_families is None:  # couldn't retrieve URLs to families for working CAZy class
-                # add one to the number of scrapping attempts
-                cazy_class.tries += 1
-
-                # check if maximum number of attempts to connect have been met
-                if cazy_class.tries == (args.retries + 1):
-                    message = (
-                        f"{cazy_class.url}\t"
-                        f"{cazy_class.name}\t"
-                        "No CAZy familes from this class were scraped\t"
-                        f"{error_message}"
-                    )
-                    file_io.write_out_failed_scrapes([message], time_stamp, args)
-                    continue
-
-                else:
-                    cazy_classes.append(cazy_class)  # retry scraping Class page later Classes
-                    continue
-
-        # Not first try, scrape only the families for which a connections to CAZy previously failed
-        else:
-            class_families = list(cazy_class.failed_families.keys())
-
-        # Scrape the familes of the current CAZy class, retrieving protein data
-
-        if (config_dict is None) or (config_dict[cazy_class.name] is None):
-            # No (sub)families were specified, therefore, scraping all families of the CAZy class
-
-            for family in tqdm(class_families, desc=f"Parsing {cazy_class.name} families"):
-                # Scrape the family and add proteins to the local database
-                family, retry_scrape, failed_fam_pages, family_sql_failures = crawler.parse_family(
-                    family,
-                    cazy_home,
-                    taxonomy_filters,
-                    kingdoms,
-                    args,
-                    session,
-                )
-
-                # check if there are pages that were unsuccessfully scraped and have retries left
-                if retry_scrape is True:
-                    # add one to the number of attempted scrapes for CAZy family
-                    try:
-                        cazy_class.failed_families[family] += 1
-                    except KeyError:
-                        cazy_class.failed_families[family] = 1  # first attempt
-
-                    # check if max number of attempts to connect family pages has been met
-                    if cazy_class.failed_families[family] == (args.retries + 1):
-                        del cazy_class.failed_families[family]  # do not try another scrape
-                        continue
-
-                if len(list(cazy_class.failed_families.keys())) != 0:
-                    # if there are families with previously failed connection attempts
-                    # and remaining tries, retry connection after working through other classes
-                    cazy_classes.append(cazy_class)
-
-                # write out URLs which failed to be scaped
-                if len(failed_fam_pages) != 0:
-                    file_io.write_out_failed_scrapes(failed_fam_pages, time_stamp, args)
-
-                # write out Proteins which failed to be be added to the database
-                if len(family_sql_failures) != 0:
-                    file_io.write_out_failed_proteins(family_sql_failures, time_stamp, args)
-
-        else:
-            # scrape only (sub)families specified in the config file
-
-            for family in tqdm(class_families, desc=f"Parsing {cazy_class.name} families"):
-
-                # Allow retrieval of subfamilies when only the parent CAZy family was named in the
-                # config file, by searching by the family not subfamily in the config file
-                if (args.subfamilies is True) and (family.name.find("_") != -1):
-                    name_check = family.name[: (family.name.find("_"))]
-                else:
-                    name_check = family.name
-
-                if name_check not in config_dict[cazy_class.name]:
-                    continue
-
-                # Scrape the family and add proteins to the local database
-                family, retry_scrape, failed_fam_pages, family_sql_failures = crawler.parse_family(
-                    family,
-                    cazy_home,
-                    taxonomy_filters,
-                    kingdoms,
-                    args,
-                    session,
-                )
-
-                # check if there are pages that were unsuccessfully scraped and have retries left
-                if retry_scrape is True:
-                    # add one to the number of attempted scrapes for CAZy family
-                    try:
-                        cazy_class.failed_families[family] += 1
-                    except KeyError:
-                        cazy_class.failed_families[family] = 1  # first attempt
-
-                    # check if max number of attempts to connect family pages has been met
-                    if cazy_class.failed_families[family] == (args.retries + 1):
-                        del cazy_class.failed_families[family]  # do not try another scrape
-                        continue
-
-                if len(list(cazy_class.failed_families.keys())) != 0:
-                    # if there are families with previously failed connection attempts
-                    # and remaining tries, retry connection after working through other classes
-                    cazy_classes.append(cazy_class)
-
-                # write out URLs which failed to be scaped
-                if len(failed_fam_pages) != 0:
-                    file_io.write_out_failed_scrapes(failed_fam_pages, time_stamp, args)
-
-                # write out Proteins which failed to be be added to the database
-                if len(family_sql_failures) != 0:
-                    file_io.write_out_failed_proteins(family_sql_failures, time_stamp, args)
-
-    return
-
-
-def log_scrape_in_db(time_stamp, config_dict, taxonomy_filters, kingdoms, session, args):
-    """Add a log of scraping CAZy to the local database.
-
-    :param time_stamp: str, date and time cazy_webscraper was invoked
-    :param config_dict: dict of CAZy classes and families to be scraped
-    :param taxonomy_filters: dict of genera, species and strains to restrict the scrape to
-    :param kingdoms: list of taxonomy Kingdoms to restrict scrape to
-    :param session: open SQL database session
-    :param args: cmd arguments
-
-    Return nothing."""
-    date = time_stamp[:time_stamp.find("--")]
-    time = time_stamp[((time_stamp.find("--")) + 2):].replace("-", ":")
-
-    new_log = sql_orm.Log(date=date, time=time)
-
-    if config_dict is not None:
-        # get classes that user named to be scraped
-        try:
-            classes = config_dict["classes"]
-            if classes is not None:
-                classes = str(classes).replace("[", "").replace("]", "").replace("'", "")
-                new_log.classes = classes
-        except KeyError:
-            pass
-
-        # create a list of families instructed to be scraped
-        families = []
-        for key in config_dict:
-            if key == "classes":
-                continue
-            if config_dict[key] is not None:
-                families.append(config_dict[key])
-
-        if len(families) != 0:
-            families = str(families).replace("[", "").replace("]", "").replace("'", "")
-            new_log.families = families
-
-    try:
-        if len(taxonomy_filters["genera"]) != 0:
-            genera = str(taxonomy_filters["genera"]).replace("[", "").\
-                replace("]", "").replace("'", "")
-            new_log.genera = genera
-    except TypeError:
-        pass
-
-    try:
-        if len(taxonomy_filters["species"]) != 0:
-            species = str(taxonomy_filters["species"])
-            species = species.replace("[", "").replace("]", "").replace("'", "")
-            new_log.species = species
-    except TypeError:
-        pass
-
-    try:
-        if len(taxonomy_filters["strains"]) != 0:
-            strains = str(taxonomy_filters["strains"])
-            strains = strains.replace("[", "").replace("]", "").replace("'", "")
-            new_log.strains = strains
-    except TypeError:
-        pass
-
-    if kingdoms is not None:
-        new_log.kingdoms = str(kingdoms).replace("[", "").replace("]", "").replace("'", "")
-    else:
-        new_log.kingdoms = "ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified"
-
-    # retrieve commands from the command line
-    cmd_line = ""
-    for cmd in [
-        [args.classes, " --classes '"],
-        [args.families, " --families '"],
-        [args.kingdoms, " --kingdoms"],
-        [args.genera, " --genera '"],
-        [args.species, " --species '"],
-        [args.strains, " --strains '"],
-        [args.streamline, "--streamline '"],
-    ]:
-        try:
-            cmd_line = cmd_line + cmd[1] + cmd[0] + "'"
-        except TypeError:
-            pass
-
-    if len(cmd_line) != 0:
-        cmd_line = cmd_line.strip()
-        new_log.cmd_line = cmd_line
-
-    session.add(new_log)
-    session.commit()
-
-    return
 
 
 def get_filter_set(taxonomy_filters_dict):
@@ -476,6 +246,253 @@ def get_filter_set(taxonomy_filters_dict):
         taxonomy_filters = set(taxonomy_filters)
 
     return taxonomy_filters
+
+
+def get_cazy_data(
+    cazy_home,
+    excluded_classes,
+    config_dict,
+    cazy_dict,
+    taxonomy_filters,
+    kingdoms,
+    ec_filters,
+    time_stamp,
+    session,
+    args,
+):
+    """Coordinate retrieval of data from the CAZy website.
+
+    This function coordinates the crawling through the CAZy website by calling the appropriate
+    functions, and then retrieving the protein data by calling to the appropriate data again.
+
+    :param cazy_home: str, url of CAZy home page
+    :param excluded_classes: list, list of classes to not scrape from CAZy
+    :param config_dict: dict, user defined configuration of the scraper
+    :param cazy_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
+    :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
+    :param kingdoms: list of taxonomy kingdoms to restrict the scrape to
+    :param ec_filters: set of EC numbers to limit the scrape to
+    :param time_stamp: str, data and time scrape was initiated
+    :param session: session, open database session
+    :param args: cmd args parser
+
+    Return nothing.
+    """
+    if args.output is not sys.stdout:
+        out_log_path = args.output
+    else:
+        out_log_path = os.getcwd()
+
+    connection_failures_logger = build_logger(
+        out_log_path, f"CAZy_connection_failures_CW_{time_stamp}.log",
+    )
+    sql_failures_logger = build_logger(
+        out_log_path, f"SQL_errors_CW_{time_stamp}.log",
+    )
+    format_failures_logger = build_logger(
+        out_log_path, f"Format_and_parsing_errors_CW_{time_stamp}.log",
+    )
+
+    # retrieve links to CAZy class pages, return list of CazyClass objects
+    cazy_classes = crawler.get_cazy_classes(
+        cazy_home, excluded_classes, cazy_dict, args,
+    )
+
+    # scrape each retrieved class page
+    for cazy_class in tqdm(cazy_classes, desc="Parsing CAZy classes"):
+
+        # first attempt of scraping, retrieve URLs to CAZy families
+        if len(list(cazy_class.failed_families.keys())) == 0:
+
+            # retrieve Family class instances, containing the Family page URL
+            class_families, error_message, incorrect_urls = crawler.get_cazy_family_urls(
+                cazy_class.url,
+                cazy_class.name,
+                cazy_home,
+                args,
+            )
+
+            if incorrect_urls is not None:  # log families for which compiled URL is incorrect
+                for url in incorrect_urls:
+                    connection_failures_logger.warning(url)
+
+            if class_families is None:  # couldn't retrieve URLs to families for working CAZy class
+                cazy_class.tries += 1  # add one to the number of scrapping attempts
+
+                # check if maximum number of attempts to connect have been met
+                if cazy_class.tries == (args.retries + 1):
+                    connection_failures_logger.warning(
+                        f"{cazy_class.url}\t{cazy_class.name}\t"
+                        f"No CAZy familes from this class were scraped\t{error_message}"
+                    )
+
+                else:
+                    cazy_classes.append(cazy_class)  # retry scraping Class page later Classes
+
+                continue
+
+        # Not first try, scrape only the families for which a connections to CAZy previously failed
+        else:
+            class_families = list(cazy_class.failed_families.keys())
+
+        # Scrape the familes of the current CAZy class, retrieving protein data
+
+        if (config_dict is None) or (config_dict[cazy_class.name] is None):
+            # No (sub)families were specified, therefore, scraping all families of the CAZy class
+
+            for family in tqdm(class_families, desc=f"Parsing {cazy_class.name} families"):
+                # Scrape the family and add proteins to the local database
+                if kingdoms == 'all':
+                    (
+                        family,
+                        retry_scrape,
+                        failed_url_connections,
+                        family_sql_failures,
+                        format_errors,
+                        session,
+                    ) = scrape_all.parse_family_via_all_pages(
+                        family,
+                        cazy_home,
+                        taxonomy_filters,
+                        ec_filters,
+                        args,
+                        session,
+                    )
+
+                else:
+                    (
+                        family,
+                        retry_scrape,
+                        failed_url_connections,
+                        family_sql_failures,
+                        format_errors,
+                        session,
+                    ) = scrape_by_kingdom.parse_family_by_kingdom(
+                        family,
+                        cazy_home,
+                        taxonomy_filters,
+                        kingdoms,
+                        ec_filters,
+                        args,
+                        session,
+                    )
+
+                # check if there are pages that were unsuccessfully scraped and have retries left
+                if retry_scrape is True:
+                    # add one to the number of attempted scrapes for CAZy family
+                    try:
+                        cazy_class.failed_families[family] += 1
+                    except KeyError:
+                        cazy_class.failed_families[family] = 1  # first attempt
+
+                    # check if max number of attempts to connect family pages has been met
+                    if cazy_class.failed_families[family] == (args.retries + 1):
+                        del cazy_class.failed_families[family]  # do not try another scrape
+                        continue
+
+                if len(list(cazy_class.failed_families.keys())) != 0:
+                    # if there are families with previously failed connection attempts
+                    # and remaining tries, retry connection after working through other classes
+                    cazy_classes.append(cazy_class)
+
+                # write out errors to their respective log files
+                for error in failed_url_connections:
+                    connection_failures_logger.warning(error)
+
+                for error in family_sql_failures:
+                    sql_failures_logger.warning(error)
+
+                for error in format_errors:
+                    format_failures_logger.warning(error)
+
+        else:
+            # scrape only (sub)families specified in the config file
+
+            for family in tqdm(class_families, desc=f"Parsing {cazy_class.name} families"):
+
+                # Allow retrieval of subfamilies when only the parent CAZy family was named in the
+                # config file, by searching by the family not subfamily in the config file
+                if (args.subfamilies is True) and (family.name.find("_") != -1):
+                    name_check = family.name[: (family.name.find("_"))]
+                else:
+                    name_check = family.name
+
+                if name_check not in config_dict[cazy_class.name]:
+                    continue
+
+                # Scrape the family and add proteins to the local database
+                if kingdoms == 'all':
+                    (
+                        family,
+                        retry_scrape,
+                        failed_url_connections,
+                        family_sql_failures,
+                        format_errors,
+                        session,
+                    ) = scrape_all.parse_family_via_all_pages(
+                        family,
+                        cazy_home,
+                        taxonomy_filters,
+                        ec_filters,
+                        args,
+                        session,
+                    )
+
+                else:
+                    (
+                        family,
+                        retry_scrape,
+                        failed_url_connections,
+                        family_sql_failures,
+                        format_errors,
+                        session,
+                    ) = scrape_by_kingdom.parse_family_by_kingdom(
+                        family,
+                        cazy_home,
+                        taxonomy_filters,
+                        kingdoms,
+                        ec_filters,
+                        args,
+                        session,
+                    )
+
+                # check if there are pages that were unsuccessfully scraped and have retries left
+                if retry_scrape is True:
+                    # add one to the number of attempted scrapes for CAZy family
+                    try:
+                        cazy_class.failed_families[family] += 1
+                    except KeyError:
+                        cazy_class.failed_families[family] = 1  # first attempt
+
+                    # check if max number of attempts to connect family pages has been met
+                    if cazy_class.failed_families[family] == (args.retries + 1):
+                        del cazy_class.failed_families[family]  # do not try another scrape
+                        continue
+
+                if len(list(cazy_class.failed_families.keys())) != 0:
+                    # if there are families with previously failed connection attempts
+                    # and remaining tries, retry connection after working through other classes
+                    cazy_classes.append(cazy_class)
+
+                # write out errors to their respective log files
+                for error in failed_url_connections:
+                    connection_failures_logger.warning(error)
+
+                for error in family_sql_failures:
+                    sql_failures_logger.warning(error)
+
+                for error in format_errors:
+                    format_failures_logger.warning(error)
+
+    if type(session) is dict:
+        if args.output is not sys.stdout:
+            output_path = args.output / f"cazy_dict_{time_stamp}.json"
+        else:
+            output_path = args.output
+        with open(output_path, 'w') as f:
+            json.dump(session, f)
+
+    return
 
 
 if __name__ == "__main__":

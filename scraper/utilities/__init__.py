@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 # (c) University of St Andrews 2020-2021
 # (c) University of Strathclyde 2020-2021
+# (c) James Hutton Institute 2020-2021
+#
 # Author:
 # Emma E. M. Hobbs
-
+#
 # Contact
 # eemh1@st-andrews.ac.uk
-
+#
 # Emma E. M. Hobbs,
 # Biomolecular Sciences Building,
 # University of St Andrews,
@@ -16,7 +18,7 @@
 # KY16 9ST
 # Scotland,
 # UK
-
+#
 # The MIT License
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,10 +27,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,6 +42,7 @@
 
 
 import logging
+import os
 
 
 def config_logger(args) -> logging.Logger:
@@ -76,3 +79,30 @@ def config_logger(args) -> logging.Logger:
         logger.addHandler(file_log_handler)
 
     return
+
+
+def build_logger(output, file_name):
+    """Build loggers with pre-defined parameters for writing out errors and failed scrapes.
+
+    :param output: Path to output dir or None
+    :param file_name: str, name of output log file
+
+    Return logger object.
+    """
+    logger = logging.getLogger(file_name[:-4])
+
+    if output is None:
+        output = os.getcwd()
+
+    path_ = output / file_name
+
+    # Set format of loglines
+    log_formatter = logging.Formatter(file_name + ": {} - {}".format("%(asctime)s", "%(message)s"))
+
+    # Setup file handler to log to a file
+    file_log_handler = logging.FileHandler(path_)
+    file_log_handler.setLevel(logging.WARNING)
+    file_log_handler.setFormatter(log_formatter)
+    logger.addHandler(file_log_handler)
+
+    return logger
