@@ -30,6 +30,8 @@ We're almost at the stage of releasing the first version of `cazy_webscraper`, b
 
 - Documentation: The ReadTheDocs documentation has been updated to include all cmd-line flag. However, I am working on developing written and video tutorials to help users will less experience using the cmd-line to get started with this tool!
 
+All this work is being done on the currently active `update_expand` branch.
+
 ## Future releases
 
 To make `cazy_webscraper` accessible to a wider audience, I will (after the release of version 1) add on a GUI for `cazy_webscraper`. This will likely be slow in development but it will come in the next 6-9 months.
