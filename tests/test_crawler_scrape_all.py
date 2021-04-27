@@ -555,12 +555,12 @@ def test_all_parse_total_proteins_error_final_pag(fam_url, fam_template, args):
 
     # assert format_failures == ['http://www.cazy.org/GH14_all.html\terror message']
     # assert failed_scrapes == [
-        (
-            'http://www.cazy.org/GH14_all.html\tCAZyClass\tFailed to connect to this '
-            'page of proteins for famName, and raised the following error message:\n'
-            'http://www.cazy.org/GH14_all.html'
-        ),
-    ]
+    #     (
+    #         'http://www.cazy.org/GH14_all.html\tCAZyClass\tFailed to connect to this '
+    #         'page of proteins for famName, and raised the following error message:\n'
+    #         'http://www.cazy.org/GH14_all.html'
+    #     ),
+    # ]
     # assert sql_failures == []
 
 
@@ -767,7 +767,7 @@ def test_all_parse_page_dict_no_table(monkeypatch, fam_template, args, input_dir
         taxonomy_filters=set(),
         ec_filters=set(),
         failed_scrapes=[],
-        session={}, 
+        session={},
         args=args["args"],
     )
 
@@ -790,7 +790,7 @@ def test_all_parse_page_dict_deleted(monkeypatch, fam_template, args, input_dir)
         taxonomy_filters=set(),
         ec_filters=set(),
         failed_scrapes=[],
-        session={}, 
+        session={},
         args=args["args"],
     )
 
@@ -813,7 +813,7 @@ def test_all_parse_page_dict_empty(monkeypatch, fam_template, args, input_dir):
         taxonomy_filters=set(),
         ec_filters=set(),
         failed_scrapes=[],
-        session={}, 
+        session={},
         args=args["args"],
     )
 
@@ -837,7 +837,7 @@ def test_all_parse_page_dict_empty_table(monkeypatch, fam_template, args, input_
         taxonomy_filters=set(),
         ec_filters=set(),
         failed_scrapes=[],
-        session={}, 
+        session={},
         args=args["args"],
     )
 
@@ -864,6 +864,6 @@ def test_all_parse_page_dict_success(monkeypatch, fam_template, args, input_dir)
         taxonomy_filters=set(),
         ec_filters=set(),
         failed_scrapes=[],
-        session={}, 
+        session={},
         args=args["args"],
     )
