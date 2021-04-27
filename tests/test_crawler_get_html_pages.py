@@ -408,7 +408,7 @@ def test_pages_parse_all_rescrape_first_pag(args, protein_gen, cazy_home_url, mo
     def mock_get_pages(*args, **kwargs):
         return protein_gen
 
-    monkeypatch.setattr(get_cazy_pages, "get_paginiation_pages", mock_parse_pagination_page)
+    monkeypatch.setattr(get_cazy_pages, "get_pagination_pages", mock_parse_pagination_page)
     monkeypatch.setattr(get_cazy_pages, "get_html_page", mock_get_pages)
 
     get_cazy_pages.parse_all_family(
@@ -433,7 +433,7 @@ def test_pages_parse_all_format_error(args, protein_gen, cazy_home_url, monkeypa
     def mock_get_pages(*args, **kwargs):
         return protein_gen
 
-    monkeypatch.setattr(get_cazy_pages, "get_paginiation_pages", mock_parse_pagination_page)
+    monkeypatch.setattr(get_cazy_pages, "get_pagination_pages", mock_parse_pagination_page)
     monkeypatch.setattr(get_cazy_pages, "get_html_page", mock_get_pages)
 
     get_cazy_pages.parse_all_family(
@@ -458,7 +458,7 @@ def test_pages_parse_all_first_fam_parse(fam_url, args, protein_gen, cazy_home_u
     def mock_get_pages(*args, **kwargs):
         return protein_gen
 
-    monkeypatch.setattr(get_cazy_pages, "get_paginiation_pages", mock_parse_pagination_page)
+    monkeypatch.setattr(get_cazy_pages, "get_pagination_pages", mock_parse_pagination_page)
     monkeypatch.setattr(get_cazy_pages, "get_html_page", mock_get_pages)
 
     get_cazy_pages.parse_all_family(
