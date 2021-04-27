@@ -102,7 +102,7 @@ def test_all_parse_family_first_parse(cazy_home_url, monkeypatch):
     fam = Family("testFam", "testClass", "testURL")
 
     def mock_parse_pagination_page(*args, **kwargs):
-        return fam, None, None, None
+        return fam, None, None, None, "session"
 
     monkeypatch.setattr(scrape_all, "parse_first_paginiation_page", mock_parse_pagination_page)
 
@@ -127,7 +127,7 @@ def test_all_parse_family_retry_paginiation(cazy_home_url, monkeypatch):
     )
 
     def mock_parse_pagination_page(*args, **kwargs):
-        return fam, None, None, None
+        return fam, None, None, None, "session"
 
     monkeypatch.setattr(scrape_all, "parse_first_paginiation_page", mock_parse_pagination_page)
 
