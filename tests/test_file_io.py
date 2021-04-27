@@ -3,7 +3,7 @@
 # (c) University of St Andrews 2020-2021
 # (c) University of Strathclyde 2020-2021
 # (c) James Hutton Institute 2020-2021
-#
+
 # Author:
 # Emma E. M. Hobbs
 #
