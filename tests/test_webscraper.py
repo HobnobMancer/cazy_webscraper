@@ -77,7 +77,7 @@ def output_dir(test_dir):
 
 @pytest.fixture
 def db_path():
-    db_path = "tests/test_inputs/test_inputs_sql/unit_test_db_2021-03-01--15-06-59.db"
+    db_path = "tests/test_inputs/unit_test_database/unit_test_2021-04-27--11-54-58.db"
     return db_path
 
 
@@ -580,6 +580,7 @@ def test_get_cazy_data_no_fam_urls(
     null_logger
 ):
     """Test get_cazy_data() when no family URLS are retrieved."""
+    os.makedirs(logs_dir, exist_ok=True)
 
     def mock_get_classes(*args, **kwargs):
         class1 = crawler.CazyClass("test_class", "test_class_url.html", 0)
@@ -607,6 +608,7 @@ def test_get_cazy_data_no_fam_urls(
         session="session_representative",
         args=args_get_cazy_data["args"],
     )
+    file_io.make_output_directory(logs_dir, True, False)
 
 
 def test_get_cazy_data_no_all(

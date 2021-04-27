@@ -44,6 +44,8 @@
 import logging
 import os
 
+from pathlib import Path
+
 
 def config_logger(args) -> logging.Logger:
     """Configure package wide logger.
@@ -93,8 +95,9 @@ def build_logger(output, file_name):
 
     if output is None:
         output = os.getcwd()
-
-    path_ = output / file_name
+        path_ = Path(f"{output}/{file_name}")
+    else:
+        path_ = output / f"{file_name}"
 
     # Set format of loglines
     log_formatter = logging.Formatter(file_name + ": {} - {}".format("%(asctime)s", "%(message)s"))

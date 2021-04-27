@@ -68,6 +68,7 @@ import sys
 import pandas as pd
 
 from datetime import datetime
+from pathlib import Path
 from typing import List, Optional
 
 from tqdm import tqdm
@@ -281,7 +282,7 @@ def get_cazy_data(
     if args.output is not sys.stdout:
         out_log_path = args.output
     else:
-        out_log_path = os.getcwd()
+        out_log_path = None
 
     connection_failures_logger = build_logger(
         out_log_path, f"CAZy_connection_failures_CW_{time_stamp}.log",
@@ -488,7 +489,7 @@ def get_cazy_data(
         if args.output is not sys.stdout:
             output_path = args.output / f"cazy_dict_{time_stamp}.json"
         else:
-            output_path = args.output
+            output_path = Path(f"{os.getcwd()}/cazy_dict_{time_stamp}.json")
         with open(output_path, 'w') as f:
             json.dump(session, f)
 
