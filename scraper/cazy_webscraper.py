@@ -145,6 +145,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 if os.path.isfile(args.database) is False:
                     logger.error(
                         "Could not find local CAZy database. Check path is correct.\n"
+                        "Had looked for a local SQL database at:"
+                        f"{args.database}"
                         "Terminating programme."
                     )
                     sys.exit(1)

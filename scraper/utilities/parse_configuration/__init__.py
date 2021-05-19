@@ -73,6 +73,10 @@ def parse_configuration(file_io_path, args):
         except FileNotFoundError:
             logger.error(
                 "Did not find the configuration file. Check the path is correct.\n"
+                "Make sure path to the configuration file is correct\n"
+                "Scrapping will not be performed becuase configuration is wrong.\n"
+                "Had looked for the configuration file at:\n"
+                f"{args.config}"
                 "Terminating programme"
             )
             sys.exit(1)
@@ -289,7 +293,9 @@ def get_cazy_dict_std_names(file_io_path):
             std_class_names = list(cazy_dict.keys())
     except FileNotFoundError:
         logger.error(
-            "Could not open the CAZy synonym dictionary.\n"
+            "Could not open the CAZy synonym dictionary, required for translating CAZy class abbreviations.\n"
+            "Check the file cazy_dictionary.json is located at:\n"
+            f"{dict_path}\n"
             "Terminating programme"
         )
         sys.exit(1)
@@ -312,10 +318,12 @@ def get_yaml_configuration(config_dict, cazy_dict, std_class_names, args):
         with open(args.config) as fh:
             yaml_config_dict = yaml.full_load(fh)
     except FileNotFoundError:
-        logger.warning(
+        logger.error(
             "Could not find configuration file when option was enabled.\n"
             "Make sure path to the configuration file is correct\n"
             "Scrapping will not be performed becuase configuration is wrong.\n"
+            "Had looked for the configuration file at:\n"
+            f"{args.config}"
             "Terminating program."
         )
         sys.exit(1)
