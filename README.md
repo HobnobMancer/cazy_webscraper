@@ -34,6 +34,8 @@ We're almost at the stage of releasing the first version of `cazy_webscraper`, b
 
 - The Expand module: This module is retrieving protein sequences from GenBank and PDB structures from PDB. The code is workable but inefficient. The code will be factorised out into multiple submodules, and include allow applying an additional EC number filter for selecting CAZyme to retrieve structural and sequence data for.
 
+- Progress on the Expand module: Retrieving sequences for specific classes and families from a dictionary created using `cazy_webscraper` is complete, although no unit tests have been written yet.
+
 - Documentation: The ReadTheDocs documentation has been updated to include all cmd-line flag. However, I am working on developing written and video tutorials to help users will less experience using the cmd-line to get started with this tool!
 
 All this work is being done on the currently active `update_expand` branch.
@@ -66,7 +68,7 @@ Then change directory to the repository root, and use Python's setup tools to in
 
 ```bash
 cd cazy_webscraper
-python3 setup.py install
+python3 install -e .
 ```
 
 ## Getting started
