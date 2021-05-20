@@ -38,6 +38,8 @@ The ``cazy_webscraper`` can be configured to scrape the entire database, selecte
 selected CAZy families. Additionally, the retrieved data can be separated/split by CAZy class, CAZy 
 family or not at all, thus gathering all data into a single dataframe.
 
+For details and updates on development, please checkout the GitHub repository.
+
 
 .. toctree::
    :maxdepth: 4
@@ -61,23 +63,6 @@ Installation
 -------------
 
 
-**Quick and Easy:**
-
-`cazy_webscraper` is available in the `` `bioconda <https://bioconda.github.io/user/install.html>`_ `` channel of 
-`` `conda <https://docs.conda.io/projects/conda/en/latest/user-guide/install/>`_ ``, and can be installed from the command-line 
-with if you have if you have ``bioconda`` channel available:  
-
-.. code-block:: bash
-
-   conda install cazy_webscraper
-
-If you do not have the ``bioconda`` channel available use:
-
-.. code-block:: bash
-
-   conda install -c bioconda cazy_webscraper
-
-
 **From Source**
 
 First clone the GitHub repository. This can be done at the command-line with the command:
@@ -91,7 +76,7 @@ Then change directory to the respository root, and use Python's setup tools to i
 .. code-block:: bash
 
    cd cazy_webscraper
-   python3 setup.py install
+   python3 install -e .
 
 
 
