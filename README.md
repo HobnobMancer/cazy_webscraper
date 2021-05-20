@@ -68,7 +68,7 @@ Then change directory to the repository root, and use Python's setup tools to in
 
 ```bash
 cd cazy_webscraper
-python3 install -e .
+pip3 install -e .
 ```
 
 ## Getting started
