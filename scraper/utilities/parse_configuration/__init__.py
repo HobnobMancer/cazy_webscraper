@@ -232,8 +232,8 @@ def get_kingdoms(args, raw_config_dict):
 
     if raw_config_dict is not None:
         try:
-            if raw_config_dict["kingdom"] is not None:
-                kingdoms += raw_config_dict["kingdom"]
+            if raw_config_dict["kingdoms"] is not None:
+                kingdoms += raw_config_dict["kingdoms"]
                 yaml_kingdoms = True
             else:
                 yaml_kingdoms = False
