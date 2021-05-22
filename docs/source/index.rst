@@ -91,8 +91,7 @@ Do **not** forget the `-e-` flag when invoking pip. The `-e-` flag installs the 
 run ``cazy_webscraper``.
 
 For those new to using the command-line and installing packages using `pip` here are the lines of 
-code you can copy and invoke one at a time into your command-line (please note this is for `bash` 
-command-line).
+code you can copy and invoke one at a time into your command-line (please note these comamnds are written in `bash`).
 
 .. code-block:: bash
 
