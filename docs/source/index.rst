@@ -6,7 +6,7 @@
 Welcome to cazy_webscraper's documentation!
 ===========================================
 
-| `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_
+| For all the latest updates, and development progress make sure to check the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_
 
 .. image:: https://img.shields.io/badge/Version-v1.0.2-yellowgreen
    :target: https://github.com/HobnobMancer/cazy_webscraper
@@ -63,20 +63,34 @@ Installation
 -------------
 
 
-**From Source**
+At the present moment ``cazy_webscraper`` only supports installation from source. In time we aim 
+to include installation via bioconda.
 
-First clone the GitHub repository. This can be done at the command-line with the command:
+[1] First clone the GitHub repository. This can be done at the command-line with the command:
 
 .. code-block:: bash
 
    git clone https://github.com/HobnobMancer/cazy_webscraper  
 
-Then change directory to the respository root, and use Python's setup tools to install:
+[2] Use the Python package manager ``pip`` to install ``cazy_webscraper``.
 
 .. code-block:: bash
 
-   cd cazy_webscraper
-   python3 install -e .
+   pip3 install -e <path_to_dir_containing_the_setup.py_file>
+
+Do **not** forget the `-e-` flag when invoking pip. The `-e-` flag installs the package as an 
+'executable'. If you do not use the `-e-` flag you will run into *constant* issues when trying to 
+run ``cazy_webscraper``.
+
+For those new to using the command-line and installing packages using `pip` here are the lines of 
+code you can copy and invoke one at a time into your command-line (please note this is for `bash` 
+command-line).
+
+.. code-block:: bash
+
+   git clone https://github.com/HobnobMancer/cazy_webscraper
+   cd cazy_webscraper  # this line changes the directory
+   pip3 install -e .  # the dot represents look for the setup.py file in the current directory
 
 
 
