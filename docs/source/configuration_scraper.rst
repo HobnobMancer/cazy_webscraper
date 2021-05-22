@@ -158,6 +158,10 @@ For example: ``cazy_webscraper -s -v``
 Basic examples of configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+The command-line options listed above can be used in any combination to customise the scraping of CAZy. The options that apply a 'filter' 
+to restrict which CAZymes are scraped from CAZy are applied in combination. For example, if the ``--families`` option and ``--ec`` option are called then 
+only CAZymes from the specified families **and** annotated with the listed EC numbers will be retrieved.
+
 Below are some example commands for invoking the ``cazy_webscraper`` to help demonstrate how to configure the webscraper at the command line.
 
 1. Writing the output to the directory 'my_output' and enabling retrieval of subfamilies:  
