@@ -48,6 +48,14 @@ For details and updates on development, please checkout the GitHub repository.
    genbank
    pdb
    license
+  
+  
+ Reference
+ ----------------
+ 
+ If you use `cazy_webscraper` in your work *please* do cite our work (including the provided DOI), as well as citing the specific version you use. This is not only helpful for us as developers to get out work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**.  
+
+**Citation:** Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
 
 
 Requirements
@@ -90,8 +98,13 @@ command-line).
 
    git clone https://github.com/HobnobMancer/cazy_webscraper
    cd cazy_webscraper  # this line changes the directory
-   pip3 install -e .  # the dot represents look for the setup.py file in the current directory
+   pip3 install -e .  # the dot tells the computer to look for the setup.py file in the current directory
 
+
+Getting started
+-------------------
+
+For a quick summary for getting started, checkout the poster: Hobbs, Emma E. M.; Pritchard, Leighton; Gloster, Tracey M.; Chapman, Sean (2021): cazy_webscraper - getting started. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370869.v3 
 
 
 Best practice
@@ -111,52 +124,31 @@ webscraper is working. **However, expect an entire scrape of the CAZy database t
 Output
 -------
 
+**Database:**
 
-**Dataframes:**
+To facilitate thorough interrogation of data retrieve from CAZy, minimise storing duplicate and redundant data, data retrieved from CAZy is stored in a local SQL database. Every CAZyme scraped from CAZy has the following data:
+- Protein name
+- CAZy (sub)family
+- GenBank accession(s)
 
-The basic function of the ``cazy_webscraper`` is to retrieve the protein data stored within and 
-presented in the CAZy database. The data is written out to a dataframe with the same headings as 
-found in CAZy, to reflect the way CAZy presented data in its webpages. The resulting dataframe 
-includes the additional column "CAZy family", which includes the CAZy family/subfamily under which 
-the respective CAZy is catalogued. Therefore, the resulting dataframe of the webscraper contains 
-the following columns:
+Each CAZyme may or may not have the following data:
+- EC number(s)
+- UniProt acession(s)
+- PDB accession(s)
 
-* Protein_name
-* CAZy_family
-* EC#
-* Source_organism
-* GenBank
-* UniProt
-* PDB/3D
+**Primary and non-primary GenBank accessions:**  
+Often multiple GenBank accession numbers are listed for a given CAZyme within CAZy. CAZy writes the 'best model' in bold, see [here for details](http://www.cazy.org/Help.html), this is interpretted by `cazy_webscraper` as the **primary GenBank accession**. Each unique CAZyme scraped from CAZy, is identified by it's **primary GenBank accession**. This enables associating all CAZy family annotations for a single CAZyme together. To be explicit, a single CAZyme record is for a CAZyme containing, for example, in GH32 and GH64, with both GH32 and GH64 annotations instead of creating a CAZyme record for the instance of the CAZyme in GH32 and another instance for the CAZyme in GH64. Another advantage of this is handling when there are duplicate records in CAZy. Identical entries are identified by two rows in the same HTML table containing identical data. If only a single GenBank accession is listed for a CAZyme (even if it is not written in bold), the lone GenBank accession is defined as the **primary GenBank accession**.
 
-The scraped CAZymes can be written to a single dataframe, or separated out into different 
-dataframes depending on how the data has been set to be split:
+When multiple GenBank accessions are listed, the accession written in bold is listed as the **primary GenBank accession** and all other listed GenBank accessions are listed as **non-primary GenBank accessions**. For the instances when there are multiple GenBank accessions written in bold, only the first listed bold GenBank accession is listed as the **primary GenBank accession**. The remaining GenBank accessions written in bold are flagged up to the user and are listed as **non-primary GenBank accessions**. This method is to enable identifying each unique CAZyme from CAZy by a single unique **primary GenBank accession**.
 
-* Per family: a single dataframe is created per scraped CAZy family
-* Per class: a singel datafarme is created per scraped CAZy family
-* Not split: a single dataframe containing all data scrapend from CAZy is created
 
-The dataframes can be written out to a specified directory or written to STDOUT to facilitate 
-piping to a subsequent program. If the dataframes are written to the disk they are saved as 
-**.csv** files.
+**Primary and non-primary UniProt accessions**
+IF multiple UniProt accessions are listed, all those written in bold are identified by CAZy and `cazy_webscraper` as the 'best' model. Consequently, all UniProt accessions listed in bold are defined as **primary UniProt accessions**, and all UniProt accessions not written in bold are listed as **non-primary UniProt accessions**. In cases when only a single UniProt accession, this lone accession is defined as the **primary UniProt accession** for the respective CAZyme.
 
-**GenBank synonyms:**
-Often multiple GenBank accession numbers are listed for a given CAZyme within CAZy. However, only the 
-first listed accession number is hyperlinked to the GenBank database. Examination of the other listed 
-synonyms (referred to as **genbank synonyms** in the webscraper) shows that these GenBank synonyms are 
-the result of submission of identical protein sequences, splice site and protein isoforms. It has been 
-interpreted that it is the first GenBank accession that is listed and hyperlinked to GenBank is the accession 
-number of protein sequence which was used by CAZy to catalogue the CAZyme and the GenBank synonyms were 
-identified and listed by having extremely high sequence identity to the catalogued CAZyme.
+**PDB accessions**
+*All* PDB accessions stored in CAZy are retrieved, and are *not* differentitated between primary and non-primary accessions.
 
-Therefore, the webscraper writes only the first GenBank accession listed for each CAZyme in the resulting dataframe. 
-The remaining GenBank synonyms are written out to a JSON file, keyed by the first GenBank accession given for each CAZyme, and valued 
-by a list of GenBank synonyms. If no GenBank synonyms are retrieved for a CAZyme then the CAZyme's GenBank accession is **not** 
-written out to the JSON GenBank synonyms file.
-
-The GenBank synonyms file is written out to the same directory as specificed for the dataframes. 
-Additionally, the data is split as is specified for the dataframes.
-
+It is important to note that not all PDB accessions listed in CAZy are also represent in PDB. Therefore, not all PDB accessions retrieved from CAZy can be used to retrieve a protein structure file form PDB. For example, the PDB accession 'BBB[nd]' was previously listed in CAZy but did not represent a record in PDB.
 
 **Protein sequences:**
 
