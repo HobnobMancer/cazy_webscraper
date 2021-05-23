@@ -697,7 +697,7 @@ Below is an example of the content you may wish to put in a configuration file.
       - EC5.4.-.-
 
 
-..note::
+.. note::
     Indentations consist of 4 spaces.
 
 
@@ -732,7 +732,7 @@ Once you have created a configuration file (we recommend modifying the template 
 you then need to invoke ``cazy_webscraper`` and tell it you are using a configuration file. To do this we add the 
 ``--config`` flag to the ``cazy_webscraper`` command, followed by the path to the configuration file.
 
-..note::
+.. note::
    You can use the long form of the configuration file flag (``--config``) *or* the short hand (``-c``).
 
 The path we pass to ``cazy_webscraper`` is a *relative* path. This means ``cazy_webscraper`` will start in the directory 
