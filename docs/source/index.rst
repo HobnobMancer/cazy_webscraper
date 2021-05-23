@@ -45,6 +45,7 @@ For details and updates on development, please checkout the GitHub repository.
    :maxdepth: 4
    
    configuration_scraper
+   configuration_tutorials
    genbank
    pdb
    license
