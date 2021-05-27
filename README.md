@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-v3.8.---orange)](https://www.python.org/about/)
 [![Research](https://img.shields.io/badge/Bioinformatics-Protein%20Engineering-ff69b4)](http://www.eastscotbiodtp.ac.uk/eastbio-student-cohort-2019)
 
-# `cazy_webscraper`
+# cazy_webscraper
 
 The `cazy_webscraper` is a Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. This program is free to use under the MIT license when proper recognition is given.
 
