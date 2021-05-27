@@ -6,4 +6,5 @@ mechanicalsoup
 numpy
 pandas
 requests
+sqlalcehmy
 tqdm
