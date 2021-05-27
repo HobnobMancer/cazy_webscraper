@@ -39,6 +39,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 import setuptools
 
 from pathlib import Path
@@ -94,13 +95,14 @@ setuptools.setup(
     },
     include_package_data=True,
     classifiers=[
+        "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Intended Audience :: Science/Research",
-        "Licence :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
-        "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.7",
-        "Topic :: Scientific :: Bioinformatics",
+        "Operating System :: MacOS :: MacOS X",
+        "Programming Language :: Python :: 3.8",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
 )
