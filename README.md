@@ -57,18 +57,19 @@ The python libraries listed within `requirements.txt`
 
 ## Installation
 
-### Quick and easy
+### Quick and easy installation
 
-Install `cazy_webscraper` via [PyPi](https://pypi.org/project/cazy-webscraper/0.1.2/).
+The easiest way to install `cazy_webscraper` is to install it via [PyPi](https://pypi.org/project/cazy-webscraper/0.1.2/).
 
 ```bash
 pip3 install cazy-webscraper
 ```
 
-**Note:** `cazy_webscraper` is spelt with a DASH not and UNDERSCORE.
+*Note: `cazy_webscraper` is spelt with a DASH not an UNDERSCORE when installing from the PyPi distribution.*
 
-### From source
+### Installing from source
 
+`cazy_webscraper` can also be installed directly from the source GitHub repository.  
 First clone the GitHub repository. This can be done at the command-line with the command:
 
 ```bash
