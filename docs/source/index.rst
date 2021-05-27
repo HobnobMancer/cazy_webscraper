@@ -6,7 +6,7 @@
 Welcome to cazy_webscraper's documentation!
 ===========================================
 
-.. figure:: assets/cazy_web_logo.svg
+.. image:: ./assets/cazy_web_logo.svg
    :scale: 50%
    :alt: cazy_webscraper logo, host organisationsn and funding
    :align: centre
