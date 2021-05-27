@@ -82,13 +82,48 @@ accesses the Windows 'mounting' system, which is how it accesses harddrives with
 For more information on using the Unix shell checkout the content and lessons hosted at `SoftWare Carpentry <https://swcarpentry.github.io/shell-novice/01-intro/index.html>`_, which 
 will walk through an introduction to the Unix shell and how the Unix shell can be used to optimise computational work.
 
-
 Installing cazy_webscraper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Preparation**
+**Preparation for installing**
 
-Open up your Bash terminal. Then we need to navigate to directory where you want to install ``cazy_webscraper``. To do this we will use the ``cd`` command.
+The easiest way to install ``cazy_webscraper`` is to use `pip`. We can check if `pip` installed by opening a Bash terminal and typing:
+
+.. code-block:: bash
+
+   pip help
+
+If `pip` is installed, text will appear in the terminal telling you how to use `pip`. If `pip` is not install an error message will be displayed, stating that the computer could not find a command called `pip`. If this happens install pip using:  
+
+.. code-block:: bash
+   
+   python get-pip.py
+
+To update the version of `pip` install on your computer use:  
+
+
+.. code-block:: bash
+   
+   python -m pip install --upgrade pip
+ 
+ 
+**Quick and easy installation**
+
+The easiest way to install ``cazy_webscraper` is via Pypi distribtion, but using the command:
+
+.. code-block:: bash
+
+   pip3 install cazy-webscraper
+
+Now ``cazy_webscraper`` is fully installed and you can skip to the part of the tutorial that explains how to use it!
+
+.. note::
+
+   ``cazy_webscraper`` is spelt with a DASH (-) when installing using `pip` **not** an underscore.
+
+**Preparation for installing using the files stored in the GitHub repository**
+
+Instead of installing ``cazy_webscraper`` via Pypi, you can install ``cazy_webscraper`` directly from the GitHub repository. Open up your Bash terminal. Then we need to navigate to directory where you want to install ``cazy_webscraper``. To do this we will use the ``cd`` command.
 
 Just like how the windows explorer points at a single directory at any time, and shows you the content of the directory, the terminal acts the same way. 
 To check at what directory your terminal is pointed at (or looking at, type the command ``pwd`` and press enter. The terminal will then 
