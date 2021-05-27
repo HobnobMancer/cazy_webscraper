@@ -6,6 +6,11 @@
 Welcome to cazy_webscraper's documentation!
 ===========================================
 
+.. figure:: assets/cazy_web_logo.svg
+   :scale: 50%
+   :alt: cazy_webscraper logo, host organisationsn and funding
+   :align: centre
+
 | For all the latest updates, and development progress make sure to check the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_
 
 .. image:: https://img.shields.io/badge/Version-v1.0.2-yellowgreen
