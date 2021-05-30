@@ -13,7 +13,7 @@
 
 The `cazy_webscraper` is a Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. This program is free to use under the MIT license when proper recognition is given.
 
-The cazy_webscraper retrieves protein data from CAZy, producing a local SQL database which enables uses to throughly interrogate the data in a manner unachievable through the CAZy website.
+The `cazy_webscraper` retrieves protein data from CAZy, producing a local SQL database which enables uses to throughly interrogate the data in a manner unachievable through the CAZy website.
 
 The program additionally, includes an `expand` module, which can retrieve the protein sequences from [GenBank](https://www.ncbi.nlm.nih.gov/genbank/) and protein structure files from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank [(PDB)](https://www.rcsb.org/).
 
@@ -22,6 +22,22 @@ The cazy_webscraper can be configured to scrape the entire database, selected Cl
 _For detailed documentation see the [full documentation](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest)._
 
 _An ER model can be found in the root of the `cazy_webscraper` GitHub repo, demonstrating the structure of the SQL database create by `cazy_webscraper`._
+
+**Step-by-step tutorials**
+_If you are new to bioinformatics and/or installing/using command-line tools, we've written a series of step-by-step instructions on how to install and use `cazy_webscraper`, which you can find [here](https://cazy-webscraper.readthedocs.io/en/latest/configuration_tutorials.html). In slower time we hope to supplementary these with videos as well, for the visual learners_
+
+**Easy installation**
+`cazy_webscraper` can be installed both via `bioconda` channel of `conda`, and via Pypi (`pip`) for quick and easy installation.
+
+**CAZyme database for thorough interogation of the data**
+Use `cazy_webscraper` to create a local SQL database, then using SQL perform complex queries against the dataset which cannot be performed on the CAZy website. For example:   
+
+- Retrieve the names of all organisms with at last CAZyme in PL1 and at least one CAZymes in AA2
+- Retrieve the PDB accessions of all CAZymes present in GH1 and/or GH3
+- Retrieve the GenBank accessions of _all_ CAZymes derived from all _Aspergillus_ species
+- Retrieve the GenBank accessions of CAZymes from GT2, derived from _Aspergillus_ or _Trichoderma_ species, and have a PDB structure file accession
+- Retrieve all EC numbers found in GH1
+- Retrieve the PDB accessions of all CAZymes derived from all strains of _Escherichia coli_, whcih are annotated with at least of the EC numbers EC3.2.1.23, EC3.2.1.25 and are from the CAZy families GH2 and/or GH5
 
 ## Referencing
 
