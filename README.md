@@ -5,6 +5,9 @@
 [![Documentation Status](https://readthedocs.org/projects/cazy-webscraper/badge/?version=latest)](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest)
 [![Python](https://img.shields.io/badge/Python-v3.8.---orange)](https://www.python.org/about/)
 [![Research](https://img.shields.io/badge/Bioinformatics-Protein%20Engineering-ff69b4)](http://www.eastscotbiodtp.ac.uk/eastbio-student-cohort-2019)
+[![Bioconda](https://img.shields.io/badge/BIOCONDA-intergration-brightgreen)](https://bioconda.github.io/user/install.html)
+[![Pypi](https://img.shields.io/badge/Pypi-intergration-blue)](https://pypi.org/project/cazy-webscraper/)
+[![Version](https://img.shields.io/badge/Version-0.1.2-orange)](https://www.python.org/about/)
 
 # cazy_webscraper
 
@@ -57,9 +60,33 @@ The python libraries listed within `requirements.txt`
 
 ## Installation
 
-### Quick and easy installation
+There are three different methods to install `cazy_webscraper`:
 
-The easiest way to install `cazy_webscraper` is to install it via [PyPi](https://pypi.org/project/cazy-webscraper/0.1.2/).
+1. Via `bioconda`
+2. Via the Python Package Index (PyPI)
+3. From source
+
+### Installing via `bioconda` (Quick and easy installation)
+
+`cazy_webscraper` is available in the [`bioconda`](https://bioconda.github.io/user/install.html) channel of [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/). If you have the `bioconda` channel availble, `cazy_webscraper` can be installed from the command-line with:
+
+```bash
+conda install cazy_webscraper
+```
+
+If the `bioconda` channel is not available, then use:
+
+```bash
+conda install -c bioconda cazy_webscraper
+```
+
+If Conda is not installed, please see the Conda website for installation [instructions](https://docs.conda.io/projects/conda/en/latest/user-guide/install/).
+
+Install `cazy_webscraper` via `bioconda` installs the full cazy_webscraper and all dependencies.
+
+### Installing via `pip` (Quick and easy installation)
+
+An easy way to install `cazy_webscraper` is to install it via [PyPi](https://pypi.org/project/cazy-webscraper/0.1.2/), using the command:
 
 ```bash
 pip3 install cazy-webscraper
