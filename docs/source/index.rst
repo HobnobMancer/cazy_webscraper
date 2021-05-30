@@ -45,11 +45,13 @@ family or not at all, thus gathering all data into a single dataframe.
 
 For details and updates on development, please checkout the GitHub repository.
 
+The tutorial pages include step-by-step guides on how to install ``cazy_webscraper`` and use the program.
 
 .. toctree::
    :maxdepth: 4
    
    configuration_scraper
+   installation_tutorials
    configuration_tutorials
    genbank
    pdb
