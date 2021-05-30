@@ -84,7 +84,7 @@ There are three different methods to install `cazy_webscraper`:
 
 ### Installing via `bioconda` (Quick and easy installation)
 
-`cazy_webscraper` is available in the [`bioconda`](https://bioconda.github.io/user/install.html) channel of [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/). If you have the `bioconda` channel availble, `cazy_webscraper` can be installed from the command-line with:
+`cazy_webscraper` is available in the [`bioconda`](https://bioconda.github.io/user/install.html) channel of [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/). If you have the `bioconda` channel available, `cazy_webscraper` can be installed from the command-line with:
 
 ```bash
 conda install cazy_webscraper
