@@ -77,6 +77,14 @@ def build_parser(argv: Optional[List] = None):
         help="Classes from which all families are to be scraped. Separate classes by ','"
     )
 
+    # Add option to use own CAZy class synoymn dict
+    parser.add_argument(
+        "--cazy_synonyms",
+        type=Path,
+        default=None,
+        help="Path to JSON file containing CAZy class synoymn names",
+    )
+
     # Add option to provide a path to an existing SQL database to add newly scraped data to
     parser.add_argument(
         "-d",
