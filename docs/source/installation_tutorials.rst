@@ -122,6 +122,8 @@ If you do not have the `bioconda` channel available (you may discover this when 
 
 If Conda is not installed, please see the Conda website for installation `instructions <https://docs.conda.io/projects/conda/en/latest/user-guide/install/>`_.
 
+.. warning::
+   If you install ``cazy_webscraper`` via ``bioconda``, to invoke ``cazy_webscraper`` call it via the command-line using ``cazy_webscraper.py``.
 
 Installing via ``pip``
 ==============================
@@ -149,8 +151,12 @@ To update the version of `pip` install on your computer use:
  
  Then you should be able to install ``cazy_webscraper`` using the command provided above.
  
+.. warning::
+   If you install ``cazy_webscraper`` via ``pip``, to invoke ``cazy_webscraper`` call it via the command-line using ``cazy_webscraper.py``.
+
  
-Preparation for installing using the files stored in the GitHub repository
+ 
+Installing from source: Installing using the files stored in the GitHub repository
 ====================================================================================
 
 
@@ -206,3 +212,6 @@ Do not forget the **-e** from this command, otherwise ``cazy_webscraper`` will n
 and you will run into constant issues when trying to use ``cazy_webscraper``.
 
 **If you ever invoke ``cazy_webscraper`` and want to cancle the command, simple press the ``Ctrl`` and ``c`` keys at the same time.**
+
+.. warning::
+   If you install ``cazy_webscraper`` from source, to invoke ``cazy_webscraper`` you will need call Python3 followed by the path to the ``cazy_webscraper.py`` file. For example, if you are located in the root directory of the respository, you would use:  ``pyathon3 scraper/cazy_webscraper.py``.
