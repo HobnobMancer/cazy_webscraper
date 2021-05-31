@@ -139,7 +139,7 @@ python3 <path to cazy_webscraper.py file>
 For example, if you were located in the root of the, then use the command:  
 
 ```bash
-python3 scraper.cazy_webscraper.py
+python3 scraper/cazy_webscraper.py
 ```
 
 ## Getting started
