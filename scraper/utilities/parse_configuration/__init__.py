@@ -282,11 +282,13 @@ def get_cazy_dict_std_names(args):
     logger = logging.getLogger(__name__)
 
     if args.cazy_synonyms is None:
+        logger.warning("Using default CAZy class synonyms")
         cazy_dict = cazy_synonym_dict()
         std_class_names = list(cazy_dict.keys())
         return cazy_dict, std_class_names
 
     try:
+        logger.warning("Using user defined CAZy class synonyms")
         with open(args.cazy_synonyms, "r") as fh:
             cazy_dict = json.load(fh)
             # create list of standardised CAZy classes
