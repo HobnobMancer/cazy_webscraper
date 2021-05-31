@@ -90,7 +90,7 @@ def parse_configuration(file_io_path, args):
     kingdoms = get_kingdoms(args, raw_config_dict)
 
     # Get dictionary of accepted CAZy class synonyms
-    cazy_dict, std_class_names = get_cazy_dict_std_names(file_io_path)
+    cazy_dict, std_class_names = get_cazy_dict_std_names(args)
 
     # Retrieve user specified CAZy classes and families to be scraped at CAZy
 
