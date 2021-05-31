@@ -593,9 +593,7 @@ def get_configuration(file_io_path, args):
     # retrieve inital parsing of configuration data
     (
         excluded_classes, config_dict, cazy_dict, taxonomy_filters_dict, kingdoms, ec_filter,
-    ) = parse_configuration(
-        file_io_path, args,
-    )
+    ) = parse_configuration(args)
     # excluded_classes and cazy_dict are used in the crawler module but are not needed for the
     # the expand module
 

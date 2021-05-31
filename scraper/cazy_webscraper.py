@@ -118,6 +118,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         kingdoms,
         ec_filters,
     ) = parse_configuration.parse_configuration(args)
+
     # convert taxonomy_filters to a set for quicker identification of species to scrape
     taxonomy_filters = get_filter_set(taxonomy_filters_dict)
 
