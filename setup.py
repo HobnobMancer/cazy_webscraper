@@ -95,7 +95,7 @@ setuptools.setup(
     },
     include_package_data=True,
     classifiers=[
-        "Development Status :: Development Status :: 4 - Beta",
+        "Development Status :: 4 - Beta",
         "Environment :: Console",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
