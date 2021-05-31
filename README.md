@@ -181,6 +181,7 @@ This will result in `cazy_webscraper` scraping CAZymes from all CAZy families an
 - `-c` `--config` Path to configuration yaml file
 - `--classes` Define classes to be scraped. Separate classes with a single comma and **no spaces**
 - `-d` `--database` Path to an existing database to add data to
+- `--cazy_synonyms` Path to JSON file containing accepted CAZy class name synonyms
 - `-f` `--force` Force writing out in output directory that already exists
 - `--families` Define families to be scraped. Separate families with a single comma (e.g. GH1,GH2) and **no spaces**
 - `--genera` Genera to restrict the scrape to. Pass a string of generas separated by a comman and **no spaces**, e.g. `--genera "Trichoderma,Acidianus"`
@@ -202,7 +203,7 @@ For shareable documentation of the scraping CAZy a configuration file can by use
 
 Under the **classes** heading list any classes to be scrapped. For classes listed under 'classes', all proteins catalogued under that class will be retrieved, unless specific families have been listed under the respective classes heading in the configuration file. Then scraping only the specific classes takes precident and the entire class is not scraped. _If you believe this should be changed please raise an issue. It is invisioned that very few users would want to scrape an entire class an also scrape only specific families from that class simultanious._
 
-A `cazy_dictionary.json` has been created and packaged within the `cazy_webscraper`. This allows users to use a variety of synonoms for the CAZy classes, for example both "GH" and "Glycoside-Hydrolases" are accepted as synonoms for "Glycoside Hydrolases (GHs)". This dictionary is packaged within the `scraper/file_io` directory. If you having issues with the scraper retrieving the list of CAZy classes that are written under 'classes' in the configuration file please check the dictionary first to see the full list of accepted synonoms. If you are comfortable modifying json files then feel free to add your own synonoms to the dictionary.
+A `cazy_dictionary.json` has been created and packaged within the `cazy_webscraper`. This allows users to use a variety of synonoms for the CAZy classes, for example both "GH" and "Glycoside-Hydrolases" are accepted as synonoms for "Glycoside Hydrolases (GHs)". This dictionary is packaged within the `scraper/file_io` directory. If you having issues with the scraper retrieving the list of CAZy classes that are written under 'classes' in the configuration file please check the dictionary first to see the full list of accepted synonoms. If you are comfortable modifying json files then feel free to add your own synonoms to the dictionary. The Python scripts contain the content of this file, if you wish to add your own CAZy class synonyms, then create a modified version of `cazy_dictionary.json` and using the flag `--cazy_synonyms` followed by the path to your modified version of the `cazy_dictionary.json`.
 
 Under the each of the specific class names listed in the configuration file list the names of specific **families** to be scraped from that class. You do not have to list the class of the families to be scraped under 'classes' as well, this is handled by the web scraper.
 
