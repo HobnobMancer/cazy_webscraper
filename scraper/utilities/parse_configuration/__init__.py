@@ -273,7 +273,7 @@ def get_kingdoms(args, raw_config_dict):
     return kingdoms
 
 
-def get_cazy_dict_std_names(file_io_path):
+def get_cazy_dict_std_names(args):
     """Retrieve dictionary of acccepted CAZy class synonym names, and list of offical class.
 
     :param args: cmd args parser
@@ -282,12 +282,13 @@ def get_cazy_dict_std_names(file_io_path):
     """
     logger = logging.getLogger(__name__)
 
-    # build path to the JSON file containing the cazy dict
-    dict_path = file_io_path.replace("__init__.py", "cazy_dictionary.json")
-    dict_path = Path(dict_path)
+    if args.cazy_synonyms is None:
+        cazy_dict = cazy_synonym_dict()
+        std_class_names = list(cazy_dict.keys())
+        return cazy_dict, std_class_names
 
     try:
-        with open(dict_path, "r") as fh:
+        with open(args.cazy_synonyms, "r") as fh:
             cazy_dict = json.load(fh)
             # create list of standardised CAZy classes
             std_class_names = list(cazy_dict.keys())
@@ -295,12 +296,25 @@ def get_cazy_dict_std_names(file_io_path):
         logger.error(
             "Could not open the CAZy synonym dictionary, required for translating CAZy class abbreviations.\n"
             "Check the file cazy_dictionary.json is located at:\n"
-            f"{dict_path}\n"
+            f"{args.cazy_synonyms}\n"
             "Terminating programme"
         )
         sys.exit(1)
 
     return cazy_dict, std_class_names
+
+
+def cazy_synonym_dict():
+    """Create a dictionary of accepted synonms for CAZy classes."""
+    cazy_dict = {
+        "Glycoside Hydrolases (GHs)": ["Glycoside-Hydrolases", "Glycoside-Hydrolases", "Glycoside_Hydrolases", "GlycosideHydrolases", "GLYCOSIDE-HYDROLASES", "GLYCOSIDE-HYDROLASES", "GLYCOSIDE_HYDROLASES", "GLYCOSIDEHYDROLASES", "glycoside-hydrolases", "glycoside-hydrolases", "glycoside_hydrolases", "glycosidehydrolases", "GH", "gh"],
+        "GlycosylTransferases (GTs)": ["Glycosyl-Transferases", "GlycosylTransferases", "Glycosyl_Transferases", "Glycosyl Transferases", "GLYCOSYL-TRANSFERASES", "GLYCOSYLTRANSFERASES", "GLYCOSYL_TRANSFERASES", "GLYCOSYL TRANSFERASES", "glycosyl-transferases", "glycosyltransferases", "glycosyl_transferases", "glycosyl transferases", "GT", "gt"],
+        "Polysaccharide Lyases (PLs)": ["Polysaccharide Lyases", "Polysaccharide-Lyases", "Polysaccharide_Lyases", "PolysaccharideLyases", "POLYSACCHARIDE LYASES", "POLYSACCHARIDE-LYASES", "POLYSACCHARIDE_LYASES", "POLYSACCHARIDELYASES", "polysaccharide lyases", "polysaccharide-lyases", "polysaccharide_lyases", "polysaccharidelyases", "PL", "pl"],
+        "Carbohydrate Esterases (CEs)": ["Carbohydrate Esterases", "Carbohydrate-Esterases", "Carbohydrate_Esterases", "CarbohydrateEsterases", "CARBOHYDRATE ESTERASES", "CARBOHYDRATE-ESTERASES", "CARBOHYDRATE_ESTERASES", "CARBOHYDRATEESTERASES", "carbohydrate esterases", "carbohydrate-esterases", "carbohydrate_esterases", "carbohydrateesterases", "CE", "ce"],
+        "Auxiliary Activities (AAs)": ["Auxiliary Activities", "Auxiliary-Activities", "Auxiliary_Activities", "AuxiliaryActivities", "AUXILIARY ACTIVITIES", "AUXILIARY-ACTIVITIES", "AUXILIARY_ACTIVITIES", "AUXILIARYACTIVITIES", "auxiliary activities", "auxiliary-activities", "auxiliary_activities", "auxiliaryactivities", "AA", "aa"],
+        "Carbohydrate-Binding Modules (CBMs)": ["Carbohydrate-Binding-Modules", "Carbohydrate_Binding_Modules", "Carbohydrate_Binding Modules", "CarbohydrateBindingModules", "CARBOHYDRATE-BINDING-MODULES", "CARBOHYDRATE_BINDING_MODULES", "CARBOHYDRATE_BINDING MODULES", "CARBOHYDRATEBINDINGMODULES", "carbohydrate-binding-modules", "carbohydrate_binding_modules", "carbohydrate_binding modules", "carbohydratebindingmodules", "CBMs", "CBM", "cbms", "cbm"]
+    }
+    return cazy_dict
 
 
 def get_yaml_configuration(config_dict, cazy_dict, std_class_names, args):
