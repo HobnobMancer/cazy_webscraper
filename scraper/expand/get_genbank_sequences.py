@@ -98,7 +98,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # retrieve configuration data
     file_io_path = file_io.__file__
     config_dict, taxonomy_filters, kingdoms = parse_configuration.get_configuration(
-        file_io_path,
         args,
     )
 

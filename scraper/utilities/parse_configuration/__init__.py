@@ -584,7 +584,7 @@ def create_streamline_scraping_warning(args):
     )
 
 
-def get_configuration(file_io_path, args):
+def get_configuration(args):
     """Get configuration for the Expand module.
 
     :param file_io_path: Path to file_io module
