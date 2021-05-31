@@ -50,13 +50,12 @@ import yaml
 from pathlib import Path
 
 
-def parse_configuration(file_io_path, args):
+def parse_configuration(args):
     """Parse configuration data, and retrieve user specified CAZy classes and families.
 
     If no user defined configuration is given the default behaviour to scrape the entirity of CAZy
     is enabled.
 
-    :param file_io_path: str, path to directory where file_io is installed
     :param args: parser arguments
 
     Return list of classes not to scrape, dict of families to scrape, dict of class synonoms,

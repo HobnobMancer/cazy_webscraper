@@ -110,7 +110,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     cazy_home = "http://www.cazy.org"
 
     # retrieve configuration data
-    parse_configuration_path = parse_configuration.__file__
     (
         excluded_classes,
         config_dict,
@@ -118,7 +117,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         taxonomy_filters_dict,
         kingdoms,
         ec_filters,
-    ) = parse_configuration.parse_configuration(parse_configuration_path, args)
+    ) = parse_configuration.parse_configuration(args)
     # convert taxonomy_filters to a set for quicker identification of species to scrape
     taxonomy_filters = get_filter_set(taxonomy_filters_dict)
 
