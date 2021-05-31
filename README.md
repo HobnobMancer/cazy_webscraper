@@ -51,11 +51,11 @@ We're almost at the stage of releasing the first version of `cazy_webscraper`, b
 
 - Unit Tests: The coverage of the unit tests will be increased to cover at least 95% of the entire package
 
-- The Expand module: This module is retrieving protein sequences from GenBank and PDB structures from PDB. The code is workable but inefficient. The code will be factorised out into multiple submodules, and include allow applying an additional EC number filter for selecting CAZyme to retrieve structural and sequence data for.
+- The Expand module: This module is for retrieving protein sequences from GenBank and PDB structures from PDB. The code is workable but inefficient. The code will be factorised out into multiple submodules, and include allow applying an additional EC number filter for selecting CAZyme to retrieve structural and sequence data for.
 
 - Progress on the Expand module: Retrieving sequences for specific classes and families from a dictionary created using `cazy_webscraper` is complete, although no unit tests have been written yet.
 
-- Documentation: The ReadTheDocs documentation has been updated to include all cmd-line flag. However, I am working on developing written and video tutorials to help users will less experience using the cmd-line to get started with this tool!
+- Documentation: The ReadTheDocs documentation has been updated to include all cmd-line flag. However, we are working on developing written and video tutorials to help users will less experience using the cmd-line to get started with this tool!
 
 All this work is being done on the currently active `update_expand` branch.
 
