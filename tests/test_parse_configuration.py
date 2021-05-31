@@ -478,9 +478,7 @@ def test_get_kingdoms_all_wrong(raw_config_dict):
     raw_config_dict["kingdoms"] = ["jack", "jill", "sam"]
     args = {"args": Namespace(kingdoms="milly")}
 
-    with pytest.raises(SystemExit) as pytest_wrapped_err:
-        parse_configuration.get_kingdoms(args["args"], raw_config_dict)
-    assert pytest_wrapped_err.type == SystemExit
+    parse_configuration.get_kingdoms(args["args"], raw_config_dict)
 
 
 # test get_cazy_dict_std_names()

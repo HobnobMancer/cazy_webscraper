@@ -5,12 +5,15 @@
 [![Documentation Status](https://readthedocs.org/projects/cazy-webscraper/badge/?version=latest)](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest)
 [![Python](https://img.shields.io/badge/Python-v3.8.---orange)](https://www.python.org/about/)
 [![Research](https://img.shields.io/badge/Bioinformatics-Protein%20Engineering-ff69b4)](http://www.eastscotbiodtp.ac.uk/eastbio-student-cohort-2019)
+[![Bioconda](https://img.shields.io/badge/BIOCONDA-intergration-brightgreen)](https://bioconda.github.io/user/install.html)
+[![Pypi](https://img.shields.io/badge/Pypi-intergration-blue)](https://pypi.org/project/cazy-webscraper/)
+[![Version](https://img.shields.io/badge/Version-0.1.2-orange)](https://www.python.org/about/)
 
 # cazy_webscraper
 
 The `cazy_webscraper` is a Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. This program is free to use under the MIT license when proper recognition is given.
 
-The cazy_webscraper retrieves protein data from CAZy, producing a local SQL database which enables uses to throughly interrogate the data in a manner unachievable through the CAZy website.
+The `cazy_webscraper` retrieves protein data from CAZy, producing a local SQL database which enables uses to throughly interrogate the data in a manner unachievable through the CAZy website.
 
 The program additionally, includes an `expand` module, which can retrieve the protein sequences from [GenBank](https://www.ncbi.nlm.nih.gov/genbank/) and protein structure files from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank [(PDB)](https://www.rcsb.org/).
 
@@ -19,6 +22,22 @@ The cazy_webscraper can be configured to scrape the entire database, selected Cl
 _For detailed documentation see the [full documentation](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest)._
 
 _An ER model can be found in the root of the `cazy_webscraper` GitHub repo, demonstrating the structure of the SQL database create by `cazy_webscraper`._
+
+**Step-by-step tutorials**
+_If you are new to bioinformatics and/or installing/using command-line tools, we've written a series of step-by-step instructions on how to install and use `cazy_webscraper`, which you can find [here](https://cazy-webscraper.readthedocs.io/en/latest/configuration_tutorials.html). In slower time we hope to supplementary these with videos as well, for the visual learners_
+
+**Easy installation**
+`cazy_webscraper` can be installed both via `bioconda` channel of `conda`, and via Pypi (`pip`) for quick and easy installation.
+
+**CAZyme database for thorough interogation of the data**
+Use `cazy_webscraper` to create a local SQL database, then using SQL perform complex queries against the dataset which cannot be performed on the CAZy website. For example:   
+
+- Retrieve the names of all organisms with at last CAZyme in PL1 and at least one CAZymes in AA2
+- Retrieve the PDB accessions of all CAZymes present in GH1 and/or GH3
+- Retrieve the GenBank accessions of _all_ CAZymes derived from all _Aspergillus_ species
+- Retrieve the GenBank accessions of CAZymes from GT2, derived from _Aspergillus_ or _Trichoderma_ species, and have a PDB structure file accession
+- Retrieve all EC numbers found in GH1
+- Retrieve the PDB accessions of all CAZymes derived from all strains of _Escherichia coli_, whcih are annotated with at least of the EC numbers EC3.2.1.23, EC3.2.1.25 and are from the CAZy families GH2 and/or GH5
 
 ## Referencing
 
@@ -57,18 +76,43 @@ The python libraries listed within `requirements.txt`
 
 ## Installation
 
-### Quick and easy
+There are three different methods to install `cazy_webscraper`:
 
-Install `cazy_webscraper` via [PyPi](https://pypi.org/project/cazy-webscraper/0.1.2/).
+1. Via `bioconda`
+2. Via the Python Package Index (PyPI)
+3. From source
+
+### Installing via `bioconda` (Quick and easy installation)
+
+`cazy_webscraper` is available in the [`bioconda`](https://bioconda.github.io/user/install.html) channel of [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/). If you have the `bioconda` channel available, `cazy_webscraper` can be installed from the command-line with:
+
+```bash
+conda install cazy_webscraper
+```
+
+If the `bioconda` channel is not available, then use:
+
+```bash
+conda install -c bioconda cazy_webscraper
+```
+
+If Conda is not installed, please see the Conda website for installation [instructions](https://docs.conda.io/projects/conda/en/latest/user-guide/install/).
+
+Install `cazy_webscraper` via `bioconda` installs the full cazy_webscraper and all dependencies.
+
+### Installing via `pip` (Quick and easy installation)
+
+An easy way to install `cazy_webscraper` is to install it via [PyPi](https://pypi.org/project/cazy-webscraper/0.1.2/), using the command:
 
 ```bash
 pip3 install cazy-webscraper
 ```
 
-**Note:** `cazy_webscraper` is spelt with a DASH not and UNDERSCORE.
+*Note: `cazy_webscraper` is spelt with a DASH not an UNDERSCORE when installing from the PyPi distribution.*
 
-### From source
+### Installing from source
 
+`cazy_webscraper` can also be installed directly from the source GitHub repository.  
 First clone the GitHub repository. This can be done at the command-line with the command:
 
 ```bash

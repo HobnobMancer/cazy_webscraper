@@ -1,5 +1,5 @@
 ================================================================
-Tutorials on installing, using and configuring cazy_webscraper
+Tutorials on configuring ``cazy_webscraper``
 ================================================================
 
 ``cazy_webscraper`` can be configured to retrieve user specified data sets from CAZy. The configuration 
@@ -11,141 +11,10 @@ This page runs through examples of how to combine the various 'filters' that can
 the scraping of CAZy. These tutorials are designed for those with less experience using command-line tools.
 
 
-Install cazy_webscraper
---------------------------
-
-Checking the requirements
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-To use ``cazy_webscraper`` you need to be using a POISx operating system (OS), Mac OS or a Linux emulator. This is because 
-you need access to a Unix shell (a form of command-line) that writes in a language called Bash.
-
-**Linux**
-POISx includes operating systems such as Unix and it derivaties, Linux, and its derivatives such as Ubuntu. On Linux 
-OS the default Unix shell is Bash.
-
-**Mac**
-If you are working on a Mac then you already have a Unix shell program installed. If you are running a 
-Mac computer running Mac OS Mojave or earlier releases, the default Unix shell is using Bash. To access 
-the Unix shell (or terminal) try one of the following:
-
-* In Finder, select the Go menu, then select Utilities. Locate Terminal in the Utilities folder and open it
-* Use the Mac ‘Spotlight’ computer search function. Search for: Terminal and press Return
-
-To check if your machine is set up to use something other than Bash, type ``echo $SHELL`` in your terminal window.
-
-For a Mac computer running macOS Catalina or later releases, or if you computer is set up to use something other 
-than Bash, you can run Bash by opening a terminal, typing the command ``bash`` and hitting return.
-
-**Windows**
-If you use Windows you can use a Linux emulator, which allows your Windows computer to behave like a windows computer. Several 
-emulators exist. Here we'll run through two different emulators you could use, and how to install them. These are not the only two 
-and feel free to use which ever Linux emulator you wish!
-
-**Git**
-One Linux emulator you can use if included in *Git for Windows*. The following installation instructions are adapted from 
-Software Carpentry `lessons <https://carpentries.github.io/workshop-template/#shell>`_. You can find a video tutorial with a step-by-step guide `here <https://youtu.be/339AEqk9c-8>`_.
-
-Installation instrucitions:
-* Download the Git for Windows install from `here <https://gitforwindows.org/>`_.
-* Run the installer
-* Click the "Next" button four times (only two times if you already have Git installed). *You do not need to change anything the Information, location, components, and start menu screens.
-* From the dropdown menu select "Use the Nano editor by default" (NOTE: you will need to scroll up to find it) and click "Next"
-* On the page that says "Adjusting the name of the initial branch in new repositories", ensure that "Let Git decide" is selected.
-* Ensure that "Git from the command line and also from 3rd-party software" is selected and click on "Next"
-* Ensure that "Use the native Windows Secure Channel Library" is selected and click on "Next".
-* Ensure that "Checkout Windows-style, commit Unix-style line endings" is selected and click on "Next".
-* Ensure that "Use Windows' default console window" is selected and click on "Next".
-* Ensure that "Default (fast-forward or merge) is selected and click "Next"
-* Ensure that "Git Credential Manager Core" is selected and click on "Next".
-* Ensure that "Enable file system caching" is selected and click on "Next".
-* Click on "Install".
-* Click on "Finish" or "Next".
-* If your "HOME" environment variable is not set (or you don't know what this is):
-* Open command prompt (Open the Windows Start Menu, then type 'cmd', and press Enter). Wait for the command promt window to open, and type the following line into the command prompt window exactly as shown:
-``setx HOME "%USERPROFILE%"``. Press Enter, you should see ``SUCCESS: Specified value was saved``. Quit command prompt by typing `exit` then pressing Enter
-
-**Ubuntu**
-Another Linux emulator that you can run on Windows is provided by Ubuntu. Ubuntu is a version of Linux with a graphical 
-user interface (GUI), and they also provide a Windows emulator version that is fully supported, free and available via the `Microsoft app store <https://www.microsoft.com/en-gb/p/ubuntu-2004-lts/9n6svws3rx71#activetab=pivot:overviewtab>`_.
-
-To install the Ubuntu emulator, navigate the `Microsoft store page <https://www.microsoft.com/en-gb/p/ubuntu-2004-lts/9n6svws3rx71#activetab=pivot:overviewtab>`_, and click install. 
-This will handel all installation for you.
-
-To start the terminal, open the Windows Start Menu and type 'Ubuntu', this will find the Ubuntu program. Click on Ubuntu and this will open a Ubuntu terminal. 
-
-Ubuntu sets the Home as its own set of directories. To navigate to any hardrive in your system, open the Ubuntu terminal then type:  
-``cd /mnt/<letter_of_harddrive (in lower case)>``, for example to access the C drive you would use ``cd /mnt/c``. The ``/mnt`` prefix 
-accesses the Windows 'mounting' system, which is how it accesses harddrives within the computer.
-
-**The shell terminal**
-For more information on using the Unix shell checkout the content and lessons hosted at `SoftWare Carpentry <https://swcarpentry.github.io/shell-novice/01-intro/index.html>`_, which 
-will walk through an introduction to the Unix shell and how the Unix shell can be used to optimise computational work.
-
-
-Installing cazy_webscraper
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-**Preparation**
-
-Open up your Bash terminal. Then we need to navigate to directory where you want to install ``cazy_webscraper``. To do this we will use the ``cd`` command.
-
-Just like how the windows explorer points at a single directory at any time, and shows you the content of the directory, the terminal acts the same way. 
-To check at what directory your terminal is pointed at (or looking at, type the command ``pwd`` and press enter. The terminal will then 
-return the path of the directory at which it is currently looking at. For example, if the terminal is pointed at a directory called 'my_data' within another directory called 'Documents', located on the C drive, 
-``pwd`` will return ``c/Documents/my_dir/``.
-
-We can change directory using the 'change directory' command (``cd``). Continuing on from the example above, 
-if we wanted to move from the directory 'my_dir' into the directory 'cazyme_research' located within it, and then into 
-the directory 'cazy_dir' within that, we would use the command ``cd cazyme_research/cazy_dir``.
-
-The change directory (``cd``) command is called then provided a path to the directory that we wish to 
-have the terminal pointed at. The ``cd`` command starts at the directory the terminal is currently looking at, then 
-follows the path we provide it. This is why to move from 'my_dir' > 'cazy_research' > 'cazy_dir' we can type 
-``cd cazy_research/cazy_dir``, becuase the terminal will looking within the 'my_dir' directory for the 'cazy_research' directory.
-
-Using the ``cd`` command navigate to the directory you wish to install ``cazy_webscraper``. 
-**If the directory where you wish to install ``cazy_webscraper`` does not exist we can use the terminal to make it**. 
-To use the terminal, first use the ``cd`` comamand to navigate to the parent directory of where you wish to house the 
-directory that you will install ``cazy_webscraper``. Then call the 'make directory command' ``mkdir`` followed by the name 
-you wish to give the directory. For example, once we have navigated to the 'cazy_dir', we can make the directory 
-'cazyme_databases' by using ``mkdir cazyme_database``. We can then navigate into the 'cazyme_database' directory we have justed made 
-by typing ``cd cazy_database`` into the terminal and hitting Return.
-
-**Installing ``cazy_webscraper``**
-
-First we clone the GitHub repository, by using the code:
-
-.. code-block:: bash
-
-   git clone https://github.com/HobnobMancer/cazy_webscraper 
-
-This creates a new directory into the directory that the terminal is currently pointed at, called 
-'cazy_webscraper'. The command also downloads all files in the GitHub repository, and writes them into 
-the new 'cazy_webscraper' directory.
-
-We then need to move into the 'cazy_webscraper' directory:
-
-.. code-block:: bash
-
-   cd cazy_webscraper
-
-We then use the Python package manage ``pip`` to install ``cazy_webscraper``.
-
-.. code-block:: bash
-
-   pip3 install -e .
-
-Do not forget the **-e** from this command, otherwise ``cazy_webscraper`` will not be installed correctly 
-and you will run into constant issues when trying to use ``cazy_webscraper``.
-
-**If you ever invoke ``cazy_webscraper`` and want to cancle the command, simple press the ``Ctrl`` and ``c`` keys at the same time.**
-
-
 Configuration via the command line
------------------------------------
+###########################################
 
-There are no required/positional arguments for the webscraper, therefore the scraper can be enabled 
+There are no required arguments for ``cazy_webscraper``, therefore the scraper can be enabled 
 by simply calling the scraper at the command line in the terminal: 
 
 .. code-block:: bash
@@ -157,9 +26,6 @@ is already pointing at the `scraper` directory, the command to invoke ``cazy_web
 .. code-block:: bash
   python3 cazy_webscraper.py
 
-If you installed ``cazy_webscraper`` using the instructions above, the terminal will be pointing at the 
-'cazy_webscraper' directory. We can move to the 'scraper' directory using the command ``cd scraper``.
-
 When NO optional arguments are provided the default behaviour of the scraper will be performed. 
 The default behaviour is to:
 
@@ -167,9 +33,17 @@ The default behaviour is to:
 * Write the resulting database to standard out (STDOUT)
 * Not to retrieve subfamilies (members of subfamilies will be retrieved but only their parent family will be listed)
 
+.. note::
+   **For those new to using command-line tools: arguments**  
+   Arguments are additional pieces of information we add onto the end of the command. They are used to configure the specific behaviour 
+   performed by computer when we tell it to perform a specific command. In the examples above the command is ``python3 cazy_webscraper.py``, 
+   where we have told to computer to run the Python program ``cazy_webscraper``, and because no additional information was provided, the computer 
+   will invoke ``cazy_webscraper`` using its default behaviour. If you do not want the default behaviour of ``cazy_webscraper`` then we need to 
+   pass additionally arguments to the computer when telling it to run ``cazy_webscraper``, which we cover in the section below.
+
 
 Options configurable at the command line
-------------------------------------------
+############################################
 
 The following behaviours of the ``cazy_webscraper`` can be configured at the command-line in the terminal:  
 
@@ -180,9 +54,11 @@ The following behaviours of the ``cazy_webscraper`` can be configured at the com
 * Enable retrieving subfamilies
 * Enable verbose logging during the operation of the webscraper
 
+`Here <https://cazy-webscraper.readthedocs.io/en/latest/configuration_scraper.html>`_ you can find a full list of the command-line flags and options.
+
 
 How to use the command-line options
---------------------------------------
+#############################################
 
 The command-line options listed above can be used in any combination to customise the scraping of CAZy. The options that apply a 'filter' 
 to restrict which CAZymes are scraped from CAZy are applied in combination. For example, if the ``--families`` option and ``--ec`` option are called then 
@@ -191,9 +67,20 @@ only CAZymes from the specified families **and** annotated with the listed EC nu
 We will now walk through some examples of how to use ``cazy_webscraper``. All example code provided in this section will presume that the terminal is 
 pointed at the `scraper` directory, which contains the `cazy_webscraper.py` file.
 
+.. note::
+   **For those new to using command-line tools: flags**
+   Command-line flags are used to tell the computer specifically which option(s) to change. Flags **always** come after the command. The abbreivated 
+   version of a flag with with prefixed with a single dash, followed by a single letter. For example, ``-s``,``-o`` and ``-l`` are all examples of short 
+   hand flags. The long version of a flag is prefixed by two dashes, followed by complete words. For example, ``--output`` is the long version of the ``-o``. 
+   The flags used by a program are defined within the program. This means the flag ``-o`` may represent different options for different programs. Always make 
+   sure to check the documentation to see what flags are provided with the program, and what they do.
+   
+   You can use the command-line to list all flags for a program/tool by typing in the command to invoke that tool, followed by the flag ``--help`` or ``-h``. For example: 
+   ``python3 cazy_webscraper --help``.
+
 
 Configuring were the output is saved
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+*************************************************
 
 We can name the directory that the database created by ``cazy_webscraper`` is written to by calling the ``--output`` flag. 
 We add the flag to the command that invokes ``cazy_webscraper``. For example, to write the output to the directory 'cazyme_database' we can use:
@@ -269,10 +156,11 @@ The above examples also highlight that it does not matter if you use the long or
 
 
 
-Configuring CAZy classes and families
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Specifying CAZy classes and families to scrape
+**************************************************
 
-**Scraping specific classes**
+Scraping specific classes
+==============================
 
 If instead of scraping all of CAZy, you want to only scrape CAZymes from specific CAZy classes then add the 
 ``--classes`` flag followed by the classes you want to scrape. If you want to list multiple families, separate the families 
@@ -298,8 +186,8 @@ For example, if you want to scrape all CAZymes from Glycoside Hydrolase and Carb
    Storing these synonyms allows you to modify this file if you wish to add your own synonoms for each CAZy class.
 
 
-**Scraping specific families**
-
+Scraping specific families
+===============================
 
 To specify specific CAZy families to scrape, add the ``--families`` flag followed by the families you want 
 to scrape. If you want to scrape multiple families, add the ``--families`` flag *once* followed by a list of *all* 
@@ -320,8 +208,8 @@ Make sure to use the accepted CAZy nomenclature; 'GH2' is accepted but 'gh2' is 
    from the Carbohydrate Binding Modules (CBM) and GlycoslyTransferases classes will **not** be retrieved.
 
 
-**Scraping specific classes AND families**
-
+Scraping specific classes AND families
+========================================
 
 If you want to specify specific CAZy classes *and* families to scrape then add *both* the ``--classess`` *and* ``-families`` 
 flags, because you can combine, mix-and-match, any combination of optional flags when invoking ``cazy_webscraper``.
@@ -354,10 +242,10 @@ are accepted.
 
 
 Applying taxonomic and EC number filters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+********************************************
 
-**Specifying kingdoms**
-
+Specifying kingdoms
+================================
 
 You may only be interest in CAZymes that are derived from species from a specific taxonomic kingdom. 
 CAZy classifies source organisms under one of 5 kingdoms:
@@ -386,7 +274,8 @@ For example, if you want to retrieve CAZymes only from bacterial and eukaryotic 
    *any* order. Thus, both ``bacteria,eukaryota`` *and* ``eukaryota,bacteria`` are accepted.
 
 
-**Genera**
+Speciying Genera to scrape
+=======================================
 
 You can customise the scraping of CAZy to retrieve only CAZymes from *all* species from specific 
 genera. To do this add the ``--genera`` flag to the ``cazy_webscraper`` command followed by all 
@@ -417,7 +306,8 @@ we would use the command:
    ASPERGILLUS is **incorrect**
 
 
-**Species**
+Specifying species of organisms to scrape
+=============================================
 
 
 You can specify to retrieve CAZymes only derived from specific species. To do this add the ``--species`` 
@@ -449,7 +339,9 @@ For example, if we wanted to retrieve all CAZymes from Aspergillus niger and Asp
 .. warning::
    When you specify a species ``cazy_webscraper`` will retrieval CAZymes from *all* strains of the species.
 
-**Strains**
+
+Specify specific strains of species to scrape
+====================================================
 
 You may only be interested in specific strains of a species. Therefore, ``cazy_webscraper`` allows you to 
 restrict the retrieval of CAZymes to only those derived from specific strains of species. To do this 
@@ -481,7 +373,8 @@ For example, if we wanted to retrieve all CAZymes from Aspergillus niger ATCC 10
    retrieve another copy of all CAZymes from Aspergillus niger ATCC 1015.
 
 
-**Combining taxonomic filters**
+Combining taxonomic filters
+=====================================
 
 You can combine any combination of ``cazy_webscraper`` optional flags, including combining the taxonomic filters. For example,
 you may wish to retrieve all CAZyme derived from all viral and Aspergillus species, Layia carnosa, Layia chrysanthemoides, Trichoderma reesei QM6a and 
@@ -505,7 +398,8 @@ we would use would be:
    retrieve another copy of all CAZymes from Aspergillus niger ATCC 1015.
 
 
-**EC numbers**
+EC numbers
+==============
 
 If you are interested in CAZymes with specific activities you can limit the retrieval of CAZymes from CAZy to only those 
 annotated with *at least one* EC number from a set of EC numbers you specify. To specify a set of EC numbers 
@@ -531,7 +425,8 @@ EC4.2.2.-, EC1.3.2.- and EC5.4.-.-, use the command:
    quotation marks) will raise errors.
 
 
-**Taxonomy and EC numbers**
+Taxonomy and EC numbers
+=============================
 
 You can use any combination of ``cazy_webscraper`` optional flags to fully customise the scraping of CAZy. 
 For example, you may which to retrieve all CAZymes annotated with the EC number EC4.2.2.- which are only from bacterial 
@@ -545,7 +440,7 @@ The order you add the optional flags **does not** matter, and you can specify mu
 
 
 Combining Taxonomy, EC numbers, CAZy classes and CAZy families filters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+*************************************************************************
 
 The optional flags for ``cazy_webscraper`` can be used in any combination and any order. For example, 
 you can combine the EC number, taxonomy, CAZy class and CAZy family configurations. Below are some examples:
@@ -580,7 +475,7 @@ To retrieve CAZymes from all viral species, and all Aspergillus niger strains wh
 
 
 Configuration file
-------------------------------------
+################################
 
 Whenever ``cazy_webscraper`` is invoked and adds data to a database, the configuration of ``cazy_webscraper`` 
 (this is the kingdoms, genera, species, strains, EC numbers, CAZy classes and CAZy family filters which were applied) 
@@ -591,7 +486,7 @@ rather than configuring the performance of ``cazy_webscraper`` at the command li
 
 
 Creating a configuration file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+****************************************
 
 An example and template configuration file is included in ``cazy_webscraper``, it can be found at ``scraper/scraper_config.yaml``. 
 This is a YAML file; if you are new to YAML files please find more detailed information on YAML files [here](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html).
@@ -612,7 +507,8 @@ The configuration YAML **must** contain the following tags/headings (identical t
 * ECs
 
 
-**Specifying CAZy classes to scrape**
+Specifying CAZy classes to scrape
+====================================
 
 Under the **classes** heading list any classes to be scrapped. For classes listed under 'classes', 
 all proteins catalogued under that class will be retrieved, **unless** specific families have been 
@@ -645,7 +541,8 @@ with single or double quotation marks. For example:
         - "GH"
         - "pl"
 
-**Specifying CAZy families to scrape**
+Specifying CAZy families to scrape
+=========================================
 
 Under the each of the class names listed in the configuration file, list the names of specific 
 **families** to be scraped from that class. The respective classes of the specificed families do 
@@ -669,7 +566,9 @@ marks. For example:
         - "GH1"
         - "GH2"
 
-**Example configuration file**
+
+Example configuration file
+*************************************
 
 Below is an example of the content you may wish to put in a configuration file.
 
@@ -726,7 +625,7 @@ allow you to add notes to your configuration file. For example:
 
 
 Using a configuration file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+************************************
 
 Once you have created a configuration file (we recommend modifying the template one provided with ``cazy_webscraper`` 
 you then need to invoke ``cazy_webscraper`` and tell it you are using a configuration file. To do this we add the 
@@ -754,7 +653,7 @@ Then the computer will look for a directory called ``scraper`` in the directory 
 
 
 Using a configuration and the command-line
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+###############################################
 
 If you so wished, you can use a configuration file *and* the command line to configure ``cazy_webscraper``. If you do this 
 ``cazy_webscraper`` will **not** retrieve duplicates of the data. If a CAZyme matches at least one of the configuration data then 
@@ -769,10 +668,11 @@ To use a configuration file and a the command-line to configure ``cazy_webscrape
 
 
 Additional operations to fine tune how ``cazy_webscraper`` operates
------------------------------------------------------------------------
+#############################################################################
 
 
-**Retrieving CAZy family and CAZy subfamily annotations**
+Retrieving CAZy family and CAZy subfamily annotations
+********************************************************
 
 The default behaviour of ``cazy_webscraper`` retrieves only the CAZy family annotations of CAZymes, and 
 does **not** catalogue the child CAZy subfamily annotations as well. If you want to retrieve the CAZy subfamily 
@@ -782,8 +682,33 @@ annotations then add the ``--subfamilies`` flag anywhere to the ``cazy_webscrape
 
    python3 cazy_webscraper.py --subfamilies
 
+Add the scraped data to an existing CAZyme database
+*********************************************************
 
-**Writing out a log file**
+You may wish to scrape CAZy in multiple stages, maybe your internet dropped out while scraping CAZy 
+and you don't want to start again, or maybe you scraped CAZy but forget missed out a species of interest. No matter 
+the reason ``cazy_webscraper`` allows you to add more CAZyme data to an existing database previously created by 
+``cazy_webscraper``.
+
+To do this add the database (``--database`` or ``-d``) flag to the ``cazy_webscraper`` command, followed by the path 
+to the SQL database you want to add your scraped CAZy data to.
+
+.. note::
+   Don't forget the .db file extension at the end of the path!
+
+All the paths we pass to ``cazy_webscraper`` are a *relative* path. This means ``cazy_webscraper`` will start in the directory 
+the terminal is currently pointed out, and follow the path from there. For example, if we used the command:
+
+.. code-block:: bash
+
+   python3 cazy_webscraper.py -d my_cazyme_databases/my_cazyme_database.db
+
+Then the computer will look for a directory called ``my_cazyme_databases`` in the directory the terminal is looking at, then within the 
+``my_cazyme_databases`` directory the computer will look for the file ``my_cazyme_database.db``.
+
+
+Writing out a log file
+******************************
 
 If you want to have a log file of all terminal output produced by ``cazy_webscraper`` then add the log 
 ``--log`` flag (or the shorthand version ``-l``) anywhere to the ``cazy_webscraper`` command, followed by a 
@@ -799,7 +724,8 @@ For example:
    directories included in the path must already exist.
 
 
-**Verbose logging**
+Verbose logging
+*********************************
 
 For more detailed logging (logging more detail and not only when warnings and errors are raised by 
 ``cazy_webscraper``), add the verbose logging flag (``--verbose`` or ``-v``) anywhere to the ``cazy_webscraper`` 
@@ -812,7 +738,8 @@ command. You need only add the verbose flag and nothing else, for example:
 The verbose flag can be used in combination with the log flag to write all terminal output to a log file.
 
 
-**Changing connection timeout**
+Changing the connection timeout limit
+*****************************************
 
 Sometimes the connection to the CAZy server times out. By default if a connection is attempted to made to CAZy 
 and no response is recieved within 45 seconds, then ``cazy_webscraper`` interprets this as the connection 
@@ -840,33 +767,8 @@ You can use the long version ``--timeout`` or short version ``-t`` of the timeou
    python3 cazy_webscraper.py --subfamilies --genera Aspergillus -v -t 60
 
 
-**Add the scraped data to an existing CAZyme database**
-
-You may wish to scrape CAZy in multiple stages, maybe your internet dropped out while scraping CAZy 
-and you don't want to start again, or maybe you scraped CAZy but forget missed out a species of interest. No matter 
-the reason ``cazy_webscraper`` allows you to add more CAZyme data to an existing database previously created by 
-``cazy_webscraper``.
-
-To do this add the database (``--database`` or ``-d``) flag to the ``cazy_webscraper`` command, followed by the path 
-to the SQL database you want to add your scraped CAZy data to.
-
-.. note::
-   Don't forget the .db file extension at the end of the path!
-
-All the paths we pass to ``cazy_webscraper`` are a *relative* path. This means ``cazy_webscraper`` will start in the directory 
-the terminal is currently pointed out, and follow the path from there. For example, if we used the command:
-
-.. code-block:: bash
-
-   python3 cazy_webscraper.py -d my_cazyme_databases/my_cazyme_database.db
-
-Then the computer will look for a directory called ``my_cazyme_databases`` in the directory the terminal is looking at, then within the 
-``my_cazyme_databases`` directory the computer will look for the file ``my_cazyme_database.db``.
-
-
-
 Configuration when scraping subfamilies
----------------------------------------
+################################################
 
 The default behaviour of ``cazy_webscraper`` retrieves only the CAZy family annotations of CAZymes, and 
 does **not** catalogue the child CAZy subfamily annotations as well. If you want to retrieve the CAZy subfamily 

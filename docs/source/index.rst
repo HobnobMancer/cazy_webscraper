@@ -6,6 +6,11 @@
 Welcome to cazy_webscraper's documentation!
 ===========================================
 
+.. image:: cazy_web_logo.svg
+   :scale: 50 %
+   :alt: cazy_webscraper logo, host organisationsn and funding
+   :align: centre
+
 | For all the latest updates, and development progress make sure to check the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_
 
 .. image:: https://img.shields.io/badge/Version-v1.0.2-yellowgreen
@@ -32,7 +37,7 @@ the same manner as the data is presented in the CAZy website. If enables, the we
 retrieve the protein sequence of the scraped CAZymes from GenBank, writing out the sequences in 
 FASTA format. Additionally, if enabled the webscraper will retrieve all protein structures for each 
 scraped CAZyme from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data 
-Bank (`PDB <https://www.rcsb.org/>_).
+Bank, `PDB <https://www.rcsb.org/>`_.
 
 The ``cazy_webscraper`` can be configured to scrape the entire database, selected Classes and/or 
 selected CAZy families. Additionally, the retrieved data can be separated/split by CAZy class, CAZy 
@@ -40,11 +45,13 @@ family or not at all, thus gathering all data into a single dataframe.
 
 For details and updates on development, please checkout the GitHub repository.
 
+The tutorial pages include step-by-step guides on how to install ``cazy_webscraper`` and use the program.
 
 .. toctree::
    :maxdepth: 4
    
    configuration_scraper
+   installation_tutorials
    configuration_tutorials
    genbank
    pdb
@@ -71,9 +78,15 @@ The python libraries listed within ``requirements.txt``, packaged within the ``c
 Installation
 -------------
 
+**Quick and easy**
 
-At the present moment ``cazy_webscraper`` only supports installation from source. In time we aim 
-to include installation via bioconda.
+You can install ``cazy_webscraper`` via `pip  <https://pypi.org/project/cazy-webscraper/>`_:  
+
+.. code-block:: bash
+
+   pip3 install cazy-webscraper
+
+**Install from source**
 
 [1] First clone the GitHub repository. This can be done at the command-line with the command:
 
