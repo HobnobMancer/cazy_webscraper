@@ -11,6 +11,11 @@ This page runs through examples of how to combine the various 'filters' that can
 the scraping of CAZy. These tutorials are designed for those with less experience using command-line tools.
 
 
+.. note::
+  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` call it using ``cazy_webscraper.py`` - this is the method used in this tutorial.
+  If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` using the command ``python3 <path to cazy_webscraper.py>``. For example, if you were located in the root of the repository, you would use: ``python3 scraper/cazy_webscraper.py``.
+
+
 Configuration via the command line
 ###########################################
 
@@ -18,13 +23,7 @@ There are no required arguments for ``cazy_webscraper``, therefore the scraper c
 by simply calling the scraper at the command line in the terminal: 
 
 .. code-block:: bash
-  python3 <path_to_cazy_webscraper.py_file>
-
-The `cazy_webscraper.py` file is located within the directory `scraper`. Therefore, if the terminal 
-is already pointing at the `scraper` directory, the command to invoke ``cazy_webscraper`` is:
-
-.. code-block:: bash
-  python3 cazy_webscraper.py
+  cazy_webscraper.py
 
 When NO optional arguments are provided the default behaviour of the scraper will be performed. 
 The default behaviour is to:
@@ -36,7 +35,7 @@ The default behaviour is to:
 .. note::
    **For those new to using command-line tools: arguments**  
    Arguments are additional pieces of information we add onto the end of the command. They are used to configure the specific behaviour 
-   performed by computer when we tell it to perform a specific command. In the examples above the command is ``python3 cazy_webscraper.py``, 
+   performed by computer when we tell it to perform a specific command. In the examples above the command is ``cazy_webscraper.py``, 
    where we have told to computer to run the Python program ``cazy_webscraper``, and because no additional information was provided, the computer 
    will invoke ``cazy_webscraper`` using its default behaviour. If you do not want the default behaviour of ``cazy_webscraper`` then we need to 
    pass additionally arguments to the computer when telling it to run ``cazy_webscraper``, which we cover in the section below.
@@ -76,7 +75,7 @@ pointed at the `scraper` directory, which contains the `cazy_webscraper.py` file
    sure to check the documentation to see what flags are provided with the program, and what they do.
    
    You can use the command-line to list all flags for a program/tool by typing in the command to invoke that tool, followed by the flag ``--help`` or ``-h``. For example: 
-   ``python3 cazy_webscraper --help``.
+   ``cazy_webscraper --help``.
 
 
 Configuring were the output is saved
@@ -87,13 +86,13 @@ We add the flag to the command that invokes ``cazy_webscraper``. For example, to
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --output cazyme_database
+   cazy_webscraper.py --output cazyme_database
 
 OR we can use the short hand version of the ``--output`` flag, ``-o``:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py -o cazyme_database
+   cazy_webscraper.py -o cazyme_database
 
 The output directory does not have to exist when ``cazy_webscraper`` is invoked. ``cazy_webscraper`` can make 
 a new directorty within the directory the terminal is currently pointing at. For example, if we are in the directory 
@@ -125,7 +124,7 @@ anywhere to the ``cazy_webscraper`` command. For example:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py -o data/cazyme_research/cazyme_database -f
+   cazy_webscraper.py -o data/cazyme_research/cazyme_database -f
 
 By default ``cazy_webscraper`` will delete or content in an already existing output directory. Therefore, in the above example, 
 if the directory ``cazyme_database`` already existed, ``cazy_webscraper`` would delete all content in the directory then proceed. 
@@ -135,22 +134,22 @@ to the ``cazy_webscraper`` command. For example:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py -o data/cazyme_research/cazyme_database -f -n
+   cazy_webscraper.py -o data/cazyme_research/cazyme_database -f -n
 
 The order you invoke *any* of the optional flags does not matter, for example the following three examples perform the 
 exact same operation as the code given above:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --force -o data/cazyme_research/cazyme_database -f
+   cazy_webscraper.py --force -o data/cazyme_research/cazyme_database -f
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py -n -o data/cazyme_research/cazyme_database -f
+   cazy_webscraper.py -n -o data/cazyme_research/cazyme_database -f
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --nodelete --force --output data/cazyme_research/cazyme_database
+   cazy_webscraper.py --nodelete --force --output data/cazyme_research/cazyme_database
 
 The above examples also highlight that it does not matter if you use the long or short versions of each of the flags.
 
@@ -170,7 +169,7 @@ For example, if you want to scrape all CAZymes from Glycoside Hydrolase and Carb
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --classes Glycoside Hydrolases,Carbohydrate Esterases
+   cazy_webscraper.py --classes Glycoside Hydrolases,Carbohydrate Esterases
 
 ``cazy_webscraper`` excepts multiple synonyms for each CAZy class:
 
@@ -197,7 +196,7 @@ For example, if you want to scrape all CAZymes from GH2, PL5, CE1, CE2 and AA10 
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --families GH2,PL5,CE1,CE2,AA10
+   cazy_webscraper.py --families GH2,PL5,CE1,CE2,AA10
 
 Make sure to use the accepted CAZy nomenclature; 'GH2' is accepted but 'gh2' is not.
 
@@ -218,25 +217,25 @@ For example, if we wanted to scrape all CAZymes from GH1, PL9 and *all* of CE we
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --families GH1,PL9 --classes CE
+   cazy_webscraper.py --families GH1,PL9 --classes CE
 
 It does **not** matter what order you add the optional flags to your command. Therefore, if we wanted to 
 scrape all CAZymes from PL1, PL2, PL3 and *all* of GH and CE we both:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --families PL1,PL2,PL3 --classes GH,CE
+   cazy_webscraper.py --families PL1,PL2,PL3 --classes GH,CE
 
 **AND**
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --classes GH,CE --families PL1,PL2,PL3
+   cazy_webscraper.py --classes GH,CE --families PL1,PL2,PL3
 
 are accepted.
 
 .. note::
-   In the example ``python3 cazy_webscraper.py --classes GH,CE --families PL1,PL2,PL3`` all CAZymes from PL1, 
+   In the example ``cazy_webscraper.py --classes GH,CE --families PL1,PL2,PL3`` all CAZymes from PL1, 
    PL2 and PL3 would be retrieved, but no CAZymes from the other PL families, in addition all CAZymes from all GH and CE 
    families would be retrieved, but no CAZymes from AA, GT or CBM families would be retrieved.
 
@@ -265,7 +264,7 @@ For example, if you want to retrieve CAZymes only from bacterial and eukaryotic 
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --kingdoms bacteria,eukaryota
+   cazy_webscraper.py --kingdoms bacteria,eukaryota
 
 
 .. warning::
@@ -288,7 +287,7 @@ we would use the command:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --genera Aspergillus,Trichoderma,Streptomyces
+   cazy_webscraper.py --genera Aspergillus,Trichoderma,Streptomyces
 
 
 .. note::
@@ -318,7 +317,7 @@ For example, if we wanted to retrieve all CAZymes from Aspergillus niger and Asp
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --species Aspergillus niger,Asepergillus fumigatus
+   cazy_webscraper.py --species Aspergillus niger,Asepergillus fumigatus
 
 
 .. note::
@@ -352,7 +351,7 @@ For example, if we wanted to retrieve all CAZymes from Aspergillus niger ATCC 10
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --strains Aspergillus niger ATCC 1015,Aspergillus uvarum CBS 121591
+   cazy_webscraper.py --strains Aspergillus niger ATCC 1015,Aspergillus uvarum CBS 121591
 
 .. note::
    The order that the strains are listed does **not** matter, and separate multiple species names with a single comma 
@@ -367,7 +366,7 @@ For example, if we wanted to retrieve all CAZymes from Aspergillus niger ATCC 10
 .. warning::
    If you use the ``--species``, ``--genera`` and ``--strains`` flags in any combination and a source organism matches 
    multiple of the taxonomy critera, the CAZymes derived from that species will only be retrieved **once**. For example, 
-   using the command ``python3 cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015`` 
+   using the command ``cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015`` 
    will retrieve all CAZymes from *all* Aspergillus species *once*. The higher taxonomy levels take president, and the command 
    will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well, and then 
    retrieve another copy of all CAZymes from Aspergillus niger ATCC 1015.
@@ -383,7 +382,7 @@ we would use would be:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
+   cazy_webscraper.py --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
 
 .. note::
    This is a single command written on a single line. When typing the command into the terminal do not fit enter until you have finished the command. 
@@ -392,7 +391,7 @@ we would use would be:
 .. warning::
    If you use the ``--species``, ``--genera`` and ``--strains`` flags in any combination and a source organism matches 
    multiple of the taxonomy critera, the CAZymes derived from that species will only be retrieved **once**. For example, 
-   using the command ``python3 cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015`` 
+   using the command ``cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015`` 
    will retrieve all CAZymes from *all* Aspergillus species *once*. The higher taxonomy levels take president, and the command 
    will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well, and then 
    retrieve another copy of all CAZymes from Aspergillus niger ATCC 1015.
@@ -415,7 +414,7 @@ EC4.2.2.-, EC1.3.2.- and EC5.4.-.-, use the command:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --ec "EC4.2.2.-,EC1.3.2.-,EC5.4.-.-"
+   cazy_webscraper.py --ec "EC4.2.2.-,EC1.3.2.-,EC5.4.-.-"
 
 .. warning::
    Some terminals may misinterpret ``EC1.2.-.-`` as trying to invoke the options ``.``, therefore, it is 
@@ -434,7 +433,7 @@ species. To do that you would add the ``--kingdoms`` and ``--ec`` flags:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --ec "EC4.2.2.-" --kingdoms bacteria
+   cazy_webscraper.py --ec "EC4.2.2.-" --kingdoms bacteria
 
 The order you add the optional flags **does not** matter, and you can specify multiple EC numbers, kingdoms, strains etc.
 
@@ -450,14 +449,14 @@ To retrieve all CAZymes from all CBM families, GH1, GH2 and PL9, and that are de
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --classes CBM --families GH1,GH2,PL9 --genera Aspergillus
+   cazy_webscraper.py --classes CBM --families GH1,GH2,PL9 --genera Aspergillus
 
 **Example 2**  
 To retrieve all CAZymes from GH1, and GH2, if they are annotated with EC1.2.-.-, and are derived from any bacterial species:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --families GH1,GH2 --ec "EC1.2.-.-" --kingdoms bacteria 
+   cazy_webscraper.py --families GH1,GH2 --ec "EC1.2.-.-" --kingdoms bacteria 
 
 .. warning::
    Some terminals may misinterpret ``EC1.2.-.-`` as trying to invoke the options ``.``, therefore, it is 
@@ -471,7 +470,7 @@ To retrieve CAZymes from all viral species, and all Aspergillus niger strains wh
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --families GH3_1,GH3_2 --subfamilies --species Aspergillus niger --kingdoms Bacteria
+   cazy_webscraper.py --families GH3_1,GH3_2 --subfamilies --species Aspergillus niger --kingdoms Bacteria
 
 
 Configuration file
@@ -639,7 +638,7 @@ the terminal is currently pointed out, and follow the path from there. For examp
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py -c scraper/scraper_config.yaml
+   cazy_webscraper.py -c scraper/scraper_config.yaml
 
 Then the computer will look for a directory called ``scraper`` in the directory the terminal is looking at, then within the 
 ``scraper`` directory it will look for a yaml file called ``scraper_config.yaml``.
@@ -680,7 +679,7 @@ annotations then add the ``--subfamilies`` flag anywhere to the ``cazy_webscrape
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --subfamilies
+   cazy_webscraper.py --subfamilies
 
 Add the scraped data to an existing CAZyme database
 *********************************************************
@@ -701,7 +700,7 @@ the terminal is currently pointed out, and follow the path from there. For examp
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py -d my_cazyme_databases/my_cazyme_database.db
+   cazy_webscraper.py -d my_cazyme_databases/my_cazyme_database.db
 
 Then the computer will look for a directory called ``my_cazyme_databases`` in the directory the terminal is looking at, then within the 
 ``my_cazyme_databases`` directory the computer will look for the file ``my_cazyme_database.db``.
@@ -717,7 +716,7 @@ For example:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --subfamilies --genera Aspergillus --log log_dir/cazy_webscraper_log.log
+   cazy_webscraper.py --subfamilies --genera Aspergillus --log log_dir/cazy_webscraper_log.log
 
 .. warning::
    The log file does not already have to exist for ``cazy_webscraper`` to write to it; however, all 
@@ -733,7 +732,7 @@ command. You need only add the verbose flag and nothing else, for example:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --subfamilies --genera Aspergillus -v
+   cazy_webscraper.py --subfamilies --genera Aspergillus -v
 
 The verbose flag can be used in combination with the log flag to write all terminal output to a log file.
 
@@ -752,19 +751,19 @@ For example, to set the connection timeout limit to 30 seconds use the command:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --timeout 30
+   cazy_webscraper.py --timeout 30
 
 The timeout flag can be used in combination with other flags, for example:
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --subfamilies --genera Aspergillus -v --timeout 30
+   cazy_webscraper.py --subfamilies --genera Aspergillus -v --timeout 30
 
 You can use the long version ``--timeout`` or short version ``-t`` of the timeout flag.
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --subfamilies --genera Aspergillus -v -t 60
+   cazy_webscraper.py --subfamilies --genera Aspergillus -v -t 60
 
 
 Configuration when scraping subfamilies
@@ -776,7 +775,7 @@ annotations then add the ``--subfamilies`` flag anywhere to the ``cazy_webscrape
 
 .. code-block:: bash
 
-   python3 cazy_webscraper.py --subfamilies
+   cazy_webscraper.py --subfamilies
 
 This will retrieve both the parent CAZy family annotations and the child CAZy subfamily annotations for all applicable CAZymes. 
 If a CAZyme is not part of a subfamily only its CAZy family annotations will be catagloued.
