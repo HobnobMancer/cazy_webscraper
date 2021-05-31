@@ -80,15 +80,10 @@ def args_config_none():
             strains=None,
             kingdoms=None,
             ec=None,
+            cazy_synonyms=None,
         )
     }
     return args_dict
-
-
-@pytest.fixture
-def parse_configuration_path():
-    parse_configuration_path = parse_configuration.__file__
-    return parse_configuration_path
 
 
 @pytest.fixture
@@ -292,12 +287,12 @@ def raw_config_dict():
 # test parse_configuration()
 
 
-def test_filenotfound_config(parse_configuration_path):
+def test_filenotfound_config():
     """Test parse_config when the path to the configuraiton file is wrong."""
     args = {"args": Namespace(config="fake_page")}
 
     with pytest.raises(SystemExit) as pytest_wrapped_err:
-        parse_configuration.parse_configuration(parse_configuration_path, args["args"])
+        parse_configuration.parse_configuration(args["args"])
     assert pytest_wrapped_err.type == SystemExit
 
 
@@ -307,7 +302,6 @@ def test_filenotfound_config(parse_configuration_path):
 def test_parse_config_file_only(
     args_file_only,
     cazy_dictionary,
-    parse_configuration_path,
     monkeypatch,
 ):
     """Test parse_configuration() when only config file is given and no cmd-line config is given."""
@@ -333,7 +327,6 @@ def test_parse_config_file_only(
     (
         excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter,
     ) = parse_configuration.parse_configuration(
-        parse_configuration_path,
         args_file_only["args"],
     )
     for item in [excluded_classes, config_dict, taxonomy_filter, kingdoms, ec_filter]:
@@ -373,7 +366,6 @@ def test_parse_config_file_and_cmd(args_config_file_cmd, cazy_dictionary, monkey
     (
         excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter,
     ) = parse_configuration.parse_configuration(
-        parse_configuration_path,
         args_config_file_cmd["args"],
     )
     for item in [excluded_classes, taxonomy_filter, kingdoms, ec_filter]:
@@ -402,7 +394,6 @@ def test_parse_config_cmd_none(args_config_cmd_none, cazy_dictionary, monkeypatc
     (
         excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter,
     ) = parse_configuration.parse_configuration(
-        parse_configuration_path,
         args_config_cmd_none["args"],
     )
 
@@ -438,7 +429,6 @@ def test_parse_config_only_cmd(args_config_cmd, cazy_dictionary, monkeypatch):
     (
         excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter,
     ) = parse_configuration.parse_configuration(
-        parse_configuration_path,
         args_config_cmd["args"],
     )
 
@@ -486,18 +476,26 @@ def test_get_kingdoms_all_wrong(raw_config_dict):
 
 def test_cazy_dict_not_found():
     """Test get_cazy_dict_std_names() when the cazy_dictionary file cannot be found."""
-    fake_path = sql.__file__
+
+    args = {"args": Namespace(cazy_synonyms="test.json")}
 
     with pytest.raises(SystemExit) as pytest_wrapped_err:
-        parse_configuration.get_cazy_dict_std_names(fake_path)
+        parse_configuration.get_cazy_dict_std_names(args["args"])
     assert pytest_wrapped_err.type == SystemExit
 
 
-def test_cazy_dict_success():
+def test_cazy_dict_success(test_input_dir):
     """Test get_cazy_dict_std_names() when the retrieval of the data is successful."""
-    path = parse_configuration.__file__
+    args = {"args": Namespace(cazy_synonyms=(test_input_dir / "cazy_dictionary.json"))}
 
-    parse_configuration.get_cazy_dict_std_names(path)
+    parse_configuration.get_cazy_dict_std_names(args["args"])
+
+
+def test_cazy_dict_default():
+    """Test get_cazy_dict_std_names() when using the default CAZy clas synonym dict."""
+    args = {"args": Namespace(cazy_synonyms=None)}
+
+    parse_configuration.get_cazy_dict_std_names(args["args"])
 
 
 # test get_yaml_configuration
@@ -646,7 +644,7 @@ def test_get_no_excluded_classes(cazy_dictionary):
 # test get_configuration() - retrieves configuraiton for the expand module
 
 
-def test_get_configuraiton_0(cazy_dictionary, parse_configuration_path, monkeypatch):
+def test_get_configuraiton_0(cazy_dictionary, monkeypatch):
     """Tests getting configuration for the expand module when NO tax filters are given."""
 
     def mock_parse_config(*args, **kwargs):
@@ -654,10 +652,10 @@ def test_get_configuraiton_0(cazy_dictionary, parse_configuration_path, monkeypa
 
     monkeypatch.setattr(parse_configuration, "parse_configuration", mock_parse_config)
 
-    parse_configuration.get_configuration(parse_configuration_path, "args")
+    parse_configuration.get_configuration("args")
 
 
-def test_get_configuraiton_1(cazy_dictionary, parse_configuration_path, monkeypatch):
+def test_get_configuraiton_1(cazy_dictionary, monkeypatch):
     """Tests getting configuration for the expand module when ARE tax filters are given."""
 
     def mock_parse_config(*args, **kwargs):
@@ -672,7 +670,7 @@ def test_get_configuraiton_1(cazy_dictionary, parse_configuration_path, monkeypa
 
     monkeypatch.setattr(parse_configuration, "parse_configuration", mock_parse_config)
 
-    parse_configuration.get_configuration(parse_configuration_path, "args")
+    parse_configuration.get_configuration("args")
 
 
 # test creating logger warning message when enabled streamlined scraping
