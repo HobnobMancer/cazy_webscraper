@@ -100,6 +100,8 @@ If Conda is not installed, please see the Conda website for installation [instru
 
 Install `cazy_webscraper` via `bioconda` installs the full cazy_webscraper and all dependencies.
 
+**To invoke `cazy_webscraper` call the program from the command-line using `cazy_webscraper.py`.**
+
 ### Installing via `pip` (Quick and easy installation)
 
 An easy way to install `cazy_webscraper` is to install it via [PyPi](https://pypi.org/project/cazy-webscraper/0.1.2/), using the command:
@@ -109,6 +111,8 @@ pip3 install cazy-webscraper
 ```
 
 *Note: `cazy_webscraper` is spelt with a DASH not an UNDERSCORE when installing from the PyPi distribution.*
+
+**To invoke `cazy_webscraper` call the program from the command-line using `cazy_webscraper.py`.**
 
 ### Installing from source
 
@@ -124,6 +128,18 @@ Then change directory to the repository root, and use Python's setup tools to in
 ```bash
 cd cazy_webscraper
 pip3 install -e .
+```
+
+If you install `cazy_webscraper` from source, to invoke `cazy_webscraper` you will need to call it using: 
+
+```bash
+python3 <path to cazy_webscraper.py file>
+```
+
+For example, if you were located in the root of the, then use the command:  
+
+```bash
+python3 scraper.cazy_webscraper.py
 ```
 
 ## Getting started
