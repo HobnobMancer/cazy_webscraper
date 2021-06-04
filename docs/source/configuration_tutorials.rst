@@ -95,15 +95,16 @@ OR we can use the short hand version of the ``--output`` flag, ``-o``:
    cazy_webscraper.py -o cazyme_database
 
 The output directory does not have to exist when ``cazy_webscraper`` is invoked. ``cazy_webscraper`` can make 
-a new directorty within the directory the terminal is currently pointing at. For example, if we are in the directory 
-'scraper', and the directory 'cazyme_database' did not exist, then ``cazy_webscraper`` would make the directory 
-'cazyme_database'.
+the output directory, including all necessary parent directories. 
 
 The ``--output`` flag can take an infinetly long path. For example, we could use:
 
 .. code-block:: bash
 
    python3 cazy_webscraper.py -o data/cazyme_research/cazyme_database
+
+If the directories ``cazymes_research`` and ``cazyme_database`` did not exist then ``cazy_webscraper`` will build 
+these for you.
 
 In the Bash terminal paths are **relative**, meaning that the terminal starts in the directory it is currently 
 looking at and follows the path from there. The installation section of this tutorial covers this when 
