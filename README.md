@@ -107,10 +107,8 @@ Install `cazy_webscraper` via `bioconda` installs the full cazy_webscraper and a
 An easy way to install `cazy_webscraper` is to install it via [PyPi](https://pypi.org/project/cazy-webscraper/0.1.2/), using the command:
 
 ```bash
-pip3 install cazy-webscraper
+pip3 install cazy_webscraper
 ```
-
-*Note: `cazy_webscraper` is spelt with a DASH not an UNDERSCORE when installing from the PyPi distribution.*
 
 **To invoke `cazy_webscraper` call the program from the command-line using `cazy_webscraper.py`.**
 
