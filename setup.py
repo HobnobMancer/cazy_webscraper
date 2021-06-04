@@ -74,9 +74,9 @@ setuptools.setup(
     url="https://github.com/HobnobMancer/cazy_webscraper",
     entry_points={
         "console_scripts": [
-            "cazy_webscraper.py = scraper.cazy_webscraper:main",
-            "get_genbank_sequences.py = scraper.expand.get_genbank_sequences:main",
-            "get_pdb_structures.py = scraper.expand.get_pdb_structures:main",
+            "cazy_webscraper = scraper.cazy_webscraper:main",
+            "cazy_webscraper_get_genbank_sequences = scraper.expand.get_genbank_sequences:main",
+            "cazy_webscraper_get_pdb_structures = scraper.expand.get_pdb_structures:main",
         ]
     },
     install_requires=[
