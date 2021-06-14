@@ -27,7 +27,11 @@ Welcome to cazy_webscraper's documentation!
    :target: https://www.python.org/about/
 .. image:: https://img.shields.io/badge/Bioinformatics-EASTBio-ff69b4
    :target: http://www.eastscotbiodtp.ac.uk/eastbio-student-cohort-2019
-  
+
+**Pypi Downloads: ** .. image:: https://img.shields.io/pypi/dm/cazy_webscraper   :alt: PyPI - Downloads
+**Conda Downloads:** .. image:: https://img.shields.io/conda/dn/bioconda/cazy_webscraper   :alt: Conda
+
+
 ``cazy_webscraper`` is a Python3 package for the automated retrieval of protein data from the `CAZy <http://wwww.cazy.org/>`_ database. This program is free to use under the MIT license, and we kindly request that, if you use this program or Python package, you cite it as indicated below.
 
    Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
@@ -54,9 +58,9 @@ The tutorial pages include step-by-step guides on how to install and use ``cazy_
 Citing ``cazy_webscraper``
 --------------------------
  
-If you use ``cazy_webscraper`` in your work *please* do cite our work (including the provided DOI), as well as citing the specific version you use. This is not only helpful for us as developers to get out work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**.  
-
-**Citation:** Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
+If you use ``cazy_webscraper`` in your work *please* do cite our work (including the provided DOI), as well as citing the specific version you use. This is not only helpful for us as developers to get out work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**. Citation:
+   
+   Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
 
 
 Requirements
@@ -76,16 +80,20 @@ Installation
 ``conda``
 =========
 
+*The latest version of ``cazy_webscraper`` will be installed with ``conda``*
+
 .. code-block:: bash
 
-   conda install cazy-webscraper
+   conda install cazy_webscraper
 
 ``pip``
 =======
 
+*``pip`` should distribute the latest version of ``cazy_webscraper``, although there may be some minor lag between GitHub releases and ``pip``.*
+
 .. code-block:: bash
 
-   pip3 install cazy-webscraper
+   pip3 install cazy_webscraper
 
 **Install from source**
 
@@ -101,8 +109,8 @@ Installation
 
    python setup.py install
 
-For those new to using the command-line and installing packages using `pip` here are the lines of 
-code you can copy and invoke one at a time into your command-line (please note these comamnds are written in `bash`).
+For those new to using the command-line and installing packages using ``pip`` here are the lines of 
+code you can copy and invoke one at a time into your command-line (please note these comamnds are written in ``bash``).
 
 .. code-block:: bash
 
