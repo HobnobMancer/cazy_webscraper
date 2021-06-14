@@ -2,7 +2,8 @@
 build/
 dist/
 cazy_webscraper.egg-info/
-distribute*
+distribute/
+.vscode/
 
 # Compiled Python modules
 *.pyc
