@@ -217,3 +217,50 @@ and you will run into constant issues when trying to use ``cazy_webscraper``.
 
 .. warning::
    If you install ``cazy_webscraper`` from source, to invoke ``cazy_webscraper`` you will need call Python3 followed by the path to the ``cazy_webscraper.py`` file. For example, if you are located in the root directory of the respository, you would use:  ``pyathon3 scraper/cazy_webscraper.py``.
+
+Checking the installation
+****************************
+
+To check ``cazy_webscraper`` was installed correctly, use the command:
+
+.. code-block:: bash
+
+   cazy_webscraper -h
+
+If ``cazy_webscraper`` is installed corretly, ``cazy_webscraper`` will install its help message, which should look something like the following:
+
+.. code-block:: bash
+   (cazy_scraper_env) user@YourComputer:home/python_packages/cazy_webscraper$ cazy_webscraper -h
+   usage: cazy_webscraper.py [-h] [-c config file] [--classes CLASSES] [--cazy_synonyms CAZY_SYNONYMS]
+   [-d local database path] [--ec EC] [-f] [--families FAMILIES] [--genera GENERA]
+   [--get_pages] [--kingdoms KINGDOMS] [-l log file name] [-n] [-o output file name]
+   [-r RETRIES] [--scrape_files SCRAPE_FILES] [-s] [--species SPECIES] [--strains STRAINS]
+   [--streamline STREAMLINE] [-t TIMEOUT] [-v]
+   Scrapes the CAZy database
+   optional arguments:
+   -h, --help            show this help message and exit
+   -c config file, --config config file Path to configuration file. Default: None, scrapes entire database (default: None)
+   --classes CLASSES     Classes from which all families are to be scraped. Separate classes by ',' (default: None)
+   --cazy_synonyms CAZY_SYNONYMS   Path to JSON file containing CAZy class synoymn names (default: None)
+   -d local database path, --database local database path    path to an existing local CAZy SQL database (default: None)
+   --ec EC   Defines EC numbers to restrict the scrape to (default: None)
+   -f, --force   Force file over writting (default: False)
+   --families FAMILIES   Families to scrape. Separate families by commas 'GH1,GH2' (case sensitive) (default: None)  
+   --genera GENERA       Genera to restrict the scrape to (default: None)   
+   --get_pages           Retrieve pages from CAZy and write out HTML files to disk (default: False)     
+   --kingdoms KINGDOMS   Kingdoms to scrape. Separate by a single comma. Options= archaea, bacteria, eukaryota,
+                         viruses, unclassified (not case sensitive) (default: None)
+   -l log file name, --log log file name      Defines log file name and/or path (default: None) 
+   -n, --nodelete        enable/disable deletion of exisiting files (default: False)  
+   -o output file name, --output output file name     Output filename (default: <_io.TextIOWrapper name='<stdout>' mode='w' encoding='utf-8'>)
+   -r RETRIES, --retries RETRIES      Number of times to retry scraping a family or class page if error encountered (default: 10)
+   --scrape_files SCRAPE_FILES        dir containing HTML files of CAZy webpages (default: None)  
+   -s, --subfamilies     Enable retrieval of subfamilies from CAZy (default: False)   
+   --species SPECIES     Species (written as Genus Species) to restrict the scrape to (default: None)     
+   --strains STRAINS     Specific strains of organisms to restrict the scrape to (written as Genus Species Strain)  
+                         (default: None)
+   --streamline STREAMLINE       Define attributes to presume are identical each family HTML table a protein appears in
+                                 The options as: genbank, ec, uniprot, pdb Any combination can be provided.
+                                 GenBank refers to non-primary GenBank accessions. (default: None)
+   -t TIMEOUT, --timeout TIMEOUT          Connection timeout limit (seconds) (default: 45)  
+   -v, --verbose         Set logger level to 'INFO' (default: False)
