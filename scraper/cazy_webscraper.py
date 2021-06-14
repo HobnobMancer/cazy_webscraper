@@ -105,11 +105,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         config_logger(args)
 
     if args.output is not sys.stdout:
+        logger.info(f"Making output directory: {args.output}")
+        logger.info(f"Force writing to exiting output dir: {args.force}")
+        logger.info(f"Deleting content already present in output dir: {args.nodelete}")
         file_io.make_output_directory(args.output, args.force, args.nodelete)
 
     cazy_home = "http://www.cazy.org"
 
     # retrieve configuration data
+    logger.info("Parsing configuration")
     (
         excluded_classes,
         config_dict,
@@ -124,6 +128,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # Check if retrieving pages from CAZy and writing to disk for scraping later
     if args.get_pages:
+        logger.info("Retrieve HTML pages from CAZy and building CAZy page library")
         get_cazy_pages.get_cazy_pages(
             args,
             cazy_home,
@@ -139,6 +144,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         # build database and return open database session
         if args.database is not None:  # open session for existing local database
             if args.database == "dict":  # build dictionary of {genbank_accession: CAZy families}
+                logger.info("Creating CAZy dict (JSON file) instead of database")
                 session = {}
 
             else:
@@ -167,9 +173,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             logger.warning("Enabled retrieval of subfamily classifications")
 
         if args.streamline is not None:
+            logger.info("Enabled streamlined scraping of CAZy")
             parse_configuration.create_streamline_scraping_warning(args)
 
         # log scraping of CAZy in local db
+        logger.info("Add log of scrape to the local CAZyme database")
         sql_interface.log_scrape_in_db(
             time_stamp,
             config_dict,
@@ -182,6 +190,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
         # Check if scraping from local CAZy files
         if args.scrape_files is not None:
+            logger.info("Scraping data from local CAZy page library")
             parse_local_pages.parse_local_pages(
                 args,
                 cazy_home,
@@ -193,6 +202,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             )
 
         else:
+            logger.info("Scraping CAZyme data directly from CAZy")
             get_cazy_data(
                 cazy_home,
                 excluded_classes,
