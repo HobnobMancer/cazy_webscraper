@@ -245,7 +245,7 @@ To specify taxonomy filters (Kingdoms, genera, species and strains), list the re
 ## Retrieving protein sequences and structure files
 
 
-**NOTE: The expand module of `cazy_webscraper` is currently under signficant redevelopment, which is taking place on the `update_expand` branch. You can track the development of this progress via the `version_1` milestone. The version of the `expand` module included in version 1 of `cazy_webscraper` will be a far more stable version than provided in the current release of `cazy_webscraper`.
+**NOTE: The expand module of `cazy_webscraper` is currently under signficant redevelopment, which is taking place on the `update_expand` branch. You can track the development of this progress via the `version_1` milestone. The version of the `expand` module included in version 1 of `cazy_webscraper` will be a far more stable version than provided in the current release of `cazy_webscraper`.**
 
 The `expand` module in `cazy_webscraper` manages the retrieval of CAZyme protein sequences from GenBank and protein structure files from PDB.
 The `expand` module is invoked to act upon a local CAZy database, not invoked while scraping CAZy.
