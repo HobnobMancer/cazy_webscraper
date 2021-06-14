@@ -90,6 +90,8 @@ def log_scrape_in_db(
     :param args: cmd arguments
 
     Return nothing."""
+    logger = logging.getLogger(__name__)
+
     date = time_stamp[:time_stamp.find("--")]
     time = time_stamp[((time_stamp.find("--")) + 2):].replace("-", ":")
 
@@ -102,6 +104,7 @@ def log_scrape_in_db(
             if classes is not None:
                 classes = str(classes).replace("[", "").replace("]", "").replace("'", "")
                 new_log.classes = classes
+                logger.info(f"Scraping CAZymes from CAZy classes: {classes}")
         except KeyError:
             pass
 
@@ -116,6 +119,7 @@ def log_scrape_in_db(
         if len(families) != 0:
             families = str(families).replace("[", "").replace("]", "").replace("'", "")
             new_log.families = families
+            logger.info(f"Scraping CAZymes from CAZy families: {families}")
 
     # get taxonomy filters defined by user, and separate into genera, species and strains
     try:
@@ -123,6 +127,7 @@ def log_scrape_in_db(
             genera = str(taxonomy_filters["genera"]).replace("[", "").\
                 replace("]", "").replace("'", "")
             new_log.genera = genera
+            logger.info(f"Scraping CAZymes from species from the genera: {genera}")
     except TypeError:
         pass
 
@@ -131,6 +136,7 @@ def log_scrape_in_db(
             species = str(taxonomy_filters["species"])
             species = species.replace("[", "").replace("]", "").replace("'", "")
             new_log.species = species
+            logger.info(f"Scraping CAZymes from the species: {species}")
     except TypeError:
         pass
 
@@ -139,19 +145,26 @@ def log_scrape_in_db(
             strains = str(taxonomy_filters["strains"])
             strains = strains.replace("[", "").replace("]", "").replace("'", "")
             new_log.strains = strains
+            logger.info(f"Scraping CAZymes from the species strains: {strains}")
     except TypeError:
         pass
 
     # get Taxonomy Kingdoms defined by user to be scraped
     if kingdoms is not None:
         new_log.kingdoms = str(kingdoms).replace("[", "").replace("]", "").replace("'", "")
+        kingdoms_message = str(kingdoms).replace("[", "").replace("]", "").replace("'", "")
+        logger.info(f"Scraping CAZymes from species from the kingdoms: {kingdoms_message}")
     else:
         new_log.kingdoms = "ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified"
+        logger.info(f"Scraping CAZymes from species from the kingdoms: ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified")
+    
 
     # get EC numbers defined by user to be scraped
     if len(ec_filters) != 0:
         new_log.ec_numbers = str(ec_filters).replace("[", "").replace("]", "").replace("'", "")
-
+        ec_message = str(ec_filters).replace("[", "").replace("]", "").replace("'", "")
+        logger.info(f"Only scraping CAZymes annotated with at least one EC number from: {ec_message}")
+    
     # retrieve commands from the command line
     cmd_line = ""
     for cmd in [
