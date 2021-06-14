@@ -90,7 +90,7 @@ def make_output_directory(output, force, nodelete):
             sys.exit(1)
 
     else:
-        output.mkdir(exist_ok=force)
+        output.mkdir(parents=True, exist_ok=force)
         logger.warning(f"Built output directory: {output}")
 
     return

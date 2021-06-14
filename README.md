@@ -6,30 +6,32 @@
 [![Python](https://img.shields.io/badge/Python-v3.8.---orange)](https://www.python.org/about/)
 [![Research](https://img.shields.io/badge/Bioinformatics-Protein%20Engineering-ff69b4)](http://www.eastscotbiodtp.ac.uk/eastbio-student-cohort-2019)
 [![Bioconda](https://img.shields.io/badge/BIOCONDA-intergration-brightgreen)](https://bioconda.github.io/user/install.html)
+[![Conda-downloads](https://img.shields.io/conda/dn/bioconda/cazy_webscraper)](https://bioconda.github.io/user/install.html)
 [![Pypi](https://img.shields.io/badge/Pypi-intergration-blue)](https://pypi.org/project/cazy-webscraper/)
+![PypiDownload](https://img.shields.io/pypi/dm/cazy_webscraper?label=Pypi%20downloads)
 [![Version](https://img.shields.io/badge/Version-0.1.5-orange)](https://www.python.org/about/)
 
 # cazy_webscraper
 
-The `cazy_webscraper` is a Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. This program is free to use under the MIT license when proper recognition is given.
+`cazy_webscraper` is a Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. This program is free to use under the MIT license when proper recognition is given.
 
-The `cazy_webscraper` retrieves protein data from CAZy, producing a local SQL database which enables uses to throughly interrogate the data in a manner unachievable through the CAZy website.
+`cazy_webscraper` retrieves protein data from CAZy, producing a local SQL database which enables uses to throughly interrogate the data in a manner unachievable through the CAZy website.
 
 The program additionally, includes an `expand` module, which can retrieve the protein sequences from [GenBank](https://www.ncbi.nlm.nih.gov/genbank/) and protein structure files from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank [(PDB)](https://www.rcsb.org/).
 
-The cazy_webscraper can be configured to scrape the entire database, selected Classes and/or selected CAZy families. An additional taxonomy filter can be applied to restrict the scraping of CAZymes to specific Kingdoms, genera, species and/or strains.
+`cazy_webscraper` can be configured to scrape the entire database, selected Classes and/or selected CAZy families. An additional taxonomy filter can be applied to restrict the scraping of CAZymes to specific Kingdoms, genera, species and/or strains.
 
 _For detailed documentation see the [full documentation](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest)._
 
 _An ER model can be found in the root of the `cazy_webscraper` GitHub repo, demonstrating the structure of the SQL database create by `cazy_webscraper`._
 
-**Step-by-step tutorials**
+**Step-by-step tutorials**  
 _If you are new to bioinformatics and/or installing/using command-line tools, we've written a series of step-by-step instructions on how to install and use `cazy_webscraper`, which you can find [here](https://cazy-webscraper.readthedocs.io/en/latest/configuration_tutorials.html). In slower time we hope to supplementary these with videos as well, for the visual learners_
 
-**Easy installation**
+**Easy installation**  
 `cazy_webscraper` can be installed both via `bioconda` channel of `conda`, and via Pypi (`pip`) for quick and easy installation.
 
-**CAZyme database for thorough interogation of the data**
+**CAZyme database for thorough interogation of the data**  
 Use `cazy_webscraper` to create a local SQL database, then using SQL perform complex queries against the dataset which cannot be performed on the CAZy website. For example:   
 
 - Retrieve the names of all organisms with at last CAZyme in PL1 and at least one CAZymes in AA2
@@ -41,7 +43,7 @@ Use `cazy_webscraper` to create a local SQL database, then using SQL perform com
 
 ## Referencing
 
-If you use `cazy_webscraper` in your work *please* do cite our work (including the provided DOI), as well as citing the specific version you use. This is not only helpful for us as developers to get out work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**.  
+It is expected academic practise to cite the work of others. If you use `cazy_webscraper` in your work *please* do cite our work (including the provided DOI), as well as citing the specific version you use. This is not only helpful for us as developers to get out work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**.  
 
 **Citation:** Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
 
@@ -84,7 +86,7 @@ There are three different methods to install `cazy_webscraper`:
 
 ### Installing via `bioconda` (Quick and easy installation)
 
-`cazy_webscraper` is available in the [`bioconda`](https://bioconda.github.io/user/install.html) channel of [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/). If you have the `bioconda` channel available, `cazy_webscraper` can be installed from the command-line with:
+`cazy_webscraper` is available in the [`bioconda`](https://bioconda.github.io/user/install.html) channel of [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/). If you have the `bioconda` channel available. The latest version of `cazy_webscraper` is guarenteed to be installed via `bioconda`. `cazy_webscraper` can be installed from the command-line with: 
 
 ```bash
 conda install cazy_webscraper
@@ -107,10 +109,8 @@ Install `cazy_webscraper` via `bioconda` installs the full cazy_webscraper and a
 An easy way to install `cazy_webscraper` is to install it via [PyPi](https://pypi.org/project/cazy-webscraper/0.1.2/), using the command:
 
 ```bash
-pip3 install cazy-webscraper
+pip3 install cazy_webscraper
 ```
-
-*Note: `cazy_webscraper` is spelt with a DASH not an UNDERSCORE when installing from the PyPi distribution.*
 
 **To invoke `cazy_webscraper` call the program from the command-line using `cazy_webscraper.py`.**
 
@@ -237,13 +237,16 @@ Glycoside Hydrolases (GHs):
 ```
 
 Please find more information on writing lists in Yaml files [here](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html).
-
+BB
 A blank configuration file is packaged within `cazy_webscraper`, within the `scraper` directory, called `scraper_config.yaml`. This configuration file contains comments to assit filling in the file correctly. If a new configuration file is created it **must** be a Yaml file and it **must** use the same headings as used in the configuration file `scraper_config.yaml`.
 
 To specify taxonomy filters (Kingdoms, genera, species and strains), list the respective filter under the appropriate keys (kingdoms, genera, species and strains) in the yaml file.
 
 
 ## Retrieving protein sequences and structure files
+
+
+**NOTE: The expand module of `cazy_webscraper` is currently under signficant redevelopment, which is taking place on the `update_expand` branch. You can track the development of this progress via the `version_1` milestone. The version of the `expand` module included in version 1 of `cazy_webscraper` will be a far more stable version than provided in the current release of `cazy_webscraper`.**
 
 The `expand` module in `cazy_webscraper` manages the retrieval of CAZyme protein sequences from GenBank and protein structure files from PDB.
 The `expand` module is invoked to act upon a local CAZy database, not invoked while scraping CAZy.
@@ -286,7 +289,7 @@ Optional arguments: _The format to pass arguments to the script is the same form
 - `-c` `--config` Define path to a configuration yaml file to define CAZy classes and/or families to retrieve the protein structures for
 - `--classes` Define CAZy classes to retrieve protein structures for
 - `--families` Define CAZy families to retrieve protein structures for
-- `-f` `--force` Force writing to directory that already exists
+- B`-f` `--force` Force writing to directory that already exists
 - `--genera` Genera of species to retrieve structures for
 - `--kingdoms` Taxonomy Kingdoms to retrieve structures for
 - `-l` `--log` Path to write out a log file to
