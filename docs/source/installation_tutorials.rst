@@ -108,7 +108,9 @@ Installing via ``Bioconda`` and ``pip` are by far the easiest methods of install
 Installing via ``Bioconda``
 ==============================
 
-If you already have `conda` installed *and* the `bioconda` channel available, ``cazy_webscraper`` can be fully installed using the command:  
+``cazy_webscraper`` can be installed via ``bioconda``. The latest release of ``cazy_webscraper` should always be avaiable from the ``bioconda`` channel.
+
+If you already have `conda` installed *and* the ``bioconda`` channel available, ``cazy_webscraper`` can be fully installed using the command:  
 
 .. code-block:: bash
 
