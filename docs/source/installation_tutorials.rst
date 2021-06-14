@@ -2,9 +2,9 @@
 How to install ``cazy_webscraper``
 ================================================================
 
-This page includes a step-by-step of how to check your computer setup meets the requirements to install ``cazy_webscraper``, and covers 3 different ways to install ``cazy_webscraper``. 
+This page includes a step-by-step guide on installing ``cazy_webscraper``, including checking your computer setup meets the requirements to install ``cazy_webscraper``, and 3 different ways to install ``cazy_webscraper``. 
 
-If you are experience using ``pip`` and ``bioconda`` to install Python packages, jump down to the relevant sections to get the command to install the packages.
+If you are experienced using ``pip`` and ``bioconda`` to install Python packages, jump down to the relevant sections to get the command to install the packages.
 
 If you are not experienced with installing programs via the command-line then read on!
 
