@@ -103,6 +103,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if logger is None:
         logger = logging.getLogger(__name__)
         config_logger(args)
+    logger.info(
+        f"-------------------cazy_webscraper------------------------"
+        "Version: v0.1.6"
+    )
 
     if args.output is not sys.stdout:
         logger.info(f"Making output directory: {args.output}")
@@ -225,6 +229,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         f"Scrape initated at {start_time}\n"
         f"Scrape finished at {end_time}\n"
         f"Total run time: {total_time}"
+        "Version: v0.1.6\n"
         "Citation: Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021):\n"
         "cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster.\n"
         "https://doi.org/10.6084/m9.figshare.14370860.v7"
@@ -236,6 +241,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         f"Scrape initated at {start_time}\n"
         f"Scrape finished at {end_time}\n"
         f"Total run time: {total_time}\n"
+        "Version: v0.1.6\n"
         "Thank you for using cazy_webscraper. Expected academic practise is to cite the work of others.\n"
         "Please cite cazy_webscraper in your work:\n"
         "Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021):"
