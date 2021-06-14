@@ -225,6 +225,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         f"Scrape initated at {start_time}\n"
         f"Scrape finished at {end_time}\n"
         f"Total run time: {total_time}"
+        "Citation: Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021):\n"
+        "cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster.\n"
+        "https://doi.org/10.6084/m9.figshare.14370860.v7"
     )
 
     print(
@@ -233,6 +236,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         f"Scrape initated at {start_time}\n"
         f"Scrape finished at {end_time}\n"
         f"Total run time: {total_time}\n"
+        "Thank you for using cazy_webscraper. Expected academic practise is to cite the work of others.\n"
+        "Please cite cazy_webscraper in your work:\n"
+        "Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021):"
+        "cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster.\n"
+        "https://doi.org/10.6084/m9.figshare.14370860.v7"
     )
 
 
