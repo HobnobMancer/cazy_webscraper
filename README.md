@@ -48,7 +48,7 @@ _Please note, `cazy_webscraper` builds a local CAZyme SQLite3 database. It does 
 
 ## Referencing
 
-It is expected academic practise to cite the work of others. If you use `cazy_webscraper` in your work *please* do cite our work (including the provided DOI), as well as citing the specific version you use. This is not only helpful for us as developers to get out work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**.  
+It is expected academic practise to cite the work of others. If you use `cazy_webscraper` in your work *please* do cite our work (including the provided DOI), as well as citing the specific version you use. This is not only helpful for us as developers to get our work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**.  
 
 > Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
 
