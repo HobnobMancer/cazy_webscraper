@@ -76,6 +76,7 @@ Python version 3.8+
 Internet access  
 The python libraries listed within `requirements.txt`  
 
+
 ## Installation
 
 There are three different methods to install `cazy_webscraper`:
@@ -84,9 +85,12 @@ There are three different methods to install `cazy_webscraper`:
 2. Via the Python Package Index (PyPI)
 3. From source
 
+
 ### Installing via `bioconda` (Quick and easy installation)
 
-`cazy_webscraper` is available in the [`bioconda`](https://bioconda.github.io/user/install.html) channel of [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/). If you have the `bioconda` channel available. The latest version of `cazy_webscraper` is guarenteed to be installed via `bioconda`. `cazy_webscraper` can be installed from the command-line with: 
+`cazy_webscraper` is available in the [`bioconda`](https://bioconda.github.io/user/install.html) channel of [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/). If you have the `bioconda` channel available.
+
+The latest version of `cazy_webscraper` is guarenteed to be installed via `bioconda`. `cazy_webscraper` can be installed from the command-line with: 
 
 ```bash
 conda install cazy_webscraper
@@ -102,7 +106,8 @@ If Conda is not installed, please see the Conda website for installation [instru
 
 Install `cazy_webscraper` via `bioconda` installs the full cazy_webscraper and all dependencies.
 
-**To invoke `cazy_webscraper` call the program from the command-line using `cazy_webscraper.py`.**
+*When `cazy_webscraper` is installed via `bioconda`, to invoke `cazy_webscraper` call the program from the command-line using `cazy_webscraper`.*
+
 
 ### Installing via `pip` (Quick and easy installation)
 
@@ -112,7 +117,8 @@ An easy way to install `cazy_webscraper` is to install it via [PyPi](https://pyp
 pip3 install cazy_webscraper
 ```
 
-**To invoke `cazy_webscraper` call the program from the command-line using `cazy_webscraper.py`.**
+*When `cazy_webscraper` is installed via `pip`, to invoke `cazy_webscraper` call the program from the command-line using `cazy_webscraper`.*
+
 
 ### Installing from source
 
@@ -142,9 +148,11 @@ For example, if you were located in the root of the, then use the command:
 python3 scraper/cazy_webscraper.py
 ```
 
+
 ## Getting started
 
 For a summary for getting started, have a look at the [getting started poster](https://hobnobmancer.github.io/cazy_webscraper/getting_started_poster.pdf).
+
 
 ## Best practise
 
@@ -152,10 +160,11 @@ When performing a series of many, automated, repeated calls to a server it is be
 
 The webscraper can appear to run slowly but this is due to the limited access speed of the CAZy server. When a CAZy family is being parsed by the scraper, and protein records are being retrieved for the CAZy family a progress bar is produced in the terminal to provide an indicator that webscraper is working. **Expect an entire scrape of the CAZy database to take several hours.** Scraping individual families can be extremely rapid; scraping the entirity of the CAZy family GH1 (containing 42,647 proteins) takes approximately 42 minutes when using a 6-core AMD fx 63000 processor and 16GB RAM.
 
+
 ## Output
 
 
-**Database:**
+### Database
 
 To facilitate thorough interrogation of data retrieve from CAZy, minimise storing duplicate and redundant data, data retrieved from CAZy is stored in a local SQL database. Every CAZyme scraped from CAZy has the following data:
 - Protein name
