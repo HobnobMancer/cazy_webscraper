@@ -27,10 +27,14 @@ Welcome to cazy_webscraper's documentation!
    :target: https://www.python.org/about/
 .. image:: https://img.shields.io/badge/Bioinformatics-EASTBio-ff69b4
    :target: http://www.eastscotbiodtp.ac.uk/eastbio-student-cohort-2019
-
-**Pypi Downloads: ** .. image:: https://img.shields.io/pypi/dm/cazy_webscraper   :alt: PyPI - Downloads
-**Conda Downloads:** .. image:: https://img.shields.io/conda/dn/bioconda/cazy_webscraper   :alt: Conda
-
+.. image:: https://img.shields.io/badge/BIOCONDA-intergration-brightgreen
+   :target: https://bioconda.github.io/user/install.html
+.. image:: https://img.shields.io/conda/dn/bioconda/cazy_webscraper?label=Bioconda%20downloads
+   :target: https://bioconda.github.io/user/install.html
+.. image:: https://img.shields.io/badge/Pypi-intergration-brightgreen
+   :target: https://pypi.org/project/cazy-webscraper/
+.. image:: https://img.shields.io/pypi/dm/cazy_webscraper?label=Pypi%20downloads
+   :target: https://pypi.org/project/cazy-webscraper/
 
 ``cazy_webscraper`` is a Python3 package for the automated retrieval of protein data from the `CAZy <http://wwww.cazy.org/>`_ database. This program is free to use under the MIT license, and we kindly request that, if you use this program or Python package, you cite it as indicated below.
 
