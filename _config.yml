@@ -1,1 +1,4 @@
 theme: jekyll-theme-minimal
+logo: '/assets/cazy_web_logo.svg'
+title: caz_webscraper
+description: A tool to retrieve user specified data sets from CAZy, and build a SQLite3 local CAZyme database.
