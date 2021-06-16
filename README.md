@@ -15,18 +15,18 @@
 
 `cazy_webscraper` is a Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. This program is free to use under the MIT license when proper recognition is given.
 
-`cazy_webscraper` retrieves protein data from CAZy, producing a local SQL database which enables uses to throughly interrogate the data in a manner unachievable through the CAZy website.
+`cazy_webscraper` retrieves protein data from CAZy, producing a local SQLite3 database which enables users to throughly interrogate the data in a manner unachievable through the CAZy website.
 
 The program additionally, includes an `expand` module, which can retrieve the protein sequences from [GenBank](https://www.ncbi.nlm.nih.gov/genbank/) and protein structure files from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank [(PDB)](https://www.rcsb.org/).
 
-`cazy_webscraper` can be configured to scrape the entire database, selected Classes and/or selected CAZy families. An additional taxonomy filter can be applied to restrict the scraping of CAZymes to specific Kingdoms, genera, species and/or strains.
+`cazy_webscraper` can be configured to scrape the entire database, selected Classes and/or selected CAZy families. An additional taxonomy filter can be applied to restrict the scraping of CAZymes to specific Kingdoms, genera, species and/or strains. Furthermore, data from multiple scrapes can be compiled into a single database. A log of every scrape of CAZy that contributed data to the database is included in the database for transparency, reproducibility and shareablity.
 
-_For detailed documentation see the [full documentation](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest)._
+For detailed documentation see the [full documentation](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest).
 
-_An ER model can be found in the root of the `cazy_webscraper` GitHub repo, demonstrating the structure of the SQL database create by `cazy_webscraper`._
+An ER model of the database craeted by `cazy_webscraper` can be found in the root of the `cazy_webscraper` GitHub repo, which illustrates the structure of the SQL database create by `cazy_webscraper`.
 
 **Step-by-step tutorials**  
-_If you are new to bioinformatics and/or installing/using command-line tools, we've written a series of step-by-step instructions on how to install and use `cazy_webscraper`, which you can find [here](https://cazy-webscraper.readthedocs.io/en/latest/configuration_tutorials.html). In slower time we hope to supplementary these with videos as well, for the visual learners_
+If you are new to bioinformatics and/or using command-line tools, we've written a series of step-by-step instructions on how to install and use `cazy_webscraper`, which you can find [here](https://cazy-webscraper.readthedocs.io/en/latest/configuration_tutorials.html). In slower time we hope to supplement these with videos as well, for the visual learners.
 
 **Easy installation**  
 `cazy_webscraper` can be installed both via `bioconda` channel of `conda`, and via Pypi (`pip`) for quick and easy installation.
@@ -41,11 +41,17 @@ Use `cazy_webscraper` to create a local SQL database, then using SQL perform com
 - Retrieve all EC numbers found in GH1
 - Retrieve the PDB accessions of all CAZymes derived from all strains of _Escherichia coli_, whcih are annotated with at least of the EC numbers EC3.2.1.23, EC3.2.1.25 and are from the CAZy families GH2 and/or GH5
 
+_Please note, `cazy_webscraper` builds a local CAZyme SQLite3 database. It does **not** provide a method for viewing the database. Any SQL compatiable database browser (such as [DB Browser for SQLite (DB4S)](https://sqlitebrowser.org/)) can be used to view the database and perform queries via SQL to interrogate the data._
+
+
+
 ## Referencing
 
 It is expected academic practise to cite the work of others. If you use `cazy_webscraper` in your work *please* do cite our work (including the provided DOI), as well as citing the specific version you use. This is not only helpful for us as developers to get out work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**.  
 
-**Citation:** Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
+> Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
+
+
 
 ## Our last developments before releasing version 1!
 
@@ -53,19 +59,23 @@ We're almost at the stage of releasing the first version of `cazy_webscraper`, b
 
 - Unit Tests: The coverage of the unit tests will be increased to cover at least 95% of the entire package
 
-- The Expand module: This module is for retrieving protein sequences from GenBank and PDB structures from PDB. The code is workable but inefficient. The code will be factorised out into multiple submodules, and include allow applying an additional EC number filter for selecting CAZyme to retrieve structural and sequence data for.
+- The Expand module: This module is for retrieving protein sequences from GenBank and PDB structures from PDB. The code is workable but inefficient. The code will be factorised out into multiple submodules, and include an additional EC number filter for selecting CAZymes to retrieve structural and sequence data for.
 
-- Progress on the Expand module: Retrieving sequences for specific classes and families from a dictionary created using `cazy_webscraper` is complete, although no unit tests have been written yet.
+- Progress on the Expand module: The code has be modularised and is working. We're currently writing the unit tests.
 
-- Documentation: The ReadTheDocs documentation has been updated to include all cmd-line flag. However, we are working on developing written and video tutorials to help users will less experience using the cmd-line to get started with this tool!
+- Documentation: The ReadTheDocs documentation has been updated to include all cmd-line flag. However, we are working on developing written and video tutorials to help users will less experience using the cmd-line to get started with this tool
 
 All this work is being done on the currently active `update_expand` branch.
 
-## Future releases and features
 
-To make `cazy_webscraper` accessible to a wider audience, I will (after the release of version 1) add on a GUI for `cazy_webscraper`. This will likely be slow in development but it will come in the next 6-9 months.
+
+## Future releases, features, feedback and contributing
+
+To make `cazy_webscraper` accessible to a wider audience, I will (after the release of version 1) add on a GUI for `cazy_webscraper`. This will likely be slow in development but it will come eventually.
 
 If there any additional features you would like to see added to `cazy_webscraper` or the documentation, please do raise an issue in the GitHub repo. All feedback is greatly appreciated and the aim is provide a tool users will find extremely useful!
+
+If you would like to contribute to `cazy_webscraper` please raise an issue in the GitHub repo (preferably using the 'Feature request' template).
 
 
 
@@ -77,7 +87,8 @@ Internet access
 The python libraries listed within `requirements.txt`  
 
 
-## Installation
+
+# Installation
 
 There are three different methods to install `cazy_webscraper`:
 
@@ -86,7 +97,8 @@ There are three different methods to install `cazy_webscraper`:
 3. From source
 
 
-### Installing via `bioconda` (Quick and easy installation)
+
+## Installing via `bioconda` (Quick and easy installation)
 
 `cazy_webscraper` is available in the [`bioconda`](https://bioconda.github.io/user/install.html) channel of [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/). If you have the `bioconda` channel available.
 
@@ -109,7 +121,7 @@ Install `cazy_webscraper` via `bioconda` installs the full cazy_webscraper and a
 *When `cazy_webscraper` is installed via `bioconda`, to invoke `cazy_webscraper` call the program from the command-line using `cazy_webscraper`.*
 
 
-### Installing via `pip` (Quick and easy installation)
+## Installing via `pip` (Quick and easy installation)
 
 An easy way to install `cazy_webscraper` is to install it via [PyPi](https://pypi.org/project/cazy-webscraper/0.1.2/), using the command:
 
@@ -120,7 +132,7 @@ pip3 install cazy_webscraper
 *When `cazy_webscraper` is installed via `pip`, to invoke `cazy_webscraper` call the program from the command-line using `cazy_webscraper`.*
 
 
-### Installing from source
+## Installing from source
 
 `cazy_webscraper` can also be installed directly from the source GitHub repository.  
 First clone the GitHub repository. This can be done at the command-line with the command:
@@ -149,22 +161,22 @@ python3 scraper/cazy_webscraper.py
 ```
 
 
-## Getting started
+# Getting started
 
 For a summary for getting started, have a look at the [getting started poster](https://hobnobmancer.github.io/cazy_webscraper/getting_started_poster.pdf).
 
 
-## Best practise
+# Best practise
 
 When performing a series of many, automated, repeated calls to a server it is best practise to do this during the period of the day when traffic is lowest. This typically includes over the weekend and overnight. Therefore, when scraping entire CAZy database, entire class(es), and/or multiple CAZy families it is advised perform these scrapes over night and/or over the weekend.
 
 The webscraper can appear to run slowly but this is due to the limited access speed of the CAZy server. When a CAZy family is being parsed by the scraper, and protein records are being retrieved for the CAZy family a progress bar is produced in the terminal to provide an indicator that webscraper is working. **Expect an entire scrape of the CAZy database to take several hours.** Scraping individual families can be extremely rapid; scraping the entirity of the CAZy family GH1 (containing 42,647 proteins) takes approximately 42 minutes when using a 6-core AMD fx 63000 processor and 16GB RAM.
 
 
-## Output
+# Output
 
 
-### Database
+## Database
 
 To facilitate thorough interrogation of data retrieve from CAZy, minimise storing duplicate and redundant data, data retrieved from CAZy is stored in a local SQL database. Every CAZyme scraped from CAZy has the following data:
 - Protein name
@@ -177,23 +189,23 @@ Each CAZyme may or may not have the following data:
 - PDB accession(s)
 
 
-**Primary and non-primary GenBank accessions:**  
+### Primary and non-primary GenBank accessions
 Often multiple GenBank accession numbers are listed for a given CAZyme within CAZy. CAZy writes the 'best model' in bold, see [here for details](http://www.cazy.org/Help.html), this is interpretted by `cazy_webscraper` as the **primary GenBank accession**. Each unique CAZyme scraped from CAZy, is identified by it's **primary GenBank accession**. This enables associating all CAZy family annotations for a single CAZyme together. To be explicit, a single CAZyme record is for a CAZyme containing, for example, in GH32 and GH64, with both GH32 and GH64 annotations instead of creating a CAZyme record for the instance of the CAZyme in GH32 and another instance for the CAZyme in GH64. Another advantage of this is handling when there are duplicate records in CAZy. Identical entries are identified by two rows in the same HTML table containing identical data. If only a single GenBank accession is listed for a CAZyme (even if it is not written in bold), the lone GenBank accession is defined as the **primary GenBank accession**.
 
 When multiple GenBank accessions are listed, the accession written in bold is listed as the **primary GenBank accession** and all other listed GenBank accessions are listed as **non-primary GenBank accessions**. For the instances when there are multiple GenBank accessions written in bold, only the first listed bold GenBank accession is listed as the **primary GenBank accession**. The remaining GenBank accessions written in bold are flagged up to the user and are listed as **non-primary GenBank accessions**. This method is to enable identifying each unique CAZyme from CAZy by a single unique **primary GenBank accession**.
 
 
-**Primary and non-primary UniProt accessions**
+### Primary and non-primary UniProt accessions
 IF multiple UniProt accessions are listed, all those written in bold are identified by CAZy and `cazy_webscraper` as the 'best' model. Consequently, all UniProt accessions listed in bold are defined as **primary UniProt accessions**, and all UniProt accessions not written in bold are listed as **non-primary UniProt accessions**. In cases when only a single UniProt accession, this lone accession is defined as the **primary UniProt accession** for the respective CAZyme.
 
 
-**PDB accessions**
+### PDB accessions
 *All* PDB accessions stored in CAZy are retrieved, and are *not* differentitated between primary and non-primary accessions.
 
 It is important to note that not all PDB accessions listed in CAZy are also represent in PDB. Therefore, not all PDB accessions retrieved from CAZy can be used to retrieve a protein structure file form PDB. For example, the PDB accession 'BBB[nd]' was previously listed in CAZy but did not represent a record in PDB.
 
 
-## Configuration
+# Configuration
 
 The operation of the `cazy_webscraper` is configured by command-line arguments and a Yaml configuration file.
 
@@ -201,7 +213,7 @@ For the basic invoking of the `cazy_webscraper` use:
 `python3 cazy_webscraper.py`
 This will result in `cazy_webscraper` scraping CAZymes from all CAZy families and species, and write the database to the memory.
 
-### Command line arguments and operation
+## Command line arguments and operation
 
 - `-c` `--config` Path to configuration yaml file
 - `--classes` Define classes to be scraped. Separate classes with a single comma and **no spaces**
@@ -222,7 +234,7 @@ This will result in `cazy_webscraper` scraping CAZymes from all CAZy families an
 - `-v` `--verbose` Enable verbose logging
 
 
-### Configuration files
+## Configuration files
 
 For shareable documentation of the scraping CAZy a configuration file can by used to specify CAZy classes and families to be scraped.
 
@@ -252,7 +264,7 @@ A blank configuration file is packaged within `cazy_webscraper`, within the `scr
 To specify taxonomy filters (Kingdoms, genera, species and strains), list the respective filter under the appropriate keys (kingdoms, genera, species and strains) in the yaml file.
 
 
-## Retrieving protein sequences and structure files
+# Retrieving protein sequences and structure files
 
 
 **NOTE: The expand module of `cazy_webscraper` is currently under signficant redevelopment, which is taking place on the `update_expand` branch. You can track the development of this progress via the `version_1` milestone. The version of the `expand` module included in version 1 of `cazy_webscraper` will be a far more stable version than provided in the current release of `cazy_webscraper`.**
@@ -310,7 +322,7 @@ Optional arguments: _The format to pass arguments to the script is the same form
 - `v` `--verbose` Default False. Enables verbose logging, changing the logger level from `WARNING` to `INFO`.
 
 
-## Directories
+# Directories
 
 Below is a directory plan of this repository, followed by a brief overview of each directories role , to facilitate navigation through the repository. This structure is the same structre found within the `cazy_webscraper` program.
 
