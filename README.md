@@ -9,7 +9,7 @@
 [![Bioconda](https://img.shields.io/badge/BIOCONDA-intergration-brightgreen)](https://bioconda.github.io/user/install.html)
 [![Conda-downloads](https://img.shields.io/conda/dn/bioconda/cazy_webscraper?label=Bioconda%20downloads)](https://bioconda.github.io/user/install.html)  
 [![Pypi](https://img.shields.io/badge/Pypi-intergration-brightgreen)](https://pypi.org/project/cazy-webscraper/)
-![PypiDownload](https://img.shields.io/pypi/dm/cazy_webscraper?label=Pypi%20downloads)  
+[![PypiDownload](https://img.shields.io/pypi/dm/cazy_webscraper?label=Pypi%20downloads)](https://pypi.org/project/cazy-webscraper/)
 
 
 # cazy_webscraper
