@@ -123,7 +123,7 @@ If you do not have the `bioconda` channel available (you may discover this when 
 If Conda is not installed, please see the Conda website for installation `instructions <https://docs.conda.io/projects/conda/en/latest/user-guide/install/>`_.
 
 .. warning::
-   If you install ``cazy_webscraper`` via ``bioconda``, to invoke ``cazy_webscraper`` call it via the command-line using ``cazy_webscraper.py``.
+   If you install ``cazy_webscraper`` via ``bioconda``, to invoke ``cazy_webscraper`` call it via the command-line using ``cazy_webscraper``.
 
 Installing via ``pip``
 ==============================
@@ -152,7 +152,7 @@ To update the version of `pip` install on your computer use:
  Then you should be able to install ``cazy_webscraper`` using the command provided above.
  
 .. warning::
-   If you install ``cazy_webscraper`` via ``pip``, to invoke ``cazy_webscraper`` call it via the command-line using ``cazy_webscraper.py``.
+   If you install ``cazy_webscraper`` via ``pip``, to invoke ``cazy_webscraper`` call it via the command-line using ``cazy_webscraper``.
 
  
  
