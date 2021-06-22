@@ -56,18 +56,26 @@ It is expected academic practise to cite the work of others. If you use `cazy_we
 
 ## Our last developments before releasing version 1!
 
-We're almost at the stage of releasing the first version of `cazy_webscraper`, but there are a few things we want to do first.
-
-- Unit Tests: The coverage of the unit tests will be increased to cover at least 95% of the entire package
-
-- The Expand module: This module is for retrieving protein sequences from GenBank and PDB structures from PDB. The code is workable but inefficient. The code will be factorised out into multiple submodules, and include an additional EC number filter for selecting CAZymes to retrieve structural and sequence data for.
-
-- Progress on the Expand module: The code has be modularised and is working. We're currently writing the unit tests.
-
-- Documentation: The ReadTheDocs documentation has been updated to include all cmd-line flag. However, we are working on developing written and video tutorials to help users will less experience using the cmd-line to get started with this tool
-
+We're almost at the stage of releasing the first version of `cazy_webscraper`, but there are a few things we want to do first.  
 All this work is being done on the currently active `update_expand` branch.
 
+- [ ] Unit Tests: The coverage of the unit tests will be increased to cover at least 95% of the entire package
+
+- [X] The `expand` module: This module is for retrieving protein sequences from GenBank and PDB structures from PDB. The code is workable but inefficient. The code will be factorised out into multiple submodules, and include an additional EC number filter for selecting CAZymes to retrieve structural and sequence data for.
+
+- [X] Write unit tests for the Expand module
+
+- [X] Documentation: Write step-by-step tutorials for using `cazy_webscraper`
+
+## Developments post the release of version 1
+
+There are still many things we would like to add, and are adding to maximise the functionality of `cazy_webscraper`. If there any new features you would like to see added or want to contribute yourself please raise and issue in the repository.
+
+- [ ] Add video tutorials
+
+- [ ] Add submodule into the `expand` module for retrieve protein sequences from the local CAZyme database and writing them out to FASTA files
+
+- [ ] Add the option for users to provide their own GenBank accessions for retrieval of protein sequences, as well as using the taxonomy, biochemical and CAZy class/family filters
 
 
 ## Future releases, features, feedback and contributing
