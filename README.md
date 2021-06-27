@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/Python-v3.8.---orange)](https://www.python.org/about/)
 [![Research](https://img.shields.io/badge/Bioinformatics-Protein%20Engineering-ff69b4)](http://www.eastscotbiodtp.ac.uk/eastbio-student-cohort-2019)  
 [![Bioconda](https://img.shields.io/badge/BIOCONDA-intergration-brightgreen)](https://bioconda.github.io/user/install.html)
-[![Conda-downloads](https://img.shields.io/conda/dn/bioconda/cazy_webscraper?label=Bioconda%20downloads)](https://bioconda.github.io/user/install.html)  
+[![Conda-downloads](https://img.shields.io/conda/dn/bioconda/cazy_webscraper?label=Bioconda%20downloads)](https://anaconda.org/bioconda/cazy_webscraper)  
 [![Pypi](https://img.shields.io/badge/Pypi-intergration-brightgreen)](https://pypi.org/project/cazy-webscraper/)
 [![PypiDownload](https://img.shields.io/pypi/dm/cazy_webscraper?label=Pypi%20downloads)](https://pypi.org/project/cazy-webscraper/)
 
