@@ -4,7 +4,11 @@ License
 MIT License
 -----------
 
+Copyright (c) University of St Andrews 2020-2021
+Copyright (c) University of Strathclyde 2020-2021
 Copyright (c) 2020 Emma E. H. Hobbs
+
+Author: Emma E. H. Hobbs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,5 +31,5 @@ SOFTWARE.
 Questions?
 ==========
 
-Please raise an issue at the GitHub repository issues pages, by
+Please raise any issues at the GitHub repository issues pages, by
 following the `link <https://github.com/HobnobMancer/cazy_webscraper>`_.
