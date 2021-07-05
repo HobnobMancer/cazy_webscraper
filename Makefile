@@ -12,16 +12,8 @@ setup_env:
 
 # Clean up local Sphinx documentation output
 clean_docs:
-<<<<<<< HEAD
 	@rm -rf docs/build/html
 
 # Build and display local Sphinx documentation
 docs: clean_docs
 	@cd docs && make html && open build/html/index.html
-=======
-	@rm -rf docs/_build/html
-
-# Build and display local Sphinx documentation
-docs: clean_docs
-	@cd docs && make html && open _build/html/index.html
->>>>>>> d2a1aac (add Makefile to automate documentation building)
