@@ -12,7 +12,7 @@ setup_env:
 
 # Clean up local Sphinx documentation output
 clean_docs:
-	@rm -rf docs/build/html
+	@rm -rf docs/_build/html
 
 # Build and display local Sphinx documentation
 docs: clean_docs
