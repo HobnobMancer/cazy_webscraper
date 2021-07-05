@@ -55,6 +55,17 @@ Quickstart
    quickstart
 
 -------------
+Best practice
+-------------
+
+When performing a series of many, automated, repeated calls to a server it is polite to do this when internet traffic is lowest *at the server*. This is typically at the weekend and overnight.
+
+The webscraper can appear to run slowly but this may be due to the bandwidth at the CAZy server, or server speed. ``cazy_webscraper`` provides a progress bar to reassure the user that the webscraper is working. 
+
+.. WARNING::
+   **Please do not perform a complete scrape of the CAZy database unless you specifically require to reproduce the entire CAZy dataset. A complete scrape will take several hours and may unintentionally deny the service to others.**
+
+-------------
 Documentation
 -------------
 
@@ -69,16 +80,6 @@ For details and updates on development, please consult the `GitHub repository <h
    genbank
    pdb
    license
-
--------------
-Best practice
--------------
-
-When performing a series of many, automated, repeated calls to a server it is polite to do this when internet traffic is lowest *at the server*. This is typically at the weekend and overnight.
-
-The webscraper can appear to run slowly but this may be due to the bandwidth at the CAZy server, or server speed. ``cazy_webscraper`` provides a progress bar to reassure the user that the webscraper is working. 
-
-**Please do not perform a complete scrape of the CAZy database unless you specifically require to reproduce the entire CAZy dataset. A complete scrape will take several hours and may unintentionally deny the service to others.**
 
 
 --------------------------
