@@ -16,4 +16,4 @@ clean_docs:
 
 # Build and display local Sphinx documentation
 docs: clean_docs
-	@cd docs && make html && open build/html/index.html
+	@cd docs && make html && open _build/html/index.html

@@ -3,6 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root ``toctree`` directive.
 
+===========================================
 Welcome to cazy_webscraper's documentation!
 ===========================================
 
@@ -42,13 +43,25 @@ Welcome to cazy_webscraper's documentation!
 
 ``cazy_webscraper`` retrieves data from CAZy, writing it to a local SQLite3 file. ``cazy_webscraper`` can retrieve the protein sequences from NCBI, for CAZymes in the local database, and also write out those sequences in FASTA format. Additionally, ``cazy_webscraper`` can retrieve protein structures from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank, `PDB <https://www.rcsb.org/>`_, for CAZymes in the local database.
 
-``cazy_webscraper`` can be configured to scrape the entire CAZy database, to recover only CAZymes filterd by user-supplied criteria, such as CAZy classes, CAZy (sub)family, or taxonomy. 
+``cazy_webscraper`` can be configured to scrape the entire CAZy database, to recover only CAZymes filtered by user-supplied criteria, such as CAZy classes, CAZy (sub)family, or taxonomy. 
 
-For details and updates on development, please consult the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_.
-
+----------
+Quickstart
+----------
 
 .. toctree::
    :maxdepth: 4
+   
+   quickstart
+
+-------------
+Documentation
+-------------
+
+For details and updates on development, please consult the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_.
+
+.. toctree::
+   :maxdepth: 2
    
    installation
    configuration
@@ -57,13 +70,24 @@ For details and updates on development, please consult the `GitHub repository <h
    pdb
    license
 
+-------------
+Best practice
+-------------
 
+When performing a series of many, automated, repeated calls to a server it is polite to do this when internet traffic is lowest *at the server*. This is typically at the weekend and overnight.
+
+The webscraper can appear to run slowly but this may be due to the bandwidth at the CAZy server, or server speed. ``cazy_webscraper`` provides a progress bar to reassure the user that the webscraper is working. 
+
+**Please do not perform a complete scrape of the CAZy database unless you specifically require to reproduce the entire CAZy dataset. A complete scrape will take several hours and may unintentionally deny the service to others.**
+
+
+--------------------------
 Citing ``cazy_webscraper``
 --------------------------
  
 If you use ``cazy_webscraper`` in your work *please* do cite our work (including the provided DOI), as well as the specific version of the tool you use. This is not only helpful for us as developers to get out work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**. Citation:
    
-   Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
+   Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
 
 
 Requirements
@@ -73,67 +97,6 @@ POSIX, macOS, or Linux
 Python >= 3.8
 Internet access
 The python libraries listed in ``requirements.txt``
-
-
-Installation
-------------
-
-**Quick and easy**
-
-``conda``
-=========
-
-The most recent version of ``cazy_webscraper`` can be installed with ``conda``
-
-.. code-block:: bash
-
-   conda install cazy_webscraper
-
-``pip``
-=======
-
-``pip`` should distribute the latest version of ``cazy_webscraper``, although there may be some minor lag between GitHub releases and ``pip``.
-
-.. code-block:: bash
-
-   pip3 install cazy_webscraper
-
-**Install from source**
-
-[1] First clone the GitHub repository. This can be done at the command-line with the command:
-
-.. code-block:: bash
-
-   git clone https://github.com/HobnobMancer/cazy_webscraper  
-
-[2] Use Python ``distutils`` to install ``cazy_webscraper``.
-
-.. code-block:: bash
-
-   python setup.py install
-
-For those new to using the command-line and installing packages using ``pip`` here are the lines of 
-code you can copy and invoke one at a time into your command-line (please note these comamnds are written in ``bash``).
-
-.. code-block:: bash
-
-   git clone https://github.com/HobnobMancer/cazy_webscraper
-   cd cazy_webscraper       # this line changes the directory
-   python setup.py install  # this install the package and executables
-
-
-Getting started
----------------
-
-For a quick summary for getting started, checkout the poster: Hobbs, Emma E. M.; Pritchard, Leighton; Gloster, Tracey M.; Chapman, Sean (2021): cazy_webscraper - getting started. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370869.v3 
-
-
-Best practice
--------------
-
-When performing a series of many, automated, repeated calls to a server it is polite to do this when internet traffic is lowest *at the server*. This is typically at the weekend and overnight.
-
-The webscraper can appear to run slowly but this may be due to the bandwidth at the CAZy server, or server speed. ``cazy_webscraper`` provides a progress bar to reassure the user that the webscraper is working. **However, expect an entire scrape of the CAZy database to take several hours.**
 
 
 Output
