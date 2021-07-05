@@ -84,7 +84,7 @@ Installation
 ``conda``
 =========
 
-*The latest version of ``cazy_webscraper`` will be installed with ``conda``*
+The most recent version of ``cazy_webscraper`` can be installed with ``conda``
 
 .. code-block:: bash
 
@@ -93,7 +93,7 @@ Installation
 ``pip``
 =======
 
-*``pip`` should distribute the latest version of ``cazy_webscraper``, although there may be some minor lag between GitHub releases and ``pip``.*
+``pip`` should distribute the latest version of ``cazy_webscraper``, although there may be some minor lag between GitHub releases and ``pip``.
 
 .. code-block:: bash
 
@@ -158,9 +158,9 @@ Each CAZyme may or may not have the following data, depending on the entry:
 Primary and non-primary GenBank accessions
 ==========================================
 
-Multiple GenBank accession numbers may be listed for a single CAZyme at CAZy. CAZy writes the "best model" in bold, see `here for details <http://www.cazy.org/Help.html>`_. This is interpreted by ``cazy_webscraper`` as the **primary GenBank accession**. Where multiple GenBank accessions written in bold, only the first listed bold GenBank accession is listed as the **primary GenBank accession**. All other listed GenBank accessions are listed as **non-primary GenBank accessions**.
+Multiple GenBank accession numbers may be listed for a single CAZyme at CAZy. CAZy writes the "best model" in bold, see `here for details <http://www.cazy.org/Help.html>`_. This is interpreted by ``cazy_webscraper`` as the **primary GenBank accession**. Where multiple GenBank accessions are written in bold, only the first listed bold GenBank accession is listed as the **primary GenBank accession**. All other listed GenBank accessions are listed as **non-primary GenBank accessions**.
 
-Each unique CAZyme scraped from CAZy, is identified by its **primary GenBank accession**. Even if a CAZyme is associated with multiple families, it is stored as a single instance.
+Each CAZyme scraped from CAZy is identified uniquely by its **primary GenBank accession**. Even if a CAZyme is associated with multiple families, it is stored as a single CAZyme record in the local SQLite database.
 
 Primary and non-primary UniProt accessions
 ==========================================
