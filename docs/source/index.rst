@@ -27,33 +27,32 @@ Welcome to cazy_webscraper's documentation!
    :target: https://www.python.org/about/
 .. image:: https://img.shields.io/badge/Bioinformatics-EASTBio-ff69b4
    :target: http://www.eastscotbiodtp.ac.uk/eastbio-student-cohort-2019
-.. image:: https://img.shields.io/badge/BIOCONDA-intergration-brightgreen
+.. image:: https://img.shields.io/badge/BIOCONDA-integration-brightgreen
    :target: https://bioconda.github.io/user/install.html
 .. image:: https://img.shields.io/conda/dn/bioconda/cazy_webscraper?label=Bioconda%20downloads
    :target: https://bioconda.github.io/user/install.html
-.. image:: https://img.shields.io/badge/Pypi-intergration-brightgreen
+.. image:: https://img.shields.io/badge/Pypi-integration-brightgreen
    :target: https://pypi.org/project/cazy-webscraper/
 .. image:: https://img.shields.io/pypi/dm/cazy_webscraper?label=Pypi%20downloads
    :target: https://pypi.org/project/cazy-webscraper/
 
-``cazy_webscraper`` is a Python3 package for the automated retrieval of protein data from the `CAZy <http://wwww.cazy.org/>`_ database. This program is free to use under the MIT license, and we kindly request that, if you use this program or Python package, you cite it as indicated below.
+``cazy_webscraper`` is a Python3 package for the automated retrieval of carbohydrate-active enzyme (CAZyme) data from the `CAZy <http://wwww.cazy.org/>`_ database. This program is free to use under the MIT license, and we kindly request that, if you use this program or Python package, you cite it as indicated below.
 
    Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
 
-``cazy_webscraper`` retrieves data from CAZy, writing out the data to a local file in the same manner as the data is presented in the CAZy website. If requested, ``cazy_webscraper`` will retrieve the protein sequences of scraped CAZymes from GenBank, writing out the sequences in FASTA format. Additionally, if requested, ``cazy_webscraper`` will retrieve protein structures for scraped CAZymes from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank, `PDB <https://www.rcsb.org/>`_.
+``cazy_webscraper`` retrieves data from CAZy, writing it to a local SQLite3 file. ``cazy_webscraper`` can retrieve the protein sequences from NCBI, for CAZymes in the local database, and also write out those sequences in FASTA format. Additionally, ``cazy_webscraper`` can retrieve protein structures from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank, `PDB <https://www.rcsb.org/>`_, for CAZymes in the local database.
 
-``cazy_webscraper`` can be configured to scrape the entire CAZy database, recover only data for selected CAZy classes and/or selected CAZy families. Retrieved data can be separated/split by CAZy class, CAZy family, or not at all.
+``cazy_webscraper`` can be configured to scrape the entire CAZy database, to recover only CAZymes filterd by user-supplied criteria, such as CAZy classes, CAZy (sub)family, or taxonomy. 
 
-For details and updates on development, please checkout the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_.
+For details and updates on development, please consult the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_.
 
-The tutorial pages include step-by-step guides on how to install and use ``cazy_webscraper``.
 
 .. toctree::
    :maxdepth: 4
    
-   configuration_scraper
-   installation_tutorials
-   configuration_tutorials
+   installation
+   configuration
+   tutorial
    genbank
    pdb
    license
@@ -62,7 +61,7 @@ The tutorial pages include step-by-step guides on how to install and use ``cazy_
 Citing ``cazy_webscraper``
 --------------------------
  
-If you use ``cazy_webscraper`` in your work *please* do cite our work (including the provided DOI), as well as citing the specific version you use. This is not only helpful for us as developers to get out work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**. Citation:
+If you use ``cazy_webscraper`` in your work *please* do cite our work (including the provided DOI), as well as the specific version of the tool you use. This is not only helpful for us as developers to get out work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**. Citation:
    
    Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
 
@@ -70,7 +69,7 @@ If you use ``cazy_webscraper`` in your work *please* do cite our work (including
 Requirements
 ------------
 
-POSIX, macOS, or Linux (native or emulated)
+POSIX, macOS, or Linux
 Python >= 3.8
 Internet access
 The python libraries listed in ``requirements.txt``
