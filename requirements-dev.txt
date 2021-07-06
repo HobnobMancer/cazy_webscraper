@@ -10,4 +10,5 @@ pylint
 pytest
 pytest-cov
 pytest-ordering
+rstcheck
 sphinx
