@@ -56,7 +56,11 @@ Please see the [`pip` documentation](https://pypi.org/project/pip/) for further 
 
 ### Quickstart
 
-We have produced a getting started with `cazy_webscraper` [poster](https://hobnobmancer.github.io/cazy_webscraper/getting_started_poster.pdf).
+We have produced a "Getting Started With `cazy_webscraper`" [poster](https://hobnobmancer.github.io/cazy_webscraper/getting_started_poster.pdf).
+
+### Retrieving protein sequences and structure files
+
+The `expand` subcommand is used to update a local CAZy database. It manages retrieval of CAZyme protein sequences from GenBank and protein structure files from RCSB/PDB.
 
 ### Roadmap
 
@@ -68,11 +72,6 @@ We welcome contributions and suggestions. You can raise issues at this repositor
 
 - [Issues](https://github.com/HobnobMancer/cazy_webscraper/issues)
 - [Pull Requests](https://github.com/HobnobMancer/cazy_webscraper/pulls)
-
-
-### Retrieving protein sequences and structure files
-
-The `expand` subcommand is used to update a local CAZy database. It manages retrieval of CAZyme protein sequences from GenBank and protein structure files from RCSB/PDB.
 
 ## LICENSE
 
