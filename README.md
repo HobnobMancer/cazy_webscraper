@@ -3,16 +3,14 @@
 -------------------------------
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4300858.svg)](https://doi.org/10.5281/zenodo.4300858)
-[![Version](https://img.shields.io/badge/Version-0.1.6-orange)](https://www.python.org/about/)
 [![licence](https://img.shields.io/badge/Licence-MIT-green)](https://github.com/HobnobMancer/cazy_webscraper/blob/master/LICENSE)
 [![CircleCI](https://circleci.com/gh/HobnobMancer/cazy_webscraper.svg?style=shield)](https://circleci.com/gh/HobnobMancer/cazy_webscraper)
 [![codecov](https://codecov.io/gh/HobnobMancer/cazy_webscraper/branch/master/graph/badge.svg)](https://codecov.io/gh/HobnobMancer/cazy_webscraper)
 [![Documentation Status](https://readthedocs.org/projects/cazy-webscraper/badge/?version=latest)](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest)
-[![Python](https://img.shields.io/badge/Python-v3.8.---orange)](https://www.python.org/about/)
-[![Research](https://img.shields.io/badge/Bioinformatics-Protein%20Engineering-ff69b4)](http://www.eastscotbiodtp.ac.uk/eastbio-student-cohort-2019)  
-[![Bioconda](https://img.shields.io/badge/BIOCONDA-integration-brightgreen)](https://bioconda.github.io/user/install.html)
+[![Research](https://img.shields.io/badge/Bioinformatics-Protein%20Engineering-ff69b4)](http://www.eastscotbiodtp.ac.uk/eastbio-student-cohort-2019)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/cazy_webscraper/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)
 [![Conda-downloads](https://img.shields.io/conda/dn/bioconda/cazy_webscraper?label=Bioconda%20downloads)](https://anaconda.org/bioconda/cazy_webscraper)  
-[![Pypi](https://img.shields.io/badge/Pypi-integration-brightgreen)](https://pypi.org/project/cazy-webscraper/)
+[![pyani PyPi version](https://img.shields.io/pypi/v/cazy_webscraper "PyPI version")](https://pypi.python.org/pypi/cazy_webscraper)
 [![PypiDownload](https://img.shields.io/pypi/dm/cazy_webscraper?label=Pypi%20downloads)](https://pypi.org/project/cazy-webscraper/)
 
 -------------------------------
