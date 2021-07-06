@@ -10,7 +10,7 @@ Welcome to cazy_webscraper's documentation!
 .. image:: cazy_web_logo.svg
    :scale: 50 %
    :alt: cazy_webscraper logo, host organisations and funding
-   :align: centre
+   :align: center
 
 | For all the latest updates, and development progress make sure to check the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_
 
@@ -89,15 +89,6 @@ Citing ``cazy_webscraper``
 If you use ``cazy_webscraper`` in your work *please* do cite our work (including the provided DOI), as well as the specific version of the tool you use. This is not only helpful for us as developers to get out work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**. Citation:
    
    Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
-
-
-Requirements
-------------
-
-POSIX, macOS, or Linux
-Python >= 3.8
-Internet access
-The python libraries listed in ``requirements.txt``
 
 
 Output
