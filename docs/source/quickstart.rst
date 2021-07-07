@@ -42,16 +42,15 @@ For a quick summary of how to get started, check out our poster:
 Default Usage
 -------------
 
-To invoke the webscraper with its default functionality call the webscraper at the command line:  
+To invoke the webscraper and get basic help, call the webscraper at the command line:  
 
 .. code-block:: bash
 
-  cazy_webscraper 
+  cazy_webscraper -h
 
 The default behaviour of the scraper is:
 
 * Scrape all entries in the CAZy database
-* Do not split/separate the data: produce a single output
 * Write the resulting data to STDOUT
 * Do not retrieve subfamilies (subfamily members will be retrieved but only their parent family be listed)
 * Do not retrieve FASTA files from GenBank
