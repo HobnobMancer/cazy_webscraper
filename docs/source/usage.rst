@@ -1,6 +1,6 @@
-===========================================
-Configuring the CAZy webscraper
-===========================================
+=========================
+Using ``cazy_webscraper``
+=========================
 
 ``cazy_webscraper`` can be configured to retrieve user specified data sets from CAZy. The configuration 
 applies to the retrieval of protein sequences from GenBank and protein structure files from PDB.
