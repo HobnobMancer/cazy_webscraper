@@ -77,6 +77,7 @@ For details and updates on development, please consult the `GitHub repository <h
    installation
    configuration
    tutorial
+   database
    genbank
    pdb
    license
@@ -91,82 +92,10 @@ If you use ``cazy_webscraper`` in your work *please* do cite our work (including
    Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
 
 
-Output
-------
-
-Database
-========
-
-To facilitate thorough interrogation of data retrieved from CAZy, minimise storing duplicate and redundant data, data retrieved from CAZy is stored in a local SQL database. Every CAZyme scraped from CAZy has the following data:
-
-- Protein name
-- CAZy (sub)family
-- GenBank accession(s)
-
-Each CAZyme may or may not have the following data, depending on the entry:
-
-- EC number(s)
-- UniProt acession(s)
-- PDB accession(s)
-
-Primary and non-primary GenBank accessions
-==========================================
-
-Multiple GenBank accession numbers may be listed for a single CAZyme at CAZy. CAZy writes the "best model" in bold, see `here for details <http://www.cazy.org/Help.html>`_. This is interpreted by ``cazy_webscraper`` as the **primary GenBank accession**. Where multiple GenBank accessions are written in bold, only the first listed bold GenBank accession is listed as the **primary GenBank accession**. All other listed GenBank accessions are listed as **non-primary GenBank accessions**.
-
-Each CAZyme scraped from CAZy is identified uniquely by its **primary GenBank accession**. Even if a CAZyme is associated with multiple families, it is stored as a single CAZyme record in the local SQLite database.
-
-Primary and non-primary UniProt accessions
-==========================================
-
-If multiple UniProt accessions are listed for a CAZyme, all accessions written in bold are treated by ``cazy_webscraper`` as the 'best' model. All UniProt accessions listed in bold are defined as **primary UniProt accessions**, and all other accessions are listed as **non-primary UniProt accessions**. 
-
-PDB accessions
-==============
-
-All PDB accessions associated with a CAZyme are considered equal, and no differentiation is made between primary and non-primary accessions.
-
-**NOTE:** not all PDB accessions listed in CAZy are present in PDB. 
-
-Protein sequences
-=================
-
-If enabled, the protein sequence of each scraped CAZyme is retrieved from GenBank in FASTA format.
-
-Protein structures
-==================
-
-If requested, protein structures are written out to disk in a user-specified directory.
-
-
-Quick Start
---------------
-
-To invoke the webscraper with its default functionality call the webscraper at the command line:  
-
-.. code-block:: bash
-
-  cazy_webscraper 
-
-The default behaviour of the scraper is:
-
-* Scrape all entries in the CAZy database
-* Do not split/separate the data: produce a single output
-* Write the resulting data to STDOUT
-* Do not retrieve subfamilies (subfamily members will be retrieved but only their parent family be listed)
-* Do not retrieve FASTA files from GenBank
-* Do not retrieve protein sequences from PDB
-
-
-Configuration
---------------
-
-The scraping of CAZy is entirely configurable to suit your purpose. Entire classes and/or specific families can be scraped, and the ability to scrape subfamilies can be enabled or disabled.
-
-For more details see the configuration section of the documetation.
-
-
+----------------------
 Development and issues
------------------------
+----------------------
 
-If there are additional features you wish to be added, you have problems with the scraper, or want to contribute please raise an issue at the GitHub repository.
+If there are additional features you wish to be added, you have problems with the scraper, or want to contribute please raise an issue at the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_.
+
+* Issues Page: `https://github.com/HobnobMancer/cazy_webscraper/issues <https://github.com/HobnobMancer/cazy_webscraper/issues>`_
