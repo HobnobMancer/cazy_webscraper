@@ -2,161 +2,118 @@
 Using ``cazy_webscraper``
 =========================
 
-``cazy_webscraper`` can be configured to retrieve user specified data sets from CAZy. The configuration 
-applies to the retrieval of protein sequences from GenBank and protein structure files from PDB.
+``cazy_webscraper`` can be used to retrieve user-specified data sets from the CAZy database. The ``cazy_webscraper`` application can be invoked _via_ the command line
 
-``cazy_webscraper`` can be configured via the **command line** and/or via a **YAML configuration file**.
+.. NOTE::
+  ``cazy_webscraper`` options can be specified in a **YAML configuration file**, to enable transparency and reproducibility.
 
-This page provides a brief summary of each of the options that can be invoked to configure the scraping of CAZy 
-using ``cazy_webscraper``. We are currently working on writing additional pages that work through examples of how to invoke 
-and combine these options to fully customise the scraping of CAZy.
+This page provides a brief summary of command-line options for ``cazy_webscraper`` that control the retrieval of data sets from the CAZy database, including:
 
+* Retrieve only specified CAZy classes and families or subfamilies
+* Retrieve only CAZymes from taxonomic kingdoms, genera, species, or strains
+* Recover only CAZymes with specified EC numbers
+* Local SQLite3 database path
+* Verbosity level and logging options
 
-Configuration via the command line
------------------------------------
-
-There are no required/positional arguments for the webscraper, therefore the scraper can be enabled 
-by simply calling the scraper at the command line in the terminal: 
-
-.. code-block:: bash
-  python3 <path_to_cazy_webscraper.py_file>
-
-The ``cazy_webscraper.py`` file is located within the directory ``scraper``. Therefore, if the terminal 
-is already pointing at the ``scraper`` directory, the command to invoke ``cazy_webscraper`` is:
-
-.. code-block:: bash
-  python3 cazy_webscraper.py
-
-When optional arguments are provided the default behaviour of the scraper will be performed. 
-The default behaviour is to:
-
-* Scrape the entire CAZy databases
-* Write the resulting database to standard out (STDOUT)
-* Not to retrieve subfamilies (members of subfamilies will be retrieved but only their parent family will be listed)
-
-
-Options configurable at the command line
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The following behaviours of the ``cazy_webscraper`` can be configured at the command-line in the terminal:  
-
-* Limit the scraping of CAZy to specific CAZy classes, CAZy families, kingdoms, genuera, species, strains and/or EC numbers.
-* Force writing out the database to a a new or existing directory
-* Write out a log file of the packages operation
-* Not delete content already present in the output directory
-* Enable retrieving subfamilies
-* Enable verbose logging during the operation of the webscraper
-
-
+--------------------
 Command line options
-^^^^^^^^^^^^^^^^^^^^
-
-The below are listed the flags to be called when invoking ``cazy_webscraper`` in order to configure its operations. 
-For example: ``cazy_webscraper -s -v``
-
-..note::
-    If an optional command is not given when calling the webscraper the relative default behaviour 
-    will be performed.
-
-    The short option is the shortened version of the command, and the long option is the long hand 
-    method of writing the command, only one of the other needs be called not both.
-
+--------------------
 
 .. list-table:: Command line options
    :header-rows: 1
 
    * - Short option
      - Long option
-     - How to use
-     - Default behaviour
+     - Action
+     - Default
    * - ``-c``
      - ``--config``
-     - Pass a path to a YAML configuration file, to specify CAZy classes, families, kingdoms, genera, species, strains and EC numbers to scrape.
-     - No path given, therefore, no configuration provided from a YAML file. Scrape all of CAZy unless other command-line options are provided.
+     - path to a YAML configuration file
+     - do not use YAML configuration file
    * -
      - ``--classes``
-     - Define classes from which all families are to be scraped. Separate classes with a single comma (e.g. ``GH,PL``)
-     - No CAZy classes specified for scraping, therefore, scrape all CAZy classes (unless specific families are provided)
+     - define CAZy classes to be retrieved (comma-separated list for multiple classes)
+     - no specified value
    * - ``-d``
      - ``--database``
-     - Path to an existing SQL database produced by ``cazy_webscraper``, this enables adding more data retrieved from CAZy to an existing database.
-     - Build a new database.
+     - path to SQLite3 database
+     - create a new database with default name
    * - 
      - ``--ec``
-     - Specify specific EC numbers so that only CAZymes annotated with these EC numbers are scraped. Separate EC numbers with a single comma (e.g. ``EC1.2.3.4,EC2.3.4.5``)
-     - No EC numbers specified, therefore, retrieve data for CAZymes regardless of their EC number annotations
+     - define EC numbers to filter CAZyme data (comma-separated list for multiple values)
+     - no specified value
    * - ``-f``
      - ``--force``
-     - Forcing writing out to directory that already exists, if specificed as the output directory. Add the option to the command and do not add anything else, for example: ``python3 cazy_webscraper -o my_dir/ -f``.
-     - Force is false, thus if the output directory already exists the output will not be written to it. ``cazy_webscraper`` will raise an error and close.
+     - force overwriting of existing output
+     - do not force overwrite
    * -
      - ``--families``
-     - Define CAZy families to be scraped. Separate families with a single comma (e.g. ``GH1,GH2``). Use the proper CAZy nomenclature for family names (e.g. GH1 not gh1)
-     - No families specified to be scraped at the command line
+     - define CAZy families to be retrieved (comma-separated list for multiple families)
+     - no specified value
    * -
      - ``--genera``
-     - Specify specific genera of source organisms of CAZyme to scrape. Separate multiple genera with a comma (e.g. ``Aspergillus,Trichoderma``)
-     - No genera specified, so scrapes CAZymes from all genera unless other configuration filters are applied.
+     - filter CAZyme data on taxonomic genus (comma-separated list for multiple values)
+     - do not filter on genus
    * - 
      - ``--get_pages``
-     - Retrieve the HTML code from CAZy for the families that match the configuration criteria provided. The HTML pages are written out to the disk as HTML files, to create a local library of CAZy HTML pages.
-     - Do not write out HTML files to disk and instead scrape the protein data from the retrieved HTML pages.
+     - retrieve HTML from CAZy for specified CAZy families and write to disk
+     - do not retrieve HTML to disk
    * - ``-h``
      - ``--help``
-     - Displays all command-line options for the webscraper in the terminal, including defining their default behaviour and required additional information.
-     - Not to display the help information.
+     - display command line options
+     -  
    * - 
      - ``--kingdoms``
-     - Specify specific taxonomic kingdoms to retrieve CAZymes only sourced from organisms from these kingdoms. The available kingdoms are: archaea, bacteria, eukaryota, viruses, unclassified (not case sensitive).
-     - No taxonomic kingdoms provided, therefore scrape from all kingdoms.
+     - filter CAZyme data on taxonomic kingdom (comma-separated list for multiple values)
+     - do not filter on kingdom
    * - ``-l``
      - ``--log``
-     - Enable writing out a log file, logging the operation of the webscraper. Add the option to command followed by desired path of the resulting log file. This the path to the file not the directory to which the log file is to be written.
-     - Not to write out a log file of the webscrapers operation.
+     - path to log file
+     - do not write log file
    * - ``-n``
      - ``--nodelete``
-     - Do not delete content in the already existing output directory, this applies for the dataframe, FASTA and protein structure output directories. Simply add this option to the command.
-     - Nodelete is false, delete the content already presented in the already existent output directories.
+     - do not delete ("clobber") existing output when overwriting
+     - delete existing output when overwriting
    * - ``-o``
      - ``--output`` 
-     - Specify the directory to write the resulting database of CAZymes to. This directory does not already have to exist, if it does not exist ``cazy_webscraper``` will make the directory. Add the option to the command followed by the path to the desired output directory.
-     - Write the output database to standard out.
+     - path to output database
+     - write to STDOUT
    * - ``-r``
      - ``--retries``
-     - Number of times to retry scraping a family or class page if error encountered.
+     - number of times to retry CAZy web requests.
      - 10
    * -
      - ``--scrape_files``
-     - Scrape CAZyme data from local HTML files containing HTML code from CAZy. Pass the path to the directory containing the CAZy HTML files.
-     - Do not scrape from local HTML pages but call directly to CAZy and scrape the HTML code as it is retrieved.
+     - path to local CAZy HTML files; data will be scraped from these files instead of CAZy website
+     - do not use local CAZy HTML files
    * - ``-s``
      - ``--subfamilies``
-     - Enable retrieval of subfamilies. If not enabled then the parent CAZy family will be listed for the relevant CAZymes. Simply add the option to the command.
-     - Do not retrieve the subfamily annotation. Only the parent CAZy family annotation will be added to the database for applicable CAZymes.
+     - define CAZy subfamilies to be retrieved (comma-separated list for multiple families)
+     - no specified value
    * - 
      - ``--species``
-     - Specify specific species to retrieve CAZymes from. Specifying the species will result in CAZymes from all strains of this species being retrieved. To list multiple species, separate them with a comma (e.g. ``Aspergillus niger,Aspergillus fumigatus``).
-     - No specific species specified.
+     - filter CAZyme data on taxonomic species (comma-separated list for multiple values)
+     - do not filter on species
    * - 
      - ``--strains``
-     - Specify specific strains of species to retrieve CAZymes from. To list multiple species, separate them with a comma (e.g. ``Aspergillus niger CBS 513.88,Aspergillus fumigatus Af293``).
-     - No specific species specified.
+     - filter CAZyme data on strain (comma-separated list for multiple values)
+     - do not filter on strain
    * - 
      - ``--streamline``
-     - Specify attributes that are presumed to be the same each time the same CAZyme is parsed from multiple families. The options are: genbank, ec, uniprot and pdb. Any combination can be provided. GenBank refers to non-primary GenBank accessions.
-     - Streamline mode not enabled, therefore, for every every CAZyme record, check all its provided data is catalogued into the database.
+     - override CAZy metadata for each recovered record
+     - do not override CAZy metadata
    * - ``-t``
      - ``--timeout``
-     - Specify how long (in seconds) a connection is tried before it is called as timed out.
+     - wait time before CAZy web connection is considered timed out
      - 45
    * - ``-v``
      - ``--verbose``
-     - Enable verbose logging of the webscraper. This provides more detailed logging of the progress of the webscrapers operation. Simply add the option to the command.
-     - Do not perform verbose logging. Only log if a warning or error is raised.
+     - enable verbose logging and output
+     - standard logging/output level
 
-
-Basic examples of configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------
+Basic Usage
+-----------
 
 The command-line options listed above can be used in any combination to customise the scraping of CAZy. The options that apply a 'filter' 
 to restrict which CAZymes are scraped from CAZy are applied in combination. For example, if the ``--families`` option and ``--ec`` option are called then 

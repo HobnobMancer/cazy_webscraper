@@ -75,7 +75,7 @@ For details and updates on development, please consult the `GitHub repository <h
    :maxdepth: 2
    
    installation
-   configuration
+   usage
    tutorial
    database
    genbank
