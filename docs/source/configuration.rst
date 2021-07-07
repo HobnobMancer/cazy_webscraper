@@ -21,8 +21,8 @@ by simply calling the scraper at the command line in the terminal:
 .. code-block:: bash
   python3 <path_to_cazy_webscraper.py_file>
 
-The `cazy_webscraper.py` file is located within the directory `scraper`. Therefore, if the terminal 
-is already pointing at the `scraper` directory, the command to invoke ``cazy_webscraper`` is:
+The ``cazy_webscraper.py`` file is located within the directory ``scraper``. Therefore, if the terminal 
+is already pointing at the ``scraper`` directory, the command to invoke ``cazy_webscraper`` is:
 
 .. code-block:: bash
   python3 cazy_webscraper.py
@@ -266,7 +266,7 @@ Configuration when scraping subfamilies
 If any subfamilies are listed within the configuration file, the retrieval of subfamilies **must** 
 be enabled at the command line uisng ``--subfamilies``.
 
-If the parent family, e.g GH3, is listed in the configuration file and `--subfamilies` is enabled, 
+If the parent family, e.g GH3, is listed in the configuration file and ``--subfamilies`` is enabled, 
 all proteins catalogued under GH3 and its subfamilies will be retrieved. This is to save time 
 having to write out all the subfamilies for a given CAZy family. The scraper will remove any 
 duplicate proteins automatically.
@@ -275,11 +275,11 @@ duplicate proteins automatically.
 An example configuration file
 -----------------------------
 
-A blank configuration file is packaged within `cazy_webscraper`, within the `scraper` directory, 
-called `scraper_config.yaml`. This configuration file contains comments to assit filling in the 
+A blank configuration file is packaged within ``cazy_webscraper``, within the ``scraper`` directory, 
+called ``scraper_config.yaml``. This configuration file contains comments to assit filling in the 
 file correctly. A new configuration file with any given name can be created and used. However, 
 it **must** be a Yaml file and it **must** use the same headings/tags as used in the configuration 
-file `scraper_config.yaml`.Please find more information on writing lists in Yaml files 
+file ``scraper_config.yaml``.Please find more information on writing lists in Yaml files 
 [here](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html).
 
 Below is an example of how the configuration file may look.
