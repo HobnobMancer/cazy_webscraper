@@ -63,8 +63,7 @@ The command-line options listed above can be used in any combination to customis
 to restrict which CAZymes are scraped from CAZy are applied in combination. For example, if the ``--families`` option and ``--ec`` option are called then 
 only CAZymes from the specified families **and** annotated with the listed EC numbers will be retrieved.
 
-We will now walk through some examples of how to use ``cazy_webscraper``. All example code provided in this section will presume that the terminal is 
-pointed at the `scraper` directory, which contains the `cazy_webscraper.py` file.
+We will now walk through some examples of how to use ``cazy_webscraper``. All example code provided in this section will presume that the terminal is pointed at the ``scraper`` directory, which contains the ``cazy_webscraper.py`` file.
 
 .. note::
    **For those new to using command-line tools: flags**
@@ -789,7 +788,7 @@ If a CAZyme is not part of a subfamily only its CAZy family annotations will be 
 If any subfamilies are listed within the configuration file, the retrieval of subfamilies **must** 
 be enabled at the command line uisng ``--subfamilies``.
 
-If the parent family, e.g GH3, is listed in the configuration file and `--subfamilies` is enabled, 
+If the parent family, e.g GH3, is listed in the configuration file and ``--subfamilies`` is enabled, 
 all proteins catalogued under GH3 and its subfamilies will be retrieved. This is to save time 
 having to write out all the subfamilies for a given CAZy family. The scraper will remove any 
 duplicate proteins automatically.
