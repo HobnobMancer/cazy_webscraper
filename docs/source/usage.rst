@@ -16,9 +16,6 @@ To download the single CAZy family GH169, use the command:
 
 This will create a new directory ``GH169`` in the current working directory, and will download all CAZy entries in the GH169 family to a new SQLite3 database in that directory.
 
-.. NOTE::
-  ``cazy_webscraper`` input options can also be specified in a **YAML configuration file**, to enable transparency and reproducibility.
-
 This page provides a brief summary of command-line options for ``cazy_webscraper`` that control the retrieval of data sets from the CAZy database, including:
 
 * Retrieve only specified CAZy classes and families or subfamilies
@@ -133,19 +130,25 @@ The command-line options listed above can be used in combination to customise th
 Defining CAZy families and classes to scrape
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The 'definition' arguments (e.g. ``--classes`` and ``--families``) are applied singly, e.g.
+The 'definition' arguments (e.g. ``--classes`` and ``--families``) indicate which groups of data will be selected for scraping from CAZy, e.g.
 
 .. code-block:: bash
 
   cazy_webscraper --families GH169 -o GH169
   cazy_webscraper --classes AA -o AA
 
-but more than one class or family can be specified, e.g.
+will download all CAZymes from the GH169 family, and the AA class, respectively. More than one class or family can be specified, e.g.
 
 .. code-block:: bash
 
   cazy_webscraper --families GH169,GH1,GH2,GH3 -o GH_families
   cazy_webscraper --classes AA,CBM -o other_classes
+
+and members of distinct families and classes can be selected simultaneously, e.g.
+
+.. code-block:: bash
+
+  cazy_webscraper --families GH169,GH1,GH2,GH3 --classes AA,CBM -o complex_query
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Filtering CAZy families and classes
@@ -194,37 +197,57 @@ To write output to an existing directory without deleting the content already pr
   cazy_webscraper --families GH169 -d GH169_output -f -n
 
 
-Configuration via a YAML file
-------------------------------
+.. NOTE::
+  ``cazy_webscraper`` input options can also be specified in a **YAML configuration file**, to enable transparency and reproducibility.
 
-Using a configuration files produces reproducible documentation of how you used ``cazy_webscraper`` -- which is an essential part of all bioinformatic research.
+-------------------------------
+Configuration using a YAML file
+-------------------------------
 
-An example/template YAML file is provided within the repository of the webscraper, located at: 
-``./scraper/scraper_config.yaml``. A configuration YAML file must contain the same tags/headings as 
-the example configuration file found in the repository. The headings are:
+All command-line options to control CAZy scraping can be provided instead *via* a YAML configuration file. This supports reproducible documentation of ``cazy_webscraper`` usage.
 
-* classes
-* Glycoside Hydrolases (GHs)
-* GlycosylTransferases (GTs)
-* Polysaccharide Lyases (PLs)
-* Carbohydrate Esterases (CEs)
-* Auxiliary Activities (AAs)
-* Carbohydrate-Binding Modules (CBMs)
-* genera
-* species
-* strains
-* kingoms
+An template YAML file is provided in the ``cazy_webscraper`` repository (``scraper/scraper_config.yaml``):
+
+.. code-block:: yaml
+
+  # Under 'classes' list class from which all proteins will retrieved
+  # Under each families respective name, list the specific families/subfamilies to be scraped
+  # Write the FULL family name, e.g. 'GH1', NOT only its number, e.g. '1'
+  # To list multiple families, each familiy must be on a new line starting indented once
+  # relative to the parent class name, and the name written within quotation marks.
+  # For more information on writing lists in Yaml please see:
+  # https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html 
+  classes:  # classes from which all proteins will be retrieved
+  Glycoside Hydrolases (GHs):
+  GlycosylTransferases (GTs):
+  Polysaccharide Lyases (PLs):
+    - "PL28"
+  Carbohydrate Esterases (CEs):
+  Auxiliary Activities (AAs):
+  Carbohydrate-Binding Modules (CBMs):
+  genera:  # list genera to be scraped
+   - "Trichoderma"
+  species:  # list species, this will scrape all strains under the species
+  strains:  # list specific strains to be scraped
+  kingdoms:  # Archaea, Bacteria, Eukaryota, Viruses, Unclassified
+   - "Bacteria"
+
+.. ATTENTION::
+  The YAML configuration file must contain all tags/headings indicated in the example configuration file found in the repository:
+
+  * classes
+  * Glycoside Hydrolases (GHs)
+  * GlycosylTransferases (GTs)
+  * Polysaccharide Lyases (PLs)
+  * Carbohydrate Esterases (CEs)
+  * Auxiliary Activities (AAs)
+  * Carbohydrate-Binding Modules (CBMs)
+  * genera
+  * species
+  * strains
+  * kingoms
 
 
-Specifying specific classes to scrape
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Under the **classes** heading list any classes to be scrapped. For classes listed under 'classes', 
-all proteins catalogued under that class will be retrieved, **unless** specific families have been 
-listed under the respective classes heading in the configuration file. Then scraping only the 
-specific families takes precident and the entire class is not scraped. _If you believe this should 
-be changed please raise an issue. It is invisioned that very few users would want to simultanious 
-scrape an entire class and also scrape only specific families from that same class._
 
 A ``cazy_dictionary.json`` has been created and packaged within the ``cazy_webscraper`` 
 (the specific location is ``./scraper/file_io/cazy_dictionary.json``, where '.' is the directory 
