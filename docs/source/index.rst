@@ -12,7 +12,7 @@ Welcome to cazy_webscraper's documentation!
    :alt: cazy_webscraper logo, host organisations and funding
    :align: center
 
-| For all the latest updates, and development progress make sure to check the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_
+| For latest updates and development progress, please check the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_
 
 -----------------
 Build Information
@@ -64,7 +64,7 @@ Build Information
 
    Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
 
-``cazy_webscraper`` retrieves data from CAZy, writing it to a local SQLite3 file. ``cazy_webscraper`` can retrieve the protein sequences from NCBI, for CAZymes in the local database, and also write out those sequences in FASTA format. Additionally, ``cazy_webscraper`` can retrieve protein structures from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank, `PDB <https://www.rcsb.org/>`_, for CAZymes in the local database.
+``cazy_webscraper`` retrieves data from CAZy, writing it to a local SQLite3 file. ``cazy_webscraper`` can retrieve the protein sequences from NCBI for CAZymes in the local database, and also write out those sequences in FASTA format. Additionally, ``cazy_webscraper`` can retrieve protein structures from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank, `PDB <https://www.rcsb.org/>`_, for CAZymes in the local database.
 
 ``cazy_webscraper`` can be configured to scrape the entire CAZy database, to recover only CAZymes filtered by user-supplied criteria, such as CAZy classes, CAZy (sub)family, or taxonomy. 
 
@@ -81,7 +81,7 @@ Quickstart
 Best practice
 -------------
 
-When performing a series of many, automated, repeated calls to a server it is polite to do this when internet traffic is lowest *at the server*. This is typically at the weekend and overnight.
+When performing a series of many automated, repeated calls to a server it is polite to do this when internet traffic is lowest *at the server*. This is typically at the weekend and overnight.
 
 The webscraper can appear to run slowly but this may be due to the bandwidth at the CAZy server, or server speed. ``cazy_webscraper`` provides a progress bar to reassure the user that the webscraper is working. 
 
@@ -110,7 +110,7 @@ For details and updates on development, please consult the `GitHub repository <h
 Citing ``cazy_webscraper``
 --------------------------
  
-If you use ``cazy_webscraper`` in your work *please* do cite our work (including the provided DOI), as well as the specific version of the tool you use. This is not only helpful for us as developers to get out work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**. Citation:
+If you use ``cazy_webscraper`` in your work *please* do cite our work (including the provided DOI), as well as the specific version of the tool you use. This is not only helpful for us as developers to get our work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**. Citation:
    
    Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
 
@@ -119,6 +119,6 @@ If you use ``cazy_webscraper`` in your work *please* do cite our work (including
 Development and issues
 ----------------------
 
-If there are additional features you wish to be added, you have problems with the scraper, or want to contribute please raise an issue at the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_.
+If there are additional features you wish to be added, you have problems with the scraper, or would like to contribute please raise an issue at the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_.
 
 * Issues Page: `https://github.com/HobnobMancer/cazy_webscraper/issues <https://github.com/HobnobMancer/cazy_webscraper/issues>`_
