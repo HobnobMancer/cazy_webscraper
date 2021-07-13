@@ -247,97 +247,32 @@ An template YAML file is provided in the ``cazy_webscraper`` repository (``scrap
   * strains
   * kingoms
 
-
-
-A ``cazy_dictionary.json`` has been created and packaged within the ``cazy_webscraper`` 
-(the specific location is ``./scraper/file_io/cazy_dictionary.json``, where '.' is the directory 
-where the webscraper is installed). This allows users to use a variety of synonoms for the CAZy 
-classes, for example both "GH" and "Glycoside-Hydrolases" are accepted as synonoms for 
-"Glycoside Hydrolases (GHs)". Additionally, the retrieval of CAZy classes from the configuration 
-file is **not** case sensitive, therefore, both "gh" and "GH" are excepted. The excepted class 
-synonoms have beeen written out in a json file to enale easy editing of this file if additional 
-accepted synonoms are to be added, of it a new CAZy class is defined then this class only needs 
-to be added to the json file, without needing to modify the entire webscraper. 
-
-If you having issues with the scraper retrieving the list of CAZy classes that are written under 
-'classes' in the configuration file, please check the dictionary first to see the full list of 
-accepted synonoms. If you are comfortable modifying json files then feel free to add your own 
-synonoms to the dictionary.
-
-Each class must be listed on a separate line, indented by 4 spaces, and the class name encapsulated 
-with single or double quotation marks. For example:
+Each value in the YAML mappings for these arguments must be listed on a separate line, indented by 4 spaces, and the class name encapsulated with single or double quotation marks. For example:
 
 .. code-block:: yaml
 
     classes:
-        - "GH"
+        - "GT"
         - "pl"
-
-
-Specifying specific families to scrape
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Under the each of the class names listed in the configuration file, list the names of specific 
-**families** to be scraped from that class. The respective classes of the specificed families do 
-**not** need to be added to the 'classes' list.
-
-Write the true name of the family not only it's number, for example **GH1** is excepted by **1** is 
-not. Name families using the standard CAZy nomenclature, such as **"GT2"** and 
-**NOT "GlycosylTransferases_2"**. Additionally, use the standard CAZy notation for subfamilies 
-(**GH3_1**).
-
-.. warning::
-   If any subfamilies are listed within the configuration file, the retrieval of subfamilies 
-   **must** be enabled at the command line uisng ``--subfamilies``.
-
-Each family must be listed on a separate line and the name surrounded by double or single quotation 
-marks. For example:
-
-.. code-block:: yaml
-
     Glycoside Hydrolases (GHs):
         - "GH1"
         - "GH2"
 
 
-Configuration when scraping subfamilies
----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
+Synonyms for CAZy classes
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If any subfamilies are listed within the configuration file, the retrieval of subfamilies **must** 
-be enabled at the command line uisng ``--subfamilies``.
+A number of synonyms may be provided for CAZy classes, e.g. both "GH" and "Glycoside-Hydrolases" are accepted as synonyms for "Glycoside Hydrolases (GHs)" (the name recorded at CAZy). These alternatives are defined in the ``cazy_webscraper`` repository, in the file ``scraper/utilities/parse_configuration/cazy_dictionary.json``.
 
-If the parent family, e.g GH3, is listed in the configuration file and ``--subfamilies`` is enabled, 
-all proteins catalogued under GH3 and its subfamilies will be retrieved. This is to save time 
-having to write out all the subfamilies for a given CAZy family. The scraper will remove any 
-duplicate proteins automatically.
+-------------------------
+Scraping CAZy subfamilies
+-------------------------
 
+``cazy_webscraper`` can scrape CAZy subfamilies, using the standard CAZy notation for subfamilies 
+(e.g. ``GH3_1``).
 
-An example configuration file
------------------------------
+.. NOTE::
+   If any subfamilies are specified for download/scraping in the YAML file, the command line argument ``--subfamilies`` must be used.
 
-A blank configuration file is packaged within ``cazy_webscraper``, within the ``scraper`` directory, 
-called ``scraper_config.yaml``. This configuration file contains comments to assit filling in the 
-file correctly. A new configuration file with any given name can be created and used. However, 
-it **must** be a Yaml file and it **must** use the same headings/tags as used in the configuration 
-file ``scraper_config.yaml``.Please find more information on writing lists in Yaml files 
-[here](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html).
-
-Below is an example of how the configuration file may look.
-
-.. code-block:: yaml
-
-    classes:
-        - "AA"
-    Glycoside Hydrolases (GHs):
-        - "GH1"
-        - "GH3"
-    GlycosylTransferases (GTs):
-    Polysaccharide Lyases (PLs):
-        - "PL9"
-    Carbohydrate Esterases (CEs):
-    Auxiliary Activities (AAs):
-    Carbohydrate-Binding Modules (CBMs):
-
-
-..note::
-    Indentations consist of 4 spaces.
+If a parent CAZy family is listed in the configuration file and ``--subfamilies`` is enabled at the command-line, all proteins catalogued under the named family and its subfamilies will be retrieved.
