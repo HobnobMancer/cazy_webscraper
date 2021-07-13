@@ -2,15 +2,27 @@
 Using ``cazy_webscraper``
 =========================
 
-``cazy_webscraper`` can be used to retrieve user-specified data sets from the CAZy database. The ``cazy_webscraper`` application can be invoked _via_ the command line
+``cazy_webscraper`` can be used to retrieve user-specified data sets from the CAZy database. The ``cazy_webscraper`` application can be invoked *via* the command line
+
+-------------
+Example Usage
+-------------
+
+To download the single CAZy family GH169, use the command:
+
+.. code-block:: bash
+
+  cazy_webscraper --families GH169 -o GH169
+
+This will create a new directory ``GH169`` in the current working directory, and will download all CAZy entries in the GH169 family to a new SQLite3 database in that directory.
 
 .. NOTE::
-  ``cazy_webscraper`` options can be specified in a **YAML configuration file**, to enable transparency and reproducibility.
+  ``cazy_webscraper`` input options can also be specified in a **YAML configuration file**, to enable transparency and reproducibility.
 
 This page provides a brief summary of command-line options for ``cazy_webscraper`` that control the retrieval of data sets from the CAZy database, including:
 
 * Retrieve only specified CAZy classes and families or subfamilies
-* Retrieve only CAZymes from taxonomic kingdoms, genera, species, or strains
+* Retrieve only CAZymes from specified taxonomic kingdoms, genera, species, or strains
 * Recover only CAZymes with specified EC numbers
 * Local SQLite3 database path
 * Verbosity level and logging options
@@ -115,23 +127,71 @@ Command line options
 Basic Usage
 -----------
 
-The command-line options listed above can be used in any combination to customise the scraping of CAZy. The options that apply a 'filter' 
-to restrict which CAZymes are scraped from CAZy are applied in combination. For example, if the ``--families`` option and ``--ec`` option are called then 
-only CAZymes from the specified families **and** annotated with the listed EC numbers will be retrieved.
+The command-line options listed above can be used in combination to customise the scraping of CAZy. Some options (e.g. ``--families`` and ``--classes``) define the broad group of data that will be scraped, others (e.g. ``--species``) are used to filter and fine-tune the data that is scraped.
 
-Below are some example commands for invoking the ``cazy_webscraper`` to help demonstrate how to configure the webscraper at the command line.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Defining CAZy families and classes to scrape
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1. Writing the output to the directory 'my_output' and enabling retrieval of subfamilies:  
-``python3 cazy_webscraper.py -o my_output -s``
+The 'definition' arguments (e.g. ``--classes`` and ``--families``) are applied singly, e.g.
 
-2. Retrieving all CAZymes derived from bacteria and annotated with the EC numbers EC1.2.3.4 or EC1.5.3.4
-``python3 cazy_webscraper.py --kingdoms bacteria --ec EC1.2.3.4,EC``
+.. code-block:: bash
 
-3. Writing the output to an existing directory but do not delete the content already present in the directory:  
-``python3 cazy_webscraper.py --output docs/my_output -f -n``
+  cazy_webscraper --families GH169 -o GH169
+  cazy_webscraper --classes AA -o AA
 
-4. Write out the data retrieved from CAZy to an existing database, and only retrieve data for CAZymes derived from Aspergiulls species from families GH13, GH15 and PL9, and all CE familes:  
-``python3 cazy_webscraper.py -d docs/my_cazy_database/cazy_scrape_2021-04-27--11-54-58.db --genera Aspergillus --families GH13,GH15,PL9 --classes CE``
+but more than one class or family can be specified, e.g.
+
+.. code-block:: bash
+
+  cazy_webscraper --families GH169,GH1,GH2,GH3 -o GH_families
+  cazy_webscraper --classes AA,CBM -o other_classes
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Filtering CAZy families and classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Options that apply a *filter* to restrict which CAZymes from a class or familiy are scraped from CAZy (e.g. ``--species`` and ``--ec``) may be applied in combination. For example:
+
+.. code-block:: bash
+
+  cazy_webscraper --families GH169 \
+      --ec 1.1.1.1 --species "Escherichia coli" \
+      -o GH169_ec1.1.1.1_speciesEscherichia_coli
+
+will download only the CAZymes in the GH169 family that have EC number 1.1.1.1 *and* are from the species *Escherichia coli*. The command:
+
+.. code-block:: bash
+
+  cazy_webscraper --families PL14 \
+      --ec 1.2.3.4 --kingdoms bacteria \
+      -o PL14_ec1.2.3.4_kingdomBacteria
+
+will download only CAZymes in the PL14 familiy that have EC number 1.2.3.4 *and* are from the kingdom *Bacteria*.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Specifying output data location
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To specify the location of the output database and log files, the ``--output``/``-o`` option can be used:
+
+.. code-block:: bash
+
+  cazy_webscraper --families GH169 -o GH169_output
+
+will write output to the directory ``GH169_output``, and create a new CAZy database in that directory.
+
+If you already have an existing CAZy output directory with a database, then specifying this database with the ``-d``/``--database`` option will cause the scraper to use the existing database rather than creating a new one:
+
+.. code-block:: bash
+
+  cazy_webscraper --families GH169 -d GH169_output/cazy.db
+
+To write output to an existing directory without deleting the content already present, use the ``--force``/``-f`` and ``--nodelete``/``-n`` options:
+
+.. code-block:: bash
+
+  cazy_webscraper --families GH169 -d GH169_output -f -n
 
 
 Configuration via a YAML file
