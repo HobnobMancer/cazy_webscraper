@@ -14,6 +14,10 @@ Welcome to cazy_webscraper's documentation!
 
 | For all the latest updates, and development progress make sure to check the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_
 
+-----------------
+Build Information
+-----------------
+
 .. image:: https://img.shields.io/badge/Version-v1.0.2-yellowgreen
    :target: https://github.com/HobnobMancer/cazy_webscraper
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.4300858.svg
@@ -28,14 +32,33 @@ Welcome to cazy_webscraper's documentation!
    :target: https://www.python.org/about/
 .. image:: https://img.shields.io/badge/Bioinformatics-EASTBio-ff69b4
    :target: http://www.eastscotbiodtp.ac.uk/eastbio-student-cohort-2019
-.. image:: https://img.shields.io/badge/BIOCONDA-integration-brightgreen
-   :target: https://bioconda.github.io/user/install.html
-.. image:: https://img.shields.io/conda/dn/bioconda/cazy_webscraper?label=Bioconda%20downloads
-   :target: https://bioconda.github.io/user/install.html
-.. image:: https://img.shields.io/badge/Pypi-integration-brightgreen
-   :target: https://pypi.org/project/cazy-webscraper/
+
+
+--------
+``PyPI``
+--------
+
+.. image:: https://img.shields.io/pypi/v/cazy_webscraper.svg?style=flat-square
+    :target: https://pypi.python.org/pypi/cazy_webscraper
 .. image:: https://img.shields.io/pypi/dm/cazy_webscraper?label=Pypi%20downloads
    :target: https://pypi.org/project/cazy-webscraper/
+
+------------
+``bioconda``
+------------
+
+.. image:: https://anaconda.org/bioconda/cazy_webscraper/badges/installer/conda.svg?style=flat-square
+     :target: https://conda.anaconda.org/bioconda
+.. image:: https://anaconda.org/bioconda/cazy_webscraper/badges/version.svg?style=flat-square
+    :target: https://anaconda.org/bioconda/cazy_webscraper
+.. image:: https://anaconda.org/bioconda/cazy_webscraper/badges/latest_release_date.svg?style=flat-square
+     :target: https://anaconda.org/bioconda/cazy_webscraper
+.. image:: https://img.shields.io/conda/dn/bioconda/cazy_webscraper?label=Bioconda%20downloads
+   :target: https://bioconda.github.io/user/install.html
+
+-------------------
+``cazy_webscraper``
+-------------------
 
 ``cazy_webscraper`` is a Python3 package for the automated retrieval of carbohydrate-active enzyme (CAZyme) data from the `CAZy <http://wwww.cazy.org/>`_ database. This program is free to use under the MIT license, and we kindly request that, if you use this program or Python package, you cite it as indicated below.
 
