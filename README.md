@@ -8,12 +8,12 @@
 [![codecov](https://codecov.io/gh/HobnobMancer/cazy_webscraper/branch/master/graph/badge.svg)](https://codecov.io/gh/HobnobMancer/cazy_webscraper)
 [![Documentation Status](https://readthedocs.org/projects/cazy-webscraper/badge/?version=latest)](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest)
 [![Research](https://img.shields.io/badge/Bioinformatics-Protein%20Engineering-ff69b4)](http://www.eastscotbiodtp.ac.uk/eastbio-student-cohort-2019)
-[![Anaconda-Server Badge](https://anaconda.org/bioconda/cazy_webscraper/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)
-[![Conda-downloads](https://img.shields.io/conda/dn/bioconda/cazy_webscraper?label=Bioconda%20downloads)](https://anaconda.org/bioconda/cazy_webscraper)  
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/cazy_webscraper/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda) 
 [![pyani PyPi version](https://img.shields.io/pypi/v/cazy_webscraper "PyPI version")](https://pypi.python.org/pypi/cazy_webscraper)
-[![PypiDownload](https://img.shields.io/pypi/dm/cazy_webscraper?label=Pypi%20downloads)](https://pypi.org/project/cazy-webscraper/)
 
 -------------------------------
+
+# Attention! With the new CAZy update, cazy_webscraper is currently defunct for the scraping of CAZy. We are addressing this, and will update shortly.
 
 `cazy_webscraper` is an application and Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. The code is distributed under the MIT license.
 
