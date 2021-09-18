@@ -74,10 +74,16 @@ from typing import List, Optional
 from tqdm import tqdm
 
 from scraper import crawler
-from scraper.crawler.cazy_html_pages import get_cazy_pages, parse_local_pages
 from scraper.crawler.parse_cazy_families import scrape_all, scrape_by_kingdom
 from scraper.sql import sql_orm, sql_interface
-from scraper.utilities import build_logger, config_logger, file_io, parsers, parse_configuration, termcolour
+from scraper.utilities import (
+    build_logger,
+    config_logger,
+    file_io,
+    parsers,
+    parse_configuration,
+    termcolour,
+)
 
 
 # Define constants
@@ -147,16 +153,26 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         sys.stderr.write("\n".join(CITATION_INFO) + "\n")
         return
 
-    if args.output is not sys.stdout:
-        logger.info(f"Output directory: {(args.output).parent}")
-        logger.info(f"Force overwriting exiting output file: {args.force}")
+    if args.database and args.db_output:
+        warning_message = (
+            "Path to existing an existing and a target path to a new database were provided.\n"
+            "Please provide one OR the other.\n"
+            "Terminating program."
+        )
+        logger.warning(termcolour(warning_message, "red")
+        )
+    
+    if args.no_db and (args.dict_output is None):
+        warning_message = (
+            "Opted to not write a database or dict/JSON file.\n"
+            "Therefore, no method for writing out retrieved data was given.\n"
+            "Please provide at least one method for writing out the retrieved data.\n"
+            "Terminating program."
+        )
+        logger.warning(termcolour(warning_message, "red")
+        )
 
-        if str((args.output).parent) != '.':
-            # dirs defined in output put
-            file_io.make_db_output_directory(args)
-
-    cazy_home = "http://www.cazy.org"
-
+    cazy_home_url = "http://www.cazy.org"
 
     logger.info("Parsing configuration")
     (
@@ -166,95 +182,117 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         taxonomy_filter,
     ) = parse_configuration.parse_configuration(args)
 
-    scrape_config_message = termcolour(
+    scrape_config_message = (
         "Configuration:\n"
-        f"Classes to scrape: {config_dict['classes']}"
-        f"GH fams to scrape: {config_dict['Glycoside Hydrolases (GHs)']}"
-        f"GT fams to scrape: {config_dict['GlycosylTransferases (GTs)']}"
-        f"PL fams to scrape: {config_dict['Polysaccharide Lyases (PLs)']}"
-        f"CE fams to scrape: {config_dict['Carbohydrate Esterases (CEs)']}"
-        f"AA fams to scrape: {config_dict['Auxiliary Activities (AAs)']}"
-        f"CBM fams to scrape: {config_dict['Carbohydrate-Binding Modules (CBMs)']}"
+        f"Classes to scrape: {config_dict['classes']}\n"
+        f"GH fams to scrape: {config_dict['Glycoside Hydrolases (GHs)']}\n"
+        f"GT fams to scrape: {config_dict['GlycosylTransferases (GTs)']}\n"
+        f"PL fams to scrape: {config_dict['Polysaccharide Lyases (PLs)']}\n"
+        f"CE fams to scrape: {config_dict['Carbohydrate Esterases (CEs)']}\n"
+        f"AA fams to scrape: {config_dict['Auxiliary Activities (AAs)']}\n"
+        f"CBM fams to scrape: {config_dict['Carbohydrate-Binding Modules (CBMs)']}\n"
+        f"Scraping subfamilies: {args.subfamilies}\n"
     )
 
-    logger.info(scrape_config_message)
+    logger.info(termcolour(scrape_config_message, "cyan"))
 
-    }
+    if args.database:
+        logger.info("Adding data to an existing local CAZyme database")
+
+        if os.path.isfile(args.database) is False:
+            logger.error(
+                "Could not find local CAZy database.\n"
+                "Check path is correct.\n"
+                "Terminating programme."
+            )
+            sys.exit(1)
+
+        try:
+            session = sql_orm.get_db_session(args)
+            logger.info("Opened session to local CAZyme database")
+        except Exception:
+            logger.error("Failed to build SQL database. Terminating program\n", exc_info=True)
+            sys.exit(1)
+        
+        logger.info("Adding log of scrape to the local CAZyme database")
+        sql_interface.log_scrape_in_db(
+            time_stamp,
+            config_dict,
+            taxonomy_filter,
+            session,
+            args,
+        )
+    
     else:
-        # build database and return open database session
-        if args.database is not None:  # open session for existing local database
-            if args.database == "dict":  # build dictionary of {genbank_accession: CAZy families}
-                logger.info("Creating CAZy dict (JSON file) instead of database")
-                session = {}
+        if args.db_output is not None:
+            logger.info("Building new local CAZyme database")
+            logger.info(f"Output directory: {(args.output).parent}")
+            logger.info(f"Force overwriting exiting output file: {args.force}")
+
+            if str((args.db_output).parent) != '.':
+                # dirs defined in output put
+                file_io.make_db_output_directory(args)
+            
+            try:
+                session = sql_orm.build_db(time_stamp, args)
+                logger.info("Built new local CAZyme database")
+            except Exception:
+                logger.error("Failed to build SQL database. Terminating program", exc_info=True)
+                sys.exit(1)
+            
+            logger.info("Adding log of scrape to the local CAZyme database")
+            sql_interface.log_scrape_in_db(
+                time_stamp,
+                config_dict,
+                taxonomy_filter,
+                session,
+                args,
+            )
+    
+        else:
+            if args.no_db:
+                logger.warning("Selected to NOT generate a CAZyme database")
+                session = None
 
             else:
-                if os.path.isfile(args.database) is False:
-                    logger.error(
-                        "Could not find local CAZy database. Check path is correct.\n"
-                        "Had looked for a local SQL database at:"
-                        f"{args.database}"
-                        "Terminating programme."
-                    )
-                    sys.exit(1)
+                logger.warning(
+                    "Default CAZyme database location selected:\n"
+                    f"Database output in cwd: cazy_webscraper_{start_time}.db"
+                )
+
                 try:
-                    session = sql_orm.get_db_session(args)
+                    session = sql_orm.build_db(f"cazy_webscraper_{start_time}.db", args)
+                    logger.info("Built new local CAZyme database")
                 except Exception:
                     logger.error("Failed to build SQL database. Terminating program", exc_info=True)
                     sys.exit(1)
 
-        else:  # create a new empty database to populate
-            try:
-                session = sql_orm.build_db(time_stamp, args)
-            except Exception:
-                logger.error("Failed to build SQL database. Terminating program", exc_info=True)
-                sys.exit(1)
+                
+    if args.dict_output is not None:
+        logger.info("Building dict of CAZy family annotations")
+        logger.info(f"Output directory: {(args.output).parent}")
+        logger.info(f"Force overwriting exiting output file: {args.force}")
 
-        if args.subfamilies is True:
-            logger.warning("Enabled retrieval of subfamily classifications")
+        if str((args.dict_output).parent) != '.':
+            # dirs defined in output put
+            file_io.make_cazy_dict_output_directory(args)
+        
+        cazy_dict = {}  # {protein_accession: [CAZy fams]}
+    
+    else:
+        cazy_dict = None
 
-        if args.streamline is not None:
-            logger.info("Enabled streamlined scraping of CAZy")
-            parse_configuration.create_streamline_scraping_warning(args)
-
-        # log scraping of CAZy in local db
-        logger.info("Add log of scrape to the local CAZyme database")
-        sql_interface.log_scrape_in_db(
-            time_stamp,
-            config_dict,
-            taxonomy_filters_dict,
-            kingdoms,
-            ec_filters,
-            session,
-            args,
-        )
-
-        # Check if scraping from local CAZy files
-        if args.scrape_files is not None:
-            logger.info("Scraping data from local CAZy page library")
-            parse_local_pages.parse_local_pages(
-                args,
-                cazy_home,
-                start_time,
-                time_stamp,
-                session,
-                taxonomy_filters,
-                ec_filters,
-            )
-
-        else:
-            logger.info("Scraping CAZyme data directly from CAZy")
-            get_cazy_data(
-                cazy_home,
-                excluded_classes,
-                config_dict,
-                cazy_class_synonym_dict,
-                taxonomy_filters,
-                kingdoms,
-                ec_filters,
-                time_stamp,
-                session,
-                args,
-            )
+    logger.info("Starting retrieval of data from CAZy")
+    get_cazy_data(
+        cazy_home_url,
+        excluded_classes,
+        config_dict,
+        cazy_class_synonym_dict,
+        taxonomy_filter,
+        session,
+        cazy_dict,
+        args,
+    )
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     end_time = pd.to_datetime(end_time)
@@ -265,10 +303,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         f"Scrape initated at {start_time}\n"
         f"Scrape finished at {end_time}\n"
         f"Total run time: {total_time}"
-        "Version: v0.1.6\n"
-        "Citation: Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021):\n"
-        "cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster.\n"
-        "https://doi.org/10.6084/m9.figshare.14370860.v7"
+        f"Version: {VERSION_INFO}\n"
+        f"Citation: {CITATION_INFO}"
     )
 
     print(
@@ -276,20 +312,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         "Finished scraping CAZy\n"
         f"Scrape initated at {start_time}\n"
         f"Scrape finished at {end_time}\n"
-        f"Total run time: {total_time}\n"
-        "Version: v0.1.6\n"
-        "Thank you for using cazy_webscraper. Expected academic practise is to cite the work of others.\n"
-        "Please cite cazy_webscraper in your work:\n"
-        "Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021):"
-        "cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster.\n"
-        "https://doi.org/10.6084/m9.figshare.14370860.v7"
+        f"Total run time: {total_time}"
+        f"Version: {VERSION_INFO}\n"
+        f"Citation: {CITATION_INFO}"
     )
 
 
-
-
 def get_cazy_data(
-    cazy_home,
+    cazy_home_url,
     excluded_classes,
     config_dict,
     cazy_class_synonym_dict,
@@ -305,7 +335,7 @@ def get_cazy_data(
     This function coordinates the crawling through the CAZy website by calling the appropriate
     functions, and then retrieving the protein data by calling to the appropriate data again.
 
-    :param cazy_home: str, url of CAZy home page
+    :param cazy_home_url: str, url of CAZy home page
     :param excluded_classes: list, list of classes to not scrape from CAZy
     :param config_dict: dict, user defined configuration of the scraper
     :param cazy_class_synonym_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
@@ -335,7 +365,7 @@ def get_cazy_data(
 
     # retrieve links to CAZy class pages, return list of CazyClass objects
     cazy_classes = crawler.get_cazy_classes(
-        cazy_home, excluded_classes, cazy_class_synonym_dict, args,
+        cazy_home_url, excluded_classes, cazy_class_synonym_dict, args,
     )
 
     # scrape each retrieved class page
@@ -348,7 +378,7 @@ def get_cazy_data(
             class_families, error_message, incorrect_urls = crawler.get_cazy_family_urls(
                 cazy_class.url,
                 cazy_class.name,
-                cazy_home,
+                cazy_home_url,
                 args,
             )
 
@@ -392,7 +422,7 @@ def get_cazy_data(
                         session,
                     ) = scrape_all.parse_family_via_all_pages(
                         family,
-                        cazy_home,
+                        cazy_home_url,
                         taxonomy_filters,
                         ec_filters,
                         args,
@@ -409,7 +439,7 @@ def get_cazy_data(
                         session,
                     ) = scrape_by_kingdom.parse_family_by_kingdom(
                         family,
-                        cazy_home,
+                        cazy_home_url,
                         taxonomy_filters,
                         kingdoms,
                         ec_filters,
@@ -471,7 +501,7 @@ def get_cazy_data(
                         session,
                     ) = scrape_all.parse_family_via_all_pages(
                         family,
-                        cazy_home,
+                        cazy_home_url,
                         taxonomy_filters,
                         ec_filters,
                         args,
@@ -488,7 +518,7 @@ def get_cazy_data(
                         session,
                     ) = scrape_by_kingdom.parse_family_by_kingdom(
                         family,
-                        cazy_home,
+                        cazy_home_url,
                         taxonomy_filters,
                         kingdoms,
                         ec_filters,
