@@ -145,7 +145,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if logger is None:
         logger = logging.getLogger(__name__)
         config_logger(args)
-
+    
     # check if printing out version or citation information
     if args.version:
         sys.stderr.write("\n".join(VERSION_INFO) + "\n")
@@ -372,9 +372,6 @@ def get_cazy_data(
     cazy_classes = crawler.get_cazy_classes(
         cazy_home_url, excluded_classes, cazy_class_synonym_dict, args,
     )
-    print("CAZY CLASSES")
-    print(cazy_classes)
-    sys.exit(1)
 
     # scrape each retrieved class page
     for cazy_class in tqdm(cazy_classes, desc="Parsing CAZy classes"):

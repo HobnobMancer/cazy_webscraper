@@ -141,32 +141,26 @@ def get_cazy_classes(cazy_home_url, excluded_classes, cazy_dict, args):
     # retrieve the div section containing the h3 element for Enzyme classes catalgoued by CAZy
     try:
         enzyme_classes_div = [
-            _ for _ in homepage.find_all("h3", {"class": "spip"})
-            if (
+            _ for _ in h3_spip_elements if (
                 str(_.contents[0].strip()).replace(u'\xa0', ' ')
-                ) == 'Enzyme Classes currently covered'][
-            0
-        ].parent
+                ) == 'Enzyme Classes currently covered'][0].parent
 
         # Retreive the enzyme class page URLs suffixs
         enzyme_class_urls  = [
-            f"{cazy_home_url}/{_['href']}"for _ in enzyme_classes_div.find_all("a") 
+            f"{cazy_home_url}/{_['href']}" for _ in enzyme_classes_div.find_all("a") 
             if (not _["href"].startswith("http"))
             and (str(_.contents[0]) not in exclusions)
         ]
 
         # retrieve the div section containing the h3 element for Associated Module catalgoued by CAZy
         associated_module_div = [
-            _ for _ in homepage.find_all("h3", {"class": "spip"})
-            if (
+            _ for _ in h3_spip_elements if (
                 str(_.contents[0].strip()).replace(u'\xa0', ' ')
-                ) == 'Associated Modules currently covered'][
-            0
-        ].parent
+                ) == 'Associated Modules currently covered'][0].parent
 
         # Retreive the enzyme class page URLs suffixs
         associated_module_urls = [
-            f"{cazy_home_url}/{_['href']}"for _ in associated_module_div.find_all("a") 
+            f"{cazy_home_url}/{_['href']}" for _ in associated_module_div.find_all("a") 
             if (not _["href"].startswith("http"))
             and (str(_.contents[0]) not in exclusions)
         ]
@@ -174,7 +168,7 @@ def get_cazy_classes(cazy_home_url, excluded_classes, cazy_dict, args):
     except AttributeError:
         logger.error(
             (
-                "Failed to retrieve URLs to CAZy classes from the CAZy homepage.\n"
+                "Attribute error raised during retrieving of CAZy class URLs.\n"
                 "Therefore, cannot scrape CAZy classes, or families\n"
                 "Terminating program."
             ),
@@ -210,11 +204,11 @@ def get_cazy_classes(cazy_home_url, excluded_classes, cazy_dict, args):
         cazy_classes.append(cazy_class)
 
     logger.info(
-        "Retrieved URLS for:"
+        "Retrieved URLs for:"
         f"{len(enzyme_class_urls)} Enzyme Classes and\n"
         f"{len(associated_module_urls)} Associated Modules classes"
     )
-    
+
     return cazy_classes
 
 
@@ -226,8 +220,10 @@ def get_cazy_family_urls(class_url, class_name, cazy_home_url, args):
     :param cazy_home_url: str, URL to CAZy home page
     :param args: args parser object
 
-    Returns list Family class objects, error message when connecting to CAZy and list of incorrectly
-    formated URLs
+    Returns:
+    A list Family class objects
+    An error message when connecting to CAZy
+    A List of incorrectly formated URLs
     """
     logger = logging.getLogger(__name__)
     logger.info(f"Retrieving URLs to families under {class_name}")
@@ -237,7 +233,7 @@ def get_cazy_family_urls(class_url, class_name, cazy_home_url, args):
 
     if class_page is None:
         logger.error(
-                f"Couldn't connect to {class_url} after {(args.retries + 1)} attempts. "
+                f"Couldn't connect to {class_url} after {(args.retries + 1)} attempts.\n"
                 f"The following error was raised:\n{error}"
         )
         return None, error, None
@@ -320,6 +316,8 @@ def get_cazy_family_urls(class_url, class_name, cazy_home_url, args):
 
     if len(incorrect_urls) == 0:
         incorrect_urls = None
+    
+    logger.info(f"Retrieved URLs for {len(cazy_families)} from {class_name} class page")
 
     return cazy_families, None, incorrect_urls
 
