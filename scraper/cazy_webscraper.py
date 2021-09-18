@@ -296,7 +296,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cazy_dict = None
     
     if args.log:
-        logger_name = args.log
+        logger_name = args.log.split(".")[0]
 
     logger.info("Starting retrieval of data from CAZy")
     get_cazy_data(
