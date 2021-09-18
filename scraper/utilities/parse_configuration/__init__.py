@@ -96,14 +96,17 @@ def parse_configuration(args):
             args,
         )
 
-    else:  
-        config_dict, taxonomy_filter = get_cmd_scrape_config(
-            config_dict,
-            cazy_class_synonym_dict,
-            taxonomy_filter, 
-            args,
-        )
+    config_dict, taxonomy_filter = get_cmd_scrape_config(
+        config_dict,
+        cazy_class_synonym_dict,
+        taxonomy_filter, 
+        args,
+    )
     
+    # When no classes or families are defined scrape every class and family
+    if args.classes is None and args.families is None and args.config is None:
+        config_dict["classes"] = set(cazy_class_synonym_dict.keys())
+
     # get list of CAZy classes not to scrape
     excluded_classes = get_excluded_classes(config_dict, cazy_class_synonym_dict)
 
@@ -397,13 +400,13 @@ def get_excluded_classes(config_dict, cazy_class_synonym_dict):
 
     Return list of CAZy classes not to be scraped.
     """
-    cazy_classes_to_scrape = []
+    cazy_classes_to_scrape = config_dict["classes"]
 
     # retrieve the names of classes for which specific families to be scraped HAVE BEEN named
     for key in config_dict:
-        if (key != "classes") and (key not in config_dict["classes"]) and (len(config_dict[key]) != 0):
+        if (key != "classes") and (len(config_dict[key]) != 0):
             # add the class of families to be scraped to the list of CAZy classes to be scraped
-            cazy_classes_to_scrape.append(key)
+            cazy_classes_to_scrape.add(key)
 
     # create list of CAZy classes not to be scraped
     excluded_classes = list(cazy_class_synonym_dict.keys())
