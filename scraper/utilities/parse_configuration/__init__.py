@@ -58,256 +58,97 @@ def parse_configuration(args):
 
     :param args: parser arguments
 
-    Return list of classes not to scrape, dict of families to scrape, dict of class synonoms,
-    a dict of taxonomy filters (genera, species and strains) to restrict the scrape to, list of
-    kingdoms to be scraped, a list of EC numbers to restrict the scrape to.
+    Return:
+    - list of classes not to scrape
+    - dict of families to scrape
+    - dict of class synonoms
     """
     logger = logging.getLogger(__name__)
-    # open config dict
-    raw_config_dict = None
-    if args.config is not None:
-        try:
-            with open(args.config, "r") as fh:
-                raw_config_dict = yaml.full_load(fh)
-        except FileNotFoundError:
-            logger.error(
-                "Did not find the configuration file. Check the path is correct.\n"
-                "Make sure path to the configuration file is correct\n"
-                "Scrapping will not be performed becuase configuration is wrong.\n"
-                "Had looked for the configuration file at:\n"
-                f"{args.config}"
-                "Terminating programme"
-            )
-            sys.exit(1)
-
-    # retrieve taxonomy filters
-    taxonomy_filter = get_genera_species_strains(args, raw_config_dict)
-
-    ec_filter = get_ec_filter(args, raw_config_dict)
-
-    # retrieve Kingdoms to scrape
-    kingdoms = get_kingdoms(args, raw_config_dict)
 
     # Get dictionary of accepted CAZy class synonyms
-    cazy_dict, std_class_names = get_cazy_dict_std_names(args)
-
-    # Retrieve user specified CAZy classes and families to be scraped at CAZy
+    cazy_class_synonym_dict = get_cazy_class_synonym_dict(args)
 
     # create dictionary to store families and classes to be scraped
     config_dict = {
-        'classes': [],
-        'Glycoside Hydrolases (GHs)': [],
-        'GlycosylTransferases (GTs)': [],
-        'Polysaccharide Lyases (PLs)': [],
-        'Carbohydrate Esterases (CEs)': [],
-        'Auxiliary Activities (AAs)': [],
-        'Carbohydrate-Binding Modules (CBMs)': [],
+        'classes': set(),
+        'Glycoside Hydrolases (GHs)': set(),
+        'GlycosylTransferases (GTs)': set(),
+        'Polysaccharide Lyases (PLs)': set(),
+        'Carbohydrate Esterases (CEs)': set(),
+        'Auxiliary Activities (AAs)': set(),
+        'Carbohydrate-Binding Modules (CBMs)': set(),
     }
+    # create dict for storing genera, species and strains scrape is to be restricted to
+    taxonomy_filter = {"genera": set(), "species": set(), "strains": set()}
+
+    # Retrieve user specified CAZy classes and families to be scraped at CAZy
 
     # user passed a YAML configuration file
     if args.config is not None:
         # add configuration data from YAML file yo configuration dictionary
-        config_dict = get_yaml_configuration(config_dict, cazy_dict, std_class_names, args)
+        config_dict = get_yaml_configuration(config_dict, cazy_class_synonym_dict, taxonomy_filter, args)
 
-        if (args.classes is None) and (args.families is None):  # no cmd-line configuration
-            # get list of CAZy classes not to scrape
-            excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict)
+        # add configuration from the cmd-line
+        config_dict,taxonomy_filter = get_cmd_scrape_config(
+            config_dict,
+            cazy_class_synonym_dict,
+            taxonomy_filter, 
+            args,
+        )
 
-            # convert empty lists to None type objects
-            config_dict = convert_lists_to_none(config_dict)
-
-            return excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter
-
-        else:  # get cmd defined configuration
-            cmd_config = get_cmd_defined_fams_classes(cazy_dict, std_class_names, args)
-            cmd_config = convert_lists_to_none(cmd_config)
-
-            # add cmd defined configuration to config_dict
-            # add items from file_config to cmd_config
-            for key in cmd_config:
-                if cmd_config[key] is not None:
-                    for item in cmd_config[key]:
-                        if item not in config_dict[key]:  # do not add duplicates
-                            config_dict[key].append(item)
-
-            # get list of CAZy classes that will not be scraped
-            excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict)
-
-            # convert empty lists to None type objects
-            config_dict = convert_lists_to_none(config_dict)
-
-            return excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter
-
-    else:  # user did not pass config file
-        if (args.classes is None) and (args.families is None):
-            # No specific families or classes specified for scraping
-            return None, None, cazy_dict, taxonomy_filter, kingdoms, ec_filter
-
-        else:  # configuration specified only via the cmd_line
-            config_dict = get_cmd_defined_fams_classes(cazy_dict, std_class_names, args)
-
-            # get list of CAZy classes that will not be scraped
-            excluded_classes = get_excluded_classes(std_class_names, config_dict, cazy_dict)
-
-            # convert empty lists to None type objects
-            config_dict = convert_lists_to_none(config_dict)
-
-            return excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter
-
-
-def get_genera_species_strains(args, raw_config_dict):
-    """Retrieve Genera, Species and Strains to retrict the scrape to.
-
-    :param args: cmd-line arguments parser
-    :param raw_config_dict: dictionary of content from YAML config file
-
-    Return set contain user specificed genera, species and strains.
-    """
-    taxonomy_filter = {"genera": [], "species": [], "strains": []}
-
-    if raw_config_dict is not None:
-        for key in ["genera", "species", "strain"]:
-            try:
-                if raw_config_dict[key] is not None:
-                    taxonomy_filter[key] = raw_config_dict[key]
-            except KeyError:
-                pass
-
-    if args.genera is not None:
-        taxonomy_filter["genera"] += (args.genera).split(",")
-
-    if args.species is not None:
-        taxonomy_filter["species"] += (args.species).split(",")
-
-    if args.strains is not None:
-        taxonomy_filter["strains"] += (args.strains).split(",")
-
-    taxonomy_filter = convert_lists_to_none(taxonomy_filter)
-
-    return taxonomy_filter
-
-
-def get_ec_filter(args, raw_config_dict):
-    """Retrieve EC numbers to retrict the scrape to.
-
-    :param args: cmd-line arguments parser
-    :param raw_config_dict: dictionary of content from YAML config file
-
-    Return set containing user specificed EC numbers.
-    """
-    ecs = []
-
-    if raw_config_dict is not None:
-        try:
-            if raw_config_dict["ECs"] is not None:
-                ecs += raw_config_dict["ECs"]
-        except KeyError:
-            pass
-
-    if args.ec is not None:
-        ecs += (args.ec).split(",")
+    else:  
+        config_dict, taxonomy_filter = get_cmd_scrape_config(
+            config_dict,
+            cazy_class_synonym_dict,
+            taxonomy_filter, 
+            args,
+        )
     
-    i = 0
-    for i in range(len(ecs)):
-        ecs[i] = ecs[i].replace("EC", "")
-        ecs[i] = ecs[i].replace("ec", "")
+    # get list of CAZy classes not to scrape
+    excluded_classes = get_excluded_classes(config_dict, cazy_class_synonym_dict)
 
-    ec_filter = set(ecs)
+    # convert empty sets to None type objects
+    config_dict = convert_empty_sets_to_none(config_dict)
 
-    return ec_filter
+    # convert dict into a single set of filters
+    taxonomy_filter = get_filter_set(taxonomy_filter)
 
-
-def get_kingdoms(args, raw_config_dict):
-    """Retrieve list of Kingdoms to scrape CAZymes from.
-
-    :param args: cmd args parser
-    :param raw_config_dict: dictionary of content from YAML config file
-
-    Return list of Kingdoms to  be scrapped.
-    """
-    logger = logging.getLogger(__name__)
-
-    kingdoms = []
-
-    if raw_config_dict is not None:
-        try:
-            if raw_config_dict["kingdoms"] is not None:
-                kingdoms += raw_config_dict["kingdoms"]
-                yaml_kingdoms = True
-            else:
-                yaml_kingdoms = False
-        except KeyError:
-            yaml_kingdoms = False
-    else:
-        yaml_kingdoms = False
-
-    if args.kingdoms is not None:
-        kingdoms += (args.kingdoms).split(",")
-
-    kingdoms = [kingdom.lower() for kingdom in kingdoms]
-    kingdoms = list(set(kingdoms))
-    cazy_kingdoms = ['archaea', 'bacteria', 'eukaryota', 'viruses', 'unclassified']
-    for kd in kingdoms:
-        if kd not in cazy_kingdoms:
-            logger.warning(
-                f"'{kd}' written in configuration, but it not a CAZy listed taxonomy Kingdom.\n"
-                f"CAZymes will not be scrapped from the user listed kingdom: {kd}"
-            )
-            kingdoms.remove(kd)
-
-    if (len(kingdoms) == 0):
-        if (args.kingdoms is not None) or (yaml_kingdoms is True):
-            # user had specified Kingdoms to be scraped
-            logger.warning(
-                "None of the Kingdoms listed match the Kingdoms listed in CAZy.\n"
-                "The classes in CAZy are: archaea, bacteria, eukaryota, viruses, and unclassified\n"
-                "Terminating programme"
-            )
-            sys.exit(1)
-
-        else:
-            # user did not specify any Kingdoms
-            kingdoms = 'all'  # scrape CAZymes from all Kingdoms
-
-    return kingdoms
+    return excluded_classes, config_dict, cazy_class_synonym_dict, taxonomy_filter
 
 
-def get_cazy_dict_std_names(args):
-    """Retrieve dictionary of acccepted CAZy class synonym names, and list of offical class.
+def get_cazy_class_synonym_dict(args):
+    """Retrieve dictionary of acccepted CAZy class synonym names.
 
     :param args: cmd args parser
 
-    Return dictionary.
+    Return dictionary of acccepted CAZy class synonym names.
     """
     logger = logging.getLogger(__name__)
 
     if args.cazy_synonyms is None:
         logger.warning("Using default CAZy class synonyms")
-        cazy_dict = cazy_synonym_dict()
-        std_class_names = list(cazy_dict.keys())
-        return cazy_dict, std_class_names
+        cazy_class_synonym_dict = cazy_synonym_dict()
+        return cazy_class_synonym_dict
 
     try:
         logger.warning("Using user defined CAZy class synonyms")
         with open(args.cazy_synonyms, "r") as fh:
-            cazy_dict = json.load(fh)
-            # create list of standardised CAZy classes
-            std_class_names = list(cazy_dict.keys())
+            cazy_class_synonym_dict = json.load(fh)
     except FileNotFoundError:
         logger.error(
             "Could not open the CAZy synonym dictionary, required for translating CAZy class abbreviations.\n"
-            "Check the file cazy_dictionary.json is located at:\n"
+            "Check the file cazy_class_synonym_dictionary.json is located at:\n"
             f"{args.cazy_synonyms}\n"
             "Terminating programme"
         )
         sys.exit(1)
 
-    return cazy_dict, std_class_names
+    return cazy_class_synonym_dict
 
 
 def cazy_synonym_dict():
     """Create a dictionary of accepted synonms for CAZy classes."""
-    cazy_dict = {
+    cazy_class_synonym_dict = {
         "Glycoside Hydrolases (GHs)": ["Glycoside-Hydrolases", "Glycoside-Hydrolases", "Glycoside_Hydrolases", "GlycosideHydrolases", "GLYCOSIDE-HYDROLASES", "GLYCOSIDE-HYDROLASES", "GLYCOSIDE_HYDROLASES", "GLYCOSIDEHYDROLASES", "glycoside-hydrolases", "glycoside-hydrolases", "glycoside_hydrolases", "glycosidehydrolases", "GH", "gh"],
         "GlycosylTransferases (GTs)": ["Glycosyl-Transferases", "GlycosylTransferases", "Glycosyl_Transferases", "Glycosyl Transferases", "GLYCOSYL-TRANSFERASES", "GLYCOSYLTRANSFERASES", "GLYCOSYL_TRANSFERASES", "GLYCOSYL TRANSFERASES", "glycosyl-transferases", "glycosyltransferases", "glycosyl_transferases", "glycosyl transferases", "GT", "gt"],
         "Polysaccharide Lyases (PLs)": ["Polysaccharide Lyases", "Polysaccharide-Lyases", "Polysaccharide_Lyases", "PolysaccharideLyases", "POLYSACCHARIDE LYASES", "POLYSACCHARIDE-LYASES", "POLYSACCHARIDE_LYASES", "POLYSACCHARIDELYASES", "polysaccharide lyases", "polysaccharide-lyases", "polysaccharide_lyases", "polysaccharidelyases", "PL", "pl"],
@@ -315,13 +156,15 @@ def cazy_synonym_dict():
         "Auxiliary Activities (AAs)": ["Auxiliary Activities", "Auxiliary-Activities", "Auxiliary_Activities", "AuxiliaryActivities", "AUXILIARY ACTIVITIES", "AUXILIARY-ACTIVITIES", "AUXILIARY_ACTIVITIES", "AUXILIARYACTIVITIES", "auxiliary activities", "auxiliary-activities", "auxiliary_activities", "auxiliaryactivities", "AA", "aa"],
         "Carbohydrate-Binding Modules (CBMs)": ["Carbohydrate-Binding-Modules", "Carbohydrate_Binding_Modules", "Carbohydrate_Binding Modules", "CarbohydrateBindingModules", "CARBOHYDRATE-BINDING-MODULES", "CARBOHYDRATE_BINDING_MODULES", "CARBOHYDRATE_BINDING MODULES", "CARBOHYDRATEBINDINGMODULES", "carbohydrate-binding-modules", "carbohydrate_binding_modules", "carbohydrate_binding modules", "carbohydratebindingmodules", "CBMs", "CBM", "cbms", "cbm"]
     }
-    return cazy_dict
+    return cazy_class_synonym_dict
 
 
-def get_yaml_configuration(config_dict, cazy_dict, std_class_names, args):
-    """Parse data from configuration YAML file.
+def get_yaml_configuration(config_dict, cazy_class_synonym_dict, taxonomy_filter, args):
+    """Parse all data from configuration YAML file.
 
     :param config_dict: dict, store CAZy classes and families to scrape
+    :param cazy_class_synonym: dict, acceppted CAZy class name synonyms
+    :param taxonomy_filter: dict, genera, species and strains scrape is to be restricted to
     :param args: cmd args parser
 
     Return dictionary containing CAZy classes and families named in YAML configuration file.
@@ -346,29 +189,43 @@ def get_yaml_configuration(config_dict, cazy_dict, std_class_names, args):
     # retrieve CAZy classes defined in the YAML configuration file
     config_dict["classes"] = get_yaml_cazy_classes(
         yaml_config_dict,
-        cazy_dict,
-        std_class_names,
+        cazy_class_synonym_dict,
     )
 
     for key in yaml_config_dict:
-        if (key != "classes") and \
-           (key != "genera") and \
-           (key != "species") and \
-           (key != "strains") and \
-           (key != "ECs"):
-            if yaml_config_dict[key] is not None:
-                for item in yaml_config_dict[key]:
-                    if item not in config_dict[key]:  # do not add duplicates
-                        config_dict[key].append(item)
+        if key == "classes":
+            yaml_cazy_classes = get_yaml_cazy_classes(yaml_config_dict, cazy_class_synonym_dict)
+            for cazy_class in yaml_cazy_classes:
+                config_dict["classes"].add(cazy_class)
+            
+        elif key == "genera":
+            if yaml_config_dict["genera"] is not None:
+                for genus in taxonomy_filter["genera"]:
+                    config_dict["genera"].add(genus)
+               
+        elif key == "species":
+            if yaml_config_dict["genera"] is not None:
+                for organism in taxonomy_filter["genera"]:
+                    config_dict["genera"].add(organism)
+
+        elif key == "strains":
+            if yaml_config_dict["genera"] is not None:
+                for organism_strain in taxonomy_filter["genera"]:
+                    config_dict["genera"].add(organism_strain)
+
+        else:  # key is a CAZy class and underneath are CAZy families to scrape
+            if yaml_config_dict[key] is not None:  # CAZy families were listed
+                for fam in yaml_config_dict[key]:
+                    config_dict[key].add(fam)
 
     return config_dict
 
 
-def get_yaml_cazy_classes(yaml_config_dict, cazy_dict, std_class_names):
+def get_yaml_cazy_classes(yaml_config_dict, cazy_class_synonym_dict):
     """Retrieve list of CAZy classes listed in the YAML file, in their standardised CAZy name.
 
     :param config_dict: dictionary of YAML content
-    :param cazy_dict: dictionary of accepted CAZy class name synonyms
+    :param cazy_class_synonym_dict: dictionary of accepted CAZy class name synonyms
 
     Return list of CAZy classes specified by user to be scraped.
     """
@@ -386,42 +243,47 @@ def get_yaml_cazy_classes(yaml_config_dict, cazy_dict, std_class_names):
         cazy_classes = []
 
     if cazy_classes is None:
-        logger.info("Did not retrieve any items under 'classes' in the config file.")
+        logger.info("Not items retrieved from 'classes' in the config file.")
         cazy_classes = []
 
     if len(cazy_classes) != 0:
         # standardise CAZy class names
-        cazy_classes = parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names)
+        cazy_classes = parse_user_cazy_classes(
+            cazy_classes,
+            cazy_class_synonym_dict,
+        )
 
     return cazy_classes
 
 
-def parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names):
+def parse_user_cazy_classes(cazy_classes, cazy_class_synonym_dict):
     """Standardise the CAZy class names listed in configuration file.
 
     :param cazy_classes: list, list of CAZy classes from configuration file
-    :param cazy_dict: dict, keyed by class name, keyed by list of accepted synonoms
-    :param std_class_names: list, list of all CAZy classes
+    :param cazy_class_synonym_dict: dict, keyed by class name, keyed by list of accepted synonoms
+    :param list(cazy_class_synonym_dict.keys()): list, list of all CAZy classes
 
     Return list of CAZy classes listed by user in the configuration file.
     """
     logger = logging.getLogger(__name__)
     logger.info("Standardising names of class listed in configuration file")
 
+    standardised_class_names = list(cazy_class_synonym_dict.keys())
+
     index = 0
     for index in range(len(cazy_classes)):
         # identify user defined CAZy classes not written in standardised format
-        if cazy_classes[index] not in std_class_names:
-            for key in cazy_dict:
-                if cazy_classes[index] in cazy_dict[key]:  # if in synonyms in cazy_dict
+        if cazy_classes[index] not in standardised_class_names:
+            for key in cazy_class_synonym_dict:
+                if cazy_classes[index] in cazy_class_synonym_dict[key]:  # if in synonyms in cazy_class_synonym_dict
                     cazy_classes[index] = key  # standardise the class name
 
         # check all names are standardised, remove names that could not be standardised
-        if cazy_classes[index] not in std_class_names:
+        if cazy_classes[index] not in standardised_class_names:
             logger.warning(
                 (
                     f"'{cazy_classes[index]}' could not be standardised.\n"
-                    "Please use a synonym in the file_io/cazy_dictionary.json.\n"
+                    "Please use a synonym in the file_io/cazy_class_synonym_dictionary.json.\n"
                     f"'{cazy_classes[index]}' will NOT be scraped."
                 )
             )
@@ -430,105 +292,122 @@ def parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names):
     return cazy_classes
 
 
-def get_cmd_defined_fams_classes(cazy_dict, std_class_names, args):
-    """Retrieve classes and families specified for scraping from the cmd-line args.
+def get_cmd_scrape_config(
+    config_dict,
+    cazy_class_synonym_dict,
+    taxonomy_filter, 
+    args,
+):
+    """Retrieve scraping configuration data from the cmd-line args parser
+    
+    :param config_dict: dict of CAZy classes and families to be scrapped
+    :param cazy_class_synonym_dict: dict of accepted CAZy class name synonyms
+    :param taxonomy_filter: dict of genera, species and strains to restrict the scrape to
+    :param args: cmd-line args parser
+    
+    Return config_dict and taxonomy_filter (dict)
+    """
+    if args.classes is not None:
+        cmd_cazy_classes = args.classes.strip().split(",")
+        cmd_cazy_classes = parse_user_cazy_classes(cmd_cazy_classes, cazy_class_synonym_dict)
+        for cazy_class in cmd_cazy_classes:
+            config_dict["classes"].add(cazy_class)
+    
+    if args.families is not None:
+        config_dict = get_cmd_defined_families(config_dict, args)
+    
+    if args.genera is not None:
+        cmd_genera = (args.genera).split(",")
+        for cmd_genus in cmd_genera:
+            taxonomy_filter["genera"].add(cmd_genus)
 
-    :param cazy_dict: dict, accepted synonyms of CAZy class names
-    :param std_class_names: list, standardised CAZy class names
-    :param args: cmd args parser
+    if args.species is not None:
+        cmd_species = (args.species).split(",")
+        for cmd_species in cmd_species:
+            taxonomy_filter["species"].add(cmd_species)
+    
+    if args.strains is not None:
+        cmd_strains = (args.strains).split(",")
+        for cmd_genus in cmd_strains:
+            taxonomy_filter["strains"].add(cmd_strains)
+    
+    return config_dict, taxonomy_filter
 
-    Return dictionary of CAZy classes and families to be scraped.
+
+def get_cmd_defined_families(config_dict, args):
+    """Retrieve CAZy families specified at the cmd-line for scraping
+    
+    :param config_dict: dict of CAZy classes and families to scrape
+    :param args: cmd-line args parser
+
+    Return config_dict
     """
     logger = logging.getLogger(__name__)
 
-    # create dictionary which will store families and classes to be scraped
-    config_dict = {
-        'classes': [],
-        'Glycoside Hydrolases (GHs)': [],
-        'GlycosylTransferases (GTs)': [],
-        'Polysaccharide Lyases (PLs)': [],
-        'Carbohydrate Esterases (CEs)': [],
-        'Auxiliary Activities (AAs)': [],
-        'Carbohydrate-Binding Modules (CBMs)': [],
-    }
+    cmd_families = (args.families).strip().split(",")
 
-    # add classes to config dict
-    cazy_classes = args.classes
-    if cazy_classes is not None:
-        cazy_classes = cazy_classes.strip().split(",")
-        # Standardise CAZy class names
-        cazy_classes = parse_user_cazy_classes(cazy_classes, cazy_dict, std_class_names)
-        config_dict["classes"] = cazy_classes
+    for fam in cmd_families:
+        try:
+            if fam.find("GH") != -1:
+                re.match(r"GH\d+", fam, re.IGNORECASE).group()
+                config_dict['Glycoside Hydrolases (GHs)'].add(fam)
 
-    families = args.families
-    if families is not None:
-        # add families to config dict
-        families = families.strip().split(",")
+            elif fam.find("GT") != -1:
+                re.match(r"GT\d+", fam, re.IGNORECASE).group()
+                config_dict['GlycosylTransferases (GTs)'].add(fam)
 
-        for fam in families:
-            try:
-                if fam.find("GH") != -1:
-                    re.match(r"GH\d+", fam, re.IGNORECASE).group()
-                    config_dict['Glycoside Hydrolases (GHs)'].append(fam)
+            elif fam.find("PL") != -1:
+                re.match(r"PL\d+", fam, re.IGNORECASE).group()
+                config_dict['Polysaccharide Lyases (PLs)'].add(fam)
 
-                elif fam.find("GT") != -1:
-                    re.match(r"GT\d+", fam, re.IGNORECASE).group()
-                    config_dict['GlycosylTransferases (GTs)'].append(fam)
+            elif fam.find("CE") != -1:
+                re.match(r"CE\d+", fam, re.IGNORECASE).group()
+                config_dict['Carbohydrate Esterases (CEs)'].add(fam)
 
-                elif fam.find("PL") != -1:
-                    re.match(r"PL\d+", fam, re.IGNORECASE).group()
-                    config_dict['Polysaccharide Lyases (PLs)'].append(fam)
+            elif fam.find("AA") != -1:
+                re.match(r"AA\d+", fam, re.IGNORECASE).group()
+                config_dict['Auxiliary Activities (AAs)'].add(fam)
 
-                elif fam.find("CE") != -1:
-                    re.match(r"CE\d+", fam, re.IGNORECASE).group()
-                    config_dict['Carbohydrate Esterases (CEs)'].append(fam)
+            elif fam.find("CBM") != -1:
+                re.match(r"CBM\d+", fam, re.IGNORECASE).group()
+                config_dict['Carbohydrate-Binding Modules (CBMs)'].ad(fam)
 
-                elif fam.find("AA") != -1:
-                    re.match(r"AA\d+", fam, re.IGNORECASE).group()
-                    config_dict['Auxiliary Activities (AAs)'].append(fam)
-
-                elif fam.find("CBM") != -1:
-                    re.match(r"CBM\d+", fam, re.IGNORECASE).group()
-                    config_dict['Carbohydrate-Binding Modules (CBMs)'].append(fam)
-
-                else:
-                    logger.warning(
-                        f"Invalid family specified at cmd line: {fam}\n"
-                        "This family will not be scraped."
-                    )
-
-            except AttributeError:
+            else:
                 logger.warning(
                     f"Invalid family specified at cmd line: {fam}\n"
                     "This family will not be scraped."
                 )
 
+        except AttributeError:
+            logger.warning(
+                f"Invalid family specified at cmd line: {fam}\n"
+                "This family will not be scraped."
+            )
+
     return config_dict
 
 
-def get_excluded_classes(std_class_names, config_dict, cazy_dict):
+def get_excluded_classes(config_dict, cazy_class_synonym_dict):
     """Define the CAZy classes that will not be scraped.
 
     This includes classes for which not Families have been specified for scraping.
 
-    :param std_class_names: list of standardised CAZy class names
     :param config_dict: configuration dict defining classes and families to be scraped
-    :param cazy_dict: dict, accepted CAZy classes synonyms
+    :param cazy_class_synonym_dict: dict, accepted CAZy classes synonyms
 
     Return list of CAZy classes not to be scraped.
     """
-    # retrieve list of CAZy classes from which all families are to be scraped
-    cazy_classes = config_dict["classes"]
+    cazy_classes_to_scrape = []
 
-    # retrieve the names of classes for which specific families to be scraped have been named
+    # retrieve the names of classes for which specific families to be scraped HAVE BEEN named
     for key in config_dict:
-        if (key != "classes") and (key not in cazy_classes) and (len(config_dict[key]) != 0):
+        if (key != "classes") and (key not in config_dict["classes"]) and (len(config_dict[key]) != 0):
             # add the class of families to be scraped to the list of CAZy classes to be scraped
-            cazy_classes.append(key)
+            cazy_classes_to_scrape.append(key)
 
     # create list of CAZy classes not to be scraped
-    excluded_classes = std_class_names
-    excluded_classes = list(set(excluded_classes).difference(cazy_classes))
+    excluded_classes = list(cazy_class_synonym_dict.keys())
+    excluded_classes = list(set(excluded_classes).difference(cazy_classes_to_scrape))
 
     if len(excluded_classes) != 0:
         # change names of classes into format for excluding classes during scrape
@@ -541,7 +420,7 @@ def get_excluded_classes(std_class_names, config_dict, cazy_dict):
     return excluded_classes
 
 
-def convert_lists_to_none(config_dict):
+def convert_empty_sets_to_none(config_dict):
     """Convert empty lists to None type objects in configuration dictionary.
 
     :param config_dict: dict, CAZy classes and families to be scraped
@@ -554,6 +433,34 @@ def convert_lists_to_none(config_dict):
                 config_dict[key] = None
 
     return config_dict
+
+
+def get_filter_set(taxonomy_filters_dict):
+    """Create a set of all taxonomy filters from a dictionary.
+
+    :param taxonomy_filers: dict of taxonomy filters
+
+    Return a set.
+    """
+    taxonomy_filters = []
+
+    for key in taxonomy_filters_dict:
+        try:
+            if len(taxonomy_filters_dict[key]) != 0:
+                taxonomy_filters += taxonomy_filters_dict[key]
+        except TypeError:
+            pass
+
+    if len(taxonomy_filters) == 0:
+        taxonomy_filters = None
+
+    else:
+        taxonomy_filters = set(taxonomy_filters)
+
+    return taxonomy_filters
+
+
+################################################################################
 
 
 def create_streamline_scraping_warning(args):
@@ -594,9 +501,9 @@ def get_configuration(args):
     """
     # retrieve inital parsing of configuration data
     (
-        excluded_classes, config_dict, cazy_dict, taxonomy_filters_dict, kingdoms, ec_filter,
+        excluded_classes, config_dict, cazy_class_synonym_dict, taxonomy_filters_dict, kingdoms, ec_filter,
     ) = parse_configuration(args)
-    # excluded_classes and cazy_dict are used in the crawler module but are not needed for the
+    # excluded_classes and cazy_class_synonym_dict are used in the crawler module but are not needed for the
     # the expand module
 
     taxonomy_filters = []
