@@ -77,7 +77,43 @@ from scraper import crawler
 from scraper.crawler.cazy_html_pages import get_cazy_pages, parse_local_pages
 from scraper.crawler.parse_cazy_families import scrape_all, scrape_by_kingdom
 from scraper.sql import sql_orm, sql_interface
-from scraper.utilities import build_logger, config_logger, file_io, parsers, parse_configuration
+from scraper.utilities import build_logger, config_logger, file_io, parsers, parse_configuration, termcolour
+
+
+# Define constants
+
+__version__ = "1.0.0-beta"
+VERSION_INFO = [
+    termcolour(
+        f"cazy_webscraper version: {__version__}",
+        "cyan",
+    ),
+]
+
+CITATION_INFO = [
+    termcolour(
+        "If you use cazy_webscraper in your work, please cite the following publication:",
+        "green",
+    ),
+    termcolour(
+        "\tHobbs, E. E. M., Pritchard, L., Chapman, S., Gloster, T. M.,",
+        "yellow",
+    ),
+    termcolour(
+        "\t(2021) cazy_webscraper Microbiology Society Annual Conference 2021 poster. ",
+        "yellow",
+    ),
+    termcolour(
+        "\tFigShare. Poster.",
+        "yellow",
+    ),
+    termcolour(
+        "\thttps://doi.org/10.6084/m9.figshare.14370860.v7",
+        "yellow",
+    ),
+]
+
+
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):

@@ -45,6 +45,7 @@ import logging
 import os
 
 from pathlib import Path
+from typing import Optional
 
 
 def config_logger(args) -> logging.Logger:
@@ -109,3 +110,33 @@ def build_logger(output, file_name):
     logger.addHandler(file_log_handler)
 
     return logger
+
+
+def termcolour(
+    logstr: str, color: Optional[str] = None, bold: Optional[bool] = False
+) -> str:
+    """Return the passed logstr, wrapped in terminal colouring."""
+    # For terminal colouring
+    termcolours = {
+        "BLACK": 0,
+        "RED": 1,
+        "GREEN": 2,
+        "YELLOW": 3,
+        "BLUE": 4,
+        "MAGENTA": 5,
+        "CYAN": 6,
+        "WHITE": 7,
+    }
+    reset = "\033[0m"
+
+    # Colour the string
+    if isinstance(color, str) and color.upper() in termcolours:
+        logstr = f"\033[1;{30 + termcolours[color.upper()]}m{logstr}{reset}"
+
+    # Make the string bold
+    if bold is True:
+        logstr = f"\033[1m{logstr}"
+        if not logstr.endswith(reset):
+            logstr += reset
+
+    return logstr
