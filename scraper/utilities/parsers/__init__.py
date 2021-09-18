@@ -85,22 +85,38 @@ def build_parser(argv: Optional[List] = None):
         help="Path to JSON file containing CAZy class synoymn names",
     )
 
+    # Add option to display citation
+    parser.add_argument(
+        "-C",
+        "--citation",
+        dest="citation",
+        action="store_true",
+        default=False,
+        help="Print cazy_webscraper citation message",
+    )  
+
     # Add option to provide a path to an existing SQL database to add newly scraped data to
     parser.add_argument(
         "-d",
-        "--database",
+        "--db_output",
         type=Path,
-        metavar="local database path",
         default=None,
-        help="path to an existing local CAZy SQL database",
+        help="Target output path to build new SQL database",
     )
 
-    # Add option to limit scrape to CAZymes with specific EC numbers
     parser.add_argument(
-        "--ec",
-        type=str,
+        "-D",
+        "--database",
+        type=Path,
         default=None,
-        help="Defines EC numbers to restrict the scrape to"
+        help="Path to an existing local CAZy SQL database",
+    )
+
+    parser.add_argument(
+        "--dict_output",
+        type=Path,
+        default=None,
+        help="Target output path to write out JSON file of protein accesisons and CAZy family annotations",
     )
 
     # Add option to force file over writting
@@ -129,26 +145,6 @@ def build_parser(argv: Optional[List] = None):
         help="Genera to restrict the scrape to"
     )
 
-    # enable writing HTML pages of CAZy website to disk
-    parser.add_argument(
-        "--get_pages",
-        dest="get_pages",
-        action="store_true",
-        default=False,
-        help="Retrieve pages from CAZy and write out HTML files to disk",
-    )
-
-    # Add option to restrict the scrape to specific kingdoms
-    parser.add_argument(
-        "--kingdoms",
-        type=str,
-        default=None,
-        help=(
-            "Kingdoms to scrape. Separate by a single comma.\n"
-            "Options= archaea, bacteria, eukaryota, viruses, unclassified (not case sensitive)"
-        ),
-    )
-
     # Add log file name option
     # If not given, no log file will be written out
     parser.add_argument(
@@ -160,27 +156,6 @@ def build_parser(argv: Optional[List] = None):
         help="Defines log file name and/or path",
     )
 
-    # Add option to prevent over writing of existing files
-    # and cause addition of files to output directory
-    parser.add_argument(
-        "-n",
-        "--nodelete",
-        dest="nodelete",
-        action="store_true",
-        default=False,
-        help="enable/disable deletion of exisiting files",
-    )
-
-    # Add option to specify output directory to write output dataframes to
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=Path,
-        metavar="output file name",
-        default=sys.stdout,
-        help="Output filename",
-    )
-
     # Add option to enable number of times to retry scraping
     parser.add_argument(
         "-r",
@@ -188,14 +163,6 @@ def build_parser(argv: Optional[List] = None):
         type=int,
         default=10,
         help="Number of times to retry scraping a family or class page if error encountered",
-    )
-
-    # Add option to scrape CAZy from local HTML files
-    parser.add_argument(
-        "--scrape_files",
-        type=Path,
-        default=None,
-        help="dir containing HTML files of CAZy webpages",
     )
 
     # Add option to enable retrieval of subfamilies
@@ -228,19 +195,6 @@ def build_parser(argv: Optional[List] = None):
         ),
     )
 
-    # Add option to streamline scraping, presumes that for each family HTML table a protein appears
-    # in, it's data will be identical
-    parser.add_argument(
-        "--streamline",
-        type=str,
-        default=None,
-        help=(
-            "Define attributes to presume are identical each family HTML table a protein"
-            " appears in\nThe options as: genbank, ec, uniprot, pdb\n"
-            "Any combination can be provided. GenBank refers to non-primary GenBank accessions."
-        )
-    )
-
     # Add option to define time out limit for trying to connect to CAZy
     parser.add_argument(
         "-t",
@@ -259,6 +213,16 @@ def build_parser(argv: Optional[List] = None):
         default=False,
         help="Set logger level to 'INFO'",
     )
+    
+    # Add option to display version
+    parser.add_argument(
+        "-V",
+        "--version",
+        dest="version",
+        action="store_true",
+        default=False,
+        help="Print cazy_webscraper version number",
+    )    
 
     if argv is None:
         # parse command-line
