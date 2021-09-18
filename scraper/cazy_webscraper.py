@@ -114,8 +114,6 @@ CITATION_INFO = [
 ]
 
 
-
-
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
     """Set up parser, logger and coordinate overal scrapping of CAZy.
 
@@ -125,7 +123,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     families specified to be scraped in the configration file.
     """
     # Program preparation
-    time_stamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")  # used in naming files
+    time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
     start_time = pd.to_datetime(start_time)
 
@@ -139,16 +137,23 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if logger is None:
         logger = logging.getLogger(__name__)
         config_logger(args)
-    logger.info(
-        f"-------------------cazy_webscraper------------------------"
-        "Version: v0.1.6"
-    )
+
+    # check if printing out version or citation information
+    if args.version:
+        sys.stderr.write("\n".join(VERSION_INFO) + "\n")
+        return
+    
+    if args.citation:
+        sys.stderr.write("\n".join(CITATION_INFO) + "\n")
+        return
 
     if args.output is not sys.stdout:
-        logger.info(f"Making output directory: {args.output}")
-        logger.info(f"Force writing to exiting output dir: {args.force}")
-        logger.info(f"Deleting content already present in output dir: {args.nodelete}")
-        file_io.make_output_directory(args.output, args.force, args.nodelete)
+        logger.info(f"Output directory: {(args.output).parent}")
+        logger.info(f"Force overwriting exiting output file: {args.force}")
+
+        if str((args.output).parent) != '.':
+            # dirs defined in output put
+            file_io.make_db_output_directory(args)
 
     cazy_home = "http://www.cazy.org"
 

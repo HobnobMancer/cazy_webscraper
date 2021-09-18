@@ -49,6 +49,45 @@ from Bio import SeqIO
 from Bio.Blast.Applications import NcbimakeblastdbCommandline
 
 
+
+def make_db_output_directory(args):
+    """Create output directory for SQL database file.
+
+    :param args: cmd-line args parser
+
+    Raises FileExistsError if target database file output path exists and 
+    force (force overwrite) is False.
+
+    Return Nothing
+    """
+    logger = logging.getLogger(__name__)
+
+    if args.output.exists():
+        if args.force is True:
+
+            logger.warning(
+                "Target output path for database exists.\n"
+                "Forced overwritting enabled. Overwritting existing CAZome database."
+            )
+            return
+        
+        else:
+            logger.warning(
+                "Target output path for database exists.\n"
+                "Forced overwritting NOT enabled\n."
+                "To overwrite the existing CAZome database\n,"
+                "rerun cazy_webscraper with the -f flag.\n"
+                "Terminating program."
+            )
+            sys.exit(1)
+
+    # make output directory
+    args.output.parent.mkdir(parents=True, exist_ok=args.force)
+    logger.warning(f"Built output directory: {args.output.parent}")
+
+    return
+
+
 def make_output_directory(output, force, nodelete):
     """Create output directory for genomic files.
 
