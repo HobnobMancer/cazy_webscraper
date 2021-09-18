@@ -85,10 +85,11 @@ class Family:
     Used to keep track if family needs to be scraped again.
     """
 
-    def __init__(self, name, cazy_class, url, path):
+    def __init__(self, name, cazy_class, url, download_url, path):
         self.name = name
         self.cazy_class = cazy_class
-        self.url = url
+        self.url = url  # path to the cazy family page
+        self.download_url = download_url  # url to download the family txt file
         self.path = path  # Path to downloaded family file
 
     def __str__(self):
@@ -292,7 +293,10 @@ def get_cazy_family_urls(class_name, class_url, cazy_home_url, args):
         # generate link for download family file
         family_download_url = f'IMG/cazy_data/{family_name}.txt'
 
-        family = Family(family_name, class_name, family_download_url)
+        family_name = url[(len(cazy_home_url) + 1): -5]
+
+        family = Family(family_name, class_name, url, family_download_url)
+        family.members = set()  # later used to store Protein members
         cazy_families.append(family)
 
     if len(incorrect_urls) == 0:
