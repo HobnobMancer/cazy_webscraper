@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 # (c) University of St Andrews 2020-2021
 # (c) University of Strathclyde 2020-2021
+# (c) James Hutton Institute 2020-2021
 # Author:
 # Emma E. M. Hobbs
-
+#
 # Contact
 # eemh1@st-andrews.ac.uk
-
+#
 # Emma E. M. Hobbs,
 # Biomolecular Sciences Building,
 # University of St Andrews,
@@ -16,7 +17,7 @@
 # KY16 9ST
 # Scotland,
 # UK
-
+#
 # The MIT License
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,10 +26,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -56,13 +57,13 @@ from scraper.sql import sql_interface
 class CazyClass:
     """A single CAZy class.
 
-    Used to keep track of if specific families need to be scraped again.
+    Used to keep track of specific families that need to be scraped again.
     """
 
     def __init__(self, name, url, tries, failed_families=None):
         self.name = name
         self.url = url
-        self.tries = tries
+        self.tries = tries  # number of attempts to be scraped
         if failed_families is None:
             self.failed_families = {}  # keyed by Family instance, valued by attempted scrapes (int)
         else:
@@ -84,15 +85,11 @@ class Family:
     Used to keep track if family needs to be scraped again.
     """
 
-    def __init__(self, name, cazy_class, url, failed_pages=None):
+    def __init__(self, name, cazy_class, url, path):
         self.name = name
         self.cazy_class = cazy_class
         self.url = url
-        if failed_pages is None:
-            # {kingdom: {paginiation_page_url: number of tries}}
-            self.failed_pages = {}
-        else:
-            self.failed_pages = failed_pages
+        self.path = path  # Path to downloaded family file
 
     def __str__(self):
         return f"CAZy family {self.name}"
@@ -212,23 +209,23 @@ def get_cazy_classes(cazy_home_url, excluded_classes, cazy_dict, args):
     return cazy_classes
 
 
-def get_cazy_family_urls(class_url, class_name, cazy_home_url, args):
+def get_cazy_family_urls(class_name, class_url, cazy_home_url, args):
     """Retrieve all protein members of each CAZy family within the given CAZy class.
 
-    :param class_url: str, URL to the CAZy class
     :param class_name: str, name of CAZy class
+    :param class_url: str, URL to CAZy class webpage
     :param cazy_home_url: str, URL to CAZy home page
     :param args: args parser object
 
     Returns:
-    A list Family class objects
+    A CazyClass isntance
     An error message when connecting to CAZy
     A List of incorrectly formated URLs
     """
     logger = logging.getLogger(__name__)
     logger.info(f"Retrieving URLs to families under {class_name}")
 
-    # scrape the class page
+    # get the html code of the class page
     class_page, error = get_page(class_url, args, max_tries=(args.retries + 1))
 
     if class_page is None:
@@ -237,8 +234,6 @@ def get_cazy_family_urls(class_url, class_name, cazy_home_url, args):
                 f"The following error was raised:\n{error}"
         )
         return None, error, None
-
-    # Retrieve URLs to the CAZy family pages
 
     # retrieve the <h3> element that titles the div section containing the tables of family links
     family_h3_element = [
@@ -290,28 +285,14 @@ def get_cazy_family_urls(class_url, class_name, cazy_home_url, args):
     incorrect_urls = []
 
     for url in family_urls:
-        # check URL format
-        try:
-            re.match(
-                r"http://www.cazy.org/(\D{2,3})(\d+|\d+_\d+).html", url
-            ).group()
-        except AttributeError as error:
-            logger.warning(
-                f"Format of URL {url} is incorrect from {class_name}.\n"
-                "Will not attempt to scrape this URL."
-            )
-            incorrect_urls.append(
-                f"{url}\t"
-                f"{class_name}\t"
-                "Format of the URL is incorrect\t"
-                f"{error}"
-            )
-            continue
+        family_name = url.replace(cazy_home_url, '')
+        family_name = family_name.replace('.html', '')
+        family_name = family_name.replace('/', '')
+        
+        # generate link for download family file
+        family_download_url = f'IMG/cazy_data/{family_name}.txt'
 
-        family_name = url[(len(cazy_home_url) + 1): -5]
-
-        family = Family(family_name, class_name, url)
-        family.members = set()  # later used to store Protein members
+        family = Family(family_name, class_name, family_download_url)
         cazy_families.append(family)
 
     if len(incorrect_urls) == 0:
