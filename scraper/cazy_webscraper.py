@@ -179,7 +179,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         excluded_classes,
         config_dict,
         cazy_class_synonym_dict,
-        taxonomy_filter,
+        taxonomy_filters,
     ) = parse_configuration.parse_configuration(args)
 
     scrape_config_message = (
@@ -214,11 +214,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             logger.error("Failed to build SQL database. Terminating program\n", exc_info=True)
             sys.exit(1)
         
+        # used for naming additional log files
+        logger_name = args.database.split('.')[0]
+        
         logger.info("Adding log of scrape to the local CAZyme database")
         sql_interface.log_scrape_in_db(
             time_stamp,
             config_dict,
-            taxonomy_filter,
+            taxonomy_filters,
             session,
             args,
         )
@@ -244,12 +247,18 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             sql_interface.log_scrape_in_db(
                 time_stamp,
                 config_dict,
-                taxonomy_filter,
+                taxonomy_filters,
                 session,
                 args,
             )
+
+            # used for naming additional log files
+            logger_name = args.db_output.split('.')[0]
     
         else:
+            # use default logger name for additional log files
+            logger_name = f'cazy_webscraper_{start_time}'
+
             if args.no_db:
                 logger.warning("Selected to NOT generate a CAZyme database")
                 session = None
@@ -278,9 +287,16 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             file_io.make_cazy_dict_output_directory(args)
         
         cazy_dict = {}  # {protein_accession: [CAZy fams]}
+
+        if args.no_db:
+            # used for naming additional log files
+            logger_name = args.dict_output.split('.')[0]
     
     else:
         cazy_dict = None
+    
+    if args.log:
+        logger_name = args.log
 
     logger.info("Starting retrieval of data from CAZy")
     get_cazy_data(
@@ -288,10 +304,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         excluded_classes,
         config_dict,
         cazy_class_synonym_dict,
-        taxonomy_filter,
+        taxonomy_filters,
         session,
         cazy_dict,
         args,
+        logger_name,
     )
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -324,11 +341,10 @@ def get_cazy_data(
     config_dict,
     cazy_class_synonym_dict,
     taxonomy_filters,
-    kingdoms,
-    ec_filters,
-    time_stamp,
     session,
+    cazy_dict,
     args,
+    logger_name,
 ):
     """Coordinate retrieval of data from the CAZy website.
 
@@ -340,28 +356,17 @@ def get_cazy_data(
     :param config_dict: dict, user defined configuration of the scraper
     :param cazy_class_synonym_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
     :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
-    :param kingdoms: list of taxonomy kingdoms to restrict the scrape to
-    :param ec_filters: set of EC numbers to limit the scrape to
-    :param time_stamp: str, data and time scrape was initiated
-    :param session: session, open database session
+    :param session: session, open database session (if opted to produce a CAZyme database)
+    :param cazy_dict: dict to add store protein accession and fam annotations (if args.dict_output is True)
     :param args: cmd args parser
+    :param logger_name: str, name used for additional logger files
 
     Return nothing.
     """
-    if args.output is not sys.stdout:
-        out_log_path = args.output
-    else:
-        out_log_path = None
-
-    connection_failures_logger = build_logger(
-        out_log_path, f"CAZy_connection_failures_CW_{time_stamp}.log",
-    )
-    sql_failures_logger = build_logger(
-        out_log_path, f"SQL_errors_CW_{time_stamp}.log",
-    )
-    format_failures_logger = build_logger(
-        out_log_path, f"Format_and_parsing_errors_CW_{time_stamp}.log",
-    )
+    # define paths for additional logs files
+    connection_failures_logger = build_logger(Path(f"{logger_name}_connection_failures.log"))
+    sql_failures_logger = build_logger(Path(f"{logger_name}_SQL_errors.log"))
+    format_failures_logger = build_logger(Path(f"{logger_name}_format_and_parsing_errors.log"))
 
     # retrieve links to CAZy class pages, return list of CazyClass objects
     cazy_classes = crawler.get_cazy_classes(
