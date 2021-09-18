@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 # (c) University of St Andrews 2020-2021
 # (c) University of Strathclyde 2020-2021
+# (c) James Hutton Institute 2020-2021
+#
 # Author:
 # Emma E. M. Hobbs
-
+#
 # Contact
 # eemh1@st-andrews.ac.uk
-
+#
 # Emma E. M. Hobbs,
 # Biomolecular Sciences Building,
 # University of St Andrews,
@@ -16,7 +18,7 @@
 # KY16 9ST
 # Scotland,
 # UK
-
+#
 # The MIT License
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,10 +27,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -512,25 +514,16 @@ class Log(Base):
         )
 
 
-def build_db(time_stamp, args):
+def build_db(db_path, args):
     """Build an empty SQL database and open a session.
 
-    :param time_stamp: str, date and time stamp of when scrape was initated
+    :param db_path: target path to write out db to
     :param args: cmd args parser
 
     Return an open database session.
     """
     logger = logging.getLogger(__name__)
     logger.info("Building empty db to store data")
-
-    if args.output is sys.stdout:
-        # write to cwd, this is deleted in scrape is successful
-        cwd = os.getcwd()
-        db_path = cwd + f"cazy_scrape_temp_{time_stamp}.db"
-
-    else:
-        # write to specified output directory
-        db_path = args.output / f"cazy_scrape_{time_stamp}.db"
 
     engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
     Base.metadata.create_all(engine)

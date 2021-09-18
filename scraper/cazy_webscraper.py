@@ -128,6 +128,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     the configuration file and thus, will not be scraped. User_cazy_families is the list of CAZy
     families specified to be scraped in the configration file.
     """
+    cazy_home_url = "http://www.cazy.org"
+
     # Program preparation
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
@@ -171,8 +173,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
         logger.warning(termcolour(warning_message, "red")
         )
-
-    cazy_home_url = "http://www.cazy.org"
 
     logger.info("Parsing configuration")
     (
@@ -266,11 +266,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             else:
                 logger.warning(
                     "Default CAZyme database location selected:\n"
-                    f"Database output in cwd: cazy_webscraper_{start_time}.db"
+                    f"Database output in cwd: cazy_webscraper_{time_stamp}.db"
                 )
 
                 try:
-                    session = sql_orm.build_db(f"cazy_webscraper_{start_time}.db", args)
+                    session = sql_orm.build_db(f"cazy_webscraper_{time_stamp}.db", args)
                     logger.info("Built new local CAZyme database")
                 except Exception:
                     logger.error("Failed to build SQL database. Terminating program", exc_info=True)
@@ -372,6 +372,9 @@ def get_cazy_data(
     cazy_classes = crawler.get_cazy_classes(
         cazy_home_url, excluded_classes, cazy_class_synonym_dict, args,
     )
+    print("CAZY CLASSES")
+    print(cazy_classes)
+    sys.exit(1)
 
     # scrape each retrieved class page
     for cazy_class in tqdm(cazy_classes, desc="Parsing CAZy classes"):
