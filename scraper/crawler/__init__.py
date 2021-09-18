@@ -101,7 +101,7 @@ class Family:
         return f"<Family: {id(self)}: {self.name}>"
 
 
-def get_cazy_classes(cazy_home, excluded_classes, cazy_dict, args):
+def get_cazy_classes(cazy_home_url, excluded_classes, cazy_dict, args):
     """Returns a list of CAZy class main/home page URLs for each specified class as the CAZy site.
 
     :param cazy_url: str, URL to the CAZy home page.
@@ -116,30 +116,16 @@ def get_cazy_classes(cazy_home, excluded_classes, cazy_dict, args):
 
     # define items to be excluded from returned class list, ALWAYS exlide links to genomes
     if excluded_classes is not None:
-        exclusions = tuple(["<strong>Genomes</strong>"] + excluded_classes)
+        exclusions = tuple(excluded_classes)
     else:
-        exclusions = "<strong>Genomes</strong>"
+        exclusions = tuple()
 
-    home_page = None
-    tries = 0  # number of the attempted connections to CAZy
+    homepage, error = get_page(cazy_home_url, args, max_tries=(args.retries + 1))
 
-    while (home_page is None) and (tries < args.retries + 1):
-        home_page, error = get_page(cazy_home, args, max_tries=(args.retries + 1))
-
-        if (home_page is None) and (tries < (args.retries + 1)):
-            logger.error(
-                f"Failed to connect to CAZy homepage after 10 attempts,\n"
-                f"On attempt# {(tries+1)}/{args.retries + 1} the following error was raised:\n"
-                f"{error}\n"
-                f"Reattempting for attempt# {(tries+2)} in 10s."
-            )
-            time.sleep(10)
-            tries += 1
-
-    if home_page is None:
+    if homepage is None:
         logger.error(
             (
-                "Failed to connect to CAZy home-page after multiple attempts.\n"
+                f"Failed to connect to CAZy home page after {args.retries} attempts.\n"
                 "The following error was raised:\n"
                 f"{error}"
                 "Could not retrieve URLs to CAZy classes.\n"
@@ -149,16 +135,46 @@ def get_cazy_classes(cazy_home, excluded_classes, cazy_dict, args):
         )
         sys.exit(1)
 
+    # retrieve the h3 elements with class spip
+    h3_spip_elements = homepage.find_all("h3", {"class": "spip"})
+
+    # retrieve the div section containing the h3 element for Enzyme classes catalgoued by CAZy
     try:
-        class_urls = [
-            f"{cazy_home}/{_['href']}"
-            for _ in home_page.find_all("a", {"class": "spip_out"})
-            if (not _["href"].startswith("http")) and (str(_.contents[0]) not in exclusions)
+        enzyme_classes_div = [
+            _ for _ in homepage.find_all("h3", {"class": "spip"})
+            if (
+                str(_.contents[0].strip()).replace(u'\xa0', ' ')
+                ) == 'Enzyme Classes currently covered'][
+            0
+        ].parent
+
+        # Retreive the enzyme class page URLs suffixs
+        enzyme_class_urls  = [
+            f"{cazy_home_url}/{_['href']}"for _ in enzyme_classes_div.find_all("a") 
+            if (not _["href"].startswith("http"))
+            and (str(_.contents[0]) not in exclusions)
         ]
-    except AttributeError:  # raise if can't find results with find_all("a", {"class": "spip_out"})
+
+        # retrieve the div section containing the h3 element for Associated Module catalgoued by CAZy
+        associated_module_div = [
+            _ for _ in homepage.find_all("h3", {"class": "spip"})
+            if (
+                str(_.contents[0].strip()).replace(u'\xa0', ' ')
+                ) == 'Associated Modules currently covered'][
+            0
+        ].parent
+
+        # Retreive the enzyme class page URLs suffixs
+        associated_module_urls = [
+            f"{cazy_home_url}/{_['href']}"for _ in associated_module_div.find_all("a") 
+            if (not _["href"].startswith("http"))
+            and (str(_.contents[0]) not in exclusions)
+        ]
+
+    except AttributeError:
         logger.error(
             (
-                "Failed retrieve URLs to CAZy classes from the CAZy homepage.\n"
+                "Failed to retrieve URLs to CAZy classes from the CAZy homepage.\n"
                 "Therefore, cannot scrape CAZy classes, or families\n"
                 "Terminating program."
             ),
@@ -166,7 +182,9 @@ def get_cazy_classes(cazy_home, excluded_classes, cazy_dict, args):
         )
         sys.exit(1)
 
-    if len(class_urls) == 0:
+    # compile the full CAZy class URLs from the homepage url and class suffixes
+
+    if len(enzyme_class_urls) == 0 and len(associated_module_urls) == 0:
         logger.error(
             (
                 "Failed retrieve URLs to CAZy classes from the CAZy homepage.\n"
@@ -178,9 +196,10 @@ def get_cazy_classes(cazy_home, excluded_classes, cazy_dict, args):
         sys.exit(1)
 
     # create CAZyClass objects
+    cazy_class_urls = enzyme_class_urls + associated_module_urls
     cazy_classes = []
 
-    for url in class_urls:
+    for url in cazy_class_urls:
         # retrieve class name and standardise it
         class_name = url[20:-5]
         for key in cazy_dict:
@@ -190,15 +209,21 @@ def get_cazy_classes(cazy_home, excluded_classes, cazy_dict, args):
         cazy_class = CazyClass(class_name, url, 0)
         cazy_classes.append(cazy_class)
 
+    logger.info(
+        "Retrieved URLS for:"
+        f"{len(enzyme_class_urls)} Enzyme Classes and\n"
+        f"{len(associated_module_urls)} Associated Modules classes"
+    )
+    
     return cazy_classes
 
 
-def get_cazy_family_urls(class_url, class_name, cazy_home, args):
+def get_cazy_family_urls(class_url, class_name, cazy_home_url, args):
     """Retrieve all protein members of each CAZy family within the given CAZy class.
 
     :param class_url: str, URL to the CAZy class
     :param class_name: str, name of CAZy class
-    :param cazy_home: str, URL to CAZy home page
+    :param cazy_home_url: str, URL to CAZy home page
     :param args: args parser object
 
     Returns list Family class objects, error message when connecting to CAZy and list of incorrectly
@@ -232,9 +257,9 @@ def get_cazy_family_urls(class_url, class_name, cazy_home, args):
     # tables[0] is the table containing links to CAZy families
     # tables[1] is the table containing the link to unclassified proteins
 
-    family_urls = [f"{cazy_home}/{_['href']}" for _ in tables[0].find_all("a")]
+    family_urls = [f"{cazy_home_url}/{_['href']}" for _ in tables[0].find_all("a")]
     try:
-        family_urls.append(f"{cazy_home}/{tables[1].a['href']}")
+        family_urls.append(f"{cazy_home_url}/{tables[1].a['href']}")
     except TypeError:
         family_urls = None
 
@@ -244,7 +269,7 @@ def get_cazy_family_urls(class_url, class_name, cazy_home, args):
 
     # retrieve URLs to subfamilies
     if args.subfamilies is True:
-        subfam_urls = get_subfamily_links(family_h3_element, cazy_home)
+        subfam_urls = get_subfamily_links(family_h3_element, cazy_home_url)
 
         if (family_urls is None) and (subfam_urls is None):
             logger.warning(f"Failed to retrieve URLs to CAZy subfamilies for {class_name}")
@@ -287,7 +312,7 @@ def get_cazy_family_urls(class_url, class_name, cazy_home, args):
             )
             continue
 
-        family_name = url[(len(cazy_home) + 1): -5]
+        family_name = url[(len(cazy_home_url) + 1): -5]
 
         family = Family(family_name, class_name, url)
         family.members = set()  # later used to store Protein members
@@ -299,11 +324,11 @@ def get_cazy_family_urls(class_url, class_name, cazy_home, args):
     return cazy_families, None, incorrect_urls
 
 
-def get_subfamily_links(family_h3_element, cazy_home):
+def get_subfamily_links(family_h3_element, cazy_home_url):
     """Retrieve URL links to CAZy subfamilies.
 
     :param family_h3_element: bs4.element.Tag, h3 element titling the page div
-    :param cazy_home: str, URL to CAZy home_page
+    :param cazy_home_url: str, URL to CAZy homepage
 
     Return list of URLs to subfamilies.
     """
@@ -317,7 +342,7 @@ def get_subfamily_links(family_h3_element, cazy_home):
     for link in all_links:
         try:
             search_result = re.search(pattern, link["href"])
-            urls.append(f"{cazy_home}/{search_result.group()}")
+            urls.append(f"{cazy_home_url}/{search_result.group()}")
         except (KeyError, AttributeError) as error:
             # KeyError raised if link does not have ['href']
             # AttributeError error raised if search_result is None becuase not subfam link
