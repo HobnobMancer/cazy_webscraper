@@ -157,34 +157,29 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     cazy_home = "http://www.cazy.org"
 
-    # retrieve configuration data
+
     logger.info("Parsing configuration")
     (
         excluded_classes,
         config_dict,
-        cazy_dict,
-        taxonomy_filters_dict,
-        kingdoms,
-        ec_filters,
+        cazy_class_synonym_dict,
+        taxonomy_filter,
     ) = parse_configuration.parse_configuration(args)
 
-    # convert taxonomy_filters to a set for quicker identification of species to scrape
-    taxonomy_filters = get_filter_set(taxonomy_filters_dict)
+    scrape_config_message = termcolour(
+        "Configuration:\n"
+        f"Classes to scrape: {config_dict['classes']}"
+        f"GH fams to scrape: {config_dict['Glycoside Hydrolases (GHs)']}"
+        f"GT fams to scrape: {config_dict['GlycosylTransferases (GTs)']}"
+        f"PL fams to scrape: {config_dict['Polysaccharide Lyases (PLs)']}"
+        f"CE fams to scrape: {config_dict['Carbohydrate Esterases (CEs)']}"
+        f"AA fams to scrape: {config_dict['Auxiliary Activities (AAs)']}"
+        f"CBM fams to scrape: {config_dict['Carbohydrate-Binding Modules (CBMs)']}"
+    )
 
-    # Check if retrieving pages from CAZy and writing to disk for scraping later
-    if args.get_pages:
-        logger.info("Retrieve HTML pages from CAZy and building CAZy page library")
-        get_cazy_pages.get_cazy_pages(
-            args,
-            cazy_home,
-            time_stamp,
-            excluded_classes,
-            cazy_dict,
-            config_dict,
-            kingdoms,
-            start_time,
-        )
+    logger.info(scrape_config_message)
 
+    }
     else:
         # build database and return open database session
         if args.database is not None:  # open session for existing local database
@@ -252,7 +247,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 cazy_home,
                 excluded_classes,
                 config_dict,
-                cazy_dict,
+                cazy_class_synonym_dict,
                 taxonomy_filters,
                 kingdoms,
                 ec_filters,
@@ -291,36 +286,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
 
 
-def get_filter_set(taxonomy_filters_dict):
-    """Create a set of all taxonomy filters from a dictionary.
-
-    :param taxonomy_filers: dict of taxonomy filters
-
-    Return a set.
-    """
-    taxonomy_filters = []
-
-    for key in taxonomy_filters_dict:
-        try:
-            if len(taxonomy_filters_dict[key]) != 0:
-                taxonomy_filters += taxonomy_filters_dict[key]
-        except TypeError:
-            pass
-
-    if len(taxonomy_filters) == 0:
-        taxonomy_filters = None
-
-    else:
-        taxonomy_filters = set(taxonomy_filters)
-
-    return taxonomy_filters
 
 
 def get_cazy_data(
     cazy_home,
     excluded_classes,
     config_dict,
-    cazy_dict,
+    cazy_class_synonym_dict,
     taxonomy_filters,
     kingdoms,
     ec_filters,
@@ -336,7 +308,7 @@ def get_cazy_data(
     :param cazy_home: str, url of CAZy home page
     :param excluded_classes: list, list of classes to not scrape from CAZy
     :param config_dict: dict, user defined configuration of the scraper
-    :param cazy_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
+    :param cazy_class_synonym_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
     :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
     :param kingdoms: list of taxonomy kingdoms to restrict the scrape to
     :param ec_filters: set of EC numbers to limit the scrape to
@@ -363,7 +335,7 @@ def get_cazy_data(
 
     # retrieve links to CAZy class pages, return list of CazyClass objects
     cazy_classes = crawler.get_cazy_classes(
-        cazy_home, excluded_classes, cazy_dict, args,
+        cazy_home, excluded_classes, cazy_class_synonym_dict, args,
     )
 
     # scrape each retrieved class page
@@ -554,9 +526,9 @@ def get_cazy_data(
 
     if type(session) is dict:
         if args.output is not sys.stdout:
-            output_path = args.output / f"cazy_dict_{time_stamp}.json"
+            output_path = args.output / f"cazy_class_synonym_dict_{time_stamp}.json"
         else:
-            output_path = Path(f"{os.getcwd()}/cazy_dict_{time_stamp}.json")
+            output_path = Path(f"{os.getcwd()}/cazy_class_synonym_dict_{time_stamp}.json")
         with open(output_path, 'w') as f:
             json.dump(session, f)
 
