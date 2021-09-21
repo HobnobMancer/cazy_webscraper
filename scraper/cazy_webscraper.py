@@ -268,7 +268,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         else:  # args.database is None AND args.db_output is None
 
             # use default logger name for additional log files
-            logger_name = f'cazy_webscraper_{start_time}'
+            logger_name = f'cazy_webscraper_{time_stamp}'
 
             # define path to cache family txt files
             cache_dir = Path(f".cazy_webscraper/cache")
@@ -309,18 +309,27 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
         if (args.no_db) and (args.database is None):
             # used for naming additional log files
+            # split('.') removes the file extensions
             logger_name = args.dict_output.split('.')[0]
         # else: writing logger in the same dir as the database file
 
     else:
         cazy_dict = None
     
-    if args.log:
+    if args.log is not None:  # write logs to user specified dir
         logger_name = args.log.split(".")[0]
+    else:
+        # write the additional log files to the .cazy_webscraper/log dir
+        logger_dir = Path(f"{str(cache_dir.parent)}/logs")
+        file_io.make_output_directory(logger_dir, args.force, args.nodelete)
+        # add logger dir path to the logger name
+        print(logger_name)
+        logger_name = f"{logger_dir}/{str(Path(logger_name).name)}"
+        
 
     # define path to dir to write out downloaded family txt files to
-
     file_io.make_output_directory(cache_dir, args.force, args.nodelete)
+
     logger.info(f"Created cache dir: {cache_dir}")
 
     logger.info("Starting retrieval of data from CAZy")
