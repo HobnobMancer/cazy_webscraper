@@ -332,6 +332,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         taxonomy_filters,
         session,
         cazy_dict,
+        cache_dir,
         args,
         logger_name,
     )
@@ -442,6 +443,8 @@ def get_cazy_data(
         # Not first try, scrape only the families for which a connections to CAZy previously failed
         else:
             class_families = list(cazy_class.failed_families.keys())
+        
+        continue
 
         # Scrape the familes of the current CAZy class, retrieving protein data
         for family in tqdm(class_families, desc=f"Parsing {cazy_class.name} families"):
