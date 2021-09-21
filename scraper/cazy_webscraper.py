@@ -412,8 +412,8 @@ def get_cazy_data(
 
             # retrieve Family class instances (in class_families), containing the Family page URL
             class_families, error_message, incorrect_urls = crawler.get_cazy_family_urls(
-                cazy_class.url,
                 cazy_class.name,
+                cazy_class.url,
                 cazy_home_url,
                 cache_dir,
                 args,
