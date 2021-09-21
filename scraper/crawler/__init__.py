@@ -45,6 +45,10 @@ import re
 import sys
 import time
 
+from socket import timeout
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen
+
 from tqdm import tqdm
 from requests.exceptions import ConnectionError, MissingSchema
 from urllib3.exceptions import HTTPError, RequestError
@@ -210,12 +214,13 @@ def get_cazy_classes(cazy_home_url, excluded_classes, cazy_dict, args):
     return cazy_classes
 
 
-def get_cazy_family_urls(class_name, class_url, cazy_home_url, args):
+def get_cazy_family_urls(class_name, class_url, cazy_home_url, cache_dir, args):
     """Retrieve all protein members of each CAZy family within the given CAZy class.
 
     :param class_name: str, name of CAZy class
     :param class_url: str, URL to CAZy class webpage
     :param cazy_home_url: str, URL to CAZy home page
+    :param cache_dir: str representing Path to dir to write out downloaded family file to
     :param args: args parser object
 
     Returns:
@@ -295,7 +300,9 @@ def get_cazy_family_urls(class_name, class_url, cazy_home_url, args):
 
         family_name = url[(len(cazy_home_url) + 1): -5]
 
-        family = Family(family_name, class_name, url, family_download_url)
+        output_path = f"{cache_dir}_{family.name}.txt"
+
+        family = Family(family_name, class_name, url, family_download_url, output_path )
         family.members = set()  # later used to store Protein members
         cazy_families.append(family)
 
@@ -335,6 +342,143 @@ def get_subfamily_links(family_h3_element, cazy_home_url):
         return
     else:
         return urls
+
+
+def parse_family(family, args):
+    """Coordinate parsing a CAZy family.
+    
+    The overal process involved:
+    Download text file containing family members. Retrieve number of members listed in family on
+    the CAZy website (used for download validation). Parse downloaded text file and add proteins
+    to the database and/or dict.
+
+    :param family: Family class instance
+    :param args: cmd-line args parser
+    
+    Return...
+    """
+    logger = logging.getLogger(__name__)
+
+    # retrieve the number of proteins listed in the family by CAZy
+    family_population = get_family_population(family, args)
+
+    if family_population == 0 or \
+        family_population == '' or \
+            family_population == '' or \
+                family_population == '':
+                logger.warning(
+                    f"No proteins found for {family.name}"
+                )
+                return ???
+    
+    # Scrape proteins from text file
+    # Tally number of proteins
+    # How many could not be added to CAZy
+    # track against family population
+
+
+def get_family_population(family, args):
+    """Retrieve the CAZy family population from the CAZy family page.
+    
+    :param family: Family class instance
+    :param args: cmd-line args parser
+    
+    Return int: number of proteins in the CAZy family
+    """
+    logger = logging.getLogger(__name__)
+
+    family_page = get_page(family.url, args, max_tries=(args.retries + 1))
+
+    # retrieve the table containing the Family data
+    family_data = family_page.find_all("div", {"class": "pos_choix"})
+
+    try:
+        family_population = int(re.findall(
+            r"Download \D{2,3}\d+? \(\d+?\)",
+            family_data[0].text,
+            flags=re.IGNORECASE,
+        )[0].split("(")[1].replace(")", ""))
+
+    except (IndexError, AttributeError):
+        family_population = 0
+    
+    if family_population == 0:
+        # check if the family has been deleted
+        try:
+            family_activities_cell = family.url.select("table")[
+                0].select("tr")[0].select('td')[0].contents[0].strip()
+
+            if family_activities_cell == 'Deleted family!':
+                family_population = 'Deleted family!'
+                logger.warning(f"{family.name} is a deleted family in CAZy")
+            else:
+                logger.warning(f"No proteins found for {family.name}")
+                family_population = 'Empty family'
+        except Exception:
+            logger.warning(f"Could not retrieve family population for {family.name}")
+            family_population = 'Failed Retrieval'
+    
+    return family_population
+
+
+def download_family_file(family, args):
+    """Download text file with CAZy family members from CAZy
+    
+    :param family: Family class instance
+    :param args: cmd-line args parser
+    
+    Return bool to represent if file downloaded successfully.
+    """
+    logger = logging.getLogger(__name__)
+
+    # Try connection
+    tries, response = 0, None
+    while (tries < (args.retries + 1)) and (response is None):
+        try:
+            response = urlopen(family.url, timeout=args.timeout)
+        except (HTTPError, URLError, timeout) as err:
+            logger.warning(
+                f"Failed to connected to {family.url}\n"
+            )
+            tries += 1
+    
+    if response is None:
+        logger.warning(
+            f"Failed to download {family.name} file after {args.retries} tries.\n"
+            "If family tries are remaining, will retry later."
+        )
+        return response
+    
+    file_size = int(response.info().get("Content-length"))
+    bsize = 1_048_576
+    try:
+        with open(family.path, 'wb') as fh:
+            while True:
+                buffer = response.read(bsize)
+                if not buffer:
+                    break
+                fh.write(buffer)
+    except IOError as err:
+        logger.warning(
+            f"Failed to download {family.name}. The following error was raised:\n"
+            f"{err}"
+        )
+        return False
+    
+    # check if the file was downloaded ok
+    if family.path.stat().st_size == 0:
+        logger.warning(
+            f"File for {family.name} was not downloaded successfully.\n"
+            "File size is 0.\n"
+            "If retries exist, will retry later"
+        )
+        return False
+    
+    return True
+
+
+
+
 
 
 def row_to_protein(row, family_name, taxonomy_filters, kingdom, ec_filters, session, args):
