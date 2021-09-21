@@ -156,6 +156,15 @@ def build_parser(argv: Optional[List] = None):
         help="Defines log file name and/or path",
     )
 
+    # Add option to enable retrieval of subfamilies
+    parser.add_argument(
+        "--no_db",
+        dest="no_db",
+        action="store_true",
+        default=False,
+        help="When called, disables building an SQL database",
+    )
+
     # Add option to enable number of times to retry scraping
     parser.add_argument(
         "-r",
