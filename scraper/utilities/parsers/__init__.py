@@ -165,6 +165,15 @@ def build_parser(argv: Optional[List] = None):
         help="When called, disables building an SQL database",
     )
 
+    # Add option to not delete content in the existing cache dir
+    parser.add_argument(
+        "--nodelete",
+        dest="nodelete",
+        action="store_true",
+        default=False,
+        help="When called, content in the existing cache dir is NOT deleted",
+    )
+
     # Add option to enable number of times to retry scraping
     parser.add_argument(
         "-r",
