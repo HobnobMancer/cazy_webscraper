@@ -74,7 +74,6 @@ from typing import List, Optional
 from tqdm import tqdm
 
 from scraper import crawler
-from scraper.crawler.parse_cazy_families import scrape_all, scrape_by_kingdom
 from scraper.sql import sql_orm, sql_interface
 from scraper.utilities import (
     build_logger,
@@ -215,7 +214,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             sys.exit(1)
         
         # used for naming additional log files
-        logger_name = args.database.split('.')[0]
+        logger_name = str(args.database).split('.')[0]
+
+        # define path to cache family txt files
+        cache_dir = Path(f"{str(args.database.parent)}/.cazy_webscraper/cache")
         
         logger.info("Adding log of scrape to the local CAZyme database")
         sql_interface.log_scrape_in_db(
@@ -234,7 +236,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
             if str((args.db_output).parent) != '.':
                 # dirs defined in output put
-                file_io.make_db_output_directory(args)
+                file_io.make_target_directory(args.db_output, args.force)
+
+                # define path to cahce family txt files
+                # define path to cache family txt files
+                cache_dir = Path(f"{str(args.db_output.parent)}/.cazy_webscraper/cache")
+            
+            else:  # writing to cwd
+                # define path to cache family txt files
+                cache_dir = Path(".cazy_webscraper/cache")
             
             try:
                 session = sql_orm.build_db(time_stamp, args)
@@ -255,9 +265,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             # used for naming additional log files
             logger_name = args.db_output.split('.')[0]
     
-        else:
+        else:  # args.database is None AND args.db_output is None
+
             # use default logger name for additional log files
             logger_name = f'cazy_webscraper_{start_time}'
+
+            # define path to cache family txt files
+            cache_dir = Path(f".cazy_webscraper/cache")
 
             if args.no_db:
                 logger.warning("Selected to NOT generate a CAZyme database")
@@ -283,19 +297,31 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
         if str((args.dict_output).parent) != '.':
             # dirs defined in output put
-            file_io.make_cazy_dict_output_directory(args)
+            file_io.make_target_directory(args.dict_output, args.force)
+
+            if (args.no_db) and (args.database is None):
+                # define path to cache family txt files because not defined by db location
+                cache_dir = Path(f"{str(args.dict_output.parent)}/.cazy_webscraper/cache")
         
+            # else: writing cache in same dir as the database
+
         cazy_dict = {}  # {protein_accession: [CAZy fams]}
 
-        if args.no_db:
+        if (args.no_db) and (args.database is None):
             # used for naming additional log files
             logger_name = args.dict_output.split('.')[0]
+        # else: writing logger in the same dir as the database file
 
     else:
         cazy_dict = None
     
     if args.log:
         logger_name = args.log.split(".")[0]
+
+    # define path to dir to write out downloaded family txt files to
+
+    file_io.make_output_directory(cache_dir, args.force, args.nodelete)
+    logger.info(f"Created cache dir: {cache_dir}")
 
     logger.info("Starting retrieval of data from CAZy")
     get_cazy_data(
@@ -342,6 +368,7 @@ def get_cazy_data(
     taxonomy_filters,
     session,
     cazy_dict,
+    cache_dir,
     args,
     logger_name,
 ):
@@ -357,6 +384,7 @@ def get_cazy_data(
     :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
     :param session: session, open database session (if opted to produce a CAZyme database)
     :param cazy_dict: dict to add store protein accession and fam annotations (if args.dict_output is True)
+    :param cache_dir: Path to dir to write out downloaded family txt files
     :param args: cmd args parser
     :param logger_name: str, name used for additional logger files
 
@@ -386,6 +414,7 @@ def get_cazy_data(
                 cazy_class.url,
                 cazy_class.name,
                 cazy_home_url,
+                cache_dir,
                 args,
             )
 
