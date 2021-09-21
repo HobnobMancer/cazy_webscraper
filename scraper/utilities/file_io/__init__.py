@@ -50,10 +50,11 @@ from Bio.Blast.Applications import NcbimakeblastdbCommandline
 
 
 
-def make_db_output_directory(args):
-    """Create output directory for SQL database file.
+def make_target_directory(output_path, force):
+    """Create target output directory for SQL database file and/or JSON file.
 
-    :param args: cmd-line args parser
+    :param output_path: Path to target output file
+    :param force: bool, whether to overwrite an existing output file
 
     Raises FileExistsError if target database file output path exists and 
     force (force overwrite) is False.
@@ -62,8 +63,8 @@ def make_db_output_directory(args):
     """
     logger = logging.getLogger(__name__)
 
-    if args.output.exists():
-        if args.force is True:
+    if output_path.exists():
+        if force is True:
 
             logger.warning(
                 "Target output path for database exists.\n"
@@ -82,55 +83,57 @@ def make_db_output_directory(args):
             sys.exit(1)
 
     # make output directory
-    args.output.parent.mkdir(parents=True, exist_ok=args.force)
-    logger.warning(f"Built output directory: {args.output.parent}")
+    output_path.parent.mkdir(parents=True, exist_ok=force)
+    logger.warning(f"Built output directory: {output_path.parent}")
 
     return
 
 
-def make_output_directory(output, force, nodelete):
-    """Create output directory for genomic files.
+def make_output_directory(output_path, force, nodelete):
+    """Create output directory to which multiple output files will be written
 
-    :param output: path, path of dir to be created
-    :param force: bool, enable/disable creating dir if already exists
-    :param nodelete: bool, enable/disable deleting content in existing dir
+    :param output_path: Path to target output dir
+    :param force: bool, whether to overwrite an existing output file
+    :param nodelete: bool, whether to delete contents in an existing target output dir
 
-    Raises FileExistsError if an attempt is made to create a directory that already
-    exist and force (force overwrite) is False.
+    Raises FileExistsError if target database file output path exists and 
+    force (force overwrite) is False.
 
     Return Nothing
     """
     logger = logging.getLogger(__name__)
 
-    if output.exists():
+    if output_path.exists():
         if force is True:
 
             if nodelete is True:
                 logger.warning(
-                    f"Output directory {output} exists, nodelete is {nodelete}. "
-                    "Adding output to output directory."
+                    "Target output path for database exists.\n"
+                    "Forced writing in existing output directory.\n"
+                    "NOT deleting existing content in the output directory."
                 )
                 return
 
             else:
                 logger.warning(
-                    f"Output directory {output} exists, nodelete is {nodelete}. "
-                    "Deleting content currently in output directory."
+                    "Target output path for database exists.\n"
+                    "Forced writing in existing output directory.\n"
+                    "DELETING existing content in the output directory."
                 )
-                shutil.rmtree(output)
-                output.mkdir(exist_ok=force)
-                return
-
+        
         else:
             logger.warning(
-                f"Output directory {output} exists. 'force' is False, cannot write to existing "
-                "output directory.\nTerminating program."
+                "Target output path for database exists.\n"
+                "Forced writing in existing output directory NOT enabled\n."
+                "To write in an existing output directory \n,"
+                "rerun cazy_webscraper with the -f flag.\n"
+                "Terminating program."
             )
             sys.exit(1)
 
-    else:
-        output.mkdir(parents=True, exist_ok=force)
-        logger.warning(f"Built output directory: {output}")
+    # make output directory
+    output_path.parent.mkdir(parents=True, exist_ok=force)
+    logger.warning(f"Built directory to store family files: {output_path.parent}")
 
     return
 
