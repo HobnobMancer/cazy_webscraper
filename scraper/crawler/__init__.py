@@ -296,11 +296,12 @@ def get_cazy_family_urls(class_name, class_url, cazy_home_url, cache_dir, args):
         family_name = family_name.replace('/', '')
         
         # generate link for download family file
-        family_download_url = f'IMG/cazy_data/{family_name}.txt'
+        # files are gzipped to reduce storage requirements
+        family_download_url = f'IMG/cazy_data/{family_name}.txt.gz'
 
         family_name = url[(len(cazy_home_url) + 1): -5]
 
-        output_path = f"{cache_dir}_{family.name}.txt"
+        output_path = f"{cache_dir}/{family_name}.txt"
 
         family = Family(family_name, class_name, url, family_download_url, output_path )
         family.members = set()  # later used to store Protein members
@@ -369,7 +370,7 @@ def parse_family(family, args):
                 logger.warning(
                     f"No proteins found for {family.name}"
                 )
-                return ???
+                return 'hello'
     
     # Scrape proteins from text file
     # Tally number of proteins
@@ -447,7 +448,7 @@ def download_family_file(family, args):
             f"Failed to download {family.name} file after {args.retries} tries.\n"
             "If family tries are remaining, will retry later."
         )
-        return response
+        return False
     
     file_size = int(response.info().get("Content-length"))
     bsize = 1_048_576
