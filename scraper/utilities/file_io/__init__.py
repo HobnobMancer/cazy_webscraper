@@ -104,36 +104,28 @@ def make_output_directory(output_path, force, nodelete):
     logger = logging.getLogger(__name__)
 
     if output_path.exists():
-        if force is True:
 
-            if nodelete is True:
-                logger.warning(
-                    "Target output path for database exists.\n"
-                    "Forced writing in existing output directory.\n"
-                    "NOT deleting existing content in the output directory."
-                )
-                return
+        if nodelete is True:
+            logger.warning(
+                "Target output path for database exists.\n"
+                "Forced writing in existing output directory.\n"
+                "NOT deleting existing content in the output directory."
+            )
+            return
 
-            else:
-                logger.warning(
-                    "Target output path for database exists.\n"
-                    "Forced writing in existing output directory.\n"
-                    "DELETING existing content in the output directory."
-                )
-        
         else:
             logger.warning(
                 "Target output path for database exists.\n"
-                "Forced writing in existing output directory NOT enabled\n."
-                "To write in an existing output directory \n,"
-                "rerun cazy_webscraper with the -f flag.\n"
-                "Terminating program."
+                "Forced writing in existing output directory.\n"
+                "DELETING existing content in the output directory."
             )
-            sys.exit(1)
 
     # make output directory
-    output_path.parent.mkdir(parents=True, exist_ok=force)
-    logger.warning(f"Built directory to store family files: {output_path.parent}")
+    try:
+        output_path.mkdir(parents=True, exist_ok=force)
+    except FileExistsError:
+        pass
+    logger.warning(f"Built directory to store family files: {output_path}")
 
     return
 
