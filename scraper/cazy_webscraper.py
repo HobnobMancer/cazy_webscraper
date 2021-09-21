@@ -217,7 +217,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger_name = str(args.database).split('.')[0]
 
         # define path to cache family txt files
-        cache_dir = Path(f"{str(args.database.parent)}/.cazy_webscraper/cache")
+        cache_dir = Path(f"{str(args.database.parent)}/.cazy_webscraper_{time_stamp}/cache")
         
         logger.info("Adding log of scrape to the local CAZyme database")
         sql_interface.log_scrape_in_db(
@@ -240,11 +240,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
                 # define path to cahce family txt files
                 # define path to cache family txt files
-                cache_dir = Path(f"{str(args.db_output.parent)}/.cazy_webscraper/cache")
+                cache_dir = Path(f"{str(args.db_output.parent)}/.cazy_webscraper_{time_stamp}/cache")
             
             else:  # writing to cwd
                 # define path to cache family txt files
-                cache_dir = Path(".cazy_webscraper/cache")
+                cache_dir = Path(f".cazy_webscraper_{time_stamp}/cache")
             
             try:
                 session = sql_orm.build_db(time_stamp, args)
@@ -271,7 +271,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             logger_name = f'cazy_webscraper_{time_stamp}'
 
             # define path to cache family txt files
-            cache_dir = Path(f".cazy_webscraper/cache")
+            cache_dir = Path(f".cazy_webscraper_{time_stamp}/cache")
 
             if args.no_db:
                 logger.warning("Selected to NOT generate a CAZyme database")
@@ -301,7 +301,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
             if (args.no_db) and (args.database is None):
                 # define path to cache family txt files because not defined by db location
-                cache_dir = Path(f"{str(args.dict_output.parent)}/.cazy_webscraper/cache")
+                cache_dir = Path(f"{str(args.dict_output.parent)}/.cazy_webscraper_{time_stamp}/cache")
         
             # else: writing cache in same dir as the database
 
@@ -323,7 +323,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger_dir = Path(f"{str(cache_dir.parent)}/logs")
         file_io.make_output_directory(logger_dir, args.force, args.nodelete)
         # add logger dir path to the logger name
-        print(logger_name)
         logger_name = f"{logger_dir}/{str(Path(logger_name).name)}"
         
 
