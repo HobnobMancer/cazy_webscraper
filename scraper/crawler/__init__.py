@@ -89,16 +89,31 @@ class Family:
     Used to keep track if family needs to be scraped again.
     """
 
-    def __init__(self, name, cazy_class, url, download_url, path, population_size=None):
+    def __init__(
+        self,
+        name,
+        url,
+        download_url,
+        path,
+        population_size=None,
+        download_attempts=0,
+    ):
         self.name = name
-        self.cazy_class = cazy_class
         self.url = url  # path to the cazy family page
         self.download_url = download_url  # url to download the family txt file
         self.path = path  # Path to downloaded family file
+
+        # Define the number of proteins CAZy states is in the family on the family page
         if population_size is None:
             self.population_size = None
         else:
             self.population_size = population_size
+        
+        # log how many attempts to download the txt file have been made
+        if download_attempts is None:
+            self.download_attempts = 0
+        else:
+            self.download_attempts = download_attempts
 
     def __str__(self):
         return f"CAZy family {self.name}"
@@ -307,7 +322,7 @@ def get_cazy_family_urls(class_name, class_url, cazy_home_url, cache_dir, args):
 
         output_path = f"{cache_dir}/{family_name}.txt"
 
-        family = Family(family_name, class_name, url, family_download_url, output_path )
+        family = Family(family_name, url, family_download_url, output_path)
         family.members = set()  # later used to store Protein members
         cazy_families.append(family)
 
@@ -362,6 +377,14 @@ def parse_family(family, args):
     
     Return
     - Family class instance
+    - Bool if failed to successfully download txt file and need to retry
+    - Str if URL is incorrect (raised HTTP 404 Errors), containing message for logger
+        Else is None
+    - Str recording discrepency between family population listed on the web page and the number
+            of proteins found in the txt file
+            Else is None if discrepency is not found
+
+    - List of SQL errors raised when 
     - Bool indicating successful or unsuccesful retrieval of CAZy family txt file
     """
     logger = logging.getLogger(__name__)
@@ -376,21 +399,141 @@ def parse_family(family, args):
                 logger.warning(
                     f"No proteins found for {family.name}"
                 )
+    elif family_population is None:
+        logger.warning(
+            f"Failed to retrieve {family.name} population size size listed on its CAZy webpage\n"
+            "No comparison between CAZy listed population size and number of proteins listed in\n"
+            "the txt file will be made."
+        )
     
     family.population_size = family_population
     
-    success = download_family_file(family, args)
-    if success is False:  # failed to download file, is attempts remain retry later
-        return family, success
+    download_result = download_family_file(family, args)
 
-    # tally number of proteins added to the local CAZyme db
-    protein_count = 0
+    if download_result is False:  # failed to download file, if attempts remain retry later
+        family.download_attempts += 1
+        return (
+            family,
+            True,  # indicate need to retry downloading the file
+            None,  # no URLs raised 404 errors
+            None,  # no population size discrepency found
+            [], [], True, None,
+        )
+    
+    elif download_result == 404:
+        incorrect_url_log_message = (
+            f"{family.name}\t{family.download_url}\t"
+            "Family txt file download URL\tHTTP Error 404: Not Found"
+        )
+        return (
+            family,
+            False,  # do not try to download the txt file again
+            incorrect_url_log_message,  # str containing url that raised an HTTP 404 err
+            None,  # no population size discrepency found
+            [], [], False, None,
+        )
 
-    with open(family.path, 'r') as fh:
-        lines = fh.read().splitlines()
+    # returns dict, str, bool
+    family_data, population_size_discrepency, redownload_txt = parse_family_txt_file(family)
 
-    for line in lines:
-        print(line)
+    if redownload_txt:
+        family.download_attempts += 1
+        return (
+            family, 
+            True,  # retry download txt file
+            None,  # no URLs raised a HTTP 404 error
+            population_size_discrepency,
+            [], [], True, None
+        )
+    
+    ## Now add data to the database.....
+    #
+    #
+    #
+    #
+    #
+    #
+    
+
+def parse_family_txt_file(family):
+    """Parse the family txt file.
+    
+    Create a dictionary of organisms and list of their proteins, identified by their GenBank
+    accession numbers.
+    
+    Return:
+    - Dict: Dict of {organism: [genbank accession]}
+    - Str: Message if discrepency between population size listed in CAZy and the number of proteins
+            in the txt file. If not discrepency, then return None.
+    - Bool: if need to redownload the txt file
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        with open(family.path, 'r') as fh:
+            lines = fh.read().splitlines()
+    except Exception as err:
+        logger.error(
+            f"Could not open txt for {family.name}. The following error was raised:\n"
+            f"{err}\n"
+            "If attempts remain, will try to redownload latter."
+        )
+        return None, True
+    
+    family_data = {}  # organism: [genbank accessions]
+
+    for line in tqdm(lines, desc=f"Parsing {family.name} txt file"):
+        organism = line.split("\t")[1]
+        genbank_accession = line.split("\t")[2]
+        
+        try:
+            family_data[organism].append(genbank_accession)
+        
+        except KeyError:
+            family_data[organism] = [genbank_accession]
+    
+    logger.info(f"Identified {len(list(family_data.keys()))} species in {family.name}")
+
+    if (len(lines) != family.population_size) and (type(family.population_size) is int):
+        logger.warning(
+            f"CAZy listed {family.population_size} proteins for {family.name} on the family webpage.\n"
+            f"But the family txt file contained {len(lines)} proteins"
+        )
+        logger_message = (
+            f"{family.name}\t"
+            f"Population size listed in CAZy: {family.population_size}\t"
+            f"Population size lised in the txt: {len(lines)}"
+        )
+
+    elif (len(line) != 0) and family.population_size == 'Deleted family!':
+        logger.warning(
+            f"CAZy listed {family.name} as a DELETED family on the family webpage.\n"
+            f"But the family txt file contained {len(lines)} proteins"
+        )
+        logger_message = (
+            f"{family.name}\t"
+            f"Population size listed in CAZy: {family.population_size}\t"
+            f"Population size lised in the txt: {len(lines)}"
+        )
+    
+    elif (len(line) != 0) and family.population_size == 'Empty family':
+        logger.warning(
+            f"CAZy listed {family.name} as an EMPTY family on the family webpage.\n"
+            f"But the family txt file contained {len(lines)} proteins"
+        )
+        logger_message = (
+            f"{family.name}\t"
+            f"Population size listed in CAZy: {family.population_size}\t"
+            f"Population size lised in the txt: {len(lines)}"
+        )
+
+    else:
+        logger_message = None
+    
+    return family_data, logger_message, False
+
+
+        
 
     # Scrape proteins from text file
     # Tally number of proteins
@@ -400,15 +543,24 @@ def parse_family(family, args):
 
 def get_family_population(family, args):
     """Retrieve the CAZy family population from the CAZy family page.
+
+    Used for checking the correct number of proteins are added to the local CAZyme database.
     
     :param family: Family class instance
     :param args: cmd-line args parser
     
     Return int: number of proteins in the CAZy family
+        or None if could not connect
     """
     logger = logging.getLogger(__name__)
 
-    family_page = get_page(family.url, args, max_tries=(args.retries + 1))
+    family_page, err = get_page(family.url, args, max_tries=(args.retries + 1))
+    if err is not None:
+        logger.warning(
+            f"Failed to connect to {family.name} webpage at {family.url}\n"
+            f"to retrieve the population size, after trying {args.retries + 1} times\n"
+        )
+        return None
 
     # retrieve the table containing the Family data
     family_data = family_page.find_all("div", {"class": "pos_choix"})
