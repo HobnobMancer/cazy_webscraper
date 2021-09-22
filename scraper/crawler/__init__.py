@@ -89,12 +89,16 @@ class Family:
     Used to keep track if family needs to be scraped again.
     """
 
-    def __init__(self, name, cazy_class, url, download_url, path):
+    def __init__(self, name, cazy_class, url, download_url, path, population_size=None):
         self.name = name
         self.cazy_class = cazy_class
         self.url = url  # path to the cazy family page
         self.download_url = download_url  # url to download the family txt file
         self.path = path  # Path to downloaded family file
+        if population_size is None:
+            self.population_size = None
+        else:
+            self.population_size = population_size
 
     def __str__(self):
         return f"CAZy family {self.name}"
@@ -297,7 +301,7 @@ def get_cazy_family_urls(class_name, class_url, cazy_home_url, cache_dir, args):
         
         # generate link for download family file
         # files are gzipped to reduce storage requirements
-        family_download_url = f'IMG/cazy_data/{family_name}.txt.gz'
+        family_download_url = f'IMG/cazy_data/{family_name}.txt'
 
         family_name = url[(len(cazy_home_url) + 1): -5]
 
@@ -356,7 +360,9 @@ def parse_family(family, args):
     :param family: Family class instance
     :param args: cmd-line args parser
     
-    Return...
+    Return
+    - Family class instance
+    - Bool indicating successful or unsuccesful retrieval of CAZy family txt file
     """
     logger = logging.getLogger(__name__)
 
@@ -364,14 +370,28 @@ def parse_family(family, args):
     family_population = get_family_population(family, args)
 
     if family_population == 0 or \
-        family_population == '' or \
-            family_population == '' or \
-                family_population == '':
+        family_population == 'Deleted family!' or \
+            family_population == 'Empty family' or \
+                family_population == 'Failed Retrieval':
                 logger.warning(
                     f"No proteins found for {family.name}"
                 )
-                return 'hello'
     
+    family.population_size = family_population
+    
+    success = download_family_file(family, args)
+    if success is False:  # failed to download file, is attempts remain retry later
+        return family, success
+
+    # tally number of proteins added to the local CAZyme db
+    protein_count = 0
+
+    with open(family.path, 'r') as fh:
+        lines = fh.read().splitlines()
+
+    for line in lines:
+        print(line)
+
     # Scrape proteins from text file
     # Tally number of proteins
     # How many could not be added to CAZy
@@ -404,16 +424,16 @@ def get_family_population(family, args):
         family_population = 0
     
     if family_population == 0:
-        # check if the family has been deleted
+        # check if the family has been deleted, and labeled as such under 'Activities in Family'
         try:
-            family_activities_cell = family.url.select("table")[
-                0].select("tr")[0].select('td')[0].contents[0].strip()
+            family_activities_cell = family_page.select("table")[
+                0].select("tr")[0].select("td")[0].contents[0].strip()
 
             if family_activities_cell == 'Deleted family!':
                 family_population = 'Deleted family!'
                 logger.warning(f"{family.name} is a deleted family in CAZy")
             else:
-                logger.warning(f"No proteins found for {family.name}")
+                logger.warning(f"{family.name} is an empty CAZy family")
                 family_population = 'Empty family'
         except Exception:
             logger.warning(f"Could not retrieve family population for {family.name}")
@@ -428,18 +448,50 @@ def download_family_file(family, args):
     :param family: Family class instance
     :param args: cmd-line args parser
     
-    Return bool to represent if file downloaded successfully.
+    Return
+    - True if download is successful
+    - False if tried to connected but failed, and ran out of attempts
+    - False if failed to download the file successfully after making URL connection
+            This indicate to try again if attempts remain (args.retries)
+    - 'empty' if an empty family (population_size = 0 and HTTP 404 error)
+    - 404 if not labelled as an empty family but HTTP 404 error raised
     """
     logger = logging.getLogger(__name__)
+
 
     # Try connection
     tries, response = 0, None
     while (tries < (args.retries + 1)) and (response is None):
+
         try:
-            response = urlopen(family.url, timeout=args.timeout)
+            response = urlopen(family.download_url, timeout=args.timeout)
+
         except (HTTPError, URLError, timeout) as err:
+
+            if err.code == 404:
+                if family.population_size == 0 or \
+                    family.population_size == 'Deleted family!' or \
+                        family.population_size == 'Empty family':
+                        logger.warning(
+                            f"{family.name} annotated with family population: "
+                            f"{family.population_size}\n"
+                            f"Retrieving {family.name} text file raised: HTTP Error 404: Not Found\n"
+                            f"{family.name} is an empty family. {family.name} added to the database\n"
+                            f"but NO proteins from {family.name} added to the local database."
+                        )
+                        return 'empty'
+                
+                else:
+                    logger.error(
+                        f"{family.name} not marked as empty family but connecting to\n"
+                        f"{family.download_url} raised: HTTP Error 404: Not Found\n"
+                        f"No proteins from {family.name} added to the database"
+                    )
+                    return '404'
+
             logger.warning(
-                f"Failed to connected to {family.url}\n"
+                f"Failed to connected to {family.url}. The following error was raised\n"
+                f"{err}"
             )
             tries += 1
     
@@ -450,7 +502,8 @@ def download_family_file(family, args):
         )
         return False
     
-    file_size = int(response.info().get("Content-length"))
+    # Connection was successfully made
+    
     bsize = 1_048_576
     try:
         with open(family.path, 'wb') as fh:
