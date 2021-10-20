@@ -88,6 +88,7 @@ from scraper.utilities import (
 # Define constants
 
 __version__ = "1.0.0-beta"
+
 VERSION_INFO = [
     termcolour(
         f"cazy_webscraper version: {__version__}",
@@ -129,16 +130,16 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     """
     cazy_home_url = "http://www.cazy.org"
 
-    # Program preparation
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
     start_time = pd.to_datetime(start_time)
 
+    # Program preparation
     if argv is None:
-        parser = parsers.build_parser()
+        parser = parsers.cazy_webscraper_parser.build_parser()
         args = parser.parse_args()
     else:
-        parser = parsers.build_parser(argv)
+        parser = parsers.cazy_webscraper_parser.build_parser(argv)
         args = parser.parse_args()
 
     if logger is None:
@@ -154,30 +155,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         sys.stderr.write("\n".join(CITATION_INFO) + "\n")
         return
 
-    if args.database and args.db_output:
-        warning_message = (
-            "Path to existing an existing and a target path to a new database were provided.\n"
-            "Please provide one OR the other.\n"
-            "Terminating program."
-        )
-        logger.warning(termcolour(warning_message, "red")
-        )
-    
-    if args.no_db and (args.dict_output is None):
-        warning_message = (
-            "Opted to not write a database or dict/JSON file.\n"
-            "Therefore, no method for writing out retrieved data was given.\n"
-            "Please provide at least one method for writing out the retrieved data.\n"
-            "Terminating program."
-        )
-        logger.warning(termcolour(warning_message, "red")
-        )
+    # check correct output was provided, exit if not operable
+    check_user_input(args)
 
     logger.info("Parsing configuration")
     (
         excluded_classes,
         config_dict,
         cazy_class_synonym_dict,
+        kingdoms_filters,
         taxonomy_filters,
     ) = parse_configuration.parse_configuration(args)
 
@@ -190,106 +176,33 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         f"CE fams to scrape: {config_dict['Carbohydrate Esterases (CEs)']}\n"
         f"AA fams to scrape: {config_dict['Auxiliary Activities (AAs)']}\n"
         f"CBM fams to scrape: {config_dict['Carbohydrate-Binding Modules (CBMs)']}\n"
-        f"Scraping subfamilies: {args.subfamilies}\n"
+        f"Scraping subfamilies: {args.subfamilies}"
     )
+
+    if len(taxonomy_filters) != 0:
+        scrape_config_message += "\nTaxonomy filters applied."
+    
+    if len(kingdoms_filters) < 5:
+        scrape_config_message += f"\nScraping only tax kingdoms: {kingdoms_filters}"
 
     logger.info(termcolour(scrape_config_message, "cyan"))
 
-    if args.database:
-        logger.info("Adding data to an existing local CAZyme database")
-
-        if os.path.isfile(args.database) is False:
-            logger.error(
-                "Could not find local CAZy database.\n"
-                "Check path is correct.\n"
-                "Terminating programme."
-            )
-            sys.exit(1)
-
-        try:
-            session = sql_orm.get_db_session(args)
-            logger.info("Opened session to local CAZyme database")
-        except Exception:
-            logger.error("Failed to build SQL database. Terminating program\n", exc_info=True)
-            sys.exit(1)
-        
-        # used for naming additional log files
-        logger_name = str(args.database).split('.')[0]
-
-        # define path to cache family txt files
-        cache_dir = Path(f"{str(args.database.parent)}/.cazy_webscraper_{time_stamp}/cache")
-        
-        logger.info("Adding log of scrape to the local CAZyme database")
-        sql_interface.log_scrape_in_db(
-            time_stamp,
-            config_dict,
-            taxonomy_filters,
-            session,
-            args,
-        )
+    if args.database:  # adding data to an EXISTING database
+        connection, logger_name, cache_dir = connect_existing_db(args, time_stamp)
     
-    else:
-        if args.db_output is not None:
-            logger.info("Building new local CAZyme database")
-            logger.info(f"Output directory: {(args.output).parent}")
-            logger.info(f"Force overwriting exiting output file: {args.force}")
+    else:  # build a new database
+        connection, logger_name, cache_dir = connect_to_new_db(args, time_stamp)
 
-            if str((args.db_output).parent) != '.':
-                # dirs defined in output put
-                file_io.make_target_directory(args.db_output, args.force)
+    logger.info("Adding log of scrape to the local CAZyme database")
+    sql_interface.log_scrape_in_db(
+        time_stamp,
+        config_dict,
+        kingdoms_filters,
+        taxonomy_filters,
+        connection,
+        args,
+    )
 
-                # define path to cahce family txt files
-                # define path to cache family txt files
-                cache_dir = Path(f"{str(args.db_output.parent)}/.cazy_webscraper_{time_stamp}/cache")
-            
-            else:  # writing to cwd
-                # define path to cache family txt files
-                cache_dir = Path(f".cazy_webscraper_{time_stamp}/cache")
-            
-            try:
-                session = sql_orm.build_db(time_stamp, args)
-                logger.info("Built new local CAZyme database")
-            except Exception:
-                logger.error("Failed to build SQL database. Terminating program", exc_info=True)
-                sys.exit(1)
-            
-            logger.info("Adding log of scrape to the local CAZyme database")
-            sql_interface.log_scrape_in_db(
-                time_stamp,
-                config_dict,
-                taxonomy_filters,
-                session,
-                args,
-            )
-
-            # used for naming additional log files
-            logger_name = args.db_output.split('.')[0]
-    
-        else:  # args.database is None AND args.db_output is None
-
-            # use default logger name for additional log files
-            logger_name = f'cazy_webscraper_{time_stamp}'
-
-            # define path to cache family txt files
-            cache_dir = Path(f".cazy_webscraper_{time_stamp}/cache")
-
-            if args.no_db:
-                logger.warning("Selected to NOT generate a CAZyme database")
-                session = None
-
-            else:
-                logger.warning(
-                    "Default CAZyme database location selected:\n"
-                    f"Database output in cwd: cazy_webscraper_{time_stamp}.db"
-                )
-
-                try:
-                    session = sql_orm.build_db(f"cazy_webscraper_{time_stamp}.db", args)
-                    logger.info("Built new local CAZyme database")
-                except Exception:
-                    logger.error("Failed to build SQL database. Terminating program", exc_info=True)
-                    sys.exit(1)
-                
     if args.dict_output is not None:
         logger.info("Building dict of CAZy family annotations")
         logger.info(f"Output directory: {(args.output).parent}")
@@ -299,24 +212,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             # dirs defined in output put
             file_io.make_target_directory(args.dict_output, args.force)
 
-            if (args.no_db) and (args.database is None):
-                # define path to cache family txt files because not defined by db location
-                cache_dir = Path(f"{str(args.dict_output.parent)}/.cazy_webscraper_{time_stamp}/cache")
-        
-            # else: writing cache in same dir as the database
-
         cazy_dict = {}  # {protein_accession: [CAZy fams]}
-
-        if (args.no_db) and (args.database is None):
-            # used for naming additional log files
-            # split('.') removes the file extensions
-            logger_name = args.dict_output.split('.')[0]
-        # else: writing logger in the same dir as the database file
 
     else:
         cazy_dict = None
     
-    if args.log is not None:  # write logs to user specified dir
+    if args.log is not None:  # write additional log files to user specified dir
         logger_name = args.log.split(".")[0]
     else:
         # write the additional log files to the .cazy_webscraper/log dir
@@ -325,8 +226,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         # add logger dir path to the logger name
         logger_name = f"{logger_dir}/{str(Path(logger_name).name)}"
         
-
-    # define path to dir to write out downloaded family txt files to
+    # create dir to cache downloaded text files and logs of failed scrapes, connections and data errs
     file_io.make_output_directory(cache_dir, args.force, args.nodelete)
 
     logger.info(f"Created cache dir: {cache_dir}")
@@ -338,7 +238,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         config_dict,
         cazy_class_synonym_dict,
         taxonomy_filters,
-        session,
+        connection,
         cazy_dict,
         cache_dir,
         args,
@@ -375,7 +275,7 @@ def get_cazy_data(
     config_dict,
     cazy_class_synonym_dict,
     taxonomy_filters,
-    session,
+    connection,
     cazy_dict,
     cache_dir,
     args,
@@ -391,7 +291,7 @@ def get_cazy_data(
     :param config_dict: dict, user defined configuration of the scraper
     :param cazy_class_synonym_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
     :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
-    :param session: session, open database session (if opted to produce a CAZyme database)
+    :param connection: connection, open database connection (if opted to produce a CAZyme database)
     :param cazy_dict: dict to add store protein accession and fam annotations (if args.dict_output is True)
     :param cache_dir: Path to dir to write out downloaded family txt files
     :param args: cmd args parser
@@ -479,14 +379,14 @@ def get_cazy_data(
                 failed_url_connections,
                 family_sql_failures,
                 format_errors,
-                session,
+                connection,
                 cazy_dict,
             ) = crawler.parse_family(
                 family,
                 cazy_home_url,
                 taxonomy_filters,
                 args,
-                session,
+                connection,
                 cazy_dict,
                 args,
             )
@@ -521,10 +421,157 @@ def get_cazy_data(
 
     if cazy_dict is not None:
         with open(args.dict_output, 'w') as f:
-            json.dump(session, f)
+            json.dump(connection, f)
 
     return
 
 
+def check_user_input(args):
+    """Check cmd-line args are suitable.
+    
+    :param args: cmd-line args parser.
+    
+    Return nothing."""
+    logger = logging.getLogger(__name__)
+
+    if args.database and args.db_output:
+        warning_message = (
+            "Target path for a NEW database (--db_output, -d) and\n"
+            "a path to an EXISTING database (--database, -D) were provided."
+            "Please provide one OR the other.\n"
+            "Terminating program."
+        )
+        logger.warning(termcolour(warning_message, "red")
+        )
+        sys.exit(1)
+    
+    if (args.db_output is None) and (args.database is None) and (args.dict_output is None) and (not args.no_db):
+        warning_message = (
+            "No target path for an output database out JSON file provided.\n"
+            "Terminating program."
+        )
+        logger.warning(termcolour(warning_message, "red")
+        )
+        sys.exit(1)
+
+    if args.no_db and (args.dict_output is None):
+        warning_message = (
+            "Opted to not write a database and no target path for a JSON file provided.\n"
+            "Please provide at least one method for writing out the retrieved data.\n"
+            "Terminating program."
+        )
+        logger.warning(termcolour(warning_message, "red")
+        )
+        sys.exit(1)
+
+    return
+
+
+def connect_existing_db(args, time_stamp):
+    """Coordinate connecting to an existing local CAZyme database, define logger name and cache dir
+    
+    :param args: cmd-line args parser
+    :param time_stamp: str, time cazy_webscraper was invoked
+
+    Return connection to local CAZyme database, logger file name, and path to cache dir
+    """
+    logger = logging.getLogger(__name__)
+    
+    logger.info("Adding data to an existing local CAZyme database")
+
+    if os.path.isfile(args.database) is False:
+        logger.error(
+            "Could not find local CAZy database.\n"
+            "Check path is correct.\n"
+            "Terminating programme."
+        )
+        sys.exit(1)
+
+    try:
+        connection = sql_orm.get_db_connection(args)
+        logger.info("Opened connection to local CAZyme database")
+    except Exception:
+        logger.error(
+            "Failed to open connection to an exiting local CAZyme database\n."
+            "Terminating program\n",
+            exc_info=True,
+        )
+        sys.exit(1)
+    
+    # used for naming additional log files
+    logger_name = str(args.database).split('.')[0]
+
+    # define path to cache family txt files
+    cache_dir = Path(f"{str(args.database.parent)}/.cazy_webscraper_{time_stamp}/cache")
+
+    return connection, logger_name, cache_dir
+    
+
+def connect_to_new_db(args, time_stamp):
+    """Build and connect to a new local CAZyme database.
+    
+    :param args: cmd-line args parser
+    :param time_stamp: str, time cazy_Webscraper was invoked
+    
+    Return connection to the database, name of the logger, and path to the cache dir
+    """
+    logger = logging.getLogger(__name__)
+
+    if args.db_output is not None:  # user defined target output for the NEW database
+        
+        if (os.path.isfile(args.db_output)):  # target file exists
+            if args.force:
+                logger.warning(
+                    "Overwriting existing local CAZyme database at:\n"
+                    f"{args.db_output}"
+                )
+
+            else:
+                logger.warning(
+                    "Target path for new database already exists.\n"
+                    "Either enable forced overwriting (-f) or add data this data (-D).\n"
+                    "Terminating program."
+                )
+                sys.exit(1)
+        
+        else:  # may need to build dirs
+            logger.info(
+                "Building new local CAZyme database\n"
+                f"Output directory: {(args.output).parent}\n"
+                f"Force overwriting exiting output file: {args.force}"
+            )
+
+        if str((args.db_output).parent) != '.':  # dirs defined in output put
+            file_io.make_target_directory(args.db_output, args.force)
+            cache_dir = Path(f"{str(args.db_output.parent)}/.cazy_webscraper_{time_stamp}/cache")
+            
+        else:  # writing to cwd
+            cache_dir = Path(f".cazy_webscraper_{time_stamp}/cache")
+
+        logger_name = args.db_output.split('.')[0]
+        db_path = args.db_output
+    
+    else:
+        logger.info("Using default database name and writing to cwd")
+        db_path = Path(f"cazy_webscraper_{time_stamp}")
+        cache_dir = Path(f".cazy_webscraper_{time_stamp}/cache")
+        logger_name = f'cazy_webscraper_{time_stamp}'
+    
+    try:
+        connection = sql_orm.build_db(db_path, time_stamp)
+        logger.info(f"Built new local CAZyme database at\n{db_path}")
+    except Exception:
+        logger.error(
+            "Failed to build new SQL database\n."
+            "Terminating program",
+            exc_info=True,
+        )
+        sys.exit(1)
+
+    return connection, logger_name, cache_dir
+
+
 if __name__ == "__main__":
     main()
+
+
