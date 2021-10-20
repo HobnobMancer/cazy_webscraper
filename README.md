@@ -57,6 +57,62 @@ Please see the [`pip` documentation](https://pypi.org/project/pip/) for further 
 
 We have produced a "Getting Started With `cazy_webscraper`" [poster](https://hobnobmancer.github.io/cazy_webscraper/getting_started_poster.pdf).
 
+### Creating a local CAZyme database
+
+`--config`, `-c` - path to a configuration YAML file. Default: None.
+
+`--classes` - list of classes from which all families are to be scrape.
+
+`--cazy_synonyms` - path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
+
+`--citation`, `-C` - Print the `cazy_webscraper` citation. When called, the program terminates after printng the citation and CAZy is **not** scraped.
+
+`--db_output`, `-d` - path to write out a **new** local CAZyme database to. Include the name of the new database, including the `.db` extension. Default: None.
+
+`--database`, `-D` - path to an **existings** local CAZyme database to add newly scraped too. Default: None.
+
+_Do not use `--db_output` **and** `--database` at the same time._
+
+`--dict_output` - path to write out a JSON, keyed by GenBank accession and valued by list of CAZy (sub)family annotations. Default: None.
+
+_`--dict_output` can be called instead of `--db_output` and `--database`, but can also be called along side these two flags, producing an output database **and** JSON file._
+
+_If `--db_output`, `--database` and `--dict_output` are **not** called, no target output is provided to `cazy_webscraper`. `cazy_webscraper` will write out a local CAZyme database to the cwd with the standardised name `cazy_webscraper_<date>_<time>.db`_
+
+`--force`, `-f` - force overwriting existing output file. Default: False.
+
+`--families` - List of CAZy (sub)families to scrape.
+
+`--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
+
+`--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None.
+
+`--no_db` - When called, no local CAZyme database will be written out. Use when only a output JSON file is desired. Default: False.
+
+_If `--db_output`, `--database` and `--dict_output` are **not** called, and `--no_db` is called no target output is provided to `cazy_webscraper`. `cazy_webscraper` will terminate and **not** scrape CAZy._
+
+`--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False.
+
+`--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
+
+`--subfamilies`, `-s` - Enable retrival of CAZy subfamilies, otherwise **only** CAZy family annotations will be retrieved. Default: False.
+
+`--species` - List of species written as Genus Species) to restrict the scraping of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
+
+`--strains` - List of specific species strains to restrict the scraping of CAZymes to.
+
+`--timeout`, `-t` - Connection timout limit (seconds). Default: 45.
+
+`--verbose`, `-v` - Enable verbose logging. Default: False.
+
+`--version`, `-V` - Print `cazy_webscraper` version number. When called and the version number is printed, `cazy_webscraper` is immediately terminated.
+
+### Default CAZy class synonyms
+
+Below are the defauls accepted syonyms for CAZy class names.
+
+
+
 ### Retrieving protein sequences and structure files
 
 The `expand` subcommand is used to update a local CAZy database. It manages retrieval of CAZyme protein sequences from GenBank and protein structure files from RCSB/PDB.
@@ -67,31 +123,17 @@ Our roadmap for development and improvement is shared on the repository wiki
 
 - [`cazy_webscraper` roadmap](https://github.com/HobnobMancer/cazy_webscraper/wiki/Roadmap)
 
+## Contributions
+
 We welcome contributions and suggestions. You can raise issues at this repository, or fork the repository and submit pull requests, at the links below:
 
 - [Issues](https://github.com/HobnobMancer/cazy_webscraper/issues)
 - [Pull Requests](https://github.com/HobnobMancer/cazy_webscraper/pulls)
 
-## LICENSE
+## License and copyright
 
 MIT License
 
 Copyright (c) 2020-2021 University of St Andrews
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE
+Copyright (c) 2020-2021 University of Strathclyde
+Copyright (c) 2020-2021 UJames Hutton Institute
