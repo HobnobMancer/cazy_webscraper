@@ -58,28 +58,30 @@ Please see the [`pip` documentation](https://pypi.org/project/pip/) for further 
 We have produced a "Getting Started With `cazy_webscraper`" [poster](https://hobnobmancer.github.io/cazy_webscraper/getting_started_poster.pdf).
 
 ### Creating a local CAZyme database
-
-`--config`, `-c` - path to a configuration YAML file. Default: None.
-
-`--classes` - list of classes from which all families are to be scrape.
-
-`--cazy_synonyms` - path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
-
-`--citation`, `-C` - print the `cazy_webscraper` citation. When called, the program terminates after printng the citation and CAZy is **not** scraped.
+Command line options for `cazy_webscraper`, which is used to scrape CAZy and compile a local SQLite database. 
+Options are written in alphabetical order.
 
 `--cache_dir` - path to cache dir to be used instead of default cache dir path.
 
-`--db_output`, `-d` - path to write out a **new** local CAZyme database to. Include the name of the new database, including the `.db` extension. Default: None.
+`--cazy_synonyms` - path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
+
+`--config`, `-c` - path to a configuration YAML file. Default: None.
+
+`--citation`, `-C` - print the `cazy_webscraper` citation. When called, the program terminates after printng the citation and CAZy is **not** scraped.
+
+`--classes` - list of classes from which all families are to be scrape.
 
 `--database`, `-D` - path to an **existings** local CAZyme database to add newly scraped too. Default: None.
+
+`--db_output`, `-d` - path to write out a **new** local CAZyme database to. Include the name of the new database, including the `.db` extension. Default: None.
 
 _Do not use `--db_output` **and** `--database` at the same time._
 
 _If `--db_output` **and** `--database` are **not** called, `cazy_webscraper` write out a local CAZyme database to the cwd with the standardised name `cazy_webscraper_<date>_<time>.db`_
 
-`--force`, `-f` - force overwriting existing output file. Default: False.
-
 `--families` - List of CAZy (sub)families to scrape.
+
+`--force`, `-f` - force overwriting existing output file. Default: False.
 
 `--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
 

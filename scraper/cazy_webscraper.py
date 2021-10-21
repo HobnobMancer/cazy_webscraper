@@ -41,15 +41,20 @@
 """
 Web scraper to scrape CAZy website and retrieve all protein data.
 
-:cmd_args --config: path to configruration file
+:cmd_args --cache_dir: target path for cache
+:cmd_args --cazy_synonms: path to yaml file containing CAZy class name synonms
 :cmd_args --classes: specify CAZy classes to scrape
-:cmd_args --database: provide path to a local SQL database to add additional data to
+:cmd_args --citation: print citation information
+:cmd_args --config: path to configruration file
+:cmd_args --database: provide path to a local SQLite database to add additional data to
+:cmd_args --db_output: path to write out new SQLite database
 :cmd_args --families: specify CAZy families to retrieve CAZymes from
-:cmd_args --force: force overwriting content in exisiting output directory
+:cmd_args --force: force overwriting existing database
 :cmd_args --genera: specify Genera to retrieve CAZymes from
 :cmd_args --kingdoms: specify taxonomy Kingdoms to scrape proteins from
 :cmd_args --log: path to log file, enables writing out log messages to a log file
-:cmd_args --nodelete: if true does not delete content in pre-existing output directory
+:cmd_args --nodelete_cache: do not deleted existing content in cache dir
+:cmd_args --nodelete_log: do not deleted existing content in log dir
 :cmd_args --output: path to output directory
 :cmd_args --retries: specify the number of times to try scraping a page if connection fails
 :cmd_args --subfamilies: enable retrieval of subfamilies from CAZy
@@ -57,6 +62,7 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 :cmd_args --strains: specify specific strains of species to retrieve CAZymes from
 :cmd_args --timeout: specify the maximum time (in seconds) before determining connection timed out
 :cmd_args --verbose: change logger level from warning to info, verbose logging
+:cmd_args --version: print version info
 """
 
 
