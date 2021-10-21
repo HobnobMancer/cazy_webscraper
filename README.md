@@ -65,7 +65,9 @@ We have produced a "Getting Started With `cazy_webscraper`" [poster](https://hob
 
 `--cazy_synonyms` - path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
 
-`--citation`, `-C` - Print the `cazy_webscraper` citation. When called, the program terminates after printng the citation and CAZy is **not** scraped.
+`--citation`, `-C` - print the `cazy_webscraper` citation. When called, the program terminates after printng the citation and CAZy is **not** scraped.
+
+`--cache_dir` - path to cache dir to be used instead of default cache dir path.
 
 `--db_output`, `-d` - path to write out a **new** local CAZyme database to. Include the name of the new database, including the `.db` extension. Default: None.
 
@@ -73,11 +75,7 @@ We have produced a "Getting Started With `cazy_webscraper`" [poster](https://hob
 
 _Do not use `--db_output` **and** `--database` at the same time._
 
-`--dict_output` - path to write out a JSON, keyed by GenBank accession and valued by list of CAZy (sub)family annotations. Default: None.
-
-_`--dict_output` can be called instead of `--db_output` and `--database`, but can also be called along side these two flags, producing an output database **and** JSON file._
-
-_If `--db_output`, `--database` and `--dict_output` are **not** called, no target output is provided to `cazy_webscraper`. `cazy_webscraper` will write out a local CAZyme database to the cwd with the standardised name `cazy_webscraper_<date>_<time>.db`_
+_If `--db_output` **and** `--database` are **not** called, `cazy_webscraper` write out a local CAZyme database to the cwd with the standardised name `cazy_webscraper_<date>_<time>.db`_
 
 `--force`, `-f` - force overwriting existing output file. Default: False.
 
@@ -85,13 +83,11 @@ _If `--db_output`, `--database` and `--dict_output` are **not** called, no targe
 
 `--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
 
-`--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None.
+`--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
 
-`--no_db` - When called, no local CAZyme database will be written out. Use when only a output JSON file is desired. Default: False.
+`--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
-_If `--db_output`, `--database` and `--dict_output` are **not** called, and `--no_db` is called no target output is provided to `cazy_webscraper`. `cazy_webscraper` will terminate and **not** scrape CAZy._
-
-`--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False.
+`--nodelete_log` - When called, content in the existing log dir will **not** be deleted. Default: False (existing content is deleted).
 
 `--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
 

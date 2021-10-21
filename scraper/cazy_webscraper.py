@@ -203,29 +203,21 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         args,
     )
 
-    if args.dict_output is not None:
-        logger.info("Building dict of CAZy family annotations")
-        logger.info(f"Output directory: {(args.output).parent}")
-        logger.info(f"Force overwriting exiting output file: {args.force}")
-
-        if str((args.dict_output).parent) != '.':
-            # dirs defined in output put
-            file_io.make_target_directory(args.dict_output, args.force)
-
-        cazy_dict = {}  # {protein_accession: [CAZy fams]}
-
+    if args.cache_dir is not None:  # use user defined cache dir
+        cache_dir = args.cache_dir
+        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
-        cazy_dict = None
-    
+        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+
     if args.log is not None:  # write additional log files to user specified dir
         logger_name = args.log.split(".")[0]
     else:
         # write the additional log files to the .cazy_webscraper/log dir
         logger_dir = Path(f"{str(cache_dir.parent)}/logs")
-        file_io.make_output_directory(logger_dir, args.force, args.nodelete)
+        file_io.make_output_directory(logger_dir, args.force, args.nodelete_log)
         # add logger dir path to the logger name
         logger_name = f"{logger_dir}/{str(Path(logger_name).name)}"
-        
+
     # create dir to cache downloaded text files and logs of failed scrapes, connections and data errs
     file_io.make_output_directory(cache_dir, args.force, args.nodelete)
 
@@ -239,7 +231,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cazy_class_synonym_dict,
         taxonomy_filters,
         connection,
-        cazy_dict,
         cache_dir,
         args,
         logger_name,
@@ -573,5 +564,3 @@ def connect_to_new_db(args, time_stamp):
 
 if __name__ == "__main__":
     main()
-
-

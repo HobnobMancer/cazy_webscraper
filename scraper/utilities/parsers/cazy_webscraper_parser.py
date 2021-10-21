@@ -93,7 +93,14 @@ def build_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help="Print cazy_webscraper citation message",
-    )  
+    )
+
+    parser.add_argument(
+        "--cache_dir",
+        type=Path,
+        default=None,
+        help="Target path for cache dir to be used instead of default path",
+    )
 
     parser.add_argument(
         "-d",
@@ -109,13 +116,6 @@ def build_parser(argv: Optional[List] = None):
         type=Path,
         default=None,
         help="Path to an existing local CAZy SQL database",
-    )
-
-    parser.add_argument(
-        "--dict_output",
-        type=Path,
-        default=None,
-        help="Target output path to write out JSON file of protein accesisons and CAZy family annotations",
     )
 
     # Add option to force file over writting
@@ -155,15 +155,6 @@ def build_parser(argv: Optional[List] = None):
         help="Defines log file name and/or path",
     )
 
-    # Add option to enable retrieval of subfamilies
-    parser.add_argument(
-        "--no_db",
-        dest="no_db",
-        action="store_true",
-        default=False,
-        help="When called, disables building an SQL database",
-    )
-
     # Add option to not delete content in the existing cache dir
     parser.add_argument(
         "--nodelete_cache",
@@ -171,6 +162,14 @@ def build_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help="When called, content in the existing cache dir is NOT deleted",
+    )
+
+    parser.add_argument(
+        "--nodelete_log",
+        dest="nodelete_log",
+        action="store_true",
+        default=False,
+        help="When called, content in the existing log dir is NOT deleted",
     )
 
     # Add option to enable number of times to retry scraping
