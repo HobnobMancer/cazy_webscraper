@@ -565,5 +565,3 @@ def get_page(url, args, **kwargs):
     page = page.soup
 
     return page
-
-

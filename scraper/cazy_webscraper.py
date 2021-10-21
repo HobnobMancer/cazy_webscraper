@@ -67,7 +67,6 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 """
 
 
-import json
 import logging
 import os
 import sys

@@ -40,13 +40,10 @@
 """Retrieve CAZy text file, extract data, apply user scraping filters."""
 
 
-import gzip
 import logging
 import re
-import sys
 import time
 
-from pathlib import Path
 from socket import timeout
 from tqdm.notebook import tqdm
 from urllib.error import HTTPError, URLError
@@ -54,26 +51,6 @@ from urllib3.exceptions import HTTPError, RequestError
 from urllib.request import urlopen
 from requests.exceptions import ConnectionError, MissingSchema
 from zipfile import ZipFile
-
-import mechanicalsoup
-
-from sqlalchemy import (
-    Boolean,
-    Column,
-    ForeignKey,
-    Index,
-    Integer,
-    PrimaryKeyConstraint,
-    String,
-    Table,
-    UniqueConstraint,
-    MetaData,
-    create_engine,
-    event,
-    exc,
-)
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
 
 
 def download_file_decorator(func):
