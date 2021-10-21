@@ -199,7 +199,7 @@ def parse_cazy_data(
         (sub)fam population sizes if args.validate is True
     
     Return:
-    cazy_data: dict, {gbk: {genus: str, species: str, kingdom: str, fam: {str: [subfam(str)]},},}
+    cazy_data: dict, {gbk: {genus: str, species: str, kingdom: str, families: {fam: {subfam}}, }
     cazy_families: list of tuples, (fam, subfam,)
     kingdoms: list of tuples, (kingdom,)
     organisms: list of tuples, (genus, species,)
@@ -330,6 +330,8 @@ def apply_kingdom_tax_filters(
     :param cazy_families: set of tuples of CAZy families to be added to the db
     :param kingdoms: set of tuples of tax kingdoms to be added to the db
     :param organisms: set of tuples of scientific names of source organisms to be added to the db
+
+    Return nothing.
     """
     if (len(kingdom_filter) == 0) and (len(tax_filter) == 0):  # kingdom and tax filters not enabled
         cazy_families.add( (cazy_fam, cazy_subfam) )
@@ -388,6 +390,8 @@ def add_protein_to_dict(cazy_data, gbk_accession, cazy_fam, cazy_subfam, genus, 
     :param genus: str, genus of the scientfic name of the source organism
     :param species: str, species from the scientific name of the source organism
     :param kingdom: str, taxonomy kingdom of the source organism of the protein
+
+    Return dict of CAZy data
     """
     try:
         existing_record = cazy_data[gbk_accession]
@@ -419,11 +423,7 @@ def validate_data_retrieval(cazy_data, cazy_fam_populations):
     :param kingdom_filter: set of tax Kingdoms to limit scrape to
     :param tax_filter: set of tax (genus, species, strains) filters to limit scrape to
     
-    Return:
-    cazy_data: dict, {gbk: {genus: str, species: str, kingdom: str, fam: {str: [subfam(str)]},},}
-    cazy_families: list of tuples, (fam, subfam,)
-    kingdoms: list of tuples, (kingdom,)
-    organisms: list of tuples, (genus, species,)
+    Return nothing
     """
     logger = logging.getLogger(__name__)
 
