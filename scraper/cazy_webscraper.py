@@ -346,6 +346,7 @@ def get_cazy_data(
     
     # extract the CAZy family data and add to the local CAZyme database
     cazy_txt_lines = crawler.extract_cazy_file_data(cazy_txt_path)
+    logger.info(f"Retrieved {len(cazy_txt_lines)} lines from the CAZy db txt file")
 
     (
         cazy_data,
@@ -360,10 +361,20 @@ def get_cazy_data(
         taxonomy_filters,
         cazy_fam_populations,
     )
+    logger.info(
+        f"Retrieved f{len((list(cazy_data.keys())))} proteins from the CAZy txt file "
+        "matching the scraping criteria"
+    )
+
+    genbank_db_insert_values = [(gbk_accession,) for gbk_accession in (list(cazy_data.keys()))]
 
     # Insert values into the local CAZyme database
+    sql_interface.insert_data(connection, 'Genbanks', ['genbank_accession'], genbank_db_insert_values)
+    sql_interface.insert_data(connection, 'CazyFamilies', ['family', 'subfamily'], families_db_insert_values)
+    sql_interface.insert_data(connection, 'Taxs', ['genus', 'species'], taxonomy_db_insert_values)
+    sql_interface.insert_data(connection, 'Kingdoms', ['kingdom'], kingdoms_db_insert_values)
 
-    logger.info(f"Retrieved {len(cazy_txt_lines)} lines from the CAZy db txt file")
+    # update relationships
 
     return
 
