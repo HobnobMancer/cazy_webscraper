@@ -271,8 +271,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 def get_cazy_data(
     cazy_home_url,
     excluded_classes,
-    config_dict,
-    cazy_class_synonym_dict,
+    class_filters,
+    fam_filters,
+    kingdom_filters,
     taxonomy_filters,
     connection,
     cache_dir,
@@ -287,8 +288,8 @@ def get_cazy_data(
 
     :param cazy_home_url: str, url of CAZy home page
     :param excluded_classes: list, list of classes to not scrape from CAZy
-    :param config_dict: dict, user defined configuration of the scraper
-    :param cazy_class_synonym_dict: dict, dictionary of excepct CAZy synonyms for CAZy classes
+    :param class_filters: set of CAZy classes to retrieve proteins from
+    :param fam_filters: set of CAZy families to retrieve proteins from
     :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
     :param connection: sqlalchemy connection obj, connection to SQLite db engine
     :param cache_dir: Path to dir to write out downloaded family txt files
@@ -298,6 +299,8 @@ def get_cazy_data(
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     # define paths for additional logs files
     connection_failures_logger = build_logger(Path(f"{logger_name}_{time_stamp}_connection_failures.log"))
     sql_failures_logger = build_logger(Path(f"{logger_name}_{time_stamp}_SQL_errors.log"))
@@ -305,7 +308,7 @@ def get_cazy_data(
 
     if args.validate:  # retrieve CAZy family population sizes for validating all data was retrieved
         # {fam (str): pop size (int)}
-        family_populations = crawler.get_validation_data.get_validation_data(
+        cazy_fam_populations = crawler.get_validation_data.get_validation_data(
             cazy_home_url,
             excluded_classes,
             config_dict,
@@ -314,8 +317,53 @@ def get_cazy_data(
             time_stamp,
             args,
         )
+    else:
+        cazy_fam_populations = None
 
     # download CAZy database txt file
+    cazy_txt_path = cache_dir / f"cazy_db_{time_stamp}.zip"
+
+    tries, retries, success = 0, (args.retries + 1), False
+
+    while (tries <= retries) and (not success):
+        err_message = crawler.get_cazy_file(cazy_txt_path, args, max_tries=(args.retries + 1))
+
+        if err_message is None:
+            success == True
+            break
+
+        else:
+            tries += 1
+    
+    if not success:
+        logger.error(
+            f"Could not connect to CAZy to download the CAZy db txt file after {(args.retries + 1)*(args.retries + 1)}\n"
+            f"The following error was raised:\n{err_message}"
+            f"File would have been written to {cazy_txt_path}"
+            "Terminating program"
+        )
+        sys.exit
+    
+    # extract the CAZy family data and add to the local CAZyme database
+    cazy_txt_lines = crawler.extract_cazy_file_data(cazy_txt_path)
+
+    (
+        cazy_data,
+        families_db_insert_values,
+        kingdoms_db_insert_values,
+        taxonomy_db_insert_values,
+    ) = crawler.parse_cazy_data(
+        cazy_txt_lines,
+        class_filters,
+        fam_filters,
+        kingdom_filters,
+        taxonomy_filters,
+        cazy_fam_populations,
+    )
+
+    # Insert values into the local CAZyme database
+
+    logger.info(f"Retrieved {len(cazy_txt_lines)} lines from the CAZy db txt file")
 
     return
 
