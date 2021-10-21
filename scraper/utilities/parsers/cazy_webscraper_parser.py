@@ -220,6 +220,17 @@ def build_parser(argv: Optional[List] = None):
         help="Connection timeout limit (seconds)"
     )
 
+    parser.add_argument(
+        "--validate",
+        dest="validate",
+        action="store_true",
+        default=False,
+        help=(
+            "Retrieve CAZy fam population sizes from CAZy and use to check\n"
+            "the number of family members added to the local database"
+        ),
+    )
+
     # Add option for more detail (verbose) logging
     parser.add_argument(
         "-v",

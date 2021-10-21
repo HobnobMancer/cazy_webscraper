@@ -61,19 +61,19 @@ We have produced a "Getting Started With `cazy_webscraper`" [poster](https://hob
 Command line options for `cazy_webscraper`, which is used to scrape CAZy and compile a local SQLite database. 
 Options are written in alphabetical order.
 
-`--cache_dir` - path to cache dir to be used instead of default cache dir path.
+`--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
-`--cazy_synonyms` - path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
+`--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
 
-`--config`, `-c` - path to a configuration YAML file. Default: None.
+`--config`, `-c` - Path to a configuration YAML file. Default: None.
 
-`--citation`, `-C` - print the `cazy_webscraper` citation. When called, the program terminates after printng the citation and CAZy is **not** scraped.
+`--citation`, `-C` - Print the `cazy_webscraper` citation. When called, the program terminates after printng the citation and CAZy is **not** scraped.
 
 `--classes` - list of classes from which all families are to be scrape.
 
-`--database`, `-D` - path to an **existings** local CAZyme database to add newly scraped too. Default: None.
+`--database`, `-D` - Path to an **existings** local CAZyme database to add newly scraped too. Default: None.
 
-`--db_output`, `-d` - path to write out a **new** local CAZyme database to. Include the name of the new database, including the `.db` extension. Default: None.
+`--db_output`, `-d` - Path to write out a **new** local CAZyme database to. Include the name of the new database, including the `.db` extension. Default: None.
 
 _Do not use `--db_output` **and** `--database` at the same time._
 
@@ -100,6 +100,8 @@ _If `--db_output` **and** `--database` are **not** called, `cazy_webscraper` wri
 `--strains` - List of specific species strains to restrict the scraping of CAZymes to.
 
 `--timeout`, `-t` - Connection timout limit (seconds). Default: 45.
+
+`--validate`, - Retrieve CAZy family population sizes from the CAZy website and check against the number of family members added to the local CAZyme database, as a method for validating the complete retrieval of CAZy data.
 
 `--verbose`, `-v` - Enable verbose logging. Default: False.
 
