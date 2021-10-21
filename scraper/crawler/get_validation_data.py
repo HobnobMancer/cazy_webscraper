@@ -83,7 +83,8 @@ class CazyClass:
 def get_validation_data(
     cazy_home_url,
     excluded_classes,
-    cazy_dict,
+    cazy_synonym_dict,
+    config_dict,
     cache_dir,
     connection_failures_logger,
     time_stamp,
@@ -93,7 +94,8 @@ def get_validation_data(
     
     :param cazy_home_url: str, URL to CAZy home page
     :param excluded_classes: list of CAZy classes NOT to scrape
-    :param cazy_dict: dict of CAZy classes and families the user wants to scrae
+    :param cazy_synonym_dict: dict of accepted CAZy class name synonyms
+    :param config_dict: dict keyed by CAZy classes, values by set of CAZy families to scrape
     :param cache_dir: path to cache dir
     :param connection_failures_logger: logger, logg incorrect URLs and URLs to which a connection 
             could not be made
@@ -112,7 +114,7 @@ def get_validation_data(
     cazy_classes = get_cazy_classes(
         cazy_home_url,
         excluded_classes,
-        cazy_dict,
+        cazy_synonym_dict,
         cache_dir,
         time_stamp,
         args,
@@ -124,16 +126,17 @@ def get_validation_data(
         
         # first attempt of scraping, retrieve URLs to CAZy families
         if len(list(cazy_class.failed_families.keys())) == 0:
-            fam_pops_to_retrieve = None  # retrieve ALL fam populations
+            fam_pops_to_retrieve = config_dict[cazy_class.name]  # retrieve user specified fams
         else: 
-            fam_pops_to_retrieve = list(cazy_class.failed_families.keys())
+            fam_pops_to_retrieve = list(cazy_class.failed_families.keys())  # retry failed connections
 
         family_populations, err_message, incorrect_urls, failed_families = get_cazy_family_pops(
-            cazy_class,
+            cazy_class.name,
+            cazy_class.url,
             cazy_home_url,
+            fam_pops_to_retrieve,
             cache_dir,
             time_stamp,
-            fam_pops_to_retrieve,
             args,
         )
 
@@ -181,12 +184,14 @@ def get_validation_data(
     return cazy_fam_populations
 
 
-def get_cazy_classes(cazy_home_url, excluded_classes, cazy_dict, cache_dir, time_stamp, args):
+def get_cazy_classes(cazy_home_url, excluded_classes, cazy_synonym_dict, cache_dir, time_stamp, args):
     """Returns a list of CAZy class instances.
 
     :param cazy_url: str, URL to the CAZy home page.
     :param excluded_classes: list, list of CAZy classes not to be scraped
-    :param cazy_dict: dictionary of offical CAZy class names
+    :param cazy_synonym_dict: dictionary of offical CAZy class names
+    :param cache_dir: path to cache dir
+    :param time_stamp: str, time cazy_webscraper was invoked
     :param args: cmd line args parser
 
     Return list of CazyClass instances, or None and an error message.
@@ -281,8 +286,8 @@ def get_cazy_classes(cazy_home_url, excluded_classes, cazy_dict, cache_dir, time
     for url in cazy_class_urls:
         # retrieve class name and standardise it
         class_name = url[20:-5]
-        for key in cazy_dict:
-            if class_name in cazy_dict[key]:
+        for key in cazy_synonym_dict:
+            if class_name in cazy_synonym_dict[key]:
                 class_name = key
 
         cazy_class = CazyClass(class_name, url, 0)
@@ -297,12 +302,21 @@ def get_cazy_classes(cazy_home_url, excluded_classes, cazy_dict, cache_dir, time
     return cazy_classes
 
 
-def get_cazy_family_pops(class_name, class_url, cazy_home_url, cache_dir, time_stamp, args):
+def get_cazy_family_pops(
+    class_name,
+    class_url,
+    cazy_home_url,
+    fam_pops_to_retrieve,
+    cache_dir,
+    time_stamp,
+    args,
+):
     """Retrieve all protein members of each CAZy family within the given CAZy class.
 
     :param class_name: str, name of CAZy class
     :param class_url: str, URL to CAZy class webpage
     :param cazy_home_url: str, URL to CAZy home page
+    :param fam_pops_to_retrieve: list of CAZy families to scrape
     :param cache_dir: str representing Path to dir to write out downloaded family file to
     :param time_stamp: str, date and time cazy_webscraper was invoked
     :param args: args parser object
@@ -342,6 +356,9 @@ def get_cazy_family_pops(class_name, class_url, cazy_home_url, cache_dir, time_s
     
     for fam_url in tqdm(family_urls, desc=f"Retrieing fam populations for {class_name}"):
         fam_name = fam_url.replace(cazy_home_url, "").split(".")[0]
+
+        if (fam_pops_to_retrieve is not None) and (fam_name not in fam_pops_to_retrieve):
+            continue
 
         family_page, err = get_page(fam_url, args, max_tries=(args.retries + 1))
         if err is not None:
