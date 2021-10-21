@@ -162,7 +162,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         return
 
     # check correct output was provided, exit if not operable
-    check_user_input(args)
+    if args.database and args.db_output:
+        warning_message = (
+            "Target path for a NEW database (--db_output, -d) and\n"
+            "a path to an EXISTING database (--database, -D) were provided.\n"
+            "Please provide one OR the other.\n"
+            "Terminating program."
+        )
+        logger.warning(termcolour(warning_message, "red"))
+        return
 
     logger.info("Parsing configuration")
     (
@@ -386,47 +394,6 @@ def get_cazy_data(
     sql_interface.insert_data(connection, 'Kingdoms', ['kingdom'], kingdoms_db_insert_values)
 
     # update relationships
-
-    return
-
-
-def check_user_input(args):
-    """Check cmd-line args are suitable.
-    
-    :param args: cmd-line args parser.
-    
-    Return nothing."""
-    logger = logging.getLogger(__name__)
-
-    if args.database and args.db_output:
-        warning_message = (
-            "Target path for a NEW database (--db_output, -d) and\n"
-            "a path to an EXISTING database (--database, -D) were provided.\n"
-            "Please provide one OR the other.\n"
-            "Terminating program."
-        )
-        logger.warning(termcolour(warning_message, "red")
-        )
-        sys.exit(1)
-    
-    if (args.db_output is None) and (args.database is None) and (args.dict_output is None) and (not args.no_db):
-        warning_message = (
-            "No target path for an output database out JSON file provided.\n"
-            "Terminating program."
-        )
-        logger.warning(termcolour(warning_message, "red")
-        )
-        sys.exit(1)
-
-    if args.no_db and (args.dict_output is None):
-        warning_message = (
-            "Opted to not write a database and no target path for a JSON file provided.\n"
-            "Please provide at least one method for writing out the retrieved data.\n"
-            "Terminating program."
-        )
-        logger.warning(termcolour(warning_message, "red")
-        )
-        sys.exit(1)
 
     return
 
