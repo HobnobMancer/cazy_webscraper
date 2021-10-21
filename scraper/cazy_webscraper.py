@@ -170,7 +170,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         excluded_classes,
         config_dict,
         cazy_class_synonym_dict,
-        kingdoms_filters,
+        class_filters,
+        fam_filters,
+        kingdom_filters,
         taxonomy_filters,
     ) = parse_configuration.parse_configuration(args)
 
@@ -189,8 +191,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if len(taxonomy_filters) != 0:
         scrape_config_message += "\nTaxonomy filters applied."
     
-    if len(kingdoms_filters) < 5:
-        scrape_config_message += f"\nScraping only tax kingdoms: {kingdoms_filters}"
+    if len(kingdom_filters) < 5:
+        scrape_config_message += f"\nScraping only tax kingdoms: {kingdom_filters}"
 
     logger.info(termcolour(scrape_config_message, "cyan"))
 
@@ -204,7 +206,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     sql_interface.log_scrape_in_db(
         time_stamp,
         config_dict,
-        kingdoms_filters,
+        kingdom_filters,
         taxonomy_filters,
         connection,
         args,
@@ -235,42 +237,49 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     get_cazy_data(
         cazy_home_url,
         excluded_classes,
-        config_dict,
         cazy_class_synonym_dict,
+        config_dict,
+        class_filters,
+        fam_filters,
+        kingdom_filters,
         taxonomy_filters,
         connection,
         cache_dir,
-        args,
         logger_name,
+        time_stamp,
+        args,
     )
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     end_time = pd.to_datetime(end_time)
     total_time = end_time - start_time
 
-    logger.info(
-        "Finished scraping CAZy. Terminating program.\n"
-        f"Scrape initated at {start_time}\n"
-        f"Scrape finished at {end_time}\n"
-        f"Total run time: {total_time}"
-        f"Version: {VERSION_INFO}\n"
-        f"Citation: {CITATION_INFO}"
-    )
-
-    print(
-        "=====================cazy_webscraper=====================\n"
-        "Finished scraping CAZy\n"
-        f"Scrape initated at {start_time}\n"
-        f"Scrape finished at {end_time}\n"
-        f"Total run time: {total_time}"
-        f"Version: {VERSION_INFO}\n"
-        f"Citation: {CITATION_INFO}"
-    )
+    if args.verbose:
+        logger.info(
+            "Finished scraping CAZy. Terminating program.\n"
+            f"Scrape initated at {start_time}\n"
+            f"Scrape finished at {end_time}\n"
+            f"Total run time: {total_time}"
+            f"Version: {VERSION_INFO}\n"
+            f"Citation: {CITATION_INFO}"
+        )
+    else:
+        print(
+            "=====================cazy_webscraper=====================\n"
+            "Finished scraping CAZy\n"
+            f"Scrape initated at {start_time}\n"
+            f"Scrape finished at {end_time}\n"
+            f"Total run time: {total_time}"
+            f"Version: {VERSION_INFO}\n"
+            f"Citation: {CITATION_INFO}"
+        )
 
 
 def get_cazy_data(
     cazy_home_url,
     excluded_classes,
+    cazy_class_synonym_dict,
+    config_dict,
     class_filters,
     fam_filters,
     kingdom_filters,
@@ -288,6 +297,8 @@ def get_cazy_data(
 
     :param cazy_home_url: str, url of CAZy home page
     :param excluded_classes: list, list of classes to not scrape from CAZy
+    :param cazy_class_synonym_dict: dict of accepted CAZy class name synonyms
+    :param config_dict: dict of CAZy families to scrape, or None if args.validate is False
     :param class_filters: set of CAZy classes to retrieve proteins from
     :param fam_filters: set of CAZy families to retrieve proteins from
     :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
@@ -311,6 +322,7 @@ def get_cazy_data(
         cazy_fam_populations = crawler.get_validation_data.get_validation_data(
             cazy_home_url,
             excluded_classes,
+            cazy_class_synonym_dict,
             config_dict,
             cache_dir,
             connection_failures_logger,
@@ -390,7 +402,7 @@ def check_user_input(args):
     if args.database and args.db_output:
         warning_message = (
             "Target path for a NEW database (--db_output, -d) and\n"
-            "a path to an EXISTING database (--database, -D) were provided."
+            "a path to an EXISTING database (--database, -D) were provided.\n"
             "Please provide one OR the other.\n"
             "Terminating program."
         )
