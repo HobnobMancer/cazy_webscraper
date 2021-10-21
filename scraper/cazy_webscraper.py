@@ -479,7 +479,7 @@ def connect_existing_db(args, time_stamp):
         sys.exit(1)
 
     try:
-        connection = sql_orm.get_db_connection(args)
+        connection = sql_orm.get_db_connection(args.database, new=False)
         logger.info("Opened connection to local CAZyme database")
     except Exception:
         logger.error(
@@ -549,7 +549,7 @@ def connect_to_new_db(args, time_stamp):
         logger_name = f'cazy_webscraper_{time_stamp}'
     
     try:
-        connection = sql_orm.build_db(db_path, time_stamp)
+        connection = sql_orm.get_db_connection(db_path, new=True)
         logger.info(f"Built new local CAZyme database at\n{db_path}")
     except Exception:
         logger.error(

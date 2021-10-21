@@ -514,38 +514,25 @@ class Log(Base):
         )
 
 
-def build_db(db_path, args):
-    """Build an empty SQL database and open a session.
+def get_db_connection(args, new):
+    """Create open connection to local CAZy SQL database.
 
-    :param db_path: target path to write out db to
     :param args: cmd args parser
+    :param new: bool, whether it is a new or an existing database being connected to
 
     Return an open database session.
     """
     logger = logging.getLogger(__name__)
-    logger.info("Building empty db to store data")
 
-    engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
-    Base.metadata.create_all(engine)
-    Session.configure(bind=engine)
-
-    return Session()
-
-
-def get_db_session(args):
-    """Create open session to local CAZy SQL database.
-
-    :param args: cmd args parser
-
-    Return an open database session.
-    """
-    logger = logging.getLogger(__name__)
-    logger.info("Opening session to an existing local database")
+    if new:
+        logger.info("Building a new empty database")
+    else:
+        logger.info("Opening session to an existing local database")
 
     db_path = args.database
 
-    engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
+    engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=True, future=True)
     Base.metadata.create_all(engine)
-    Session.configure(bind=engine)
-
-    return Session()
+    connection = engine.connect()
+    
+    return connection
