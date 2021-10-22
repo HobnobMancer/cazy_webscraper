@@ -93,7 +93,7 @@ from scraper.utilities import (
 
 # Define constants
 
-__version__ = "1.0.0-beta"
+__version__ = "2.0.0-beta"
 
 VERSION_INFO = [
     termcolour(
@@ -181,6 +181,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         fam_filters,
         kingdom_filters,
         taxonomy_filters,
+        tax_filters_dict,
     ) = parse_configuration.parse_configuration(args)
 
     scrape_config_message = (
@@ -214,7 +215,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         time_stamp,
         config_dict,
         kingdom_filters,
-        taxonomy_filters,
+        tax_filters_dict,
         connection,
         args,
     )

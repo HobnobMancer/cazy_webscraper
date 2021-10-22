@@ -49,6 +49,8 @@ import yaml
 
 from pathlib import Path
 
+from scraper.utilities.parse_configuration.cazy_class_synonym_dict import cazy_synonym_dict
+
 
 def parse_configuration(args):
     """Parse configuration data, and retrieve user specified CAZy classes and families.
@@ -79,27 +81,27 @@ def parse_configuration(args):
         'Carbohydrate-Binding Modules (CBMs)': set(),
     }
     # create dict for storing genera, species and strains scrape is to be restricted to
-    taxonomy_filter = {"genera": set(), "species": set(), "strains": set()}
+    taxonomy_filter_dict = {"genera": set(), "species": set(), "strains": set()}
 
     # Retrieve user specified CAZy classes and families to be scraped at CAZy
 
     # user passed a YAML configuration file
     if args.config is not None:
         # add configuration data from YAML file yo configuration dictionary
-        config_dict = get_yaml_configuration(config_dict, cazy_class_synonym_dict, taxonomy_filter, args)
+        config_dict = get_yaml_configuration(config_dict, cazy_class_synonym_dict, taxonomy_filter_dict, args)
 
         # add configuration from the cmd-line
-        config_dict,taxonomy_filter = get_cmd_scrape_config(
+        config_dict, taxonomy_filter_dict = get_cmd_scrape_config(
             config_dict,
             cazy_class_synonym_dict,
-            taxonomy_filter, 
+            taxonomy_filter_dict, 
             args,
         )
 
-    config_dict, taxonomy_filter = get_cmd_scrape_config(
+    config_dict, taxonomy_filter_dict = get_cmd_scrape_config(
         config_dict,
         cazy_class_synonym_dict,
-        taxonomy_filter, 
+        taxonomy_filter_dict, 
         args,
     )
     
@@ -110,13 +112,27 @@ def parse_configuration(args):
     # get list of CAZy classes not to scrape
     excluded_classes = get_excluded_classes(config_dict, cazy_class_synonym_dict)
 
+    # convert dict into a single set of filters
+    taxonomy_filter_set = get_filter_set(taxonomy_filter_dict)
+    class_filters = set(config_dict['classes'])
+    family_filters = set()
+    for key in config_dict:
+        if key != 'classes':
+            for fam in config_dict[key]:
+                family_filters.add(fam)
+
     # convert empty sets to None type objects
     config_dict = convert_empty_sets_to_none(config_dict)
 
-    # convert dict into a single set of filters
-    taxonomy_filter = get_filter_set(taxonomy_filter)
-
-    return excluded_classes, config_dict, cazy_class_synonym_dict, taxonomy_filter
+    return (
+        excluded_classes,
+        config_dict,
+        cazy_class_synonym_dict,
+        class_filters,
+        family_filters,
+        taxonomy_filter_dict,
+        taxonomy_filter_set,
+    )
 
 
 def get_cazy_class_synonym_dict(args):
@@ -146,19 +162,6 @@ def get_cazy_class_synonym_dict(args):
         )
         sys.exit(1)
 
-    return cazy_class_synonym_dict
-
-
-def cazy_synonym_dict():
-    """Create a dictionary of accepted synonms for CAZy classes."""
-    cazy_class_synonym_dict = {
-        "Glycoside Hydrolases (GHs)": ["Glycoside-Hydrolases", "Glycoside-Hydrolases", "Glycoside_Hydrolases", "GlycosideHydrolases", "GLYCOSIDE-HYDROLASES", "GLYCOSIDE-HYDROLASES", "GLYCOSIDE_HYDROLASES", "GLYCOSIDEHYDROLASES", "glycoside-hydrolases", "glycoside-hydrolases", "glycoside_hydrolases", "glycosidehydrolases", "GH", "gh"],
-        "GlycosylTransferases (GTs)": ["Glycosyl-Transferases", "GlycosylTransferases", "Glycosyl_Transferases", "Glycosyl Transferases", "GLYCOSYL-TRANSFERASES", "GLYCOSYLTRANSFERASES", "GLYCOSYL_TRANSFERASES", "GLYCOSYL TRANSFERASES", "glycosyl-transferases", "glycosyltransferases", "glycosyl_transferases", "glycosyl transferases", "GT", "gt"],
-        "Polysaccharide Lyases (PLs)": ["Polysaccharide Lyases", "Polysaccharide-Lyases", "Polysaccharide_Lyases", "PolysaccharideLyases", "POLYSACCHARIDE LYASES", "POLYSACCHARIDE-LYASES", "POLYSACCHARIDE_LYASES", "POLYSACCHARIDELYASES", "polysaccharide lyases", "polysaccharide-lyases", "polysaccharide_lyases", "polysaccharidelyases", "PL", "pl"],
-        "Carbohydrate Esterases (CEs)": ["Carbohydrate Esterases", "Carbohydrate-Esterases", "Carbohydrate_Esterases", "CarbohydrateEsterases", "CARBOHYDRATE ESTERASES", "CARBOHYDRATE-ESTERASES", "CARBOHYDRATE_ESTERASES", "CARBOHYDRATEESTERASES", "carbohydrate esterases", "carbohydrate-esterases", "carbohydrate_esterases", "carbohydrateesterases", "CE", "ce"],
-        "Auxiliary Activities (AAs)": ["Auxiliary Activities", "Auxiliary-Activities", "Auxiliary_Activities", "AuxiliaryActivities", "AUXILIARY ACTIVITIES", "AUXILIARY-ACTIVITIES", "AUXILIARY_ACTIVITIES", "AUXILIARYACTIVITIES", "auxiliary activities", "auxiliary-activities", "auxiliary_activities", "auxiliaryactivities", "AA", "aa"],
-        "Carbohydrate-Binding Modules (CBMs)": ["Carbohydrate-Binding-Modules", "Carbohydrate_Binding_Modules", "Carbohydrate_Binding Modules", "CarbohydrateBindingModules", "CARBOHYDRATE-BINDING-MODULES", "CARBOHYDRATE_BINDING_MODULES", "CARBOHYDRATE_BINDING MODULES", "CARBOHYDRATEBINDINGMODULES", "carbohydrate-binding-modules", "carbohydrate_binding_modules", "carbohydrate_binding modules", "carbohydratebindingmodules", "CBMs", "CBM", "cbms", "cbm"]
-    }
     return cazy_class_synonym_dict
 
 
@@ -445,53 +448,19 @@ def get_filter_set(taxonomy_filters_dict):
 
     Return a set.
     """
-    taxonomy_filters = []
+    taxonomy_filters = {}
 
     for key in taxonomy_filters_dict:
         try:
-            if len(taxonomy_filters_dict[key]) != 0:
-                taxonomy_filters += taxonomy_filters_dict[key]
+            for tax_filter in taxonomy_filters_dict[key]:
+                taxonomy_filters.add(tax_filter)
         except TypeError:
             pass
 
     if len(taxonomy_filters) == 0:
         taxonomy_filters = None
 
-    else:
-        taxonomy_filters = set(taxonomy_filters)
-
     return taxonomy_filters
-
-
-################################################################################
-
-
-def create_streamline_scraping_warning(args):
-    """Creating warning message to flag 'streamlined' scraping has been enabled.
-
-    :param args: cmd-line args parser
-
-    Return nothing.
-    """
-    logger = logging.getLogger(__name__)
-    streamline = (args.streamline).split(",")
-    index = 0
-    for index in range(len(streamline)):
-        if streamline[index] == "genbank":
-            streamline[index] = "GenBank primary and non-primary accessions"
-        if streamline[index] == "ec":
-            streamline[index] = "EC numbers"
-        if streamline[index] == "uniprot":
-            streamline[index] = "UniProt primary and non-primary accessions"
-        if streamline[index] == "pdb":
-            streamline[index] = "PDB accessions"
-
-    streamline = ',\n'.join(streamline)
-    logger.warning(
-        "Enabled 'streamlined' scraping. "
-        "Presuming the following data is identical for each family table a protein appears in\n"
-        f"{streamline}"
-    )
 
 
 def get_configuration(args):
