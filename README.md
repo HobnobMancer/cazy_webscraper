@@ -13,23 +13,24 @@
 
 -------------------------------
 
-# Attention! With the new CAZy update, cazy_webscraper is currently defunct for the scraping of CAZy. We are addressing this, and will update shortly.
+> `cazy_webscraper` version 1 is depracted. Please ensure you are using `cazy_webscraper` version 2 or newer.
 
 `cazy_webscraper` is an application and Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. The code is distributed under the MIT license.
 
 `cazy_webscraper` retrieves protein data from the [CAZy database](https://www.cazy.org) into a local SQLite3 database. This enables users to integrate the dataset into analytical pipelines, and interrogate the data in a manner unachievable through the CAZy website.
 
-Using the `expand` subcommand, a user can retrieve CAZyme protein sequence data from [GenBank](https://www.ncbi.nlm.nih.gov/genbank/), and protein structure files from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank [(PDB)](https://www.rcsb.org/).
+Using the `expand` subcommand, a user can retrieve:
+- CAZyme protein sequence data from [GenBank](https://www.ncbi.nlm.nih.gov/genbank/)
+- Protein structure files from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank [(PDB)](https://www.rcsb.org/)
+- EC number and Uniprot protein IDs from the [UniProtKB database](https://www.uniprot.org/)
 
-`cazy_webscraper` can recover specified CAZy Classes and/or CAZy families, and these queries can be filtered by taxonomy at Kingdoms, genus, species or strain level. Successive CAZy queries can be collated into a single local database. A log of each query is recorded in the database for transparency, reproducibility and shareablity.
+`cazy_webscraper` can recover specified CAZy Classes and/or CAZy families. These queries can be filtered by taxonomy at Kingdoms, genus, species or strain level. Successive CAZy queries can be collated into a single local database. A log of each query is recorded in the database for transparency, reproducibility and shareablity.
 
 If you use `cazy_webscraper, please cite the following publication:
 
 > Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. [https://doi.org/10.6084/m9.figshare.14370860.v7](https://doi.org/10.6084/m9.figshare.14370860.v7)
 
 ## Best practice
-
-**Please do not perform a complete scrape of the CAZy database unless you specifically require to reproduce the entire CAZy dataset. A complete scrape will take several hours and may unintentionally deny the service to others.**
 
 When performing a series of many automated calls to a server it is best to do this when traffic is lowest, such as at weekends or overnight *at the server*.
 
@@ -57,7 +58,7 @@ Please see the [`pip` documentation](https://pypi.org/project/pip/) for further 
 
 We have produced a "Getting Started With `cazy_webscraper`" [poster](https://hobnobmancer.github.io/cazy_webscraper/getting_started_poster.pdf).
 
-### Creating a local CAZyme database
+## Creating a local CAZyme database
 Command line options for `cazy_webscraper`, which is used to scrape CAZy and compile a local SQLite database. 
 Options are written in alphabetical order.
 
@@ -111,19 +112,18 @@ _If `--db_output` **and** `--database` are **not** called, `cazy_webscraper` wri
 
 ### Default CAZy class synonyms
 
-Below are the defauls accepted syonyms for CAZy class names.
+CAZy classes are accepted in the written long form (such as Glycoside Hydrolases) and in their abbreviated form (e.g. GH).
+
+Both the plural and singular abbreviated form of a CAZy class name is accepted, e.g. GH and GHs.
+
+Spaces, hythens, underscores and no space or extract character can be used in the CAZy class names. Therefore, Glycoside Hydrolases, Glycoside-Hydrolases, Glycoside_Hydrolases and GlycosideHydrolases are all accepted.
+
+Class names can be written in all upper case, all lower case, or mixed case, such as GLYCOSIDE-HYDROLASES, glycoside hydrolases and Glycoside Hydrolases. All lower or all upper case CAZy class name abbreviations (such as GH and gh) are accepted.
 
 
-
-### Retrieving protein sequences and structure files
+## Retrieving protein sequences and structure files
 
 The `expand` subcommand is used to update a local CAZy database. It manages retrieval of CAZyme protein sequences from GenBank and protein structure files from RCSB/PDB.
-
-### Roadmap
-
-Our roadmap for development and improvement is shared on the repository wiki
-
-- [`cazy_webscraper` roadmap](https://github.com/HobnobMancer/cazy_webscraper/wiki/Roadmap)
 
 ## Contributions
 
