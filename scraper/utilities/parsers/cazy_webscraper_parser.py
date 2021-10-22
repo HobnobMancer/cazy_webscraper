@@ -181,6 +181,15 @@ def build_parser(argv: Optional[List] = None):
         help="Number of times to retry scraping a family or class page if error encountered",
     )
 
+    # Add option to force file over writting
+    parser.add_argument(
+        "--sql_echo",
+        dest="sql_echo",
+        action="store_true",
+        default=False,
+        help="Set SQLite engine echo to True (SQLite will print its log messages)",
+    )
+
     # Add option to enable retrieval of subfamilies
     parser.add_argument(
         "-s",
