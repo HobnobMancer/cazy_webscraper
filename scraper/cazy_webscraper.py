@@ -211,14 +211,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         connection, logger_name, cache_dir = connect_to_new_db(args, time_stamp)
 
     logger.info("Adding log of scrape to the local CAZyme database")
-    sql_interface.log_scrape_in_db(
-        time_stamp,
-        config_dict,
-        kingdom_filters,
-        tax_filters_dict,
-        connection,
-        args,
-    )
+    with sql_orm.Session(bind=connection) as session:
+        sql_interface.log_scrape_in_db(
+            time_stamp,
+            config_dict,
+            kingdom_filters,
+            tax_filters_dict,
+            session,
+            args,
+        )
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir

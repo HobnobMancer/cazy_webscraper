@@ -533,6 +533,7 @@ def get_db_connection(args, new):
 
     engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=True, future=True)
     Base.metadata.create_all(engine)
+    Session.configure(bind=engine)
     connection = engine.connect()
     
     return connection
