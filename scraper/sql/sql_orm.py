@@ -57,6 +57,7 @@ from sqlalchemy import (
     String,
     Table,
     UniqueConstraint,
+    MetaData,
     create_engine,
     event,
     exc,
@@ -71,6 +72,7 @@ from sqlalchemy.sql.operators import custom_op
 
 # Use the declarative system
 # Database structured in NF1
+metadata_obj = MetaData()
 Base = declarative_base()
 Session = sessionmaker()
 
@@ -149,123 +151,65 @@ SQLITE_REGEX_FUNCTIONS = {
 }
 
 
-# define association/relationship tables
-
-
-# linker table between cazymes and CAZy family and subfamilies
-cazymes_families = Table(
-    "cazymes_families",
+# define linker/relationship tables
+genbanks_families = Table(
+    'Genbanks_CazyFamilies',
     Base.metadata,
-    Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
-    Column("family_id", Integer, ForeignKey("families.family_id")),
-    PrimaryKeyConstraint("cazyme_id", "family_id"),
+    Column("genbank_id", Integer, ForeignKey("Genbanks.genbank_id")),
+    Column("family_id", Integer, ForeignKey("CazyFamilies.family_id")),
+    PrimaryKeyConstraint("genbank_id", "family_id"),
 )
 
 
-# linker table between cazymes and ec numbers
-cazymes_ecs = Table(
-    "cazymes_ecs",
-    Base.metadata,
-    Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
-    Column("ec_id", Integer, ForeignKey("ecs.ec_id")),
-    PrimaryKeyConstraint("cazyme_id", "ec_id"),
-)
-
-
-# linker table between cazymes and UniProt accessions of CAZymes
-cazymes_uniprots = Table(
-    "cazymes_uniprots",
-    Base.metadata,
-    Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
-    Column("uniprot_id", Integer, ForeignKey("uniprots.uniprot_id")),
-    PrimaryKeyConstraint("cazyme_id", "uniprot_id"),
-)
-
-
-# linker table between CAZymes and PDB structures
-cazymes_pdbs = Table(
-    "cazymes_pdbs",
-    Base.metadata,
-    Column("cazyme_id", Integer, ForeignKey("cazymes.cazyme_id")),
-    Column("pdb_id", Integer, ForeignKey("pdbs.pdb_id")),
-    PrimaryKeyConstraint("cazyme_id", "pdb_id"),
-)
-
-
-# define models
-
-
-class Cazyme(Base):
-    """Describes a CAZyme, which is a protein single entry in CAZy.
-
-    Every CAZyme will have a name, a source organism, at least one CAZy family, and at least
-    a primary GenBank accession. A CAZyme may also have non-primary GenBank accessions, EC
-    number annotations, UniProt accessions and PDB accessions.
+# Define class tables
+class Genbank(Base):
+    """Represents a protein GenBank accession number and protein seq.
+    
+    The GenBank accession is used to identify unique proteins in the database.
     """
-    __tablename__ = "cazymes"
-
-    cazyme_id = Column(Integer, primary_key=True)
-    cazyme_name = Column(String)
-    taxonomy_id = Column(Integer, ForeignKey("taxs.taxonomy_id"))
-
-    taxonomy = relationship("Taxonomy", back_populates="cazymes")
-
+    __tablename__ = 'Genbanks'
+    
+    __table_args__ = (
+        UniqueConstraint("genbank_accession"),
+    )
+    
+    genbank_id = Column(Integer, primary_key=True)
+    genbank_accession = Column(String, index=True)
+    sequence = Column(String)
+    seq_update_date = Column(String)
+    taxonomy_id = Column(Integer, ForeignKey("Taxs.taxonomy_id"))
+    
     families = relationship(
         "CazyFamily",
-        secondary=cazymes_families,
-        back_populates="cazymes",
+        secondary=genbanks_families,
+        back_populates="Genbanks",
         lazy="dynamic",
     )
-    cazymes_genbanks = relationship(
-        "Cazymes_Genbanks",
-        back_populates="cazymes",
-        lazy="dynamic",
-    )
-
-    # Not all CAZymes will have EC numbers, UniProt accessions or PDB accessions
-    ecs = relationship(
-        "EC",
-        secondary=cazymes_ecs,
-        back_populates="cazymes",
-        lazy="dynamic",
-    )
-    uniprots = relationship(
-        "Uniprot",
-        secondary=cazymes_uniprots,
-        back_populates="cazymes",
-        lazy="dynamic",
-    )
-    pdbs = relationship(
-        "Pdb",
-        secondary=cazymes_pdbs,
-        back_populates="cazymes",
-        lazy="dynamic",
-    )
-
+    
+    
     def __str__(self):
-        return f"-CAZyme name={self.cazyme_name}, id={self.cazyme_id}-"
+        return f"-Genbank accession={self.genbank_accession}-"
 
     def __repr__(self):
-        return f"<Class Cazyme: name={self.cazyme_name}, id={self.cazyme_id}>"
+        return f"<Class GenBank acc={self.genbank_accession}>"
 
 
 class Taxonomy(Base):
-    """Describes the source organism of CAZymes."""
-    __tablename__ = "taxs"
+    """Represent the taxonomy of an organism."""
+    __tablename__ = "Taxs"
+    
     __table_args__ = (
         UniqueConstraint("genus", "species"),
-        Index("organism_index", "genus", "species", "kingdom_id")
+        Index("organism_option", "taxonomy_id", "genus", "species")
     )
-
+    
     taxonomy_id = Column(Integer, primary_key=True)
     genus = Column(String)
     species = Column(String)
-    kingdom_id = Column(Integer, ForeignKey("kingdoms.kingdom_id"))
-
+    kingdom_id = Column(Integer, ForeignKey("Kingdoms.kingdom_id"))
+    
     tax_kingdom = relationship("Kingdom", back_populates="taxonomy")
-
-    cazymes = relationship("Cazyme", back_populates="taxonomy")
-
+    
     def __str__(self):
         return f"-Source organism, Genus={self.genus}, Species={self.species}-"
 
@@ -274,40 +218,40 @@ class Taxonomy(Base):
             f"<Class Taxonomy: genus={self.genus}, species={self.species}, id={self.taxonomy_id}>"
         )
 
-
+    
 class Kingdom(Base):
-    """Describes a taxonomy Kingdom."""
-    __tablename__ = "kingdoms"
+    """Describes a taxonomy Kingdom. Data retrieved from NCBI"""
+    __tablename__ = "Kingdoms"
+    
     __table_args__ = (
         UniqueConstraint("kingdom"),
     )
-
+    
     kingdom_id = Column(Integer, primary_key=True)
     kingdom = Column(String)
 
     taxonomy = relationship("Taxonomy", back_populates="tax_kingdom")
 
     def __str__(self):
-        return f"-Kingdom, taxonomy_kingdom={self.kingdom}-"
+        return f"-Kingdom, kingdom={self.kingdom}-"
 
     def __repr__(self):
-        return f"<Class Kingdom, taxonomy_kingdom={self.kingdom}, id={self.kingdom_id}>"
+        return f"<Class Kingdom, kingdom={self.kingdom}, id={self.kingdom_id}>"
 
 
 class CazyFamily(Base):
-    """Describes a CAZy family.
-
-    Every unique CAZy family-subfamily pair will be given a unique family_id. For example,
-    if a CAZyme is catalogued under a subfamily, the parent CAZy family and the CAZy subfamily
-    will be listed together, and given a single family_id. If another protein is catalogued
-    under only the parent CAZy family, another entry with for the CAZy family will be made with
-    a null value for the subfamily and a different family_id. """
-    __tablename__ = "families"
-
+    """Describes a CAZy family, and subfamily if applicable.
+    
+    Every unique CAZy family-subfamily pair is represented as a unique instance
+    in the database.
+    """
+    __tablename__ = "CazyFamilies"
+    
+    # define columns before table_args so subfam column can be called
     family_id = Column(Integer, primary_key=True)
-    family = Column(ReString, nullable=False)
+    family = Column(String, nullable=False)  # make this an ReString later
     subfamily = Column(String, nullable=True)
-
+    
     __table_args__ = (
         Index(
             "subfamily_option",
@@ -316,173 +260,29 @@ class CazyFamily(Base):
             unique=True,
             postgresql_where=(subfamily.isnot(None)),
         ),
-        Index("family_option", "family", unique=True, postgresql_where=(subfamily.is_(None))),
+        Index(
+            "family_option",
+            "family",
+            unique=True,
+            postgresql_where=(subfamily.is_(None))
+        ),
     )
-
-    cazymes = relationship(
-        "Cazyme",
-        secondary=cazymes_families,
+    
+    genbanks = relationship(
+        "Genbank",
+        secondary=genbanks_families,
         back_populates="families",
         lazy="dynamic",
     )
 
     def __str__(self):
-        if self.subfamily is None:
-            return f"-CAZy family {self.family}, id={self.family_id}-"
-        else:
-            return f"-CAZy subfamily {self.subfamily}, parent={self.family}, id={self.family_id}-"
+        return f"-CAZy Family, Family={self.family}, Subfamily={self.subfamily}, id={self.family_id}-"
 
     def __repr__(self):
         """Return string representation of source organism."""
         return(
             f"<Class Family, family={self.family}, subfamily={self.subfamily}, id={self.family_id}"
         )
-
-
-class Genbank(Base):
-    """Describe a GenBank accession number of protein sequences.
-
-    The associated GenBank protein record is the source record from which CAZy retrieves the
-    protein sequence for the CAZyme.
-    """
-    __tablename__ = "genbanks"
-    __table_args__ = (
-        UniqueConstraint("genbank_accession"),
-    )
-
-    genbank_id = Column(Integer, primary_key=True)
-    genbank_accession = Column(String, index=True)
-    sequence = Column(String)
-    seq_update_date = Column(String)  # 'YYYY/MM/DD'
-
-    cazymes_genbanks = relationship(
-        "Cazymes_Genbanks",
-        back_populates="genbanks",
-        lazy="dynamic",
-    )
-
-    def __str__(self):
-        return f"-Genbank accession={self.genbank_accession}-"
-
-    def __repr__(self):
-        return f"<Class GenBank acc={self.genbank_accession}>"
-
-
-class Cazymes_Genbanks(Base):
-    """Represent assoication between a CAZyme and its primary and non-primary GenBank accessions.
-
-    The primary GenBank accession is the only hyperlinked
-    GenBank accession for the protein, and believed to be used by CAZy to indicate the source
-    GenBank protein record for the record in CAZy. It can not be guareenteed that a GenBank
-    accession will only be recorded as a primary OR a non-primary accession. It may be possible
-    that a GenBank accession is the primary accession for one CAZyme and a non-primary accession
-    for another. This is believed to be possible becuase CAZy does not appear to ID unique proteins
-    by the GenBank accession because duplicate entries for CAZyme can be found within CAZy.
-    """
-    __tablename__ = "cazymes_genbanks"
-    __table_args__ = (
-        UniqueConstraint("cazyme_id", "genbank_id", "primary"),
-    )
-
-    link_id = Column(Integer, primary_key=True)  # unique ID of the CAZyme-GenBank relationship
-    cazyme_id = Column(Integer, ForeignKey("cazymes.cazyme_id"))
-    genbank_id = Column(Integer, ForeignKey("genbanks.genbank_id"))
-
-    primary = Column(Boolean, index=True)
-
-    cazymes = relationship("Cazyme", back_populates="cazymes_genbanks")
-    genbanks = relationship("Genbank", back_populates="cazymes_genbanks")
-
-    def __str__(self):
-        return f"cazyme_id={self.cazyme_id}--genbank_id={self.genbank_id}--primary={self.primary}-"
-
-    def __repr__(self):
-        return(
-            f"<Class Cazymes_GenBanks cazyme_id={self.cazyme_id}-"
-            f"-genbank_id={self.genbank_id}-primary={self.primary}>"
-        )
-
-
-# Not all CAZymes will have EC numbers, UniProt accessions or PDB accessions
-
-
-class EC(Base):
-    """Describe EC numbers."""
-    __tablename__ = "ecs"
-    __table_args__ = (
-        UniqueConstraint("ec_number"),
-    )
-
-    ec_id = Column(Integer, primary_key=True)
-    ec_number = Column(String, index=True)
-
-    cazymes = relationship("Cazyme", secondary=cazymes_ecs, back_populates="ecs", lazy="dynamic")
-
-    def __str__(self):
-        return f"-EC{self.ec_number}-ec_id={self.ec_number}-"
-
-    def __repr__(self):
-        return f"<Class EC, EC{self.ec_number}, ec_id={self.ec_number}>"
-
-
-class Uniprot(Base):
-    """Describe a UniProt accession number.
-
-    The primary UniProt accession is the first UniProt accession that is lsited in UniProt for
-    the CAZyme.
-    """
-    __tablename__ = "uniprots"
-    __table_args__ = (
-        UniqueConstraint("uniprot_accession", "primary"),
-    )
-
-    uniprot_id = Column(Integer, primary_key=True)
-    uniprot_accession = Column(String)
-    primary = Column(Boolean)
-    sequence = Column(String)
-    seq_update_date = Column(String)  # 'YYYY/MM/DD'
-
-    Index('uniprot_idx', uniprot_accession, primary)
-
-    cazymes = relationship(
-        "Cazyme",
-        secondary=cazymes_uniprots,
-        back_populates="uniprots",
-        lazy="dynamic",
-    )
-
-    def __str__(self):
-        return(
-            f"-UniProt accession={self.uniprot_accession}, "
-            f"id={self.uniprot_id}, primary={self.primary}-"
-        )
-
-    def __repr__(self):
-        return(
-            f"<Class Uniprot accession={self.uniprot_accession}, "
-            f"id={self.uniprot_id}, primary={self.primary}>"
-        )
-
-
-class Pdb(Base):
-    """Describe a PDB accession number of protein structure."""
-    __tablename__ = "pdbs"
-    __table_args__ = (
-        UniqueConstraint("pdb_accession"),
-    )
-
-    pdb_id = Column(Integer, primary_key=True)
-    pdb_accession = Column(String)
-
-    Index('pdb_idx', pdb_accession)
-
-    cazymes = relationship("Cazyme", secondary=cazymes_pdbs, back_populates="pdbs", lazy="dynamic")
-
-    def __str__(self):
-        return f"-PDB accession={self.pdb_accession}, id={self.pdb_id}-"
-
-    def __repr__(self):
-        return f"<Class Pdb accession={self.pdb_accession}, id={self.pdb_id}>"
 
 
 class Log(Base):
