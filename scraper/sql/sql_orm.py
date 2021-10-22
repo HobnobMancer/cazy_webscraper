@@ -170,7 +170,7 @@ class Genbank(Base):
     __tablename__ = 'Genbanks'
     
     __table_args__ = (
-        UniqueConstraint("genbank_accession"),
+        UniqueConstraint("genbank_accession", name="genbank_unique"),
     )
     
     genbank_id = Column(Integer, primary_key=True)
@@ -199,7 +199,7 @@ class Taxonomy(Base):
     __tablename__ = "Taxs"
     
     __table_args__ = (
-        UniqueConstraint("genus", "species"),
+        UniqueConstraint("genus", "species", name="scientific_name"),
         Index("organism_option", "taxonomy_id", "genus", "species")
     )
     
@@ -224,7 +224,7 @@ class Kingdom(Base):
     __tablename__ = "Kingdoms"
     
     __table_args__ = (
-        UniqueConstraint("kingdom"),
+        UniqueConstraint("kingdom", name="kingdom_unique"),
     )
     
     kingdom_id = Column(Integer, primary_key=True)
@@ -249,23 +249,12 @@ class CazyFamily(Base):
     
     # define columns before table_args so subfam column can be called
     family_id = Column(Integer, primary_key=True)
-    family = Column(String, nullable=False)  # make this an ReString later
+    family = Column(ReString, nullable=False)  # make this an ReString later
     subfamily = Column(String, nullable=True)
     
     __table_args__ = (
-        Index(
-            "subfamily_option",
-            "family",
-            "subfamily",
-            unique=True,
-            postgresql_where=(subfamily.isnot(None)),
-        ),
-        Index(
-            "family_option",
-            "family",
-            unique=True,
-            postgresql_where=(subfamily.is_(None))
-        ),
+        UniqueConstraint("family", "subfamily", name="unique_fam_anno"),
+        Index("family", "subfamily", name="fam_annotations"),
     )
     
     genbanks = relationship(
