@@ -80,7 +80,7 @@ def download_file_decorator(func):
                 success = False
                 err = err_message
             
-            if err_message is None:
+            if err is None:
                 success = True
                 
             tries += 1
@@ -88,7 +88,7 @@ def download_file_decorator(func):
             if (not success) and (tries < kwargs['max_tries']):
                 logger.warning(
                     f'Failed to connect to CAZy on try {tries}/{kwargs["max_tries"]}\n'
-                    f'Error raised: {err_message}\n'
+                    f'Error raised: {err}\n'
                     'Retrying connection to CAZy in 10s'
                 )
                 time.sleep(10)
@@ -96,9 +96,9 @@ def download_file_decorator(func):
         if not success:
             logger.warning(
                 f'Failed to connect to CAZy after {kwargs["max_tries"]} tries\n'
-                f'Error raised: {err_message}\n'
+                f'Error raised: {err}\n'
             )
-            return err_message
+            return err
         else:
             return None
         
