@@ -397,6 +397,12 @@ def get_cazy_data(
 
     add_cazyme_data.add_cazy_families(cazy_data, connection)
 
+    # load taxonomy and cazy families from the db into memory for adding
+    # relationships between GenBank accessions, CAZy (sub)fams and taxa
+    db_tax_dict, db_fam_dict = add_cazyme_data.load_taxa_fam_data(connection)
+
+    
+
     return
 
 
