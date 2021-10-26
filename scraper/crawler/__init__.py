@@ -176,19 +176,20 @@ def parse_cazy_data(
         (sub)fam population sizes if args.validate is True
     
     Return:
-    cazy_data: dict, {gbk: {genus: str, species: str, kingdom: str, families: {fam: {subfam}}, }
-    cazy_families: list of tuples, (fam, subfam,)
-    kingdoms: list of tuples, (kingdom,)
-    organisms: list of tuples, (genus, species,)
+    cazy_data: dict, {gbk: {"organism": set(str), "families": {'fam': set (subfam)}}}
+    taxa_data: dict, {kingdom: set(organism)}
     """
-    cazy_families = set()  # set of tuples of (fam, subfam,)
-    kingdoms = set()  # set of tuples of (kingdom,)
-    organisms = set()  # set of tuples of (genus, species,)
+    logger = logging.getLogger(__name__)
 
-    cazy_data = {} # {gbk: {genus: str, species: str, kingdom: str, families: {fam: {subfam}}, }
-    # fam annotation stored under the 'families' key, in a dict keyed by the parent fam, and valued
-    # by a set of subfamily annotations. If not subfamily annotation is given. None is added to the
-    # set.
+    # define dicts CAZy data will be stored in
+    cazy_data = {} # {genbank_accession: {organism,}, families: {(fam, subfam,),} }
+    taxa_data = {} # {kingdom: organism}
+    
+    # used for verbose logging
+    gbk_accessions = set()
+    fam_annotations = set()
+    organisms = set()
+    kingdoms = set()
 
     for line in tqdm(lines, 'Parsing CAZy txt file'):
         line_str = line.decode()
@@ -201,14 +202,16 @@ def parse_cazy_data(
             cazy_fam = cazy_fam[:cazy_fam.find("_")]
         else:
             cazy_subfam = None
+        fam_annotations.add( (cazy_fam, cazy_subfam) )
        
         kingdom = line_data[1]
+        kingdoms.add(kingdom)
         
         organism = line_data[2]
-        genus = organism.split(" ")[0]
-        species = ' '.join(organism.split(" ")[1:])
+        organisms.add(organism)
         
         gbk_accession = line_data[3]
+        gbk_accessions.add(gbk_accession)
 
         # Apply filters
         if (len(class_filter) == 0) and (len(fam_filter) == 0):
