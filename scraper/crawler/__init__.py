@@ -175,9 +175,7 @@ def parse_cazy_data(
     :param cazy_fam_populations: None if args.validate is False, or dict of CAZy listed CAZy 
         (sub)fam population sizes if args.validate is True
     
-    Return:
-    cazy_data: dict, {gbk: {"organism": set(str), "families": {'fam': set (subfam)}}}
-    taxa_data: dict, {kingdom: set(organism)}
+    Return cazy_data: dict, {gbk: {"organism": set(str), "families": {'fam': set (subfam)}}}
     """
     logger = logging.getLogger(__name__)
 
@@ -215,20 +213,15 @@ def parse_cazy_data(
 
         # Apply filters
         if (len(class_filter) == 0) and (len(fam_filter) == 0):
-            cazy_data, cazy_families, kingdoms, organisms = apply_kingdom_tax_filters(
+            cazy_data = apply_kingdom_tax_filters(
                 cazy_data,
                 kingdom_filter,
                 tax_filter,
                 gbk_accession,
                 cazy_fam,
                 cazy_subfam,
-                genus,
-                species,
                 organism,
                 kingdom,
-                cazy_families,
-                kingdoms,
-                organisms,
             )
 
         # check if scraping the class the family belongs to
@@ -236,47 +229,45 @@ def parse_cazy_data(
             fam_class = re.match(r"\D{2,3}", cazy_fam).group()
             
             if fam_class in class_filter:
-                cazy_data, cazy_families, kingdoms, organisms = apply_kingdom_tax_filters(
+                cazy_data = apply_kingdom_tax_filters(
                     cazy_data,
                     kingdom_filter,
                     tax_filter,
                     gbk_accession,
                     cazy_fam,
                     cazy_subfam,
-                    genus,
-                    species,
                     organism,
                     kingdom,
-                    cazy_families,
-                    kingdoms,
-                    organisms,
                 )
 
                 continue
             
         if (cazy_fam in fam_filter) or (cazy_subfam in fam_filter):
-            cazy_data, cazy_families, kingdoms, organisms = apply_kingdom_tax_filters(
+            cazy_data = apply_kingdom_tax_filters(
                 cazy_data,
                 kingdom_filter,
                 tax_filter,
                 gbk_accession,
                 cazy_fam,
                 cazy_subfam,
-                genus,
-                species,
                 organism,
                 kingdom,
-                cazy_families,
-                kingdoms,
-                organisms,
             )
 
             continue
 
     if cazy_fam_populations is not None:
         validate_data_retrieval(cazy_data, cazy_fam_populations)
+        
+    logger.info(
+        "CAZy txt file contained:\n"
+        f"{len(list(gbk_accessions))} unique GenBank accessions"
+        f"{len(list(fam_annotations))} unique Fam-Subfam annotations"
+        f"{len(list(organisms))} unique source organisms"
+        f"{len(list(kingdoms))} unique tax kingdoms"
+    )
 
-    return cazy_data, list(cazy_families), list(kingdoms), list(organisms)
+    return cazy_data, taxa_data
 
 
 def apply_kingdom_tax_filters(
@@ -286,13 +277,8 @@ def apply_kingdom_tax_filters(
     gbk_accession,
     cazy_fam,
     cazy_subfam,
-    genus,
-    species,
     organism,
     kingdom,
-    cazy_families,
-    kingdoms,
-    organisms,
 ):
     """Apply User defined Kingdom and Taxonomy filters to determine if protein is to be added to 
     the local CAZyme database.
@@ -303,89 +289,71 @@ def apply_kingdom_tax_filters(
     :param gbk_accession: str, the GenBank accession of the protein
     :param cazy_fam: str, CAZy family annotation
     :param cazy_subfam: str, CAZy subfamily annotation, or None if protein is not a CAZy subfamily
-    :param genus: str, genus of the source organism
-    :param species: str, species of the source organism
-    :param organism: str, scientific name of the source organism
-    :param kingdom: str, tax kingdom of the source organism
-    :param cazy_families: set of tuples of CAZy families to be added to the db
-    :param kingdoms: set of tuples of tax kingdoms to be added to the db
-    :param organisms: set of tuples of scientific names of source organisms to be added to the db
+    :param kingdom: str, taxonomy kingdom of the source organism of the protein
 
     Return nothing.
     """
-    if (len(kingdom_filter) == 0) and (len(tax_filter) == 0):  # kingdom and tax filters not enabled
-        cazy_families.add( (cazy_fam, cazy_subfam) )
-        kingdoms.add( (kingdom,) )
-        organisms.add( (genus, species) )
+    if (len(kingdom_filter) == 0) and (len(tax_filter) == 0):  # kingdom and tax filters NOT enabled
         cazy_data = add_protein_to_dict(
             cazy_data,
             gbk_accession,
             cazy_fam,
             cazy_subfam,
-            genus,
-            species,
+            organism,
             kingdom,
         )
 
     if len(kingdom_filter) != 0:  # user enabled kingdom filter
         if kingdom in kingdom_filter:
-            cazy_families.add( (cazy_fam, cazy_subfam) )
-            kingdoms.add( (kingdom,) )
-            organisms.add( (genus, species) )
             cazy_data = add_protein_to_dict(
                 cazy_data,
                 gbk_accession,
                 cazy_fam,
                 cazy_subfam,
-                genus,
-                species,
+                organism,
                 kingdom,
             )
 
     if len(tax_filter) != 0:  # user enabled tax filter
         if any(filter in organism for filter in tax_filter):
-            if kingdom in kingdom_filter:
-                cazy_families.add( (cazy_fam, cazy_subfam) )
-                kingdoms.add( (kingdom,) )
-                organisms.add( (genus, species) )
-                cazy_data = add_protein_to_dict(
-                    cazy_data,
-                    gbk_accession,
-                    cazy_fam,
-                    cazy_subfam,
-                    genus,
-                    species,
-                    kingdom,
-                )
+            cazy_data = add_protein_to_dict(
+                cazy_data,
+                gbk_accession,
+                cazy_fam,
+                cazy_subfam,
+                organism,
+                kingdom,
+            )
     
-    return cazy_data, cazy_families, kingdoms, organisms
+    return cazy_data
 
 
-def add_protein_to_dict(cazy_data, gbk_accession, cazy_fam, cazy_subfam, genus, species, kingdom):
+def add_protein_to_dict(cazy_data, gbk_accession, cazy_fam, cazy_subfam, organism, kingdom):
     """Add protein to dict containing all proteins to be added to the local CAZyme database.
     
     :param cazy_data: dict of proteins to add to the local CAZyme database
     :param cazy_fam: str, name of the CAZy family
     :param cazy_subfam: str, name of the CAZy subfamily or None if not in a subfamily
-    :param genus: str, genus of the scientfic name of the source organism
-    :param species: str, species from the scientific name of the source organism
+    :param organism: str, scientific name of the source organism
     :param kingdom: str, taxonomy kingdom of the source organism of the protein
 
     Return dict of CAZy data
     """
     try:
-        existing_record = cazy_data[gbk_accession]
+        cazy_data[gbk_accession]
+        cazy_data[gbk_accession]["kingdom"].add(kingdom)
+        cazy_data[gbk_accession]["organism"].add(organism)
+        
         try:
-            existing_record['family'][cazy_fam].add(cazy_subfam)
+            cazy_data[gbk_accession]["families"][cazy_fam].add(cazy_subfam)
         except KeyError:
-            existing_record['family'][cazy_fam] = {cazy_subfam}
-
+            cazy_data[gbk_accession]["families"][cazy_fam] = {cazy_subfam}
+        
     except KeyError:
         cazy_data[gbk_accession] = {
-            'genus': genus,
-            'species': species,
-            'kingdom': kingdom,
-            'families': {cazy_fam: {cazy_subfam}}
+            "kingdom": {kingdom},
+            "organism": {organism},
+            "families": {cazy_fam: {cazy_subfam}},
         }
     
     return cazy_data
