@@ -46,6 +46,7 @@ import logging
 from tqdm import tqdm
 
 from scraper.sql.sql_interface import insert_data
+from scraper.sql.sql_orm import Session, Kingdom
 
 
 def add_kingdoms(cazy_data, connection):
@@ -72,4 +73,26 @@ def add_kingdoms(cazy_data, connection):
     insert_data(connection, 'Kingdoms', ['kingdom'], kingdoms_db_insert_values)
 
 
+def add_source_organisms(taxa_data, connection):
+    """Add taxonomy (source organism) data to the local CAZyme database
+    
+    :param taxa_data: dict of taxa data {kingdom: set(organism)}
+    :param connection: open sqlalchemy connection to SQLite engine
+    
+    Return nothing
+    """
+    taxonomy_db_insert_values = []
+    with Session(bind=connection) as session:
+        for kingdom in tqdm(taxa_data, desc='Adding Tax data to db per Kingdom'):
+            print(kingdom)
+            # query db to get the kingdom db object, retrieve only the kingdom ID number
+            found_kingdom = session.query(Kingdom.kingdom_id).\
+                filter(Kingdom.kingdom==kingdom).\
+                first()[0]
+            
+            for organism in taxa_data[kingdom]:
+                genus = organism.split(" ")[0]
+                species = ' '.join(organism.split(" ")[1:])
+                taxonomy_db_insert_values.append((genus, species, found_kingdom))
 
+    insert_data(connection, 'Taxs', ['genus', 'species', 'kingdom_id'], taxonomy_db_insert_values)
