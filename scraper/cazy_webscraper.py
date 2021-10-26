@@ -401,7 +401,8 @@ def get_cazy_data(
     # relationships between GenBank accessions, CAZy (sub)fams and taxa
     db_tax_dict, db_fam_dict = add_cazyme_data.load_taxa_fam_data(connection)
 
-    
+    gbk_fam_values = add_cazyme_data.add_genbanks(cazy_data, db_tax_dict, db_fam_dict, connection)
+
 
     return
 

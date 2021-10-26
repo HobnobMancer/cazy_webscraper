@@ -153,3 +153,43 @@ def load_taxa_fam_data(connection):
     return db_tax_dict, db_fam_dict
 
 
+def add_genbanks(cazy_data, db_tax_dict, db_fam_dict, connection):
+    """Add GenBank accessions with tax data to the db
+    
+    :param cazy_data: dict of CAZy data
+    :param connection: open sqlalchemy connection to an SQLite db
+    
+    Return set of tuples, of (genbank_acc, fam_id)
+    """
+    # create set of tuples for inserting into the Genbank db table
+    # associates a genbank accession with its source organisms db tax id num
+    gbk_db_insert_values = set()
+
+    # ...and create set of tuples for inserting into the CazyFamilies_Genbank table
+    # associates genbank acc db id nums with CAZy fam db ids
+    gbk_fam_values = set()  # { (gbk_accession, fam_db_id) } 
+
+    for genbank_accession in tqdm(cazy_data, desc='Adding GenBank to db'):
+        organism = list(cazy_data[genbank_accession]['organism'])[0]
+        tax_id = db_tax_dict[organism]
+        
+        gbk_db_insert_values.add( (genbank_accession, tax_id) )
+        
+        
+        for cazy_fam in  cazy_data[genbank_accession]['families']:
+            subfamilies = cazy_data[genbank_accession]['families'][cazy_fam]
+            
+            for cazy_subfam in subfamilies:
+                if cazy_subfam is None:
+                    fam_name = f"{cazy_fam} _"
+                
+                else:
+                    fam_name = f"{cazy_fam} {cazy_subfam}"
+            
+            fam_id = db_fam_dict[fam_name]
+            gbk_fam_values.add( (genbank_accession, fam_id) )
+
+    insert_data(connection, 'Genbanks', ['genbank_accession', 'taxonomy_id'], list(gbk_db_insert_values))
+
+    return gbk_fam_values
+
