@@ -385,7 +385,7 @@ def get_cazy_data(
         "matching the scraping criteria"
     )
 
-    ####
+    cazy_data = cazy.replace_multiple_tax(cazy_data, args)
 
     return
 

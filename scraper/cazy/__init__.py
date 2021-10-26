@@ -42,9 +42,12 @@
 
 import logging
 import re
+import time
 
 from tqdm.notebook import tqdm
 from zipfile import ZipFile
+
+from Bio import Entrez
 
 
 def extract_cazy_file_data(cazy_txt_path):
@@ -350,3 +353,121 @@ def validate_data_retrieval(cazy_data, cazy_fam_populations):
             )
 
     return
+
+
+def entrez_retry(retries, entrez_func, *func_args, **func_kwargs):
+    """Call to NCBI using Entrez.
+    
+    Maximum number of retries is 10, retry initated when network error encountered.
+    
+    :param logger: logger object
+    :param retries: parser argument, maximum number of retries excepted if network error encountered
+    :param entrez_func: function, call method to NCBI
+    :param *func_args: tuple, arguments passed to Entrez function
+    :param ** func_kwargs: dictionary, keyword arguments passed to Entrez function
+    
+    Returns record.
+    """
+    logger = logging.getLogger(__name__)
+    record, retries, tries = None, retries, 0
+
+    while record is None and tries < retries:
+        try:
+            record = entrez_func(*func_args, **func_kwargs)
+
+        except IOError:
+            # log retry attempt
+            if tries < retries:
+                logger.warning(
+                    f"Network error encountered during try no.{tries}.\nRetrying in 10s",
+                    exc_info=1,
+                )
+                time.sleep(10)
+            tries += 1
+
+    if record is None:
+        logger.error(
+            "Network error encountered too many times. Exiting attempt to call to NCBI"
+        )
+        return
+
+    return record
+
+
+def replace_multiple_tax(cazy_data, args):
+    """
+    Identify GenBank accessions which have multiple source organisms listedi in CAZy. Replace with
+    the latest source organism from NCBI.
+
+    :param cazy_data: dict of CAZy data
+    :param args: cmd-line args parser
+
+    Return dict of proteins with multiple source organisms listed in CAZy
+    {genbank_accession: {"families": {fam: set(subfam)} }}
+    """
+    logger = logging.getLogger(__name__)
+
+    Entrez.email = args.email
+
+    multi_taxa_gbk = {}
+
+    for genbank_accession in tqdm(cazy_data, desc='Searching for multiple taxa annotations'):
+        if len(cazy_data[genbank_accession]["organism"]) > 1:
+            multi_taxa_gbk[genbank_accession] = {"families": cazy_data[genbank_accession]["families"]}
+            logger.warning(
+                f"{genbank_accession} annotated with multiple taxa:\n"
+                f"{cazy_data[genbank_accession]['organism']}"
+            )
+
+    id_post_list = str(",".join(list(multi_taxa_gbk.keys())))
+    try:
+        epost_results = Entrez.read(
+            entrez_retry(
+                args.retries, Entrez.epost, "Protein", id=id_post_list
+            )
+        )
+    # if no record is returned from call to Entrez
+    except (TypeError, AttributeError) as error:
+        logger.error(
+                f"Entrez failed to post assembly IDs.\n"
+                "Exiting retrieval of accession numbers, and returning null value 'NA'"
+        )
+
+    # Retrieve web environment and query key from Entrez epost
+    epost_webenv = epost_results["WebEnv"]
+    epost_query_key = epost_results["QueryKey"]
+
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.efetch,
+            db="Protein",
+            query_key=epost_query_key,
+            WebEnv=epost_webenv,
+            retmode="xml",
+        ) as record_handle:
+            protein_records = Entrez.read(record_handle, validate=False)
+    # if no record is returned from call to Entrez
+    except (TypeError, AttributeError) as error:
+        logger.error(
+            f"Entrez failed to retireve accession numbers."
+            "Exiting retrieval of accession numbers, and returning null value 'NA'"
+        )
+    
+    for protein in tqdm(protein_records, desc="Retrieving organism from NCBI"):
+        accession = protein['GBSeq_accession-version']
+        organism = protein['GBSeq_organism']
+        kingdom = protein['GBSeq_taxonomy'].split(';')[0]
+        
+        try:
+            cazy_data[accession] = {
+                "kingdom": (kingdom,),
+                "organism": (organism,),
+                "families": multi_taxa_gbk[accession]["families"],
+            }
+        except KeyError:
+            logger.error(
+                f'GenBank accession {accession} retrieved from NCBI, but it is not present in CAZy'
+            )
+
+    return cazy_data
