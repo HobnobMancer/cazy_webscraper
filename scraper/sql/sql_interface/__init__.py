@@ -43,6 +43,8 @@
 
 import logging
 
+from tqdm import tqdm
+
 from scraper.sql import sql_orm
 
 
@@ -181,3 +183,4 @@ def insert_data(connection, table_name, column_names, insert_values):
         except Exception as db_error:
             raise SqlInterfaceException(db_error)
 
+    return

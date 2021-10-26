@@ -82,6 +82,7 @@ from tqdm import tqdm
 from scraper import crawler
 from scraper import cazy
 from scraper.sql import sql_orm, sql_interface
+from scraper.sql.sql_interface import add_cazyme_data
 from scraper.utilities import (
     build_logger,
     config_logger,
@@ -386,6 +387,12 @@ def get_cazy_data(
     )
 
     cazy_data = cazy.replace_multiple_tax(cazy_data, args)
+
+    # add kingdoms to the db
+    # create dict of taxa data {kingdom: set(organism)}
+    taxa_data = add_cazyme_data.add_kingdoms(cazy_data, args)
+
+    
 
     return
 
