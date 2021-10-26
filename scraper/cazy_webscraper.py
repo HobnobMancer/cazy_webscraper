@@ -403,7 +403,8 @@ def get_cazy_data(
 
     gbk_fam_values = add_cazyme_data.add_genbanks(cazy_data, db_tax_dict, db_fam_dict, connection)
 
-
+    add_cazyme_data.add_genbank_fam_relationships(gbk_fam_values, connection)
+    
     return
 
 
