@@ -96,3 +96,26 @@ def add_source_organisms(taxa_data, connection):
                 taxonomy_db_insert_values.append((genus, species, found_kingdom))
 
     insert_data(connection, 'Taxs', ['genus', 'species', 'kingdom_id'], taxonomy_db_insert_values)
+
+
+def add_cazy_families(cazy_data, connection):
+    """Add CAZy families and subfamilies to local CAZyme database
+    
+    :param cazy_data: dict of data retrieved from CAZy
+    :param connection: open sqlalchemy connection to an SQLite db engine
+    
+    Return nothing"""
+    families_db_insert_values = set()
+
+    for genbank_accession in tqdm(cazy_data, desc='Adding CAZy fams to db'):
+        for cazy_fam in cazy_data[genbank_accession]["families"]:
+            subfamilies = cazy_data[genbank_accession]["families"][cazy_fam]
+            if None not in subfamilies:
+                cazy_data[genbank_accession]["families"][cazy_fam].add(None)
+            
+            for cazy_subfam in subfamilies:
+                families_db_insert_values.add( (cazy_fam, cazy_subfam) )
+
+    insert_data(connection, 'CazyFamilies', ['family', 'subfamily'], list(families_db_insert_values))
+
+

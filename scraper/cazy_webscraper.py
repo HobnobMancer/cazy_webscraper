@@ -395,6 +395,8 @@ def get_cazy_data(
     # add taxonomy source organisms to the db
     add_cazyme_data.add_source_organisms(taxa_data, connection)
 
+    add_cazyme_data.add_cazy_families(cazy_data, connection)
+
     return
 
 
