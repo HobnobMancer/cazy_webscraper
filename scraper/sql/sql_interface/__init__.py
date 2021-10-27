@@ -159,9 +159,9 @@ def log_scrape_in_db(
 def insert_data(connection, table_name, column_names, insert_values):
     """Insert values into one or multiple rows in the database.
     
-    :param connection: sqlalchemy open db engine connection
+    :param connection: open connection to SQLite db engine
     :param table_name: str, name of table to be inserted into
-    :param column_names: list of columns to insert data into
+    :param column_names: list of columns (str) to insert data into
     :param insert_values: list of tuples, one tuple per inserted row in the db
     
     Return nothing.
