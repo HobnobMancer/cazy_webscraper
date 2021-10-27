@@ -143,6 +143,13 @@ def build_parser(argv: Optional[List] = None):
         help="Genera to restrict the scrape to"
     )
 
+    parser.add_argument(
+        "--kingdoms",
+        type=str,
+        default=None,
+        help="Tax Kingdoms to restrict the scrape to"
+    )
+
     # Add log file name option
     # If not given, no log file will be written out
     parser.add_argument(
