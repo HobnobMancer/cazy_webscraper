@@ -488,7 +488,7 @@ def connect_to_new_db(args, time_stamp):
         else:  # writing to cwd
             cache_dir = Path(f".cazy_webscraper_{time_stamp}/cache")
 
-        logger_name = args.db_output.split('.')[0]
+        logger_name = str(args.db_output).split('.')[0]
         db_path = args.db_output
     
     else:
