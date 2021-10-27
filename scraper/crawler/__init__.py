@@ -41,6 +41,7 @@
 
 
 import logging
+import os
 import time
 
 from socket import timeout
@@ -77,7 +78,7 @@ def download_file_decorator(func):
             ) as err_message:
                 success = False
                 err = err_message
-            
+
             if err is None:
                 success = True
                 
@@ -99,6 +100,8 @@ def download_file_decorator(func):
             return err
         else:
             return None
+
+        
         
     return wrapper
 
@@ -113,6 +116,7 @@ def get_cazy_file(out_path, args, **kwargs):
     
     Return nothing
     """
+    logger = logging.getLogger(__name__)
     download_url = 'http://www.cazy.org/IMG/cazy_data/cazy_data.zip'
     
     # HTTPError, URLError or timeout error may be raised, handled by wrapper
@@ -133,5 +137,9 @@ def get_cazy_file(out_path, args, **kwargs):
                     break
                 pbar.update(len(buffer))
                 fh.write(buffer)
+
+    if os.path.isfile(out_path) is False:
+        logger.error('CAZy txt file not created locally.')
+        raise IOError
 
     return
