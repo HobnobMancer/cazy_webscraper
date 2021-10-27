@@ -181,8 +181,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         class_filters,
         fam_filters,
         kingdom_filters,
-        taxonomy_filters,
-        tax_filters_dict,
+        taxonomy_filter_dict,
+        taxonomy_filter_set,
     ) = parse_configuration.parse_configuration(args)
 
     scrape_config_message = (
@@ -197,7 +197,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         f"Scraping subfamilies: {args.subfamilies}"
     )
 
-    if len(taxonomy_filters) != 0:
+    if len(taxonomy_filter_set) != 0:
         scrape_config_message += "\nTaxonomy filters applied."
     
     if len(kingdom_filters) < 5:
@@ -217,7 +217,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             time_stamp,
             config_dict,
             kingdom_filters,
-            tax_filters_dict,
+            taxonomy_filter_dict,
             session,
             args,
         )
@@ -252,7 +252,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         class_filters,
         fam_filters,
         kingdom_filters,
-        taxonomy_filters,
+        taxonomy_filter_set,
         connection,
         cache_dir,
         logger_name,

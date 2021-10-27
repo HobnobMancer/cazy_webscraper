@@ -83,27 +83,48 @@ def parse_configuration(args):
     # create dict for storing genera, species and strains scrape is to be restricted to
     taxonomy_filter_dict = {"genera": set(), "species": set(), "strains": set()}
 
+    kingdom_filters = set()
+
     # Retrieve user specified CAZy classes and families to be scraped at CAZy
 
     # user passed a YAML configuration file
     if args.config is not None:
         # add configuration data from YAML file yo configuration dictionary
-        config_dict = get_yaml_configuration(config_dict, cazy_class_synonym_dict, taxonomy_filter_dict, args)
-
-        # add configuration from the cmd-line
-        config_dict, taxonomy_filter_dict = get_cmd_scrape_config(
+        config_dict, taxonomy_filter_dict, kingdom_filters = get_yaml_configuration(
             config_dict,
             cazy_class_synonym_dict,
-            taxonomy_filter_dict, 
+            taxonomy_filter_dict,
+            kingdom_filters,
             args,
         )
 
-    config_dict, taxonomy_filter_dict = get_cmd_scrape_config(
+        # add configuration from the cmd-line
+        config_dict, taxonomy_filter_dict, kingdom_filters = get_cmd_scrape_config(
+            config_dict,
+            cazy_class_synonym_dict,
+            taxonomy_filter_dict, 
+            kingdom_filters,
+            args,
+        )
+
+    config_dict, taxonomy_filter_dict, kingdom_filters = get_cmd_scrape_config(
         config_dict,
         cazy_class_synonym_dict,
         taxonomy_filter_dict, 
+        kingdom_filters,
         args,
     )
+
+    if len(kingdom_filters) == 0:
+        kingdom_filters = {"Archaea", "Bacteria", "Eukaryota", "Viruses", "Unclassified"}
+    else:
+        kingdoms = {}
+        correct_kingdoms = {"Archaea", "Bacteria", "Eukaryota", "Viruses", "Unclassified"}
+        for kingdom in kingdom_filters:
+            user_kingdom = f"{kingdom[0].upper()}{kingdom[1:].lower()}"
+            if user_kingdom in correct_kingdoms:
+                kingdoms.add(f"{kingdom[0].upper()}{kingdom[1:].lower()}")
+        kingdom_filters = kingdoms
     
     # When no classes or families are defined scrape every class and family
     if args.classes is None and args.families is None and args.config is None:
@@ -130,6 +151,7 @@ def parse_configuration(args):
         cazy_class_synonym_dict,
         class_filters,
         family_filters,
+        kingdom_filters,
         taxonomy_filter_dict,
         taxonomy_filter_set,
     )
@@ -165,12 +187,19 @@ def get_cazy_class_synonym_dict(args):
     return cazy_class_synonym_dict
 
 
-def get_yaml_configuration(config_dict, cazy_class_synonym_dict, taxonomy_filter, args):
+def get_yaml_configuration(
+    config_dict,
+    cazy_class_synonym_dict,
+    taxonomy_filter_dict,
+    kingdom_filters,
+    args,
+):
     """Parse all data from configuration YAML file.
 
     :param config_dict: dict, store CAZy classes and families to scrape
     :param cazy_class_synonym: dict, acceppted CAZy class name synonyms
     :param taxonomy_filter: dict, genera, species and strains scrape is to be restricted to
+    :param kingdom_filters: set of tax kingdoms to restrict the scrape to
     :param args: cmd args parser
 
     Return dictionary containing CAZy classes and families named in YAML configuration file.
@@ -206,25 +235,30 @@ def get_yaml_configuration(config_dict, cazy_class_synonym_dict, taxonomy_filter
             
         elif key == "genera":
             if yaml_config_dict["genera"] is not None:
-                for genus in taxonomy_filter["genera"]:
-                    config_dict["genera"].add(genus)
+                for genus in yaml_config_dict["genera"]:
+                    taxonomy_filter_dict["genera"].add(genus)
                
         elif key == "species":
-            if yaml_config_dict["genera"] is not None:
-                for organism in taxonomy_filter["genera"]:
-                    config_dict["genera"].add(organism)
+            if yaml_config_dict["species"] is not None:
+                for organism in yaml_config_dict["species"]:
+                    taxonomy_filter_dict["species"].add(organism)
 
         elif key == "strains":
-            if yaml_config_dict["genera"] is not None:
-                for organism_strain in taxonomy_filter["genera"]:
-                    config_dict["genera"].add(organism_strain)
+            if yaml_config_dict["strains"] is not None:
+                for organism_strain in yaml_config_dict["strains"]:
+                    taxonomy_filter_dict["strains"].add(organism_strain)
+        
+        elif key == "kingdoms":
+            if yaml_config_dict["kingdoms"] is not None:
+                for kingdom in yaml_config_dict["kingdoms"]:
+                    kingdom_filters["kingdoms"].add(kingdom)
 
         else:  # key is a CAZy class and underneath are CAZy families to scrape
             if yaml_config_dict[key] is not None:  # CAZy families were listed
                 for fam in yaml_config_dict[key]:
                     config_dict[key].add(fam)
 
-    return config_dict
+    return config_dict, taxonomy_filter_dict, kingdom_filters
 
 
 def get_yaml_cazy_classes(yaml_config_dict, cazy_class_synonym_dict):
@@ -301,7 +335,8 @@ def parse_user_cazy_classes(cazy_classes, cazy_class_synonym_dict):
 def get_cmd_scrape_config(
     config_dict,
     cazy_class_synonym_dict,
-    taxonomy_filter, 
+    taxonomy_filter,
+    kingdom_filters,
     args,
 ):
     """Retrieve scraping configuration data from the cmd-line args parser
@@ -309,6 +344,7 @@ def get_cmd_scrape_config(
     :param config_dict: dict of CAZy classes and families to be scrapped
     :param cazy_class_synonym_dict: dict of accepted CAZy class name synonyms
     :param taxonomy_filter: dict of genera, species and strains to restrict the scrape to
+    :param kingdom_filters: set of tax kingdoms to restrict the scrape to
     :param args: cmd-line args parser
     
     Return config_dict and taxonomy_filter (dict)
@@ -337,7 +373,12 @@ def get_cmd_scrape_config(
         for cmd_genus in cmd_strains:
             taxonomy_filter["strains"].add(cmd_strains)
     
-    return config_dict, taxonomy_filter
+    if args.kingdoms is not None:
+        cmd_kingdoms = (args.kingdoms).split(",")
+        for kingdom in cmd_kingdoms:
+            kingdom_filters.add(kingdom)
+    
+    return config_dict, taxonomy_filter, kingdom_filters
 
 
 def get_cmd_defined_families(config_dict, args):
