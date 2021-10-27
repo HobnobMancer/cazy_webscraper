@@ -420,8 +420,9 @@ def replace_multiple_tax(cazy_data, args):
                 f"{cazy_data[genbank_accession]['organism']}"
             )
     
-    logger.info(
-        f"{len(list(multi_taxa_gbk.keys()))} proteins found with multiple source organisms in CAZy"
+    logger.warning(
+        f"{len(list(multi_taxa_gbk.keys()))} proteins found with multiple source organisms in CAZy\n"
+        "Querying NCBI to retrieve the latest source organisms"
     )
 
     if len(list(multi_taxa_gbk.keys())) == 0:
@@ -435,7 +436,7 @@ def replace_multiple_tax(cazy_data, args):
             )
         )
     # if no record is returned from call to Entrez
-    except (TypeError, AttributeError) as error:
+    except (TypeError, AttributeError):
         logger.error(
                 f"Entrez failed to post assembly IDs.\n"
                 "Exiting retrieval of accession numbers, and returning null value 'NA'"
