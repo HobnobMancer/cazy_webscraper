@@ -140,7 +140,6 @@ def log_scrape_in_db(
         [args.genera, " --genera '"],
         [args.species, " --species '"],
         [args.strains, " --strains '"],
-        [args.streamline, "--streamline '"],
     ]:
         try:
             cmd_line = cmd_line + cmd[1] + cmd[0] + "'"
