@@ -249,7 +249,7 @@ class CazyFamily(Base):
     
     # define columns before table_args so subfam column can be called
     family_id = Column(Integer, primary_key=True)
-    family = Column(String, nullable=False)  # make this an ReString later
+    family = Column(ReString, nullable=False)  # make this an ReString later
     subfamily = Column(String, nullable=True)
     
     __table_args__ = (
