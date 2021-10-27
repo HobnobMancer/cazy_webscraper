@@ -123,10 +123,8 @@ def get_cazy_file(out_path, args, **kwargs):
     
     # IOError may be raised, handled by wrapper
     with open(out_path, 'wb') as fh:
-        # Using leave=False as this will be an internally-nested progress bar
         with tqdm(
             total=file_size,
-            leave=False,
             desc=f"Downloading CAZy txt file",
         ) as pbar:
             while True:
