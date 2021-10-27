@@ -56,6 +56,12 @@ def build_parser(argv: Optional[List] = None):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
+    parser.add_argument(
+        "email",
+        type=str,
+        help="User email address. Requirement of Entrez, used to get source organsism data. Email is not stored be cazy_webscraper."
+    )
+
     # Add optional arguments to parser
 
     # Add option to specify path to configuration file
