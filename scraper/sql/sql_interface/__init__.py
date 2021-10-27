@@ -140,7 +140,6 @@ def log_scrape_in_db(
         [args.genera, " --genera '"],
         [args.species, " --species '"],
         [args.strains, " --strains '"],
-        [args.ec, " --ec '"],
         [args.streamline, "--streamline '"],
     ]:
         try:
