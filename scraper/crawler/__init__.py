@@ -91,7 +91,7 @@ def download_file_decorator(func):
                 )
                 time.sleep(10)
             
-        if not success:
+        if success is False:
             logger.warning(
                 f'Failed to connect to CAZy after {kwargs["max_tries"]} tries\n'
                 f'Error raised: {err}\n'

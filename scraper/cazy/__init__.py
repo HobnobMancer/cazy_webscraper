@@ -44,7 +44,7 @@ import logging
 import re
 import time
 
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 from zipfile import ZipFile
 
 from Bio import Entrez

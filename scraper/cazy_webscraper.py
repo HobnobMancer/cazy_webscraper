@@ -347,24 +347,24 @@ def get_cazy_data(
 
     tries, retries, success = 0, (args.retries + 1), False
 
+    err_message = None
     while (tries <= retries) and (not success):
         err_message = crawler.get_cazy_file(cazy_txt_path, args, max_tries=(args.retries + 1))
 
         if err_message is None:
-            success == True
             break
 
         else:
             tries += 1
     
-    if not success:
+    if err_message is not None:
         logger.error(
             f"Could not connect to CAZy to download the CAZy db txt file after {(args.retries + 1)*(args.retries + 1)}\n"
             f"The following error was raised:\n{err_message}"
             f"File would have been written to {cazy_txt_path}"
             "Terminating program"
         )
-        sys.exit
+        sys.exit(1)
     
     # extract the CAZy family data and add to the local CAZyme database
     cazy_txt_lines = cazy.extract_cazy_file_data(cazy_txt_path)
