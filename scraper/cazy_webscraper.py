@@ -87,11 +87,10 @@ from scraper.utilities import (
     build_logger,
     config_logger,
     file_io,
-    parsers,
     parse_configuration,
     termcolour,
 )
-
+from scraper.utilities.parsers import cazy_webscraper_parser
 
 # Define constants
 
@@ -144,10 +143,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # Program preparation
     if argv is None:
-        parser = parsers.cazy_webscraper_parser.build_parser()
+        parser = cazy_webscraper_parser.build_parser()
         args = parser.parse_args()
     else:
-        parser = parsers.cazy_webscraper_parser.build_parser(argv)
+        parser = cazy_webscraper_parser.build_parser(argv)
         args = parser.parse_args()
 
     if logger is None:
