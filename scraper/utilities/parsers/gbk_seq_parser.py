@@ -42,21 +42,49 @@
 
 
 import argparse
+import sys
 
 from pathlib import Path
 from typing import List, Optional
 
 
-def build_parser(argv: Optional[List] = None):
-    """Return ArgumentParser parser for script."""
+def build_genbank_sequences_parser(argv: Optional[List] = None):
+    """Return ArgumentParser parser for the script 'expand.genbank_sequences.py'."""
     # Create parser object
     parser = argparse.ArgumentParser(
-        prog="cazy_webscraper.py",
-        description="Scrapes the CAZy database",
+        prog="genbank_sequences.py",
+        description="Populates local CAZy database with protein sequences from GenBank",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
+    # Add positional/required arguments
+    parser.add_argument(
+        "database",
+        type=Path,
+        metavar="local CAZy database",
+        help="Path to local CAZy database",
+    )
+
+    parser.add_argument(
+        "email",
+        type=str,
+        metavar="user email address",
+        help="User email address, requirement of NCBI-Entrez",
+    )
+
     # Add optional arguments to parser
+
+    # Add option for building a BLAST database of retrieved protein sequences
+    parser.add_argument(
+        "-b",
+        "--blastdb",
+        type=Path,
+        default=None,
+        help=(
+            "Create BLAST database of retrieved GenBank protein sequences.\n"
+            "Give the path to the directory to store the database"
+        ),
+    )
 
     # Add option to specify path to configuration file
     parser.add_argument(
@@ -68,7 +96,7 @@ def build_parser(argv: Optional[List] = None):
         help="Path to configuration file. Default: None, scrapes entire database",
     )
 
-    # Add option to define complete classes to scrape
+    # Add option to define classes to retrieve protein sequences for
     parser.add_argument(
         "--classes",
         type=str,
@@ -76,45 +104,13 @@ def build_parser(argv: Optional[List] = None):
         help="Classes from which all families are to be scraped. Separate classes by ','"
     )
 
-    # Add option to use own CAZy class synoymn dict
+    # specify the number of accessions posted in single ePost to NCBI
     parser.add_argument(
-        "--cazy_synonyms",
-        type=Path,
-        default=None,
-        help="Path to JSON file containing CAZy class synoymn names",
-    )
-
-    # Add option to display citation
-    parser.add_argument(
-        "-C",
-        "--citation",
-        dest="citation",
-        action="store_true",
-        default=False,
-        help="Print cazy_webscraper citation message",
-    )
-
-    parser.add_argument(
-        "--cache_dir",
-        type=Path,
-        default=None,
-        help="Target path for cache dir to be used instead of default path",
-    )
-
-    parser.add_argument(
-        "-d",
-        "--db_output",
-        type=Path,
-        default=None,
-        help="Target output path to build new SQL database",
-    )
-
-    parser.add_argument(
-        "-D",
-        "--database",
-        type=Path,
-        default=None,
-        help="Path to an existing local CAZy SQL database",
+        "-e",
+        "--epost",
+        type=int,
+        default=150,
+        help="Number of accessions posted to NCBI per epost, advice to be max 200. Default=150"
     )
 
     # Add option to force file over writting
@@ -127,12 +123,36 @@ def build_parser(argv: Optional[List] = None):
         help="Force file over writting",
     )
 
-    # Add option to specify families to scrape
+    # Add option to specify families to retrieve protein sequences for
     parser.add_argument(
         "--families",
         type=str,
         default=None,
-        help="Families to scrape. Separate families by commas 'GH1,GH2' (case sensitive)"
+        help="Families to scrape. Separate families by commas 'GH1,GH2'",
+    )
+
+    # Add option to enable writing sequences to FASTA file or files, or not at all
+    parser.add_argument(
+        "--fasta",
+        type=str,
+        default=None,
+        help=(
+            "Enable writing out retrieved sequences to FASTA file(s).\n"
+            "Writing 'separate' produces a single FASTA file per retrieved protein sequence,\n"
+            "else, write the path to the FASTA to add retrieved protein sequences to\n"
+            "(this can be a pre-existing or non-existing FASTA file."
+        ),
+    )
+
+    # Add option to restrict the scrape to specific kingdoms
+    parser.add_argument(
+        "--kingdoms",
+        type=str,
+        default=None,
+        help=(
+            "Kingdoms to scrape. Separate by a single comma.\n"
+            "Options= archaea, bacteria, eukaryota, viruses, unclassified (not case sensitive)"
+        ),
     )
 
     # Add option to restrict scrape to specific genera
@@ -154,49 +174,14 @@ def build_parser(argv: Optional[List] = None):
         help="Defines log file name and/or path",
     )
 
-    # Add option to not delete content in the existing cache dir
+    # enable retrieving protein sequences for only primary GenBank accessions
     parser.add_argument(
-        "--nodelete_cache",
-        dest="nodelete_cache",
+        "-p",
+        "--primary",
+        dest="primary",
         action="store_true",
         default=False,
-        help="When called, content in the existing cache dir is NOT deleted",
-    )
-
-    parser.add_argument(
-        "--nodelete_log",
-        dest="nodelete_log",
-        action="store_true",
-        default=False,
-        help="When called, content in the existing log dir is NOT deleted",
-    )
-
-    # Add option to enable number of times to retry scraping
-    parser.add_argument(
-        "-r",
-        "--retries",
-        type=int,
-        default=10,
-        help="Number of times to retry scraping a family or class page if error encountered",
-    )
-
-    # Add option to force file over writting
-    parser.add_argument(
-        "--sql_echo",
-        dest="sql_echo",
-        action="store_true",
-        default=False,
-        help="Set SQLite engine echo to True (SQLite will print its log messages)",
-    )
-
-    # Add option to enable retrieval of subfamilies
-    parser.add_argument(
-        "-s",
-        "--subfamilies",
-        dest="subfamilies",
-        action="store_true",
-        default=False,
-        help="Enable retrieval of subfamilies from CAZy",
+        help="Enable retrieveing protein sequences for only primary GenBank accessions",
     )
 
     # Add option to restrict the scrape to specific species. This will scrape CAZymes from
@@ -219,24 +204,16 @@ def build_parser(argv: Optional[List] = None):
         ),
     )
 
-    # Add option to define time out limit for trying to connect to CAZy
+    # Add option to update sequences if the retrieved sequence is different
+    # If not enabled then sequences will only be retrieved and added for proteins that do not
+    # already have a protein sequence
     parser.add_argument(
-        "-t",
-        "--timeout",
-        type=int,
-        default=45,
-        help="Connection timeout limit (seconds)"
-    )
-
-    parser.add_argument(
-        "--validate",
-        dest="validate",
+        "-u",
+        "--update",
+        dest="update",
         action="store_true",
         default=False,
-        help=(
-            "Retrieve CAZy fam population sizes from CAZy and use to check\n"
-            "the number of family members added to the local database"
-        ),
+        help="Enable overwriting sequences in the database if the retrieved sequence is different",
     )
 
     # Add option for more detail (verbose) logging
@@ -248,16 +225,6 @@ def build_parser(argv: Optional[List] = None):
         default=False,
         help="Set logger level to 'INFO'",
     )
-    
-    # Add option to display version
-    parser.add_argument(
-        "-V",
-        "--version",
-        dest="version",
-        action="store_true",
-        default=False,
-        help="Print cazy_webscraper version number",
-    )    
 
     if argv is None:
         # parse command-line
