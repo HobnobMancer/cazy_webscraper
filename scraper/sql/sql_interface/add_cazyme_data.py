@@ -72,6 +72,8 @@ def add_kingdoms(cazy_data, connection):
 
     insert_data(connection, 'Kingdoms', ['kingdom'], kingdoms_db_insert_values)
 
+    return taxa_dict
+
 
 def add_source_organisms(taxa_data, connection):
     """Add taxonomy (source organism) data to the local CAZyme database
@@ -83,8 +85,11 @@ def add_source_organisms(taxa_data, connection):
     """
     taxonomy_db_insert_values = []
     with Session(bind=connection) as session:
-        for kingdom in tqdm(taxa_data, desc='Adding Tax data to db per Kingdom'):
-            print(kingdom)
+        for kingdom in tqdm(
+            taxa_data,
+            total=len(list(taxa_data.keys())),
+            desc='Adding Tax data to db per Kingdom',
+        ):
             # query db to get the kingdom db object, retrieve only the kingdom ID number
             found_kingdom = session.query(Kingdom.kingdom_id).\
                 filter(Kingdom.kingdom==kingdom).\
