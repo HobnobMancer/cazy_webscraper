@@ -302,12 +302,12 @@ class Log(Base):
         )
 
 
-def get_db_connection(db_path, new, args):
+def get_db_connection(db_path, args, new):
     """Create open connection to local CAZy SQL database.
 
-    :param args: cmd args parser
-    :param new: bool, whether it is a new or an existing database being connected to
+    :param db_path: cmd args parser
     :param args: cmd-line args parser
+    :param new: bool, whether it is a new or an existing database being connected to
 
     Return an open database session.
     """
