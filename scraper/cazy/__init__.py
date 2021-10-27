@@ -411,13 +411,21 @@ def replace_multiple_tax(cazy_data, args):
 
     multi_taxa_gbk = {}
 
-    for genbank_accession in tqdm(cazy_data, desc='Searching for multiple taxa annotations'):
-        if len(cazy_data[genbank_accession]["organism"]) > 1:
+    for genbank_accession in tqdm(cazy_data, total=len(list(cazy_data.keys())), desc='Searching for multiple taxa annotations'):
+        gbk_organisms = cazy_data[genbank_accession]["organism"]
+        if len(gbk_organisms) > 1:
             multi_taxa_gbk[genbank_accession] = {"families": cazy_data[genbank_accession]["families"]}
             logger.warning(
                 f"{genbank_accession} annotated with multiple taxa:\n"
                 f"{cazy_data[genbank_accession]['organism']}"
             )
+    
+    logger.info(
+        f"{len(list(multi_taxa_gbk.keys()))} proteins found with multiple source organisms in CAZy"
+    )
+
+    if len(list(multi_taxa_gbk.keys())) == 0:
+        return cazy_data
 
     id_post_list = str(",".join(list(multi_taxa_gbk.keys())))
     try:
