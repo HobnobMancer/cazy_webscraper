@@ -135,6 +135,7 @@ def parse_configuration(args):
 
     # convert dict into a single set of filters
     taxonomy_filter_set = get_filter_set(taxonomy_filter_dict)
+
     class_filters = set(config_dict['classes'])
     family_filters = set()
     for key in config_dict:
@@ -497,9 +498,6 @@ def get_filter_set(taxonomy_filters_dict):
                 taxonomy_filters.add(tax_filter)
         except TypeError:
             pass
-
-    if len(taxonomy_filters) == 0:
-        taxonomy_filters = None
 
     return taxonomy_filters
 
