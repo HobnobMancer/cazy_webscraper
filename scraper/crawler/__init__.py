@@ -44,7 +44,7 @@ import logging
 import time
 
 from socket import timeout
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 from urllib.error import HTTPError, URLError
 from urllib3.exceptions import HTTPError, RequestError
 from urllib.request import urlopen
