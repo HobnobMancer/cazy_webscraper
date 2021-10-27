@@ -359,7 +359,8 @@ def get_cazy_data(
     
     if err_message is not None:
         logger.error(
-            f"Could not connect to CAZy to download the CAZy db txt file after {(args.retries + 1)*(args.retries + 1)}\n"
+            "Could not connect to CAZy to download the CAZy db txt file after "
+            f"{(args.retries + 1)*(args.retries + 1)}\n"
             f"The following error was raised:\n{err_message}"
             f"File would have been written to {cazy_txt_path}"
             "Terminating program"
