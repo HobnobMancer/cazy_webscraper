@@ -115,9 +115,7 @@ def parse_configuration(args):
         args,
     )
 
-    if len(kingdom_filters) == 0:
-        kingdom_filters = {"Archaea", "Bacteria", "Eukaryota", "Viruses", "Unclassified"}
-    else:
+    if len(kingdom_filters) != 0:
         kingdoms = {}
         correct_kingdoms = {"Archaea", "Bacteria", "Eukaryota", "Viruses", "Unclassified"}
         for kingdom in kingdom_filters:
@@ -136,7 +134,12 @@ def parse_configuration(args):
     # convert dict into a single set of filters
     taxonomy_filter_set = get_filter_set(taxonomy_filter_dict)
 
-    class_filters = set(config_dict['classes'])
+    user_class_filters = set(config_dict['classes'])
+    class_filters = set()
+    for class_filter in user_class_filters:
+        new_filter = class_filter[class_filter.find('(')+1:class_filter.find(')')-1]
+        class_filters.add(new_filter)
+    
     family_filters = set()
     for key in config_dict:
         if key != 'classes':

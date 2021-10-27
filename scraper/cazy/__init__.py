@@ -170,10 +170,10 @@ def parse_cazy_data(
         
     logger.info(
         "CAZy txt file contained:\n"
-        f"{len(list(gbk_accessions))} unique GenBank accessions"
-        f"{len(list(fam_annotations))} unique Fam-Subfam annotations"
-        f"{len(list(organisms))} unique source organisms"
-        f"{len(list(kingdoms))} unique tax kingdoms"
+        f"{len(list(gbk_accessions))} unique GenBank accessions\n"
+        f"{len(list(fam_annotations))} unique Fam-Subfam annotations\n"
+        f"{len(list(organisms))} unique source organisms\n"
+        f"{len(list(kingdoms))} unique tax kingdoms\n"
     )
 
     return cazy_data, taxa_data
