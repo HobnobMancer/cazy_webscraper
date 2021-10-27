@@ -370,9 +370,7 @@ def get_cazy_data(
     cazy_txt_lines = cazy.extract_cazy_file_data(cazy_txt_path)
     logger.info(f"Retrieved {len(cazy_txt_lines)} lines from the CAZy db txt file")
 
-    (
-        cazy_data,
-    ) = cazy.parse_cazy_data(
+    cazy_data, taxa_data = cazy.parse_cazy_data(
         cazy_txt_lines,
         class_filters,
         fam_filters,
