@@ -26,9 +26,26 @@ Using the `expand` subcommand, a user can retrieve:
 
 `cazy_webscraper` can recover specified CAZy Classes and/or CAZy families. These queries can be filtered by taxonomy at Kingdoms, genus, species or strain level. Successive CAZy queries can be collated into a single local database. A log of each query is recorded in the database for transparency, reproducibility and shareablity.
 
+## Citation
+
 If you use `cazy_webscraper, please cite the following publication:
 
 > Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. [https://doi.org/10.6084/m9.figshare.14370860.v7](https://doi.org/10.6084/m9.figshare.14370860.v7)
+
+## Table of Contents
+<!-- TOC -->
+- [`cazy_webscraper`](#cazy_webscraper)
+- [Citation](#citation)
+- [Best practice](#best-practice)
+- [Documentation](#documentation)
+    - [Installation](#installation)
+    - [Quick start](#quick-start)
+    - [Creating a local CAZyme database](#creating-a-local-cazyme-database)
+    - [Default CAZy class synonyms](#default-cazy-class-synonyms)
+    - [Retrieving protein sequences and structure files](#retrieving-protein-sequences-and-structure-files)
+- [Contributions](#contributions)
+- [License and copyright](#license-and-copyright)
+<!-- /TOC -->
 
 ## Best practice
 
@@ -58,9 +75,16 @@ Please see the [`pip` documentation](https://pypi.org/project/pip/) for further 
 
 We have produced a "Getting Started With `cazy_webscraper`" [poster](https://hobnobmancer.github.io/cazy_webscraper/getting_started_poster.pdf).
 
+To download all of CAZy and save the database in the default location (the cwd) with the default name (`cazy_webscraper_<date>_<time>.db`) use the following command:  
+```bash
+cazy_webscraper <user_email>
+```
+
 ## Creating a local CAZyme database
 Command line options for `cazy_webscraper`, which is used to scrape CAZy and compile a local SQLite database. 
 Options are written in alphabetical order.
+
+`email` - \[REQUIRED\] User email address. This is required by NCBI Entrez for querying the Entrez server.
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
@@ -106,9 +130,10 @@ _If `--db_output` **and** `--database` are **not** called, `cazy_webscraper` wri
 
 `--validate`, - Retrieve CAZy family population sizes from the CAZy website and check against the number of family members added to the local CAZyme database, as a method for validating the complete retrieval of CAZy data.
 
-`--verbose`, `-v` - Enable verbose logging. Default: False.
+`--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
 `--version`, `-V` - Print `cazy_webscraper` version number. When called and the version number is printed, `cazy_webscraper` is immediately terminated.
+
 
 ### Default CAZy class synonyms
 
@@ -119,7 +144,6 @@ Both the plural and singular abbreviated form of a CAZy class name is accepted, 
 Spaces, hythens, underscores and no space or extract character can be used in the CAZy class names. Therefore, Glycoside Hydrolases, Glycoside-Hydrolases, Glycoside_Hydrolases and GlycosideHydrolases are all accepted.
 
 Class names can be written in all upper case, all lower case, or mixed case, such as GLYCOSIDE-HYDROLASES, glycoside hydrolases and Glycoside Hydrolases. All lower or all upper case CAZy class name abbreviations (such as GH and gh) are accepted.
-
 
 ## Retrieving protein sequences and structure files
 
