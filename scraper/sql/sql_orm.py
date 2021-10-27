@@ -170,7 +170,7 @@ class Genbank(Base):
     __tablename__ = 'Genbanks'
     
     __table_args__ = (
-        UniqueConstraint("genbank_accession", name="genbank_unique"),
+        UniqueConstraint("genbank_accession"),
     )
     
     genbank_id = Column(Integer, primary_key=True)
@@ -182,7 +182,7 @@ class Genbank(Base):
     families = relationship(
         "CazyFamily",
         secondary=genbanks_families,
-        back_populates="Genbanks",
+        back_populates="genbanks",
         lazy="dynamic",
     )
     
@@ -199,7 +199,7 @@ class Taxonomy(Base):
     __tablename__ = "Taxs"
     
     __table_args__ = (
-        UniqueConstraint("genus", "species", name="scientific_name"),
+        UniqueConstraint("genus", "species"),
         Index("organism_option", "taxonomy_id", "genus", "species")
     )
     
@@ -215,7 +215,7 @@ class Taxonomy(Base):
 
     def __repr__(self):
         return (
-            f"<Class Taxonomy: genus={self.genus}, species={self.species}, id={self.taxonomy_id}>"
+            f"<Class Taxonomy: genus={self.genus}, species={self.species}, id={self.taxonomy_id}, kndgm={self.kingdom_id}>"
         )
 
     
@@ -224,7 +224,7 @@ class Kingdom(Base):
     __tablename__ = "Kingdoms"
     
     __table_args__ = (
-        UniqueConstraint("kingdom", name="kingdom_unique"),
+        UniqueConstraint("kingdom"),
     )
     
     kingdom_id = Column(Integer, primary_key=True)
@@ -236,7 +236,7 @@ class Kingdom(Base):
         return f"-Kingdom, kingdom={self.kingdom}-"
 
     def __repr__(self):
-        return f"<Class Kingdom, kingdom={self.kingdom}, id={self.kingdom_id}>"
+        return f"<Class Kingdom, kingdom={self.kingdom}, kingdom_id={self.kingdom_id}>"
 
 
 class CazyFamily(Base):
@@ -249,12 +249,12 @@ class CazyFamily(Base):
     
     # define columns before table_args so subfam column can be called
     family_id = Column(Integer, primary_key=True)
-    family = Column(ReString, nullable=False)  # make this an ReString later
+    family = Column(String, nullable=False)  # make this an ReString later
     subfamily = Column(String, nullable=True)
     
     __table_args__ = (
-        UniqueConstraint("family", "subfamily", name="unique_fam_anno"),
-        Index("family", "subfamily", name="fam_annotations"),
+        UniqueConstraint("family", "subfamily"),
+        Index("fam_index", "family", "subfamily"),
     )
     
     genbanks = relationship(
@@ -287,7 +287,6 @@ class Log(Base):
     genera_filter = Column(String)
     species_filter = Column(String)
     strains_filter = Column(String)
-    ec_numbers = Column(String)
     cmd_line = Column(String)  # command line arguments
 
     def __str__(self):
