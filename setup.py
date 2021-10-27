@@ -85,7 +85,7 @@ setuptools.setup(
         "pandas>=1.0.3",
         "pyyaml",
         "requests",
-        "sqlalchemy==1.3.20",
+        "sqlalchemy>=1.4.20",
         "tqdm",
     ],
     packages=setuptools.find_packages(),
