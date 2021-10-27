@@ -388,7 +388,7 @@ def get_cazy_data(
 
     # add kingdoms to the db
     # create dict of taxa data {kingdom: set(organism)}
-    taxa_data = add_cazyme_data.add_kingdoms(cazy_data, args)
+    taxa_data = add_cazyme_data.add_kingdoms(cazy_data, connection)
 
     # add taxonomy source organisms to the db
     add_cazyme_data.add_source_organisms(taxa_data, connection)
