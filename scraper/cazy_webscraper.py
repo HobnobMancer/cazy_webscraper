@@ -477,7 +477,7 @@ def connect_to_new_db(args, time_stamp):
         else:  # may need to build dirs
             logger.info(
                 "Building new local CAZyme database\n"
-                f"Output directory: {(args.output).parent}\n"
+                f"Output directory: {(args.db_output).parent}\n"
                 f"Force overwriting exiting output file: {args.force}"
             )
 
