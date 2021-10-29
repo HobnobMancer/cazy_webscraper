@@ -41,14 +41,11 @@
 """Submodule to build a local SQL database"""
 
 import logging
-import os
 import re
-import sys
 
 import sqlite3
 
 from sqlalchemy import (
-    Boolean,
     Column,
     ForeignKey,
     Index,
@@ -160,6 +157,22 @@ genbanks_families = Table(
     PrimaryKeyConstraint("genbank_id", "family_id"),
 )
 
+genbanks_ecs = Table(
+    "Genbanks_Ecs",
+    Base.metadata,
+    Column("genbank_id", Integer, ForeignKey("Genbanks.genbank_id")),
+    Column("ec_id", Integer, ForeignKey("Ecs.ec_id")),
+    PrimaryKeyConstraint("genbank_id", "ec_id"),
+)
+
+genbanks_pdbs = Table(
+    "Genbanks_Pdbs",
+    Base.metadata,
+    Column("genbank_id", Integer, ForeignKey("Genbanks.genbank_id")),
+    Column("pdb_id", Integer, ForeignKey("Pdbs.pdb_id")),
+    PrimaryKeyConstraint("genbank_id", "pdb_id"),
+)
+
 
 # Define class tables
 class Genbank(Base):
@@ -175,8 +188,8 @@ class Genbank(Base):
     
     genbank_id = Column(Integer, primary_key=True)
     genbank_accession = Column(String, index=True)
-    sequence = Column(String)
-    seq_update_date = Column(String)
+    sequence = Column(ReString)
+    seq_update_date = Column(ReString)
     taxonomy_id = Column(Integer, ForeignKey("Taxs.taxonomy_id"))
     
     families = relationship(
@@ -186,6 +199,21 @@ class Genbank(Base):
         lazy="dynamic",
     )
     
+    ecs = relationship(
+        "Ec",
+        secondary=genbanks_ecs,
+        back_populates="genbanks",
+        lazy="dynamic",
+    )
+    
+    pdbs = relationship(
+        "Pdb",
+        secondary=genbanks_ecs,
+        back_populates="genbanks",
+        lazy="dynamic",
+    )
+    
+    uniprots = relationship("Uniprot", back_populates="Genbanks")
     
     def __str__(self):
         return f"-Genbank accession={self.genbank_accession}-"
@@ -270,13 +298,92 @@ class CazyFamily(Base):
     def __repr__(self):
         """Return string representation of source organism."""
         return(
-            f"<Class Family, family={self.family}, subfamily={self.subfamily}, id={self.family_id}"
+            f"<Class Family, family={self.family}, subfamily={self.subfamily}, id={self.family_id}>"
         )
+    
+    
+class Uniprot(Base):
+    """Table containing UniProt accessions and protein sequences retrieved from UniProtKB"""
+    __tablename__ = "Uniprots"
+    
+    __table_args__ = (
+        UniqueConstraint("uniprot_accession",),
+        Index("uniprot_option", "uniprot_id", "uniprot_accession")
+    )
+    
+    genbank_id = Column(Integer, ForeignKey('Genbanks.genbank_id'))
+    uniprot_id = Column(Integer, primary_key=True)
+    uniprot_accession = Column(String)
+    uniprot_name = Column(ReString)
+    sequence = Column(ReString)
+    seq_update_date = Column(ReString)
+    
+    genbanks = relationship("Genbanks", back_populates="uniprots")
+    
+    def __str__(self):
+        return f"-Uniprot, accession={self.uniprot_accession}, name={self.uniprot_name}, id={self.uniprot_id}-"
+
+    def __repr__(self):
+        """Return string representation of source organism."""
+        return(
+            f"<Uniprot, accession={self.uniprot_accession}, name={self.uniprot_name}, id={self.uniprot_id}>"
+        )
+
+
+class Ec(Base):
+    """Describe EC numbers."""
+    __tablename__ = "Ecs"
+    __table_args__ = (
+        UniqueConstraint("ec_number"),
+    )
+
+    ec_id = Column(Integer, primary_key=True)
+    ec_number = Column(String, index=True)
+
+    genbanks = relationship(
+        "Genbank",
+        secondary=genbanks_ecs,
+        back_populates="ecs",
+        lazy="dynamic",
+    )
+    
+    def __str__(self):
+        return f"-EC{self.ec_number}-ec_id={self.ec_number}-"
+
+    def __repr__(self):
+        return f"<Class EC, EC{self.ec_number}, ec_id={self.ec_number}>"
+    
+
+class Pdb(Base):
+    """Describe a PDB accession number of protein structure."""
+    __tablename__ = "Pdbs"
+    __table_args__ = (
+        UniqueConstraint("pdb_accession"),
+    )
+
+    pdb_id = Column(Integer, primary_key=True)
+    pdb_accession = Column(String)
+
+    Index('pdb_idx', pdb_accession)
+
+    genbanks = relationship(
+        "Genbank",
+        secondary=genbanks_pdbs,
+        back_populates="pdbs",
+        lazy="dynamic",
+    )
+    
+    def __str__(self):
+        return f"-PDB accession={self.pdb_accession}, id={self.pdb_id}-"
+
+    def __repr__(self):
+        return f"<Class Pdb accession={self.pdb_accession}, id={self.pdb_id}>"
+
 
 
 class Log(Base):
     """Record what data was added to the database and when."""
-    __tablename__ = "logs"
+    __tablename__ = "Logs"
 
     log_id = Column(Integer, primary_key=True)
     date = Column(String)  # date CAZy scrape was initiated
