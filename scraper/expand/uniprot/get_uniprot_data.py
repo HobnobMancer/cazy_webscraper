@@ -164,9 +164,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
 
 def get_uniprot_accessions(genbank_accessions, args):
-    """Retrieve UniProt accessions for the GenBank accessions from UniProtKB.
+    """Retrieve UniProt accessions for the GenBank accessions from UniProt REST API.
     
-    UniProt requests batch queries of no larger than 20,000
+    UniProt requests batch queries of no larger than 20,000, athough queries longer than 500
+    often raise HTTP 400 Error codes, especially in busy server times.
 
     :param genbank_accessions: set, GenBank accessions to retrieve UniProt accessions for
     :param args: cmd-line args parser
