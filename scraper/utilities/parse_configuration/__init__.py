@@ -47,8 +47,6 @@ import re
 import sys
 import yaml
 
-from pathlib import Path
-
 from scraper.utilities.parse_configuration.cazy_class_synonym_dict import cazy_synonym_dict
 
 
@@ -98,15 +96,7 @@ def parse_configuration(args):
             args,
         )
 
-        # add configuration from the cmd-line
-        config_dict, taxonomy_filter_dict, kingdom_filters = get_cmd_scrape_config(
-            config_dict,
-            cazy_class_synonym_dict,
-            taxonomy_filter_dict, 
-            kingdom_filters,
-            args,
-        )
-
+    # add configuration from the cmd-line
     config_dict, taxonomy_filter_dict, kingdom_filters = get_cmd_scrape_config(
         config_dict,
         cazy_class_synonym_dict,
@@ -145,9 +135,6 @@ def parse_configuration(args):
         if key != 'classes':
             for fam in config_dict[key]:
                 family_filters.add(fam)
-
-    # convert empty sets to None type objects
-    config_dict = convert_empty_sets_to_none(config_dict)
 
     return (
         excluded_classes,
@@ -505,18 +492,57 @@ def get_filter_set(taxonomy_filters_dict):
     return taxonomy_filters
 
 
-def get_configuration(args):
+def get_expansion_configuration(args):
     """Get configuration for the Expand module.
 
-    :param file_io_path: Path to file_io module
     :param args: cmd-line argument parser
 
     Return configuration dictionary, set of taxonomy filters and set of Taxonomy Kingdoms.
     """
+    # Get dictionary of accepted CAZy class synonyms
+    cazy_class_synonym_dict = get_cazy_class_synonym_dict(args)
+
+    # create dictionary to store families and classes to be scraped
+    config_dict = {
+        'classes': set(),
+        'Glycoside Hydrolases (GHs)': set(),
+        'GlycosylTransferases (GTs)': set(),
+        'Polysaccharide Lyases (PLs)': set(),
+        'Carbohydrate Esterases (CEs)': set(),
+        'Auxiliary Activities (AAs)': set(),
+        'Carbohydrate-Binding Modules (CBMs)': set(),
+    }
+
+    taxonomy_filter_dict = {"genera": set(), "species": set(), "strains": set()}
+    kingdom_filters = set()
+    ec_filters = set()
+
+    # retrieve user configuration, defining for which records data should be retrieved
+    if args.config is not None:
+        config_dict, taxonomy_filter_dict, kingdom_filters = get_yaml_configuration(
+            config_dict,
+            cazy_class_synonym_dict,
+            taxonomy_filter_dict,
+            kingdom_filters,
+            args,
+        )
+        ec_filters = get_yaml_ec_config(ec_filters, args)
+
+        #
+
+
     # retrieve inital parsing of configuration data
     (
-        excluded_classes, config_dict, cazy_class_synonym_dict, taxonomy_filters_dict, kingdoms, ec_filter,
+        excluded_classes,
+        config_dict,
+        cazy_class_synonym_dict,
+        class_filters,
+        family_filters,
+        kingdom_filters,
+        taxonomy_filter_dict,
+        taxonomy_filter_set,
     ) = parse_configuration(args)
+
     # excluded_classes and cazy_class_synonym_dict are used in the crawler module but are not needed for the
     # the expand module
 
