@@ -233,12 +233,12 @@ def get_uniprot_accessions(genbank_accessions, args):
     return uniprot_gbk_dict
 
 
-def get_uniprot_data(uniprot_gkb_dict, cache_dir, args):
+def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
     """Batch query UniProt to retrieve protein data. Save data to cache directory.
     
     Bioservices requests batch queries no larger than 200.
 
-    :param gkb_uniprot_dict: dict, keyed by GenBank accession and valued by UniProt accession
+    :param uniprot_gbk_dict: dict, keyed by GenBank accession and valued by UniProt accession
     :param cache_dir: path to directory to write out cache
     :param args: cmd-line args parser
     
@@ -250,17 +250,20 @@ def get_uniprot_data(uniprot_gkb_dict, cache_dir, args):
     logger = logging.getLogger(__name__)
 
     uniprot_dict = {}  # {uniprot: {genbank_accession: str, uniprot_name: str, pdb: set, ec: set}}
+    all_ecs = set()  # store all retrieved EC numbers as one tuple per unique EC number
 
     # add PDB column to columns to be retrieved
     UniProt()._valid_columns.append('database(PDB)')
     
-    query_chunks = get_chunks(list(uniprot_gkb_dict.keys()), args.bioservices_batch_size)
+    bioservices_queries = get_chunks_list(
+        list(uniprot_gbk_dict.keys()),
+        args.bioservices_batch_size,
+    )
 
-    all_ecs = set()  # store all retrieved EC numbers as one tuple per unique EC number
+    for query in tqdm(bioservices_queries, "Batch retrieving protein data from UniProt"):
+        uniprot_df = UniProt().get_df(entries=query)
 
-    for query_list in tqdm(query_chunks, "Batch quering UniProt"):
-        uniprot_df = UniProt().get_df(entries=query_list)
-
+        # cache UniProt response
         _time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         _path = cache_dir / f'uniprot_query_response_{_time_stamp}.csv'
         uniprot_df.to_csv(_path)
@@ -284,45 +287,56 @@ def get_uniprot_data(uniprot_gkb_dict, cache_dir, args):
                 uniprot_dict[uniprot_acc]
                 logger.warning(
                     f'Multiple entries for UniProt:{uniprot_acc}, '
-                    f'GenBank:{uniprot_gkb_dict[uniprot_acc]} retrieved from UniProt,\n'
+                    f'GenBank:{uniprot_gbk_dict[uniprot_acc]} retrieved from UniProt,\n'
                     'compiling data into a single record'
                 )
             except KeyError:
-               uniprot_dict[uniprot_acc] = {
-                   "genbank_accession": uniprot_gkb_dict[uniprot_acc],
-                   "name": uniprot_name,
-                }
+                try:
+                    uniprot_dict[uniprot_acc] = {
+                        "genbank_accession": uniprot_gbk_dict[uniprot_acc],
+                        "name": uniprot_name,
+                        }
+                except KeyError:
+                    logger.warning(
+                        f"Retrieved record with UniProt accession {uniprot_acc} but this "
+                        "accession was not\nretrieved from the UniProt REST API"
+                    )
+                    continue
             
             if args.ec:
+                # retrieve EC numbers
                 ec_numbers = row['EC number']
                 try:
                     ec_numbers = ec_numbers.split('; ')
                 except AttributeError:
                     # no EC numbers listed
-                    continue
-
+                    ec_numbers = set()
+                
                 try:
                     uniprot_dict[uniprot_acc]["ec"]
                 except KeyError:
                     uniprot_dict[uniprot_acc]["ec"] = set()
 
+                # add EC numbers to dict
                 for ec in ec_numbers:
                     all_ecs.add( (ec,) )
                     uniprot_dict[uniprot_acc]["ec"].add(ec)
 
             if args.pdb:
+                # retrieve PDB accessions
                 pdb_accessions = row['Cross-reference (PDB)']
+                print('PDBS:', pdb_accessions)
                 try:
                     pdb_accessions = pdb_accessions.split('; ')
                 except AttributeError:
-                    # no EC numbers listed
-                    continue
+                    pdb_accessions = set()
 
                 try:
                     uniprot_dict[uniprot_acc]["pdb"]
                 except KeyError:
                     uniprot_dict[uniprot_acc]["pdb"] = set()
 
+                # add PDB accessions to dict
                 for pdb in pdb_accessions:
                     uniprot_dict[uniprot_acc]["pdb"].add(pdb)
             
@@ -331,12 +345,27 @@ def get_uniprot_data(uniprot_gkb_dict, cache_dir, args):
 
                 try:
                     uniprot_dict[uniprot_acc]["sequence"]
+                    existing_date = uniprot_dict[uniprot_acc]["seq_date"]
+                    new_date = row['Date of last sequence modification']
+                    
+                    # check which sequence is newer
+                    existing_date.split('-')
+                    existing_date = datetime(existing_date[0], existing_date[1], existing_date[2])
+                    new_date.split('-')
+                    new_date = datetime(existing_date[0], existing_date[1], existing_date[2])
+
+                    if new_date > existing_date:  # past < present is True
+                        uniprot_dict[uniprot_acc]["sequence"] = sequence
+                        uniprot_dict[uniprot_acc]["seq_date"] = row['Date of last sequence modification']
+                    # else keep the existing sequence
                     logger.warning(
                         f'Multiple sequences retrieved for {uniprot_acc}\n'
-                        'Adding first retrieved sequence to the local CAZyme db'
+                        'Using most recently updated sequence'
                     )
+                    
                 except KeyError:
                     uniprot_dict[uniprot_acc]["sequence"] = sequence
+                    uniprot_dict[uniprot_acc]["seq_date"] = row['Date of last sequence modification']
 
     return uniprot_dict, all_ecs
 
