@@ -43,6 +43,7 @@
 
 import io
 import logging
+import math
 import urllib.parse
 import urllib.request
 
@@ -56,7 +57,7 @@ from bioservices import UniProt
 from tqdm import tqdm
 
 from scraper import cazy_webscraper
-from scraper.expand import get_chunks
+from scraper.expand import get_chunks_gen, get_chunks_list
 from scraper.sql import sql_interface
 from scraper.sql.sql_interface.add_uniprot_db import (
     add_ec_numbers,
@@ -174,13 +175,18 @@ def get_uniprot_accessions(genbank_accessions, args):
     """
     uniprot_url = 'https://www.uniprot.org/uploadlists/'
 
-    gbk_accs_chunks = get_chunks(genbank_accessions, args.uniprot_batch_size)
+    uniprot_rest_queries = get_chunks_list(genbank_accessions, args.uniprot_batch_size)
 
-    accession_dict = {}  # {genbank_accession: uniprot_accession}
+    uniprot_gbk_dict = {}  # {uniprot_accession: gbk_accession}
+    failed_queries = {}  # {query: tries}
 
-    for query_chunk in tqdm(gbk_accs_chunks, desc='Batch retrieving UniProt accessions'):
-        # convert the set of gbk accessions into str format
-        query = ' '.join(query_chunk)
+    for query_chunk in tqdm(
+        uniprot_rest_queries,
+        desc='Batch retrieving UniProt accessions',
+    ):
+        if type(query) != str:
+            # convert the set of gbk accessions into str format
+            query = ' '.join(query_chunk)
 
         params = {
             'from': 'EMBL',
@@ -189,19 +195,35 @@ def get_uniprot_accessions(genbank_accessions, args):
             'query': query
         }
 
+        # submit query data
         data = urllib.parse.urlencode(params)
         data = data.encode('utf-8')
         req = urllib.request.Request(uniprot_url, data)
-        with urllib.request.urlopen(req) as f:
-            response = f.read()
+
+        # retrieve UniProt response
+        try:
+            with urllib.request.urlopen(req) as f:
+                response = f.read()
+        except HTTPError:
+            try:
+                failed_queries[query] += 1
+            except KeyError:
+                failed_queries[query] = 1
+            if failed_queries[query] > args.retries:
+                del failed_queries[query]
+            else:
+                uniprot_rest_queries.append(query)
+
         uniprot_batch_response = response.decode('utf-8')
 
         uniprot_batch_response = uniprot_batch_response.split('\n')
 
-        for line in uniprot_batch_response[1:-1]:  # the first line includes the titles, last line is an empty str
-            accession_dict[line.split('\t')[1]] = line.split('\t')[0]
+        for line in uniprot_batch_response[1:]:  # the first line includes the titles, last line is an empty str
+            if line == '':  # add check incase last line is not an empty str 
+                continue
+            uniprot_gbk_dict[line.split('\t')[1]] = line.split('\t')[0]
 
-    return accession_dict
+    return uniprot_gbk_dict
 
 
 def get_uniprot_data(uniprot_gkb_dict, cache_dir, args):
