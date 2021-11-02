@@ -129,7 +129,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
 
     # retrieve dict of genbank accession and genbank accession ids from the local CAZyme db
-    gbk_dict = sql_interface.get_filtered_gbk_table_dict(
+    gbk_dict = sql_interface.query_db.get_filtered_gbk_table_dict(
         connection,
         class_filters,
         family_filters,
