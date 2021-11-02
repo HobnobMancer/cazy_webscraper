@@ -45,8 +45,8 @@ import logging
 
 from tqdm import tqdm
 
-from scraper.sql.sql_interface import insert_data
-from scraper.sql.sql_orm import Session, CazyFamily, Genbank, Kingdom, Taxonomy
+from scraper.sql.sql_interface import insert_data, get_gbk_table_dict
+from scraper.sql.sql_orm import Session, CazyFamily, Kingdom, Taxonomy
 
 
 def add_kingdoms(cazy_data, connection):
@@ -180,7 +180,6 @@ def add_genbanks(cazy_data, db_tax_dict, db_fam_dict, connection):
         
         gbk_db_insert_values.add( (genbank_accession, tax_id) )
         
-        
         for cazy_fam in  cazy_data[genbank_accession]['families']:
             subfamilies = cazy_data[genbank_accession]['families'][cazy_fam]
             
@@ -208,12 +207,7 @@ def add_genbank_fam_relationships(gbk_fam_values, connection):
     Return nothing
     """
     # retrieve genbank id numbers from the local database
-    with Session(bind=connection) as session:
-        all_genbank = session.query(Genbank).all()
-
-    db_gbk_dict = {}  # {genbank_accession: db genbank id number}
-    for gbk in all_genbank:
-        db_gbk_dict[f"{gbk.genbank_accession}"] = gbk.genbank_id
+    db_gbk_dict = get_gbk_table_dict(connection)
 
     gbk_fam_db_insert_values = set()  # { (gbk_id(int), fam_id(int), ), }
 
