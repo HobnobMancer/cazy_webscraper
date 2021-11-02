@@ -65,6 +65,7 @@ from scraper.sql.sql_interface.add_uniprot_db import (
 from scraper.sql import sql_orm
 from scraper.utilities import config_logger, file_io
 from scraper.utilities.parsers import uniprot_parser
+from scraper.utilities.parse_configuration import get_expansion_configuration
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -94,7 +95,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_dir = cache_dir / "uniprot_data_retrieval"
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
-    config_dict, kingdom_filters, taxonomy_filter_dict = parse_uniprot_config(args)
+    config_dict, kingdom_filters, taxonomy_filter_dict = get_expansion_configuration(args)
 
     # add log to the local CAZyme database
     logger.info("Adding log of scrape to the local CAZyme database")
