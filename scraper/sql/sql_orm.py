@@ -387,6 +387,8 @@ class Log(Base):
     log_id = Column(Integer, primary_key=True)
     date = Column(String)  # date CAZy scrape was initiated
     time = Column(String)  # time scrape was initated
+    database = Column(String)
+    retrieved_annotations = Column(String)
     classes = Column(String)  # CAZy classes scraped
     families = Column(String)  # CAZy families scraped
     kingdoms = Column(String)  # Taxonomy Kingdoms to retrieve CAZymes from

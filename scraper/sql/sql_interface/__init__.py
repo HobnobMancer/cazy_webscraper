@@ -60,6 +60,8 @@ def log_scrape_in_db(
     config_dict,
     taxonomy_filters,
     kingdoms,
+    db,
+    retrieved_annotations,
     session,
     args,
 ):
@@ -69,6 +71,8 @@ def log_scrape_in_db(
     :param config_dict: dict of CAZy classes and families to be scraped
     :param taxonomy_filters: dict of genera, species and strains to restrict the scrape to
     :param kingdoms: list of taxonomy Kingdoms to restrict scrape to
+    :param db: str, name of the external database from which data is retrieved
+    :param retrieved_annotations: str, types of annotations retrieved (e.g. UniProt accessions)
     :param session: open SQL database session
     :param args: cmd arguments
 
@@ -78,7 +82,12 @@ def log_scrape_in_db(
     date = time_stamp[:time_stamp.find("--")]
     time = time_stamp[((time_stamp.find("--")) + 2):].replace("-", ":")
 
-    new_log = sql_orm.Log(date=date, time=time)
+    new_log = sql_orm.Log(
+        date=date,
+        time=time,
+        database=db,
+        retrieved_annotations=retrieved_annotations,
+    )
 
     if config_dict is not None:
         # get classes that user named to be scraped
@@ -182,3 +191,20 @@ def insert_data(connection, table_name, column_names, insert_values):
             raise SqlInterfaceException(db_error)
 
     return
+
+
+def get_gbk_table_dict(connection):
+    """Compile a dict of the data in the Genbanks table
+    
+    :param connection: open connection to an SQLite3 database
+    
+    Return dict {gbk accession : gbk id}
+    """
+    with sql_orm.Session(bind=connection) as session:
+        all_genbank = session.query(sql_orm.Genbank).all()
+
+    db_gbk_dict = {}  # {genbank_accession: db genbank id number}
+    for gbk in all_genbank:
+        db_gbk_dict[f"{gbk.genbank_accession}"] = gbk.genbank_id
+    
+    return db_gbk_dict
