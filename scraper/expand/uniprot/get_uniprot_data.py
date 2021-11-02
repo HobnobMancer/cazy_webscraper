@@ -106,6 +106,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             retrieved_annotations = f"{retrieved_annotations}, PDB accessions"
         if len(config_dict['seq']) != 0:
             retrieved_annotations = f"{retrieved_annotations}, Protein sequence"
+        if args.update_seq:
+            retrieved_annotations = f"{retrieved_annotations}, Updated UniProt protein sequences"
         sql_interface.log_scrape_in_db(
             time_stamp,
             config_dict,
