@@ -100,7 +100,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         class_filters,
         family_filters,
         kingdom_filters,
-        taxonomy_filter_set,
         taxonomy_filter_dict,
         ec_filters,
     ) = get_expansion_configuration(args)
@@ -130,7 +129,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
 
     # retrieve dict of genbank accession and genbank accession ids from the local CAZyme db
-    gbk_dict = sql_interface.get_gbk_table_dict(connection)
+    gbk_dict = sql_interface.get_filtered_gbk_table_dict(
+        connection,
+        class_filters,
+        family_filters,
+        kingdom_filters,
+        taxonomy_filter_dict,
+        ec_filters,
+    )
     genbank_accessions = list(gbk_dict.keys())
 
     # retrieve the uniprot accessions for the genbank accessions
