@@ -41,9 +41,7 @@
 """Retrieve data from UniProtKB and adding it to a local CAZyme db"""
 
 
-import io
 import logging
-import math
 import urllib.parse
 import urllib.request
 
@@ -57,7 +55,7 @@ from bioservices import UniProt
 from tqdm import tqdm
 
 from scraper import cazy_webscraper
-from scraper.expand import get_chunks_gen, get_chunks_list
+from scraper.expand import get_chunks_list
 from scraper.sql import sql_interface
 from scraper.sql.sql_interface.add_uniprot_db import (
     add_ec_numbers,
