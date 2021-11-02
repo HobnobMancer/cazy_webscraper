@@ -174,6 +174,7 @@ def get_uniprot_accessions(genbank_accessions, args):
 
     Return dict of {uniprot_accession: genbank_accession}
     """
+    logger = logging.getLogger(__name__)
     uniprot_url = 'https://www.uniprot.org/uploadlists/'
 
     uniprot_rest_queries = get_chunks_list(genbank_accessions, args.uniprot_batch_size)
@@ -223,6 +224,11 @@ def get_uniprot_accessions(genbank_accessions, args):
             if line == '':  # add check incase last line is not an empty str 
                 continue
             uniprot_gbk_dict[line.split('\t')[1]] = line.split('\t')[0]
+
+    logger.info(
+        f"Retrieved {len(genbank_accessions)} gbk accessions from the local db\n"
+        f"{len(list(uniprot_gbk_dict.keys()))} were assoicated with records in UniProt"
+    )
 
     return uniprot_gbk_dict
 
