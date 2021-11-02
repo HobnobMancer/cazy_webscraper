@@ -106,7 +106,7 @@ def parse_configuration(args):
     )
 
     if len(kingdom_filters) != 0:
-        kingdoms = {}
+        kingdoms = set()
         correct_kingdoms = {"Archaea", "Bacteria", "Eukaryota", "Viruses", "Unclassified"}
         for kingdom in kingdom_filters:
             user_kingdom = f"{kingdom[0].upper()}{kingdom[1:].lower()}"
@@ -528,42 +528,33 @@ def get_expansion_configuration(args):
         )
         ec_filters = get_yaml_ec_config(ec_filters, args)
 
-        #
-
-
-    # retrieve inital parsing of configuration data
-    (
-        excluded_classes,
+    # add configuration from the cmd-line
+    config_dict, taxonomy_filter_dict, kingdom_filters = get_cmd_scrape_config(
         config_dict,
         cazy_class_synonym_dict,
+        taxonomy_filter_dict, 
+        kingdom_filters,
+        args,
+    )
+    ec_filters = get_cmdline_ec_config(ec_filters, args)
+
+    user_class_filters = set(config_dict['classes'])
+    class_filters = set()
+    for class_filter in user_class_filters:
+        new_filter = class_filter[class_filter.find('(')+1:class_filter.find(')')-1]
+        class_filters.add(new_filter)
+    
+    family_filters = set()
+    for key in config_dict:
+        if key != 'classes':
+            for fam in config_dict[key]:
+                family_filters.add(fam)
+
+    return (
+        config_dict,
         class_filters,
         family_filters,
         kingdom_filters,
         taxonomy_filter_dict,
-        taxonomy_filter_set,
-    ) = parse_configuration(args)
-
-    # excluded_classes and cazy_class_synonym_dict are used in the crawler module but are not needed for the
-    # the expand module
-
-    taxonomy_filters = []
-
-    for key in taxonomy_filters_dict:
-        try:
-            if len(taxonomy_filters_dict[key]) != 0:
-                taxonomy_filters += taxonomy_filters_dict[key]
-        except (TypeError, KeyError):
-            pass
-
-    if len(taxonomy_filters) == 0:
-        taxonomy_filters = None
-
-    else:
-        taxonomy_filters = set(taxonomy_filters)
-
-    if kingdoms == "all":
-        kingdoms = ['Archaea', 'Bacteria', 'Eukaryota', 'Viruses', 'Unclassified']
-
-    kingdoms = set(kingdoms)
-
-    return config_dict, taxonomy_filters, kingdoms
+        ec_filters,
+    )
