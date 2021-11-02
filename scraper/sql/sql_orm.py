@@ -165,13 +165,6 @@ genbanks_ecs = Table(
     PrimaryKeyConstraint("genbank_id", "ec_id"),
 )
 
-genbanks_pdbs = Table(
-    "Genbanks_Pdbs",
-    Base.metadata,
-    Column("genbank_id", Integer, ForeignKey("Genbanks.genbank_id")),
-    Column("pdb_id", Integer, ForeignKey("Pdbs.pdb_id")),
-    PrimaryKeyConstraint("genbank_id", "pdb_id"),
-)
 
 
 # Define class tables
@@ -192,6 +185,11 @@ class Genbank(Base):
     seq_update_date = Column(ReString)
     taxonomy_id = Column(Integer, ForeignKey("Taxs.taxonomy_id"))
     
+    organism = relationship(
+        "Taxonomy",
+        back_populates="genbanks",
+    )
+    
     families = relationship(
         "CazyFamily",
         secondary=genbanks_families,
@@ -208,12 +206,14 @@ class Genbank(Base):
     
     pdbs = relationship(
         "Pdb",
-        secondary=genbanks_ecs,
-        back_populates="genbanks",
-        lazy="dynamic",
+        back_populates="genbank",
     )
     
-    uniprots = relationship("Uniprot", back_populates="Genbanks")
+    uniprot = relationship(
+        "Uniprot",
+        back_populates="genbank",
+        # uselist=False,
+    ) # 1-1 relationship
     
     def __str__(self):
         return f"-Genbank accession={self.genbank_accession}-"
@@ -236,6 +236,7 @@ class Taxonomy(Base):
     species = Column(String)
     kingdom_id = Column(Integer, ForeignKey("Kingdoms.kingdom_id"))
     
+    genbanks = relationship("Genbank", back_populates="organism")
     tax_kingdom = relationship("Kingdom", back_populates="taxonomy")
     
     def __str__(self):
@@ -318,7 +319,7 @@ class Uniprot(Base):
     sequence = Column(ReString)
     seq_update_date = Column(ReString)
     
-    genbanks = relationship("Genbanks", back_populates="uniprots")
+    genbank = relationship("Genbank", back_populates="uniprot")
     
     def __str__(self):
         return f"-Uniprot, accession={self.uniprot_accession}, name={self.uniprot_name}, id={self.uniprot_id}-"
@@ -363,14 +364,13 @@ class Pdb(Base):
 
     pdb_id = Column(Integer, primary_key=True)
     pdb_accession = Column(String)
-
+    genbank_id = Column(Integer, ForeignKey('Genbanks.genbank_id'))
+    
     Index('pdb_idx', pdb_accession)
 
-    genbanks = relationship(
+    genbank = relationship(
         "Genbank",
-        secondary=genbanks_pdbs,
         back_populates="pdbs",
-        lazy="dynamic",
     )
     
     def __str__(self):
@@ -378,7 +378,6 @@ class Pdb(Base):
 
     def __repr__(self):
         return f"<Class Pdb accession={self.pdb_accession}, id={self.pdb_id}>"
-
 
 
 class Log(Base):
