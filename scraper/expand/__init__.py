@@ -37,3 +37,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 """A module for expanding the the local CAZY database beyond what is provided within CAZy."""
+
+
+def get_chunks_gen(lst, chunk_length):
+    """Separate the long list into separate chunks.
+
+    :param lst: list to be separated into smaller lists (or chunks)
+    :param chunk_length: int, the length of the lists the longer list is to be split up into
+
+    Return a generator object containing lists.
+    """
+    for i in range(0, len(lst), chunk_length):
+        yield lst[i:i + chunk_length]
+
+
+def get_chunks_list(lst, chunk_length):
+    """Separate the long list into separate chunks.
+
+    :param lst: list to be separated into smaller lists (or chunks)
+    :param chunk_length: int, the length of the lists the longer list is to be split up into
+
+    Return a list of nested lists.
+    """
+    chunks = []
+    for i in range(0, len(lst), chunk_length):
+        chunks.append(lst[i:i + chunk_length])
+    return chunks
