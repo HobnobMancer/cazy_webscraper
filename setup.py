@@ -77,6 +77,7 @@ setuptools.setup(
             "cazy_webscraper = scraper.cazy_webscraper:main",
             "cw_get_genbank_sequences = scraper.expand.get_genbank_sequences:main",
             "cw_get_pdb_structures = scraper.expand.get_pdb_structures:main",
+            "ce_get_uniprot_data = scraper.expand.uniprot.get_uniprot_data:main",
         ]
     },
     install_requires=[
