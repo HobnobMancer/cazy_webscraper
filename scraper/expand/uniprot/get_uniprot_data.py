@@ -131,7 +131,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     add_uniprot_accessions(uniprot_dict, gbk_dict, connection)
 
     # add ec numbers
-    if args.ec:
+    if (args.ec) and (len(all_ecs) != 0):
         add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection)
 
     # add pdb accessions
