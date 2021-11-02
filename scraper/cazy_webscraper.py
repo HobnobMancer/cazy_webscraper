@@ -218,6 +218,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             config_dict,
             kingdom_filters,
             taxonomy_filter_dict,
+            set(),  # ec_filters not applied when scraping CAZy
             'CAZy',
             'CAZy annotations',
             session,

@@ -60,6 +60,7 @@ def log_scrape_in_db(
     config_dict,
     taxonomy_filters,
     kingdoms,
+    ec_filter,
     db,
     retrieved_annotations,
     session,
@@ -71,6 +72,7 @@ def log_scrape_in_db(
     :param config_dict: dict of CAZy classes and families to be scraped
     :param taxonomy_filters: dict of genera, species and strains to restrict the scrape to
     :param kingdoms: list of taxonomy Kingdoms to restrict scrape to
+    :param ec_filter: set of EC numbers to restrict retrieval of data to
     :param db: str, name of the external database from which data is retrieved
     :param retrieved_annotations: str, types of annotations retrieved (e.g. UniProt accessions)
     :param session: open SQL database session
@@ -154,6 +156,10 @@ def log_scrape_in_db(
             cmd_line = cmd_line + cmd[1] + cmd[0] + "'"
         except TypeError:
             pass
+
+    if len(ec_filter) != 0:
+        cmd_line = cmd_line + "--ec_filter" + (','.join(list(ec_filter))) + "'"
+        new_log.ec_filter = ','.join(list(ec_filter))
 
     if len(cmd_line) != 0:
         cmd_line = cmd_line.strip()

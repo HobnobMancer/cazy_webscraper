@@ -95,7 +95,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_dir = cache_dir / "uniprot_data_retrieval"
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
-    config_dict, kingdom_filters, taxonomy_filter_dict = get_expansion_configuration(args)
+    (
+        config_dict,
+        class_filters,
+        family_filters,
+        kingdom_filters,
+        taxonomy_filter_set,
+        taxonomy_filter_dict,
+        ec_filters,
+    ) = get_expansion_configuration(args)
 
     # add log to the local CAZyme database
     logger.info("Adding log of scrape to the local CAZyme database")
@@ -114,6 +122,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             config_dict,
             kingdom_filters,
             taxonomy_filter_dict,
+            ec_filters,
             'UniProt',
             retrieved_annotations,
             session,
