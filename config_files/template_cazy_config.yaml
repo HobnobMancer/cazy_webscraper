@@ -9,13 +9,10 @@ classes:  # classes from which all proteins will be retrieved
 Glycoside Hydrolases (GHs):
 GlycosylTransferases (GTs):
 Polysaccharide Lyases (PLs):
-  - "PL28"
 Carbohydrate Esterases (CEs):
 Auxiliary Activities (AAs):
 Carbohydrate-Binding Modules (CBMs):
 genera:  # list genera to be scraped
- - "Trichoderma"
 species:  # list species, this will scrape all strains under the species
 strains:  # list specific strains to be scraped
 kingdoms:  # Archaea, Bacteria, Eukaryota, Viruses, Unclassified
- - "Bacteria"
