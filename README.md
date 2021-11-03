@@ -396,7 +396,7 @@ When listing EC numbers, the 'EC' prefix can be included or excluded. For exampl
 
 `cazy_webscraper` performs a direct EC number comparison. Therefore, supplying `cazy_webscraper` with the EC number EC1.2.3.- will only retrieve protein specifically annotated with EC1.2.3.-. `cazy_webscraper` will **not** retrieve proteins will all completed EC numbers under EC1.2.3.-, thus, `cazy_webscraper` will **not** retrieve data for proteins annotated with EC1.2.3.1, EC1.2.3.2, EC1.2.3.3, etc.
 
-Example configuration files, and an empty configuraiton file template are located in the [``]() directory of this repo.
+Example configuration files, and an empty configuraiton file template are located in the [`config_files`]() directory of this repo.
 
 ## Contributions
 
