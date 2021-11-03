@@ -579,9 +579,9 @@ def get_ec_config(ec_filters, args):
             )
             sys.exit(1)
 
-        ec_filters = set(yaml_config_dict['ec_numbers'])
+        ec_filters = set(yaml_config_dict['ec'])
 
-    ec_filters = ec_filters.union(set((args.ec).split(",")))
+    ec_filters = ec_filters.union(set((args.ec_filter).split(",")))
 
     ec_filters = [ec.replace("EC","") for ec in ec_filters]
     ec_filters = [ec.replace("ec","") for ec in ec_filters]
