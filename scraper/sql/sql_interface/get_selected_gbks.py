@@ -119,12 +119,12 @@ def get_genbank_accessions(
             connection,
         )
     
-    # extract the accession numbers from the db Genbank objects
-    gbk_accessions = set()
+    # extract the accession numbers from the db Genbank objects and their db genbank_id
+    gbk_dict = {}
     for obj in filtered_gbk_accessions:
-        gbk_accessions.add(obj.genbank_accession)
+        gbk_dict[obj.genbank_accession] = obj.genbank_id
     
-    if len(gbk_accessions) == 0:
+    if len(list(gbk_dict.keys())) == 0:
         logger.error(
             "No proteins in the local CAZyme db matched the provided critiera.\n"
             "Check the critieria matches data in the local CAZyme db.\n"
@@ -132,7 +132,7 @@ def get_genbank_accessions(
         )
         sys.exit(1)
     
-    return gbk_accessions
+    return gbk_dict
 
     
 def get_class_fam_genbank_accessions(
@@ -326,3 +326,4 @@ def apply_ec_filters(
             filtered_gbks.add(gbk)
     
     return filtered_gbks
+
