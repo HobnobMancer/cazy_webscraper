@@ -66,20 +66,10 @@ def build_parser(argv: Optional[List] = None):
 
     # Add option to specify path to configuration file
     parser.add_argument(
-        "-c",
-        "--config",
+        "--cache_dir",
         type=Path,
-        metavar="config file",
         default=None,
-        help="Path to configuration file. Default: None, scrapes entire database",
-    )
-
-    # Add option to define complete classes to scrape
-    parser.add_argument(
-        "--classes",
-        type=str,
-        default=None,
-        help="Classes from which all families are to be scraped. Separate classes by ','"
+        help="Target path for cache dir to be used instead of default path",
     )
 
     # Add option to use own CAZy class synoymn dict
@@ -90,6 +80,23 @@ def build_parser(argv: Optional[List] = None):
         help="Path to JSON file containing CAZy class synoymn names",
     )
 
+    # Add option to define complete classes to scrape
+    parser.add_argument(
+        "--classes",
+        type=str,
+        default=None,
+        help="Classes from which all families are to be scraped. Separate classes by ','"
+    )
+
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=Path,
+        metavar="config file",
+        default=None,
+        help="Path to configuration file. Default: None, scrapes entire database",
+    )
+
     # Add option to display citation
     parser.add_argument(
         "-C",
@@ -98,13 +105,6 @@ def build_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help="Print cazy_webscraper citation message",
-    )
-
-    parser.add_argument(
-        "--cache_dir",
-        type=Path,
-        default=None,
-        help="Target path for cache dir to be used instead of default path",
     )
 
     parser.add_argument(

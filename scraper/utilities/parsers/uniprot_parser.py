@@ -70,14 +70,19 @@ def build_parser(argv: Optional[List] = None):
         help="Batch size for queries parsed by bioservices to UniProt to retrieve protein data"
     )
 
-    # Add option to specify path to configuration file
     parser.add_argument(
-        "-c",
-        "--config",
+        "--cache_dir",
         type=Path,
-        metavar="config file",
         default=None,
-        help="Path to configuration file. Default: None, scrapes entire database",
+        help="Target path for cache dir to be used instead of default path",
+    )
+
+    # Add option to use own CAZy class synoymn dict
+    parser.add_argument(
+        "--cazy_synonyms",
+        type=Path,
+        default=None,
+        help="Path to JSON file containing CAZy class synoymn names",
     )
 
     # Add option to define complete classes to scrape
@@ -88,11 +93,14 @@ def build_parser(argv: Optional[List] = None):
         help="CAZy classes to retrieve UniProt data for. Separate classes by ','"
     )
 
+    # Add option to specify path to configuration file
     parser.add_argument(
-        "--cache_dir",
+        "-c",
+        "--config",
         type=Path,
+        metavar="config file",
         default=None,
-        help="Target path for cache dir to be used instead of default path",
+        help="Path to configuration file. Default: None, scrapes entire database",
     )
 
     parser.add_argument(
@@ -104,14 +112,11 @@ def build_parser(argv: Optional[List] = None):
         help="Retrieve EC numbers from UniProt",
     )
 
-    # Add option to force file over writting
     parser.add_argument(
-        "-f",
-        "--force",
-        dest="force",
-        action="store_true",
-        default=False,
-        help="Force file over writting",
+        "--ec_filter",
+        type=str,
+        default=None,
+        help="Limit retrieval to proteins annotated with the provided EC numbers. Separate EC numbers with single commas"
     )
 
     # Add option to specify families to scrape
