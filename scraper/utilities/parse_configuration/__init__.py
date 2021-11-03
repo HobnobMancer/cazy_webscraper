@@ -526,7 +526,6 @@ def get_expansion_configuration(args):
             kingdom_filters,
             args,
         )
-        ec_filters = get_yaml_ec_config(ec_filters, args)
 
     # add configuration from the cmd-line
     config_dict, taxonomy_filter_dict, kingdom_filters = get_cmd_scrape_config(
@@ -536,7 +535,8 @@ def get_expansion_configuration(args):
         kingdom_filters,
         args,
     )
-    ec_filters = get_cmdline_ec_config(ec_filters, args)
+
+    ec_filters = get_ec_config(ec_filters, args)
 
     user_class_filters = set(config_dict['classes'])
     class_filters = set()
@@ -558,3 +558,33 @@ def get_expansion_configuration(args):
         taxonomy_filter_dict,
         ec_filters,
     )
+
+
+def get_ec_config(ec_filters, args):
+    logger = logging.getLogger(__name__)
+
+    if args.config is not None:
+        # open configuration file
+        try:
+            with open(args.config) as fh:
+                yaml_config_dict = yaml.full_load(fh)
+        except FileNotFoundError:
+            logger.error(
+                "Could not find configuration file when option was enabled.\n"
+                "Make sure path to the configuration file is correct\n"
+                "Scrapping will not be performed becuase configuration is wrong.\n"
+                "Had looked for the configuration file at:\n"
+                f"{args.config}"
+                "Terminating program."
+            )
+            sys.exit(1)
+
+        ec_filters = set(yaml_config_dict['ec_numbers'])
+
+    ec_filters = ec_filters.union(set((args.ec).split(",")))
+
+    ec_filters = [ec.replace("EC","") for ec in ec_filters]
+    ec_filters = [ec.replace("ec","") for ec in ec_filters]
+    ec_filters = [ec.replace("*","-") for ec in ec_filters]
+
+    return set(ec_filters)
