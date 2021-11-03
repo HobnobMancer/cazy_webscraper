@@ -57,6 +57,7 @@ from tqdm import tqdm
 from scraper import cazy_webscraper
 from scraper.expand import get_chunks_list
 from scraper.sql import sql_interface
+from scraper.sql.sql_interface import get_selected_gbks
 from scraper.sql.sql_interface.add_uniprot_db import (
     add_ec_numbers,
     add_pdb_accessions,
@@ -129,13 +130,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
 
     # retrieve dict of genbank accession and genbank accession ids from the local CAZyme db
-    gbk_dict = sql_interface.query_db.get_filtered_gbk_table_dict(
-        connection,
+    gbk_dict = get_selected_gbks.get_genbank_accessions(
         class_filters,
         family_filters,
-        kingdom_filters,
         taxonomy_filter_dict,
+        kingdom_filters,
         ec_filters,
+        connection,
     )
     genbank_accessions = list(gbk_dict.keys())
 
