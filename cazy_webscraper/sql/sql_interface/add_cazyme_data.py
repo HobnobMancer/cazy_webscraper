@@ -120,18 +120,39 @@ def add_cazy_families(cazy_data, connection):
     :param connection: open sqlalchemy connection to an SQLite db engine
     
     Return nothing"""
-    families_db_insert_values = set()
+    logger = logging.getLogger(__name__)
 
-    for genbank_accession in tqdm(cazy_data, desc='Adding CAZy fams to db'):
+    # get list of CAZy (sub)families already present in the db
+    fam_table_dict = get_table_dicts.get_fams_table_dict(connection)  # {family subfamily: db_family_id}
+
+    existing_fam_records = list(fam_table_dict.keys()) 
+
+    families_db_insert_values = set()  # new fam records to add to db
+
+    for genbank_accession in tqdm(cazy_data, desc='Extracting CAZy fams from CAZy data'):
         for cazy_fam in cazy_data[genbank_accession]["families"]:
             subfamilies = cazy_data[genbank_accession]["families"][cazy_fam]
-            if None not in subfamilies:
-                cazy_data[genbank_accession]["families"][cazy_fam].add(None)
             
-            for cazy_subfam in subfamilies:
-                families_db_insert_values.add( (cazy_fam, cazy_subfam) )
+            for subfam in subfamilies:
+                if subfam is None:
+                    cazy_subfam = "_"
+                else:
+                    cazy_subfam = subfam
+                fam_key = f"{cazy_fam} {cazy_subfam}"
+                
+                if fam_key in existing_fam_records:
+                    families_db_insert_values.add( (cazy_fam, cazy_subfam) )
+            
+    if len(families_db_insert_values) != 0:
+        logger.info(
+            f"Inserting {len(families_db_insert_values)} "
+            "new family records into the CazyFamilies table"
+        )
+        insert_data(connection, 'CazyFamilies', ['family', 'subfamily'], list(families_db_insert_values))
+    else:
+        logger.info("Found no new CAZy family records to add the CazyFamilies table")
 
-    insert_data(connection, 'CazyFamilies', ['family', 'subfamily'], list(families_db_insert_values))
+    return
 
 
 def load_taxa_fam_data(connection):
