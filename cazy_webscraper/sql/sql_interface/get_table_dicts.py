@@ -41,7 +41,30 @@
 """Retrieve all objects from a db table and parse the data to build a dict, repr the current table state."""
 
 
-from cazy_webscraper.sql.sql_orm import Kingdom, Session
+from cazy_webscraper.sql.sql_orm import CazyFamily, Kingdom, Session
+
+
+def get_fams_table_dict(connection):
+    """Create dict of objects present in the CazyFamilies table.
+    
+    :param connection: open sqlalchemy db engine connection
+    
+    Return dict {family subfamily: db_family_id}
+    """
+    with Session(bind=connection) as session:
+        all_families = session.query(CazyFamily).all()
+        
+    db_fam_dict = {}
+
+    for fam in all_families:
+        if fam.subfamily is None:
+            subfam = '_'
+        else:
+            subfam = fam.subfamily
+            
+        db_fam_dict[f"{fam.family} {subfam}"] = fam.family_id
+    
+    return db_fam_dict
 
 
 def get_kingdom_table_dict(connection):
