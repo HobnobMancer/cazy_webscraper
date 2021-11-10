@@ -43,7 +43,7 @@
 
 import logging
 
-from sqlalchemy import delete
+from sqlalchemy import delete, text
 from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_interface import insert_data, get_table_dicts
@@ -138,7 +138,14 @@ def add_source_organisms(taxa_dict, connection):
         logger.info(
             f"Updating the parent Kingdom for {len(records_to_update)} tax records in the db"
         )
-        ????
+        for record in records_to_update:
+            connection.execute(
+                text(
+                    "UPDATE Taxs "
+                    f"SET kingdom_id = {record[2]} "
+                    f"WHERE genus = '{record[0]}' AND species = '{record[1]}'"
+                )
+            )
 
     return
 
