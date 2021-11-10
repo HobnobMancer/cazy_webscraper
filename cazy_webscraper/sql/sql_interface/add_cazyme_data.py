@@ -155,40 +155,6 @@ def add_cazy_families(cazy_data, connection):
     return
 
 
-def load_taxa_fam_data(connection):
-    """Load taxonomy and CAZy fam tables into memory.
-    
-    :param connection: open sqlalchemy connection to an SQLite db engine
-    
-    Return dict representing the Taxs table and a dict of the Families table
-    """
-    with Session(bind=connection) as session:
-        all_families = session.query(CazyFamily).all()
-
-    db_fam_dict = {}
-
-    for fam in all_families:
-        if fam.subfamily is None:
-            subfam = '_'
-        else:
-            subfam = fam.subfamily
-            
-        db_fam_dict[f"{fam.family} {subfam}"] = fam.family_id
-
-    # create dict of tax data from db, valued by the tax obj id number
-    with Session(bind=connection) as session:
-        all_taxa = session.query(Taxonomy).all()
-        
-    db_tax_dict = {}
-    for taxa in all_taxa:
-        if len(taxa.species) == 0:
-            db_tax_dict[f"{taxa.genus}"] = taxa.taxonomy_id
-        else:
-            db_tax_dict[f"{taxa.genus} {taxa.species}"] = taxa.taxonomy_id
-    
-    return db_tax_dict, db_fam_dict
-
-
 def add_genbanks(cazy_data, db_tax_dict, db_fam_dict, connection):
     """Add GenBank accessions with tax data to the db
     
