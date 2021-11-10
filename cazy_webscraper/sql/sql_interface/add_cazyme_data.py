@@ -130,6 +130,10 @@ def add_source_organisms(taxa_dict, connection):
             ['genus', 'species', 'kingdom_id'],
             taxonomy_db_insert_values,
         )
+    else:
+        logger.info(
+            "No new tax records to add to the db"
+        )
     if len(records_to_update) != 0:
         logger.info(
             f"Updating the parent Kingdom for {len(records_to_update)} tax records in the db"
@@ -322,6 +326,10 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
             'Genbanks_CazyFamilies',
             ['genbank_id', 'family_id'],
             list(gbk_fam_db_insert_values),
+        )
+    else:
+        logger.info(
+            "No new Genbank accession-CAZy (sub)family relationships to add to the db"
         )
     
     if (len(gbk_fam_records_to_del) != 0) and args.delete_old_relationships:
