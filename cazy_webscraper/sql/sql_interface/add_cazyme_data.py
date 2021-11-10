@@ -43,10 +43,11 @@
 
 import logging
 
+from sqlalchemy import delete
 from tqdm import tqdm
 
-from cazy_webscraper.sql.sql_interface import insert_data, get_gbk_table_dict, get_table_dicts
-from cazy_webscraper.sql.sql_orm import Session, CazyFamily, Kingdom, Taxonomy
+from cazy_webscraper.sql.sql_interface import insert_data, get_table_dicts
+from cazy_webscraper.sql.sql_orm import genbanks_families
 
 
 def add_kingdoms(taxa_dict, connection):
@@ -116,7 +117,8 @@ def add_source_organisms(taxa_dict, connection):
 def add_cazy_families(cazy_data, connection):
     """Add CAZy families and subfamilies to local CAZyme database
     
-    :param cazy_data: dict of data retrieved from CAZy
+    :param cazy_data: dict of data extracted from the txt file
+        {gbk_accession: {kingdom:str, organism:str, families{fam:subfam}}}
     :param connection: open sqlalchemy connection to an SQLite db engine
     
     Return nothing"""
@@ -207,22 +209,106 @@ def add_genbanks(cazy_data, connection):
         ????
 
 
-def add_genbank_fam_relationships(gbk_fam_values, connection):
+def add_genbank_fam_relationships(cazy_data, connection):
     """Add GenBank accession - CAZy family relationships to db
     
-    :param gbk_fam_values: set of tuples (gbk_acc, fam_id)
+    :param cazy_data: dict of data extracted from the txt file
+        {gbk_accession: {kingdom:str, organism:str, families{fam:subfam}}}
     :param connection: open sqlalchemy connection to an SQLite db engine
 
     Return nothing
     """
-    # retrieve genbank id numbers from the local database
-    db_gbk_dict = get_gbk_table_dict(connection)
+    logger = logging.getLogger(__name__)
 
-    gbk_fam_db_insert_values = set()  # { (gbk_id(int), fam_id(int), ), }
+    gbk_fam_db_insert_values = set()  # new records to add
+    gbk_fam_records_to_del = set()  # records/relationships to delete
 
-    for gbk_tuple in tqdm(gbk_fam_values, desc='Adding Protein-Fam relationships'):
-        gbk_id = db_gbk_dict[gbk_tuple[0]]
-        fam_id = gbk_tuple[1]
-        gbk_fam_db_insert_values.add( (gbk_id, fam_id) )
+    # get dict of GenBank and CazyFamilies tables, used for getting gbk_ids  and fam_ids of accessions and
+    # families without entries in the CazyFamilies_Genbanks table
+    gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection) 
+    # {genbank_accession: 'taxa_id': int, 'gbk_id': int}
+    fam_table_dict = get_table_dicts.get_fams_table_dict(connection) 
+    # {fam: fam_id}
 
-    insert_data(connection, 'Genbanks_CazyFamilies', ['genbank_id', 'family_id'], list(gbk_fam_db_insert_values))
+    # load current relationships in the db
+    gbk_fam_table_dict = get_table_dicts.get_gbk_fam_table_dict(connection)
+    # {genbank_accession: families: {fam: fam_id}, id: int (db_id)}
+    
+    gbks_with_existing_relationships = list(gbk_fam_table_dict.keys())
+
+    for genbank_accession in tqdm(cazy_data, desc="Extract Genbank-Family relationships from CAZy data"):
+        
+        if genbank_accession in gbks_with_existing_relationships:
+            # identify which genbank-fam relationships in the CAZy data to delete or add
+            existing_families_rel_dict = gbk_fam_table_dict[genbank_accession]['families']  # {fam: fam_id}
+            
+            families = cazy_data[genbank_accession]['families']
+            
+            cazy_families = set()  # used for checking which existing relationships are no longer in CAZy
+            
+            for fam in families:
+                if families[fam] is None:
+                    family = f"{fam} _"
+                else:
+                    family = f"{fam} {families[fam]}"
+                cazy_families.add(family)
+                
+                if family not in (list(existing_families_rel_dict.keys())):
+                    # add new relationship
+                    genbank_id = gbk_table_dict[genbank_accession]['id']
+                    fam_id = fam_table_dict[family]
+                    gbk_fam_db_insert_values.add( (genbank_id, fam_id,) )
+                    
+                # else: gbk-fam already in db
+                
+            # check for relationships to delete: a relationship that is in the db but no longer in CAZy
+            for family in list(existing_families_rel_dict.keys()):
+                if family not in cazy_families:  # relationship no longer in CAZy
+                    genbank_id = gbk_table_dict[genbank_accession]['id']
+                    fam_id = fam_table_dict[family]
+                    gbk_fam_records_to_del.add( (genbank_id, fam_id) )
+                
+                # else: fam relationship in the db is still in CAZy
+        
+        else:
+            # add all CAZy (sub)family associations to db for this GenBank accession
+            families = cazy_data[genbank_accession]['families']
+            for fam in families:
+                if families[fam] is None:
+                    family = f"{fam} _"
+                else:
+                    family = f"{fam} {families[fam]}"
+                
+                fam_id = fam_table_dict[family]
+                
+                genbank_id = gbk_table_dict[genbank_accession]['id']
+                
+                gbk_fam_db_insert_values.add( (genbank_id, fam_id,) )
+        
+        
+    if len(gbk_fam_db_insert_values) != 0:
+        logger.info(
+            f"Adding {len(gbk_fam_db_insert_values)} new GenBank accession - "
+            "CAZy (sub)family relationships to the db"
+        )
+        insert_data(
+            connection,
+            'Genbanks_CazyFamilies',
+            ['genbank_id', 'family_id'],
+            list(gbk_fam_db_insert_values),
+        )
+    
+    if (len(gbk_fam_records_to_del) != 0) :
+        logger.info(
+            "Deleting {(len(gbk_fam_records_to_del)} GenBank accession - "
+            "CAZy (sub)family relationships\n"
+            "that are the db but are no longer in CAZy"
+        )
+        for record = gbk_fam_records_to_del:
+            # record = (genbank_id, fam_id,)
+            stmt = (
+                delete(genbanks_families).\
+                where(genbanks_families.c.genbank_id == record[0]).\
+                where(genbanks_families.c.family_id == record[1])
+            )
+            connection.execute(stmt)
