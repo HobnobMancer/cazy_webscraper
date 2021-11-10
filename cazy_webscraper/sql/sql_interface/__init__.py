@@ -45,7 +45,7 @@ import logging
 
 from tqdm import tqdm
 
-from scraper.sql import sql_orm
+from cazy_webscraper.sql import sql_orm
 
 
 class SqlInterfaceException(Exception):
