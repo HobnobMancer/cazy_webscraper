@@ -147,7 +147,7 @@ def get_taxs_table_dict(connection):
     
     :param connection: open sqlalchemy db engine connection
     
-    Return dict {genus species: db_tax_id}
+    Return dict {genus species: {'tax_id': db_tax_id, 'kingdom_id': kingdom_id}
     """
     with Session(bind=connection) as session:
         all_taxa = session.query(Taxonomy).all()
@@ -155,9 +155,15 @@ def get_taxs_table_dict(connection):
     db_tax_dict = {}
     for taxa in all_taxa:
         if len(taxa.species) == 0:
-            db_tax_dict[f"{taxa.genus}"] = taxa.taxonomy_id
+            db_tax_dict[f"{taxa.genus}"] = {
+                'tax_id': taxa.taxonomy_id,
+                'kingdom_id': taxa.kingdom_id,
+            }
         else:
-            db_tax_dict[f"{taxa.genus} {taxa.species}"] = taxa.taxonomy_id
+            db_tax_dict[f"{taxa.genus} {taxa.species}"] = {
+                'tax_id': taxa.taxonomy_id,
+                'kingdom_id': taxa.kingdom_id,
+            }
     
     return db_tax_dict
 
