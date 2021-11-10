@@ -41,7 +41,7 @@
 """Retrieve all objects from a db table and parse the data to build a dict, repr the current table state."""
 
 
-from cazy_webscraper.sql.sql_orm import CazyFamily, Genbank, Kingdom, Session
+from cazy_webscraper.sql.sql_orm import CazyFamily, Genbank, Kingdom, Session, Taxonomy
 
 
 def get_fams_table_dict(connection):
@@ -105,4 +105,23 @@ def get_kingdom_table_dict(connection):
         
     return kingdom_dict
 
+
+def get_taxs_table_dict(connection):
+    """Create dict of objects present in the Taxs table.
+    
+    :param connection: open sqlalchemy db engine connection
+    
+    Return dict {genus species: db_tax_id}
+    """
+    with Session(bind=connection) as session:
+        all_taxa = session.query(Taxonomy).all()
+        
+    db_tax_dict = {}
+    for taxa in all_taxa:
+        if len(taxa.species) == 0:
+            db_tax_dict[f"{taxa.genus}"] = taxa.taxonomy_id
+        else:
+            db_tax_dict[f"{taxa.genus} {taxa.species}"] = taxa.taxonomy_id
+    
+    return db_tax_dict
 
