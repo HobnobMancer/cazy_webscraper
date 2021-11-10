@@ -155,7 +155,7 @@ def add_cazy_families(cazy_data, connection):
     return
 
 
-def add_genbanks(cazy_data, db_tax_dict, db_fam_dict, connection):
+def add_genbanks(cazy_data, connection):
     """Add GenBank accessions with tax data to the db
     
     :param cazy_data: dict of CAZy data
@@ -163,36 +163,48 @@ def add_genbanks(cazy_data, db_tax_dict, db_fam_dict, connection):
     
     Return set of tuples, of (genbank_acc, fam_id)
     """
-    # create set of tuples for inserting into the Genbank db table
-    # associates a genbank accession with its source organisms db tax id num
+    logger = logging.getLogger(__name__)
+
+    # retrieve existing records from the db
+    gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
+    existing_gbk_records = list(gbk_table_dict.keys)
+    taxa_table_dict = get_table_dicts.get_taxs_table_dict(connection)
+
+    gbk_record_updates = {}  # {gbk_accession: 'taxa_id': (new taxa_id) int, 'gbk_id': int}
     gbk_db_insert_values = set()
 
-    # ...and create set of tuples for inserting into the CazyFamilies_Genbank table
-    # associates genbank acc db id nums with CAZy fam db ids
-    gbk_fam_values = set()  # { (gbk_accession, fam_db_id) } 
-
-    for genbank_accession in tqdm(cazy_data, desc='Adding GenBank to db'):
-        organism = list(cazy_data[genbank_accession]['organism'])[0]
-        tax_id = db_tax_dict[organism]
+    for gbk_accession in tqdm(cazy_data, desc="Creating Genbank records to insert"):
+        if gbk_accession not in existing_gbk_records:
+            organism = cazy_data[gbk_accession]['organism']
+            taxa_id = taxa_table_dict[organism]
+            gbk_db_insert_values.add( (gbk_accession, taxa_id,) )
         
-        gbk_db_insert_values.add( (genbank_accession, tax_id) )
-        
-        for cazy_fam in  cazy_data[genbank_accession]['families']:
-            subfamilies = cazy_data[genbank_accession]['families'][cazy_fam]
+        else:  # check if need to update taxa_id
+            # get the taxa_id for the existing record
+            existing_record_id = gbk_table_dict[gbk_accession]['taxa_id']
             
-            for cazy_subfam in subfamilies:
-                if cazy_subfam is None:
-                    fam_name = f"{cazy_fam} _"
-                
-                else:
-                    fam_name = f"{cazy_fam} {cazy_subfam}"
+            # get the taxa_id for the organism listed in the CAZy txt file
+            organism = cazy_data[gbk_accession]['organism']
+            cazy_data_taxa_id = taxa_table_dict[organism]
             
-            fam_id = db_fam_dict[fam_name]
-            gbk_fam_values.add( (genbank_accession, fam_id) )
+            if cazy_data_taxa_id != existing_record_id:
+                # need to update the record
+                gbk_record_updates[gbk_accession] = {
+                    'taxa_id': cazy_data_taxa_id,
+                    'gbk_id': gbk_table_dict[gbk_accession]['gbk_id'],
+                }
 
-    insert_data(connection, 'Genbanks', ['genbank_accession', 'taxonomy_id'], list(gbk_db_insert_values))
-
-    return gbk_fam_values
+    if len(gbk_db_insert_values) != 0:
+        logger.info(
+            f"Inserting {len(gbk_db_insert_values)} GenBank accessions into the db"
+        )
+        insert_data(connection, 'Genbanks', ['genbank_accession', 'taxonomy_id'], list(gbk_db_insert_values))
+    
+    if len(list(gbk_record_updates.keys())) != 0:
+        logger.info(
+            f"Updating {len(list(gbk_record_updates.keys()))} Genbank table records with new taxonomy IDs"
+        )
+        ????
 
 
 def add_genbank_fam_relationships(gbk_fam_values, connection):
