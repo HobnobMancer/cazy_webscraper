@@ -45,8 +45,8 @@ import logging
 
 from tqdm import tqdm
 
-from scraper.sql.sql_interface import insert_data, get_gbk_table_dict
-from scraper.sql.sql_orm import Session, CazyFamily, Kingdom, Taxonomy
+from cazy_webscraper.sql.sql_interface import insert_data, get_gbk_table_dict
+from cazy_webscraper.sql.sql_orm import Session, CazyFamily, Kingdom, Taxonomy
 
 
 def add_kingdoms(cazy_data, connection):
