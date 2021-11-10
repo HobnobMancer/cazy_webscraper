@@ -441,3 +441,24 @@ def replace_multiple_tax(cazy_data, args):
             )
 
     return cazy_data
+
+
+def build_taxa_dict(cazy_data):
+    """Createa a dict of taxa data extracted from the CAZy plain text file.
+    
+    :param cazy_dict: dict of CAZy data
+    
+    Return taxa_dict, dict of taxonomy data {kingdom: set(organism)}
+    """
+    taxa_dict = {}  # {kingdom: {organism,}}
+    
+    for genbank_accession in tqdm(cazy_data, "Compiling taxa data"):
+        kingdom = list(cazy_data[genbank_accession]['kingdom'])[0]
+        organism = list(cazy_data[genbank_accession]['organism'])[0]
+        
+        try:
+            taxa_dict[kingdom].add(organism)
+        except KeyError:
+            taxa_dict[kingdom] = {organism}
+    
+    return taxa_dict
