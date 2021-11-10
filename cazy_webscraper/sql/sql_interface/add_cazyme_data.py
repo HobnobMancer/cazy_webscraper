@@ -208,7 +208,7 @@ def add_genbanks(cazy_data, connection):
     existing_gbk_records = list(gbk_table_dict.keys)
     taxa_table_dict = get_table_dicts.get_taxs_table_dict(connection)
 
-    gbk_record_updates = {}  # {gbk_accession: 'taxa_id': (new taxa_id) int, 'gbk_id': int}
+    gbk_record_updates = set()  # {gbk_accession: 'taxa_id': (new taxa_id) int, 'gbk_id': int}
     gbk_db_insert_values = set()
 
     for gbk_accession in tqdm(cazy_data, desc="Creating Genbank records to insert"):
@@ -227,10 +227,7 @@ def add_genbanks(cazy_data, connection):
             
             if cazy_data_taxa_id != existing_record_id:
                 # need to update the record
-                gbk_record_updates[gbk_accession] = {
-                    'taxa_id': cazy_data_taxa_id,
-                    'gbk_id': gbk_table_dict[gbk_accession]['gbk_id'],
-                }
+                gbk_record_updates.add( (cazy_data_taxa_id, gbk_table_dict[gbk_accession]['gbk_id']) )
 
     if len(gbk_db_insert_values) != 0:
         logger.info(
@@ -238,11 +235,18 @@ def add_genbanks(cazy_data, connection):
         )
         insert_data(connection, 'Genbanks', ['genbank_accession', 'taxonomy_id'], list(gbk_db_insert_values))
     
-    if len(list(gbk_record_updates.keys())) != 0:
+    if len(gbk_record_updates) != 0:
         logger.info(
-            f"Updating {len(list(gbk_record_updates.keys()))} Genbank table records with new taxonomy IDs"
+            f"Updating {len(gbk_record_updates)} Genbank table records with new taxonomy IDs"
         )
-        ????
+        for record in gbk_record_updates:
+            connection.execute(
+                text(
+                    "UPDATE Taxs "
+                    f"SET taxonomy_id = {record[1]} "
+                    f"WHERE genbank_id = '{record[0]}'"
+                )
+            )
 
 
 def add_genbank_fam_relationships(cazy_data, connection, args):
