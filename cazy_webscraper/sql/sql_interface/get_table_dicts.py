@@ -41,7 +41,7 @@
 """Retrieve all objects from a db table and parse the data to build a dict, repr the current table state."""
 
 
-from cazy_webscraper.sql.sql_orm import CazyFamily, Kingdom, Session
+from cazy_webscraper.sql.sql_orm import CazyFamily, Genbank, Kingdom, Session
 
 
 def get_fams_table_dict(connection):
@@ -65,6 +65,27 @@ def get_fams_table_dict(connection):
         db_fam_dict[f"{fam.family} {subfam}"] = fam.family_id
     
     return db_fam_dict
+
+
+def get_gbk_table_dict(connection):
+    """Compile a dict of the data in the Genbanks table
+    
+    :param connection: open connection to an SQLite3 database
+    
+    Return dict {genbank_accession: 'taxa_id': int, 'gbk_id': int}
+    """
+    with Session(bind=connection) as session:
+        all_genbank = session.query(Genbank).all()
+
+    db_gbk_dict = {}  # {genbank_accession: 'taxa_id': str, 'id': int}
+    
+    for gbk in all_genbank:
+        db_gbk_dict[f"{gbk.genbank_accession}"] = {
+            'taxa_id': gbk.taxonomy_id,
+            'id': gbk.genbank_id
+        }
+    
+    return db_gbk_dict
 
 
 def get_kingdom_table_dict(connection):
