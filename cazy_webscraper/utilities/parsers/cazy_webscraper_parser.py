@@ -123,6 +123,18 @@ def build_parser(argv: Optional[List] = None):
         help="Path to an existing local CAZy SQL database",
     )
 
+    parser.add_argument(
+        "--delete_old_relationships",
+        dest="delete_old_relationships",
+        action="store_true",
+        default=False,
+        help=(
+            "Delete old GenBank accession - CAZy family relationships (annotations)\n"
+            "that are in the local db but are not in CAZy, e.g. when CAZy has moved a\n"
+            "protein from one fam to another, delete the old family annotation."
+        ),
+    )
+
     # Add option to force file over writting
     parser.add_argument(
         "-f",

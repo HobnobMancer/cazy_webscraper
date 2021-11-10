@@ -209,12 +209,13 @@ def add_genbanks(cazy_data, connection):
         ????
 
 
-def add_genbank_fam_relationships(cazy_data, connection):
+def add_genbank_fam_relationships(cazy_data, connection, args):
     """Add GenBank accession - CAZy family relationships to db
     
     :param cazy_data: dict of data extracted from the txt file
         {gbk_accession: {kingdom:str, organism:str, families{fam:subfam}}}
     :param connection: open sqlalchemy connection to an SQLite db engine
+    :param args: cmd-line args parser
 
     Return nothing
     """
@@ -298,13 +299,13 @@ def add_genbank_fam_relationships(cazy_data, connection):
             list(gbk_fam_db_insert_values),
         )
     
-    if (len(gbk_fam_records_to_del) != 0) :
+    if (len(gbk_fam_records_to_del) != 0) and args.delete_old_relationships:
         logger.info(
             "Deleting {(len(gbk_fam_records_to_del)} GenBank accession - "
             "CAZy (sub)family relationships\n"
             "that are the db but are no longer in CAZy"
         )
-        for record = gbk_fam_records_to_del:
+        for record in gbk_fam_records_to_del:
             # record = (genbank_id, fam_id,)
             stmt = (
                 delete(genbanks_families).\
