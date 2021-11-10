@@ -37,12 +37,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Parse data retrieved from CAZy."""
+"""Parse data retrieved from CAZy and build a dict of data matching the user's criteria."""
 
 
 import logging
 import re
-import time
 
 from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
