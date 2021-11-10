@@ -45,34 +45,37 @@ import logging
 
 from tqdm import tqdm
 
-from cazy_webscraper.sql.sql_interface import insert_data, get_gbk_table_dict
+from cazy_webscraper.sql.sql_interface import insert_data, get_gbk_table_dict, get_table_dicts
 from cazy_webscraper.sql.sql_orm import Session, CazyFamily, Kingdom, Taxonomy
 
 
-def add_kingdoms(cazy_data, connection):
-    """Create a dict of taxa information and add kingdoms to db.
+def add_kingdoms(taxa_dict, connection):
+    """Add new Kingdoms objects to database.
     
-    :param cazy_data: dict of CAZy data
-    :param connection: open sqlalchemy conenction to an SQLite db engine
+    Check existing kingdom objects in the db against kingdoms retrieved from the 
+    CAZy txt file, so as to only add new kingdoms.
 
-    Return taxa_dict, dict of taxonomy data {kingdom: set(organism)}
+    :param taxa_dict: dict of kingdoms and organisms from the cazy_data dict
+        {kingdom: {organism}}
+    :param connection: open sqlalchemy connection to a local SQLite db engine
+    
+    Return nothing
     """
-    taxa_dict = {}  # {kingdom: {organism,}}
+    kingdom_table_dict = get_table_dicts.get_kingdom_table_dict(connection)
+
+    # retrieve the Kingdoms retrieved from the CAZy txt file
+    cazy_kingdoms = list(taxa_dict.keys())
+    existing_kingdom_records = list(kingdom_table_dict.keys())
+
+    # create list of tuples for db insert
+    kingdoms_db_insert_values = [
+        (kngdm,) for kngdm in cazy_kingdoms if kngdm not in existing_kingdom_records
+    ]
+
+    if len(kingdoms_db_insert_values) != 0:
+        insert_data(connection, 'Kingdoms', ['kingdom'], kingdoms_db_insert_values)
     
-    for genbank_accession in tqdm(cazy_data, "Compiling taxa data"):
-        kingdom = list(cazy_data[genbank_accession]['kingdom'])[0]
-        organism = list(cazy_data[genbank_accession]['organism'])[0]
-        
-        try:
-            taxa_dict[kingdom].add(organism)
-        except KeyError:
-            taxa_dict[kingdom] = {organism}
-
-    kingdoms_db_insert_values = [(kingdom,) for kingdom in taxa_dict.keys()]
-
-    insert_data(connection, 'Kingdoms', ['kingdom'], kingdoms_db_insert_values)
-
-    return taxa_dict
+    return
 
 
 def add_source_organisms(taxa_data, connection):
