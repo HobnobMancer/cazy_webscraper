@@ -78,32 +78,39 @@ def add_kingdoms(taxa_dict, connection):
     return
 
 
-def add_source_organisms(taxa_data, connection):
+def add_source_organisms(taxa_dict, connection):
     """Add taxonomy (source organism) data to the local CAZyme database
     
-    :param taxa_data: dict of taxa data {kingdom: set(organism)}
+    :param taxa_dict: dict of taxa data {kingdom: set(organism)}
     :param connection: open sqlalchemy connection to SQLite engine
     
     Return nothing
     """
+    # retrieve db kingdom objects for retrieving the kingdom_id for the Taxs table
+    kingdom_table_dict = get_table_dicts.get_kingdom_table_dict(connection)  # {kingdom: kingdom_id}
+
+    # compare taxa already in the db against taxa retrieved from the CAZy txt file
+    # to identify new taxa objects to be added to the db
+
     taxonomy_db_insert_values = []
-    with Session(bind=connection) as session:
-        for kingdom in tqdm(
-            taxa_data,
-            total=len(list(taxa_data.keys())),
-            desc='Adding Tax data to db per Kingdom',
-        ):
-            # query db to get the kingdom db object, retrieve only the kingdom ID number
-            found_kingdom = session.query(Kingdom.kingdom_id).\
-                filter(Kingdom.kingdom==kingdom).\
-                first()[0]
-            
-            for organism in taxa_data[kingdom]:
+
+    for kingdom in tqdm(
+        taxa_dict,
+        total=len(list(taxa_dict.keys())),
+        desc='Create tax objects per Kingdom',
+    ):
+        kingdom_id = kingdom_table_dict[kingdom]
+        
+        existing_taxa_records = taxa_dict[kingdom]
+        
+        for organism in taxa_dict[kingdom]:  # organisms from the CAZy txt file
+            if organism not in existing_taxa_records:  # new record to add
                 genus = organism.split(" ")[0]
                 species = ' '.join(organism.split(" ")[1:])
-                taxonomy_db_insert_values.append((genus, species, found_kingdom))
+                taxonomy_db_insert_values.append( (genus, species, kingdom_id,) )
 
-    insert_data(connection, 'Taxs', ['genus', 'species', 'kingdom_id'], taxonomy_db_insert_values)
+    if len(taxonomy_db_insert_values) != 0:
+        insert_data(connection, 'Taxs', ['genus', 'species', 'kingdom_id'], taxonomy_db_insert_values)
 
 
 def add_cazy_families(cazy_data, connection):
