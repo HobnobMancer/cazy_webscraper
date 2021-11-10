@@ -88,6 +88,42 @@ def get_gbk_table_dict(connection):
     return db_gbk_dict
 
 
+def get_gbk_fam_table_dict(connection):
+    """Build dict representing the records present in the Genbanks_CazyFamilies table
+
+    If a GenBank accession is in the db but not has not CazyFamilies instances related to it,
+    the GenBank accession is not returned when quering the db.
+    
+    :param connection: open sqlalchemy connection to an SQLite3 db engine
+    
+    Return dict {gbk_id: {fam_id}}"""
+    with Session(bind=connection) as session:
+        all_gbk_fam_records = session.query(Genbank, CazyFamily).\
+        join(CazyFamily, Genbank.families).\
+        all()
+        
+    db_gbk_fam_dict = {}  # {genbank_accession: families: {fam: fam_id}, id: int (db_id)}
+    
+    for record in all_gbk_fam_records:
+        genbank_accession = record[0].genbank_accession
+        family = record[1].family
+        subfamily = record[1].subfamily
+        if subfamily is None:
+            subfamily = '_'
+        
+        family = f"{family} {subfamily}"
+        
+        try:
+            db_gbk_fam_dict[genbank_accession][family] = record[1].family_id
+        except KeyError:
+            db_gbk_fam_dict[genbank_accession] = {
+                "families": {family: record[1].family_id},
+                "id": record[0].genbank_id,
+            }
+    
+    return db_gbk_fam_dict
+
+
 def get_kingdom_table_dict(connection):
     """Load and parse the Kingdoms table from the db and compile a dict {kgnd: id}
     
