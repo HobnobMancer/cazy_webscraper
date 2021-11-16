@@ -239,6 +239,10 @@ To retrieve all GenBank protein seuqneces for all proteins in a local CAZyme dat
 cw_get_genbank_seq <path_to_local_CAZyme_db>
 ```
 
+`cazy_webscraper` produces to cache files, which are written to the cache dir:
+1. `no_seq_retrieved.txt` which lists the GenBank accessions for which no sequence could be retrieved from GenBank
+2. `seq_retrieved.txt` which list GenBank accessiosn for which a sequence was retrieved from GenBank
+
 ### Configuring GenBank protein sequence retrieval
 
 Below are listed the command-line flags for configuring the retrieval of protein sequences from GenBank.
