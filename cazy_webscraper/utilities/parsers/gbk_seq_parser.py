@@ -74,18 +74,6 @@ def build_parser(argv: Optional[List] = None):
 
     # Add optional arguments to parser
 
-    # Add option for building a BLAST database of retrieved protein sequences
-    parser.add_argument(
-        "-b",
-        "--blastdb",
-        type=Path,
-        default=None,
-        help=(
-            "Create BLAST database of retrieved GenBank protein sequences.\n"
-            "Give the path to the directory to store the database"
-        ),
-    )
-
     # Add option to specify path to configuration file
     parser.add_argument(
         "-c",
@@ -131,19 +119,6 @@ def build_parser(argv: Optional[List] = None):
         help="Families to scrape. Separate families by commas 'GH1,GH2'",
     )
 
-    # Add option to enable writing sequences to FASTA file or files, or not at all
-    parser.add_argument(
-        "--fasta",
-        type=str,
-        default=None,
-        help=(
-            "Enable writing out retrieved sequences to FASTA file(s).\n"
-            "Writing 'separate' produces a single FASTA file per retrieved protein sequence,\n"
-            "else, write the path to the FASTA to add retrieved protein sequences to\n"
-            "(this can be a pre-existing or non-existing FASTA file."
-        ),
-    )
-
     # Add option to restrict the scrape to specific kingdoms
     parser.add_argument(
         "--kingdoms",
@@ -172,16 +147,6 @@ def build_parser(argv: Optional[List] = None):
         metavar="log file name",
         default=None,
         help="Defines log file name and/or path",
-    )
-
-    # enable retrieving protein sequences for only primary GenBank accessions
-    parser.add_argument(
-        "-p",
-        "--primary",
-        dest="primary",
-        action="store_true",
-        default=False,
-        help="Enable retrieveing protein sequences for only primary GenBank accessions",
     )
 
     # Add option to restrict the scrape to specific species. This will scrape CAZymes from
