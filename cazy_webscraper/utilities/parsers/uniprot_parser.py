@@ -104,6 +104,25 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
+        "--delete_old_ec",
+        dest="delete_old_ec",
+        action="store_true",
+        default=False,
+        help=(
+            "Delete EC number-GenBank relationships/annotations\n"
+            "that are not longer listed in UniProt for a given protein"
+        ),
+    )
+
+    parser.add_argument(
+        "--delete_old_pdbs",
+        dest="delete_old_pdbs",
+        action="store_true",
+        default=False,
+        help="Delete PDB accessions that are not longer listed in UniProt for a given protein",
+    )
+
+    parser.add_argument(
         "-e",
         "--ec",
         dest="ec",
