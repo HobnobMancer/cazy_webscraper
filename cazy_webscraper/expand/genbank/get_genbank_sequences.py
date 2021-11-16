@@ -49,11 +49,11 @@ from typing import List, Optional
 
 from Bio import Entrez, SeqIO
 from saintBioutils.genbank import entrez_retry
-from saintBioutils.utilities.logger import config_logger
+from saintBioutils.utilities.logger import config_logger, file_io
 
 from cazy_webscraper import cazy_webscraper
 from cazy_webscraper.sql import sql_orm, sql_interface
-from cazy_webscraper.sql.sql_interface import get_selected_gbks
+from cazy_webscraper.sql.sql_interface import get_selected_gbks, add_genbank_data
 from cazy_webscraper.utilities.parsers import gbk_seq_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
@@ -83,6 +83,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger.warning("Enabled updating sequences")
 
     connection, logger_name, cache_dir = cazy_webscraper.connect_existing_db(args, time_stamp)
+
+    if args.cache_dir is not None:  # use user defined cache dir
+        cache_dir = args.cache_dir
+        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+    else:
+        cache_dir = cache_dir / "uniprot_data_retrieval"
+        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     (
         config_dict,
@@ -128,11 +135,40 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
     genbank_accessions = list(gbk_dict.keys())
 
+    seq_dict = get_sequences(genbank_accessions, cache_dir, args)  # {gbk_accession: seq}
 
-def get_sequences(genbank_accessions, args):
+    add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, connection, args)
+
+    end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    end_time = pd.to_datetime(end_time)
+    total_time = end_time - start_time
+
+    if args.verbose:
+        logger.info(
+            "Finished getting sequences from GenBank\n"
+            f"Scrape initated at {start_time}\n"
+            f"Scrape finished at {end_time}\n"
+            f"Total run time: {total_time}"
+            f"Version: {cazy_webscraper.VERSION_INFO}\n"
+            f"Citation: {cazy_webscraper.CITATION_INFO}"
+        )
+    else:
+        print(
+            "=====================cazy_webscraper=====================\n"
+            "Finished getting sequences from GenBank\n"
+            f"Scrape initated at {start_time}\n"
+            f"Scrape finished at {end_time}\n"
+            f"Total run time: {total_time}"
+            f"Version: {cazy_webscraper.VERSION_INFO}\n"
+            f"Citation: {cazy_webscraper.CITATION_INFO}"
+        )
+
+
+def get_sequences(genbank_accessions, cache_dir, args):
     """Retrieve protein sequences from Entrez.
 
     :param genbank_accessions: list, GenBank accessions
+    :param cache_dir: Path, cache directory
     :param args: cmb-line args parser
 
     Return nothing.
@@ -142,6 +178,8 @@ def get_sequences(genbank_accessions, args):
     seq_dict = {}  # {gbk_accession: seq}
 
     epost_webenv, epost_query_key = bulk_query_ncbi(genbank_accessions, args)
+
+    success_accessions = set()  # accessions for which seqs were retrieved
 
     # retrieve the protein sequences
     with entrez_retry(
@@ -198,6 +236,8 @@ def get_sequences(genbank_accessions, args):
                 
             seq_dict[seq_accession] = record.sequence
 
+            success_accessions.add(seq_accession)
+
             # remove the accession from the list
             try:
                 genbank_accessions.remove(temp_accession)
@@ -212,6 +252,16 @@ def get_sequences(genbank_accessions, args):
         logger.warning("Protein sequences for the following CAZymes were not retrieved:")
         for acc in genbank_accessions:
             logger.warning(f"GenBank accession: {acc}")
+
+        cache_path = cache_dir / "no_seq_retrieved.txt"
+        with open(cache_path, "a") as fh:
+            for acc in genbank_accessions:
+                fh.write(f"{acc}\n")
+    
+    cache_path = cache_dir / "seq_retrieved.txt"
+    with open(cache_path, "a") as fh:
+        for acc in success_accessions:
+            fh.write(f"{acc}\n")
 
     return
 
