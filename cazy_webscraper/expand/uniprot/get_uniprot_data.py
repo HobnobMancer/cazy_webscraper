@@ -145,15 +145,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir)
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
-    add_uniprot_accessions(uniprot_dict, gbk_dict, connection)
+    add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args)
 
     # add ec numbers
     if (args.ec) and (len(all_ecs) != 0):
-        add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection)
+        add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args)
 
     # add pdb accessions
     if args.pdb:
-        add_pdb_accessions(uniprot_dict, gbk_dict, connection)
+        add_pdb_accessions(uniprot_dict, gbk_dict, connection, args)
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     end_time = pd.to_datetime(end_time)
