@@ -49,7 +49,7 @@ from typing import List, Optional
 
 
 
-def build_pdb_structures_parser(argv: Optional[List] = None):
+def build_parser(argv: Optional[List] = None):
     """Return ArgumentParser parser for the script 'expand.genbank_sequences.py'."""
     # Create parser object
     parser = argparse.ArgumentParser(
