@@ -156,7 +156,6 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection):
         pdbs = uniprot_dict[uniprot_acc]["pdb"]
         if len(pdbs) == 0:
             continue
-        print(pdbs)
 
         for pdb in pdbs:
             pdb_insert_values.add(pdb, gbk_id)
