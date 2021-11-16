@@ -41,11 +41,11 @@
 """Add data retrieved from UniProt to a local SQLite database"""
 
 
-from sqlalchemy import text
+from sqlalchemy import delete, text
 from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_interface import insert_data, get_table_dicts
-from cazy_webscraper.sql.sql_orm import Session, Ec
+from cazy_webscraper.sql.sql_orm import genbanks_ecs
 
 
 def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
@@ -171,54 +171,75 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
     return
 
 
-def add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection):
+def add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args):
     """Add EC numbers to the local CAZyme database
 
     :param uniprot_dict: dict containing data retrieved from UniProt
     :param all_ecs: set of all EC numbers retrieved from UniProt
     :param gbk_dict: dict representing data from the Genbanks table
     :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param args: cmd-line args parser
 
     Return nothing.
     """
-    insert_data(connection, "Ecs", ["ec_number"], list(all_ecs))
+    # load EC records in the local CAZyme db
+    ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
 
-    # load Ecs table into memory to retrieve the EC number IDs
-    with Session(bind=connection) as session:
-        all_db_ecs = session.query(Ec).all()
+    # identify new EC numbers to add to the EC table
+    existing_ecs = list(ec_table_dict.keys())
+    ec_insert_values = set()
 
-    # parse Ecs table to create a dict
-    ec_dict = {}
-    for ec_object in all_db_ecs:
-        ec_dict[ec_object.ec_number] = ec_object.ec_id
+    for ec in all_ecs:
+        if ec not in existing_ecs:
+            ec_insert_values.add( (ec,) )
 
-    gbk_ec_dict = {}
-    for uniprot_acc in tqdm(uniprot_dict, desc="Adding EC numbers per protein"):
-        genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
+    if len(ec_insert_values) != 0:
+        insert_data(connection, "Ecs", ["ec_number"], list(ec_insert_values))
 
-        ec_numbers = uniprot_dict[uniprot_acc]["ec"]
+        # load in the newly updated EC table from the local CAZyme db
+        ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
+    
+    # load in gbk_ec table, contains the gbk-ec number relationships
+    ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)  # {ec_id: {gbk ids}}
 
-        gbk_id = gbk_dict[genbank_acc]
+    if args.delete_old_ec:
+        gbk_ec_table_dict = get_table_dicts.get_gbk_ec_table_dict(connection)  # {gbk_id: {ec ids}}
+        ecs_rel_to_delete = set()  # set of tuples (gbk_id, ec_id)
 
-        try:
-            gbk_ec_dict[gbk_id]
-        except KeyError:
-            gbk_ec_dict[gbk_id] = set()
-
-        for ec in ec_numbers:
-            ec_id = ec_dict[ec]
-            gbk_ec_dict[gbk_id].add(ec_id)
-        
     # compile list of tuples to insert into the Genbanks_Ecs table
     gbk_ec_insert_values = set()
 
-    for gbk_id in gbk_ec_dict:
-        ec_ids = gbk_ec_dict[gbk_id]
-        for ec_id in ec_ids:
-            gbk_ec_insert_values.add( (gbk_id, ec_id) )
-    
-    
-    insert_data(connection, "Genbanks_Ecs", ["genbank_id", "ec_id"], list(gbk_ec_insert_values))
+    for uniprot_acc in tqdm(uniprot_dict, desc="Updating EC numbers"):
+        genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
+        gbk_id = gbk_dict[genbank_acc]
+        
+        retrieved_ec_numbers = uniprot_dict[uniprot_acc]["ec"]  # EC#s retrieved from UniProt
+        for ec in retrieved_ec_numbers:
+            ec_id = ec_table_dict[ec]
+            
+            existing_gbk_relationships = ec_gbk_table_dict[ec_id]
+            if gbk_id not in existing_gbk_relationships:
+                gbk_ec_insert_values.add( (gbk_id, ec_id) )
+        
+        if args.delete_old_ec:
+            existing_ec_relationships = gbk_ec_table_dict[gbk_id]
+            for ec in retrieved_ec_numbers:
+                ec_id = ec_table_dict[ec]
+                if ec_id not in existing_ec_relationships:
+                    ecs_rel_to_delete.add( (gbk_id, ec_id) )
+
+    if len(gbk_ec_insert_values) != 0:
+        insert_data(connection, "Genbanks_Ecs", ["genbank_id", "ec_id"], list(gbk_ec_insert_values))
+
+    if args.delete_old_ec and len(ecs_rel_to_delete) != 0:
+        for record in tqdm(ecs_rel_to_delete, desc="Deleteing old GenBank-EC relationships"):
+            # record = (genbank_id, ec_id,)
+            stmt = (
+                delete(genbanks_ecs).\
+                where(genbanks_ecs.c.genbank_id == record[0]).\
+                where(genbanks_ecs.c.ec_id == record[1])
+            )
+            connection.execute(stmt)
 
     return
 
@@ -290,4 +311,3 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
             )
             
     return
-
