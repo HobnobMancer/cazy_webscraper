@@ -41,6 +41,7 @@
 """Add data retrieved from UniProt to a local SQLite database"""
 
 
+from sqlalchemy import text
 from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_interface import insert_data
@@ -134,6 +135,36 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, uniprot_table_dict, connectio
             columns = ['genbakn_id', 'uniprot_accession', 'uniprot_name']
     
         insert_data(connection, "Uniprots", columns, list(uniprot_insert_values))
+
+    if len(update_record_gbk_id) != 0:
+        for record in tqdm(update_record_gbk_id, desc="Updating UniProt-Gbk relationships"):
+            connection.execute(
+                text(
+                    "UPDATE Uniprots "
+                    f"SET genbank_id = {record[1]} "
+                    f"WHERE uniprot_accession = '{record[0]}'"
+                )
+            )
+        
+    if len(update_record_name) != 0:
+        for record in tqdm(update_record_name, desc="Updating UniProt protein names"):
+            connection.execute(
+                text(
+                    "UPDATE Uniprots "
+                    f"SET uniprot_name = {record[1]} "
+                    f"WHERE uniprot_accession = '{record[0]}'"
+                )
+            )
+
+    if len(update_record_seq) != 0:
+        for record in tqdm(update_record_seq, desc="Updating UniProt protein seqs"):
+            connection.execute(
+                text(
+                    "UPDATE Uniprots "
+                    f"SET sequence = {record[1]}, seq_update_date = {record[2]} "
+                    f"WHERE uniprot_accession = '{record[0]}'"
+                )
+            )
 
     return
 
