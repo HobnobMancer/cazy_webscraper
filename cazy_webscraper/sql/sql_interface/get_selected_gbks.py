@@ -73,7 +73,7 @@ def get_genbank_accessions(
     :param ec_filters: set of EC numbers to limit the retrieval of data to
     :param connection: open sqlaclchemy connection for an SQLite db
     
-    Return set of GenBank accessions
+    Return dict {gbk_acc: gbk_id}
     """
     logger = logging.getLogger(__name__)
     
