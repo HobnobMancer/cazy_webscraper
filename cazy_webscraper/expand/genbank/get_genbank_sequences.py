@@ -290,3 +290,7 @@ def bulk_query_ncbi(accessions, args):
     epost_query_key = epost_result["QueryKey"]
 
     return epost_webenv, epost_query_key
+
+
+if __name__ == "__main__":
+    main()
