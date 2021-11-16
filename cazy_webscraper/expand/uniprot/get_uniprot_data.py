@@ -58,7 +58,7 @@ from cazy_webscraper import cazy_webscraper
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface import get_selected_gbks
-from cazy_webscraper.sql.sql_interface.add_uniprot_db import (
+from cazy_webscraper.sql.sql_interface.add_uniprot_data import (
     add_ec_numbers,
     add_pdb_accessions,
     add_uniprot_accessions,
