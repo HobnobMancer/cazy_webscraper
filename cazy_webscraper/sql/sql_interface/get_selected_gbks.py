@@ -46,7 +46,7 @@ import sys
 
 from tqdm import tqdm
 
-from scraper.sql.sql_orm import (
+from cazy_webscraper.sql.sql_orm import (
     CazyFamily,
     Ec,
     Genbank,
