@@ -176,6 +176,27 @@ def get_gbk_table_dict(connection):
     return db_gbk_dict
 
 
+def get_gbk_table_seq_dict(connection):
+    """Compile a dict of the data in the Genbanks table
+    
+    :param connection: open connection to an SQLite3 database
+    
+    Return dict {genbank_accession: 'taxa_id': int, 'gbk_id': int}
+    """
+    with Session(bind=connection) as session:
+        all_genbank = session.query(Genbank).all()
+
+    db_gbk_dict = {}  # {genbank_accession: 'taxa_id': str, 'id': int}
+    
+    for gbk in all_genbank:
+        db_gbk_dict[f"{gbk.genbank_accession}"] = {
+            'sequence': gbk.sequence,
+            'seq_date': gbk.seq_update_date
+        }
+    
+    return db_gbk_dict
+
+
 def get_gbk_fam_table_dict(connection):
     """Build dict representing the records present in the Genbanks_CazyFamilies table
 
