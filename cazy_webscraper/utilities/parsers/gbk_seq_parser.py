@@ -83,6 +83,14 @@ def build_parser(argv: Optional[List] = None):
         help="Path to configuration file. Default: None, scrapes entire database",
     )
 
+    # Add option to use own CAZy class synoymn dict
+    parser.add_argument(
+        "--cazy_synonyms",
+        type=Path,
+        default=None,
+        help="Path to JSON file containing CAZy class synoymn names",
+    )
+
     # Add option to define classes to retrieve protein sequences for
     parser.add_argument(
         "--classes",
@@ -91,10 +99,16 @@ def build_parser(argv: Optional[List] = None):
         help="Classes from which all families are to be scraped. Separate classes by ','"
     )
 
+    parser.add_argument(
+        "--ec_filter",
+        type=str,
+        default=None,
+        help="Limit retrieval to proteins annotated with the provided EC numbers. Separate EC numbers with single commas"
+    )
+
     # specify the number of accessions posted in single ePost to NCBI
     parser.add_argument(
-        "-e",
-        "--epost",
+        "--entrez_batch_size",
         type=int,
         default=150,
         help="Number of accessions posted to NCBI per epost, advice to be max 200. Default=150"
@@ -147,6 +161,24 @@ def build_parser(argv: Optional[List] = None):
         default=None,
         help="Defines log file name and/or path",
     )
+
+    parser.add_argument(
+        "--nodelete_cache",
+        dest="nodelete_cache",
+        action="store_true",
+        default=False,
+        help="Do not delete content in existing cache dir",
+    )
+
+    # Add option to force file over writting
+    parser.add_argument(
+        "--sql_echo",
+        dest="sql_echo",
+        action="store_true",
+        default=False,
+        help="Set SQLite engine echo to True (SQLite will print its log messages)",
+    )
+
 
     # Add option to restrict the scrape to specific species. This will scrape CAZymes from
     # all strains belonging to each listed species

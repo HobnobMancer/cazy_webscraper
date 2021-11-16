@@ -96,6 +96,13 @@ def build_parser(argv: Optional[List] = None):
         help="Classes from which all families are to be scraped. Separate classes by ','"
     )
 
+    parser.add_argument(
+        "--ec_filter",
+        type=str,
+        default=None,
+        help="Limit retrieval to proteins annotated with the provided EC numbers. Separate EC numbers with single commas"
+    )
+
     # Add option to force file over writting
     parser.add_argument(
         "-f",
@@ -163,6 +170,22 @@ def build_parser(argv: Optional[List] = None):
         metavar="log file name",
         default=None,
         help="Defines log file name and/or path",
+    )
+
+    parser.add_argument(
+        "--nodelete",
+        dest="nodelete",
+        action="store_true",
+        default=False,
+        help="Do not delete content in existing output dir",
+    )
+
+    parser.add_argument(
+        "--nodelete_cache",
+        dest="nodelete_cache",
+        action="store_true",
+        default=False,
+        help="Do not delete content in existing cache dir",
     )
 
     # Add option to restrict the scrape to specific species. This will scrape CAZymes from
