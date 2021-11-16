@@ -200,12 +200,25 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "-s",
-        "--sequence",
-        dest="sequence",
+        "--sequence_new",
+        dest="sequence_new",
         action="store_true",
         default=False,
-        help="Retrieve protein Aa sequences from UniProt, also logs date sequence was retrieved",
+        help=(
+            "Retrieve protein Aa sequences from UniProt for records that do NOT\n"
+            "have a sequence in the local CAZyme database"
+        ),
+    )
+
+    parser.add_argument(
+        "--sequence_update",
+        dest="sequence_update",
+        action="store_true",
+        default=False,
+        help=(
+            "Retrieve protein Aa sequences from UniProt for records and overwrite the existing\n"
+            "sequence in the local CAZyme database if a newer sequence is retireved from UniProt"
+        ),
     )
 
     # Add option to force file over writting
@@ -254,13 +267,13 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--update_seq",
-        dest="update_db",
+        "--update_name",
+        dest="update_name",
         action="store_true",
         default=False,
         help=(
-            "Update sequences in the db if a newer sequence is available.\n"
-            "Default is to NOT update and NOT overwrite the sequence in the db"
+            "Overwrite the existing protein name from UniProt if a different\n"
+            "protein name is retrieve for the same UniProt accession"
         ),
     )
 
