@@ -54,19 +54,19 @@ from urllib.error import HTTPError
 from bioservices import UniProt
 from tqdm import tqdm
 
-from scraper import cazy_webscraper
-from scraper.expand import get_chunks_list
-from scraper.sql import sql_interface
-from scraper.sql.sql_interface import get_selected_gbks
-from scraper.sql.sql_interface.add_uniprot_db import (
+from cazy_webscraper import cazy_webscraper
+from cazy_webscraper.expand import get_chunks_list
+from cazy_webscraper.sql import sql_interface
+from cazy_webscraper.sql.sql_interface import get_selected_gbks
+from cazy_webscraper.sql.sql_interface.add_uniprot_db import (
     add_ec_numbers,
     add_pdb_accessions,
     add_uniprot_accessions,
 )
-from scraper.sql import sql_orm
-from scraper.utilities import config_logger, file_io
-from scraper.utilities.parsers import uniprot_parser
-from scraper.utilities.parse_configuration import get_expansion_configuration
+from cazy_webscraper.sql import sql_orm
+from cazy_webscraper.utilities import config_logger, file_io
+from cazy_webscraper.utilities.parsers import uniprot_parser
+from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
