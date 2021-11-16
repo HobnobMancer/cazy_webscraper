@@ -43,8 +43,8 @@
 
 from tqdm import tqdm
 
-from scraper.sql.sql_interface import insert_data
-from scraper.sql.sql_orm import Session, Ec
+from cazy_webscraper.sql.sql_interface import insert_data
+from cazy_webscraper.sql.sql_orm import Session, Ec
 
 
 def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
