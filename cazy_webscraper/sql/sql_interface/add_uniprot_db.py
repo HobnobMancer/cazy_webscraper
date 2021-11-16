@@ -47,11 +47,13 @@ from cazy_webscraper.sql.sql_interface import insert_data
 from cazy_webscraper.sql.sql_orm import Session, Ec
 
 
-def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
+def add_uniprot_accessions(uniprot_dict, gbk_dict, uniprot_table_dict, connection, args):
     """Add UniProt data to the local CAZyme database
     
     :param uniprot_dict: dict containing data retrieved from UniProt
     :param gbk_dict: dict representing data from the Genbanks table
+    :param uniprot_table_dict: dict representing the Uniprots table
+        {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
     :param connection: open sqlalchemy conenction to an SQLite db engine
     :param args: cmd-line args parser
 
@@ -59,29 +61,79 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
     """
     uniprot_insert_values = set()
 
-    if args.sequence:
-        for uniprot_acc in tqdm(uniprot_dict, desc="Adding UniProt data per protein"):
-            genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
-            gbk_id = gbk_dict[genbank_acc]
-            uniprot_name = uniprot_dict[uniprot_acc]["name"]
-            seq = uniprot_dict[uniprot_acc]["sequence"]
-            date = uniprot_dict[uniprot_acc]["seq_date"]
+    # the following variables containing objects in the local db that are to be updated
+    update_record_gbk_id = set()  # ((uniprot_accession, gbk_id),)
+    update_record_name = set()  # ((uniprot_accession, retrieved_name), )
+    update_record_seq = set()  # ((uniprot_accession, retrieved_seq), )
 
-            uniprot_insert_values.add( (gbk_id, uniprot_acc, uniprot_name, seq, date) )
-        
-        columns = ['genbank_id', 'uniprot_accession', 'uniprot_name', 'sequence', 'seq_update_date']
-    
-    else:
-        for uniprot_acc in tqdm(uniprot_dict, desc="Adding UniProt data per protein"):
-            genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
-            gbk_id = gbk_dict[genbank_acc]
-            uniprot_name = uniprot_dict[uniprot_acc]["name"]
+    for uniprot_acc in tqdm(uniprot_dict, desc="Separating new and existing records"):
+        # check if the UniProt accession is already in the local CAZyme db
+        try:
+            uniprot_table_dict[uniprot_acc]
+            # Uniprot accession is already in the local CAZyme db
 
-            uniprot_insert_values.add( (gbk_id, uniprot_acc, uniprot_name) )
+            # check if the GenBank id is the same
+            existing_gbk_id = uniprot_table_dict[uniprot_acc]['genbank_id']
+            retrieved_gbk_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
+            retrieved_gbk_id = gbk_dict[retrieved_gbk_acc]
+            if existing_gbk_id != retrieved_gbk_id:
+                update_record_gbk_id.add( (uniprot_acc, retrieved_gbk_id) )
+                
+            if args.update_name:
+                # check if the name has changed
+                existing_name = uniprot_table_dict[uniprot_acc]['name']
+                retrieved_name = uniprot_dict[uniprot_acc]['name']
+                
+                if existing_name != retrieved_name:
+                    update_record_name.add( (uniprot_acc, retrieved_name) )
+            
+            if args.sequence_new:  # only add seq if sequence is not there
+                if uniprot_table_dict[uniprot_acc]['seq'] is None:
+                    update_record_seq.add( (uniprot_acc, uniprot_dict[uniprot_acc]["sequence"]) )
+                
+            if args.sequence_update:  # update seq if a newer version is available or no seq present
+                if uniprot_table_dict[uniprot_acc]['seq'] is None:
+                        update_record_seq.add( (
+                            uniprot_acc,
+                            uniprot_dict[uniprot_acc]["sequence"],
+                            uniprot_dict[uniprot_acc]["seq_date"],
+                        ) )
+                else:
+                    existing_date = uniprot_table_dict[uniprot_acc]['seq_date']
+                    retrieved_date = uniprot_dict[uniprot_acc]['seq_date']
+                    
+                    if existing_date < retrieved_date:  # existing date is older, update seq
+                        update_record_seq.add( (
+                            uniprot_acc,
+                            uniprot_dict[uniprot_acc]["sequence"],
+                            uniprot_dict[uniprot_acc]["seq_date"],
+                        ) )
         
-        columns = ['genbakn_id', 'uniprot_accession', 'uniprot_name']
+        except KeyError:  # new record to add to local CAZyme db
+            
+            if args.sequence_new or args.sequence_update:
+                genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
+                gbk_id = gbk_dict[genbank_acc]
+                uniprot_name = uniprot_dict[uniprot_acc]["name"]
+                seq = uniprot_dict[uniprot_acc]["sequence"]
+                date = uniprot_dict[uniprot_acc]["seq_date"]
+
+                uniprot_insert_values.add( (gbk_id, uniprot_acc, uniprot_name, seq, date) )
+
+            else:  # not retrieving protein sequences
+                genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
+                gbk_id = gbk_dict[genbank_acc]
+                uniprot_name = uniprot_dict[uniprot_acc]["name"]
+                
+                uniprot_insert_values.add( (gbk_id, uniprot_acc, uniprot_name) )
     
-    insert_data(connection, "Uniprots", columns, list(uniprot_insert_values))
+    if len(uniprot_insert_values) != 0:
+        if args.sequence_new or args.sequence_update:
+            columns = ['genbank_id', 'uniprot_accession', 'uniprot_name', 'sequence', 'seq_update_date']
+        else:
+            columns = ['genbakn_id', 'uniprot_accession', 'uniprot_name']
+    
+        insert_data(connection, "Uniprots", columns, list(uniprot_insert_values))
 
     return
 
