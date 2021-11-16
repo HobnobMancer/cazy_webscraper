@@ -88,6 +88,21 @@ def build_parser(argv: Optional[List] = None):
         help="Path to configuration file. Default: None, scrapes entire database",
     )
 
+    parser.add_argument(
+        "--cache_dir",
+        type=Path,
+        default=None,
+        help="Target path for cache dir to be used instead of default path",
+    )
+
+    # Add option to use own CAZy class synoymn dict
+    parser.add_argument(
+        "--cazy_synonyms",
+        type=Path,
+        default=None,
+        help="Path to JSON file containing CAZy class synoymn names",
+    )
+
     # Add option to define classes to retrieve protein sequences for
     parser.add_argument(
         "--classes",
