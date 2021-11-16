@@ -44,22 +44,24 @@
 from sqlalchemy import text
 from tqdm import tqdm
 
-from cazy_webscraper.sql.sql_interface import insert_data
+from cazy_webscraper.sql.sql_interface import insert_data, get_table_dicts
 from cazy_webscraper.sql.sql_orm import Session, Ec
 
 
-def add_uniprot_accessions(uniprot_dict, gbk_dict, uniprot_table_dict, connection, args):
+def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
     """Add UniProt data to the local CAZyme database
     
     :param uniprot_dict: dict containing data retrieved from UniProt
     :param gbk_dict: dict representing data from the Genbanks table
-    :param uniprot_table_dict: dict representing the Uniprots table
-        {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
     :param connection: open sqlalchemy conenction to an SQLite db engine
     :param args: cmd-line args parser
 
     Return nothing.
     """
+    # load the current Uniprot records in the local CAZyme db
+    # {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
+    uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+
     uniprot_insert_values = set()
 
     # the following variables containing objects in the local db that are to be updated
@@ -221,32 +223,71 @@ def add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection):
     return
 
 
-def add_pdb_accessions(uniprot_dict, gbk_dict, connection):
+def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
     """Add PDB accessions to the local CAZyme database
 
     :param uniprot_dict: dict containing data retrieved from UniProt
     :param gbk_dict: dict representing data from the Genbanks table
     :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param args: cmd-line args parser
 
     Return nothing.
     """
-    pdb_insert_values = set()
+    # load in PDB objects in the local CAZyme db
+    pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
 
-    for uniprot_acc in tqdm(uniprot_dict, desc="Adding PDB accessions per protein"):
+    pdb_insert_values = set()  # new records to add to db
+    update_pdbs = set()  # records to update
+    existing_pdbs = set(pdb_table_dict.values())  # records already in the db
+    if args.delete_old_pdbs:
+        delete_pdbs = set()  # records to delete, PDB acc no longer listed in UniProt for the given protein
+
+    for uniprot_acc in tqdm(uniprot_dict, desc="Identifying new and updated PDB records"):
         genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
         gbk_id = gbk_dict[genbank_acc]
 
-        pdbs = uniprot_dict[uniprot_acc]["pdb"]
-        if len(pdbs) == 0:
+        retrieved_pdbs = uniprot_dict[uniprot_acc]["pdb"]
+        if len(retrieved_pdbs) == 0:
             continue
 
-        for pdb in pdbs:
-            pdb_insert_values.add(pdb, gbk_id)
+        for pdb in retrieved_pdbs:
+            if pdb_acc in existing_pdbs:
+                # check if the gbk_id is the same
+                current_pdbs = pdb_table_dict[gbk_id]
+                if pdb_acc not in current_pdbs:
+                    update_pdbs.add( (pdb_acc, gbk_id) )
+            
+            else:
+                pdb_insert_values.add( (pdb_acc, gbk_id) )
+        
+        if args.delete_old_pdbs:
+            existing_pdb_records = pdb_table_dict[gbk_id]
+            for pdb_acc in existing_pdb_records:
+                if pdb_acc not in retrieved_pdbs:
+                    delete_pdbs.add( (pdb_acc,) )
 
-    if len(pdb_insert_values) == 0:
-        return
+    if len(pdb_insert_values) != 0:
+        insert_data(connection, "Pdbs", ["pdb_accession", "genbank_id"], list(pdb_insert_values))
 
-    insert_data(connection, "Pdbs", ["pdb_accession", "genbank_id"], list(pdb_insert_values))
+    if len(update_pdbs) != 0:
+        for record in tqdm(update_pdbs, desc="Updating PDB records"):
+            connection.execute(
+                text(
+                    "UPDATE Pdbs "
+                    f"SET genbank_id = {record[1]} "
+                    f"WHERE pdb_accession = '{record[0]}'"
+                )
+            )
 
+    if args.delete_old_pdbs and len(delete_pdbs) != 0:
+        for record in tqdm(delete_pdbs, desc="Deleteing old PDB accessions"):
+            # record = (pdb_acc,)
+            connection.execute(
+                text(
+                    "DELETE Pdbs "
+                    f"WHERE pdb_accession = '{record[0]}'"
+                )
+            )
+            
     return
 
