@@ -47,7 +47,8 @@ If you use `cazy_webscraper`, please cite the following publication:
     - [Configuring UniProt data retrieval](#configuring-uniprot-data-retrieval)
 - [Retrieving protein sequences from GenBank](#retrieving-protein-sequences-from-genbank)
     - [Configuring GenBank protein sequence data retrieval](#configuring-genbank-protein-sequence-retrieval)
-- [Extracing protein sequences from the local CAZyme database and building a BLAST database](#extracting-protein-sequences-from-the-local-cazyme-database-and-building-a-blast-database)
+- [Extracting protein sequences from the local CAZyme database and building a BLAST database](#extracting-protein-sequences-from-the-local-cazyme-database-and-building-a-blast-database)
+    - [Configuring extracting sequences from a local CAZyme db](#configuring-extracting-sequences-from-a-local-cazyme-db)
 - [Retrieving protein structure files from PDB](#retrieving-protein-structure-files-from-pdb)
     - [Configuring PDB protein structure file retrieval](#configuring-pdb-protein-structure-file-retrieval)
 - [Configuring `cazy_webscraper` using a YAML file](#configuring-using-a-yaml-file)
@@ -289,7 +290,7 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
 
-## Extract protein sequences from the local CAZyme database and building a BLAST database
+## Extracting protein sequences from the local CAZyme database and building a BLAST database
 
 Protein sequences from GenBank and UniProt that are stored in the local CAZyme database can be extracted using `cazy_webscraper`, and written to any combination of:
 - 1 FASTA file per unique protein
