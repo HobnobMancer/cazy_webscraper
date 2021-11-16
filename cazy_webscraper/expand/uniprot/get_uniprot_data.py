@@ -161,17 +161,17 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     if args.verbose:
         logger.info(
-            "Finished scraping CAZy. Terminating program.\n"
+            "Finished getting data from UniProt\n"
             f"Scrape initated at {start_time}\n"
             f"Scrape finished at {end_time}\n"
             f"Total run time: {total_time}"
-            f"Version: {cazy_webscraper.V}\n"
+            f"Version: {cazy_webscraper.VERSION_INFO}\n"
             f"Citation: {cazy_webscraper.CITATION_INFO}"
         )
     else:
         print(
             "=====================cazy_webscraper=====================\n"
-            "Finished scraping CAZy\n"
+            "Finished getting data from UniProt\n"
             f"Scrape initated at {start_time}\n"
             f"Scrape finished at {end_time}\n"
             f"Total run time: {total_time}"
