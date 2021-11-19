@@ -29,7 +29,7 @@ copyright = '2020, Emma E. M. Hobbs'
 author = 'Emma E. M. Hobbs'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.2'
+release = '2.0.0'
 
 
 # -- General configuration ---------------------------------------------------
