@@ -108,7 +108,7 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "-d",
+        "-o",
         "--db_output",
         type=Path,
         default=None,
@@ -116,7 +116,7 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "-D",
+        "-d",
         "--database",
         type=Path,
         default=None,

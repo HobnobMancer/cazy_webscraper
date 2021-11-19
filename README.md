@@ -105,9 +105,9 @@ Options are written in alphabetical order.
 
 `--classes` - list of classes from which all families are to be scrape.
 
-`--database`, `-D` - Path to an **existings** local CAZyme database to add newly scraped too. Default: None.
+`--database`, `-d` - Path to an **existings** local CAZyme database to add newly scraped too. Default: None.
 
-`--db_output`, `-d` - Path to write out a **new** local CAZyme database to. Include the name of the new database, including the `.db` extension. Default: None.
+`--db_output`, `-o` - Path to write out a **new** local CAZyme database to. Include the name of the new database, including the `.db` extension. Default: None.
 
 _Do not use `--db_output` **and** `--database` at the same time._
 
