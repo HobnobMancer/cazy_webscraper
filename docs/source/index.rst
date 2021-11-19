@@ -89,7 +89,7 @@ We have produced a "Getting Started With ``cazy_webscraper``" `poster <https://h
 To download the entire CAZy dataset, and save the data set to the current working directory with the final name 
 ``cazy_webscraper_<date>_<time>.db``, use the following command structure:  
 
-.. codeblock bash
+.. code-block:: bash
    cazy_webscraper <user_email>
 
 .. NOTE::
