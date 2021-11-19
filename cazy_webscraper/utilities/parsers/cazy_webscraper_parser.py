@@ -185,7 +185,7 @@ def build_parser(argv: Optional[List] = None):
         dest="nodelete",
         action="store_true",
         default=False,
-        help="When called, content in the existing cache dir is NOT deleted",
+        help="When called, content in the existing out dir is NOT deleted",
     )
 
     # Add option to not delete content in the existing cache dir
