@@ -79,18 +79,18 @@ from typing import List, Optional
 
 from tqdm import tqdm
 
-from scraper import crawler
-from scraper import cazy
-from scraper.sql import sql_orm, sql_interface
-from scraper.sql.sql_interface import add_cazyme_data
-from scraper.utilities import (
+from cazy_webscraper import crawler
+from cazy_webscraper import cazy
+from cazy_webscraper.sql import sql_orm, sql_interface
+from cazy_webscraper.sql.sql_interface import add_cazyme_data
+from cazy_webscraper.utilities import (
     build_logger,
     config_logger,
     file_io,
     parse_configuration,
     termcolour,
 )
-from scraper.utilities.parsers import cazy_webscraper_parser
+from cazy_webscraper.utilities.parsers import cazy_webscraper_parser
 
 # Define constants
 
