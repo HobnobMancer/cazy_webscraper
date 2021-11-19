@@ -179,6 +179,15 @@ def build_parser(argv: Optional[List] = None):
         help="Defines log file name and/or path",
     )
 
+    parser.add_argument(
+        "-n",
+        "--nodelete",
+        dest="nodelete",
+        action="store_true",
+        default=False,
+        help="When called, content in the existing cache dir is NOT deleted",
+    )
+
     # Add option to not delete content in the existing cache dir
     parser.add_argument(
         "--nodelete_cache",
