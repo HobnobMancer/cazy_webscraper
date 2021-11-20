@@ -460,18 +460,21 @@ Configuration file
 ------------------
 
 Whenever ``cazy_webscraper`` is invoked and adds data to a database, the configuration of ``cazy_webscraper`` 
-(this is the kingdoms, genera, species, strains, EC numbers, CAZy classes and CAZy family filters which were applied) 
+(this is the kingdoms, genera, species, strains, CAZy classes and CAZy family filters which were applied) 
 and the data and time the scrape was initiated is logged in the database. However, for optimal reproduction of 
 how ``cazy_webscraper`` was used in your research, you can create shareable documentation that others can use to 
-invoke ``cazy_webscraper`` and apply the exact sample filters as yourself. This is achieved by creating a configuration file 
+reproduce your CAZy dateset. This is achieved by creating a configuration file 
 rather than configuring the performance of ``cazy_webscraper`` at the command line.
 
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Creating a configuration file
-****************************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-An example and template configuration file is included in ``cazy_webscraper``, it can be found at ``scraper/scraper_config.yaml``. 
-This is a YAML file; if you are new to YAML files please find more detailed information on YAML files [here](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html).
+``cazy_webscraper`` uses the YAML file type for its configuraiton file; 
+if you are new to YAML files please find more detailed information on YAML files [here](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html).
+
+A template and example configuration file for scrapping CAZy using ``cazy_webscraper`` can be found in 
+the repo, in the ``configuration_files`` directory.
 
 The configuration YAML **must** contain the following tags/headings (identical to how they are presented below):
 
@@ -485,34 +488,17 @@ The configuration YAML **must** contain the following tags/headings (identical t
 * genera
 * species
 * strains
-* kingoms
-* ECs
+* kingdoms
 
+.. NOTE::
+   The order of the tags/headings does not matter.
 
-Specifying CAZy classes to scrape
-====================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Scraping specific CAZy classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Under the **classes** heading list any classes to be scrapped. For classes listed under 'classes', 
-all proteins catalogued under that class will be retrieved, **unless** specific families have been 
-listed under the respective classes heading in the configuration file. Then scraping only the 
-specific families takes precident and the entire class is not scraped. _If you believe this should 
-be changed please raise an issue. It is invisioned that very few users would want to simultanious 
-scrape an entire class and also scrape only specific families from that same class._
-
-A ``cazy_dictionary.json`` has been created and packaged within the ``cazy_webscraper`` 
-(the specific location is ``./scraper/file_io/cazy_dictionary.json``, where '.' is the directory 
-where the webscraper is installed). This allows users to use a variety of synonoms for the CAZy 
-classes, for example both "GH" and "Glycoside-Hydrolases" are accepted as synonoms for 
-"Glycoside Hydrolases (GHs)". Additionally, the retrieval of CAZy classes from the configuration 
-file is **not** case sensitive, therefore, both "gh" and "GH" are excepted. The excepted class 
-synonoms have beeen written out in a json file to enale easy editing of this file if additional 
-accepted synonoms are to be added, of it a new CAZy class is defined then this class only needs 
-to be added to the json file, without needing to modify the entire webscraper. 
-
-If you having issues with the scraper retrieving the list of CAZy classes that are written under 
-'classes' in the configuration file, please check the dictionary first to see the full list of 
-accepted synonoms. If you are comfortable modifying json files then feel free to add your own 
-synonoms to the dictionary.
+Under the **classes** heading list any classes to be scrapped. For each CAZy class listed under 'classes', CAZymes 
+will be retrieved for every CAZy family within the CAZy class.
 
 Each class must be listed on a separate line, indented by 4 spaces, and the class name encapsulated 
 with single or double quotation marks. For example:
@@ -521,17 +507,22 @@ with single or double quotation marks. For example:
 
     classes:
         - "GH"
-        - "pl"
+        - "PL"
 
-Specifying CAZy families to scrape
-=========================================
+The same CAZy class name synonyms used for the command line are accepted for the configuration file.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Scraping specific CAZy families
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Under the each of the class names listed in the configuration file, list the names of specific 
 **families** to be scraped from that class. The respective classes of the specificed families do 
 **not** need to be added to the 'classes' list.
 
 Write the true name of the family not only it's number, for example **GH1** is excepted by **1** is 
-not. Name families using the standard CAZy nomenclature, such as **"GT2"** and 
+not.
+
+Name families using the standard CAZy nomenclature, such as **"GT2"** and 
 **NOT "GlycosylTransferases_2"**. Additionally, use the standard CAZy notation for subfamilies 
 (**GH3_1**).
 
@@ -547,12 +538,16 @@ marks. For example:
     Glycoside Hydrolases (GHs):
         - "GH1"
         - "GH2"
+        - "GH3_1"
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 Example configuration file
-*************************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Below is an example of the content you may wish to put in a configuration file.
+Below is an example of the content you may wish to put in a configuration file. Using this file 
+will retrieve all CAZymes in CAZy class AA, CAZy families GH1, GH3 and PL9 that are either derived from 
+a bacterial or *Trichoderma* species.
 
 .. code-block:: yaml
 
@@ -573,9 +568,6 @@ Below is an example of the content you may wish to put in a configuration file.
    strains:
    kingdoms:
       - "Bacteria"
-   ECs:
-      - EC4.2.2.-
-      - EC5.4.-.-
 
 
 .. note::
@@ -606,15 +598,13 @@ allow you to add notes to your configuration file. For example:
    ECs:  # only CAZymes with at least one of these EC numbers will be scrapped
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 Using a configuration file
-************************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Once you have created a configuration file (we recommend modifying the template one provided with ``cazy_webscraper`` 
 you then need to invoke ``cazy_webscraper`` and tell it you are using a configuration file. To do this we add the 
-``--config`` flag to the ``cazy_webscraper`` command, followed by the path to the configuration file.
-
-.. note::
-   You can use the long form of the configuration file flag (``--config``) *or* the short hand (``-c``).
+``--config``/``-c`` flag to the ``cazy_webscraper`` command, followed by the path to the configuration file.
 
 The path we pass to ``cazy_webscraper`` is a *relative* path. This means ``cazy_webscraper`` will start in the directory 
 the terminal is currently pointed out, and follow the path from there. For example, if we used the command:
@@ -623,8 +613,8 @@ the terminal is currently pointed out, and follow the path from there. For examp
 
    cazy_webscraper -c scraper/scraper_config.yaml
 
-Then the computer will look for a directory called ``scraper`` in the directory the terminal is looking at, then within the 
-``scraper`` directory it will look for a yaml file called ``scraper_config.yaml``.
+Then the computer will look for a directory called ``scraper`` in the directory the terminal is looking at, then look within the 
+``scraper`` directory for a yaml file called ``scraper_config.yaml``.
 
 .. note::
    To check which directory ``cazy_webscraper`` is pointed at type ``pwd`` into the terminal and hit enter. This is the 
@@ -633,13 +623,14 @@ Then the computer will look for a directory called ``scraper`` in the directory 
 .. warning::
    Your path must point directly to the YAML file. Don't forget the '.yaml' file extension!
 
-
+------------------------------------------
 Using a configuration and the command-line
-###############################################
+------------------------------------------
 
-If you so wished, you can use a configuration file *and* the command line to configure ``cazy_webscraper``. If you do this 
-``cazy_webscraper`` will **not** retrieve duplicates of the data. If a CAZyme matches at least one of the configuration data then 
-one copy of the CAZyme record will be added to the SQL database, and only one copy will be added to the database no matter how many of the 
+You can configure ``cazy_webscraper`` using a combination of command line arguments and a configuration file. 
+
+If a CAZyme matches at least one of the configuration data (whether if be from the terminal of the configuration file),  
+one copy of the CAZyme record will be added to the SQL database, and only **one copy**, no matter how many of the 
 configuration data the CAZyme meets.
 
 To use a configuration file and a the command-line to configure ``cazy_webscraper``, use the configuration file 
@@ -649,8 +640,9 @@ To use a configuration file and a the command-line to configure ``cazy_webscrape
    The order you invoke the optional flags **does not** matter.
 
 
+-------------------------------------------------------------------
 Additional operations to fine tune how ``cazy_webscraper`` operates
-#############################################################################
+-------------------------------------------------------------------
 
 
 Retrieving CAZy family and CAZy subfamily annotations
