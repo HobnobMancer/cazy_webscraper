@@ -80,9 +80,9 @@ We will now walk through some examples of how to use ``cazy_webscraper``. All ex
    ``cazy_webscraper --help``.
 
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------
 Configuring were the output is saved
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------
 
 Instead of writing out database to the current working directory using the default database name 
 (``cazy_webscraper_<date>_<time>.db``), we can name the database and directory that the database 
@@ -153,15 +153,16 @@ exact same operation as the code given above:
 The above examples also highlight that it does not matter if you use the long or short versions of each of the flags.
 
 
-
+----------------------------------------------
 Specifying CAZy classes and families to scrape
-**************************************************
+----------------------------------------------
 
+^^^^^^^^^^^^^^^^^^^^^^^^^
 Scraping specific classes
-==============================
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If instead of scraping all of CAZy, you want to only scrape CAZymes from specific CAZy classes then add the 
-``--classes`` flag followed by the classes you want to scrape. If you want to list multiple families, separate the families 
+``--classes`` flag followed by the classes you want to scrape. If you want to list multiple classes, separate the classes 
 with a single comma. When you specify a CAZy class to scrape, *all* CAZy families within that class will be scraped.
 
 For example, if you want to scrape all CAZymes from Glycoside Hydrolase and Carbohydrate Esterases then use the command:
@@ -184,13 +185,14 @@ For example, if you want to scrape all CAZymes from Glycoside Hydrolase and Carb
 
 * **Carbohydrate-Binding Modules (CBMs):** Carbohydrate-Binding-Modules, Carbohydrate_Binding_Modules, Carbohydrate_Binding Modules, CarbohydrateBindingModules, CARBOHYDRATE-BINDING-MODULES, CARBOHYDRATE_BINDING_MODULES, CARBOHYDRATE_BINDING MODULES, CARBOHYDRATEBINDINGMODULES, carbohydrate-binding-modules, carbohydrate_binding_modules, carbohydrate_binding modules, carbohydratebindingmodules, CBMs, CBM, cbms, cbm
 
-.. note::
+.. TIP::
    These synonyms are stored in a JSON found at ``scraper/utilities/parse_configuration/cazy_dictionary.json``. 
    Storing these synonyms allows you to modify this file if you wish to add your own synonoms for each CAZy class.
 
 
+--------------------------
 Scraping specific families
-===============================
+--------------------------
 
 To specify specific CAZy families to scrape, add the ``--families`` flag followed by the families you want 
 to scrape. If you want to scrape multiple families, add the ``--families`` flag *once* followed by a list of *all* 
