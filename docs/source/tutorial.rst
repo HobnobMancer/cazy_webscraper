@@ -3,50 +3,52 @@ Tutorials on configuring ``cazy_webscraper``
 ================================================================
 
 ``cazy_webscraper`` can be configured to retrieve user specified data sets from CAZy. The configuration 
-applies to the retrieval of protein sequences from GenBank and protein structure files from PDB.
+applies to the retrieval of protein data from UniProt, protein sequences from GenBank and protein structure files from PDB.
 
 ``cazy_webscraper`` can be configured via the **command line** and/or via a **YAML configuration file**.
 
 This page runs through examples of how to combine the various 'filters' that can be applied, to fully customised 
 the scraping of CAZy. These tutorials are designed for those with less experience using command-line tools.
 
-
-.. note::
+.. NOTE::
   If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` call it using ``cazy_webscraper`` - this is the method used in this tutorial.  
   If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` using the command ``python3 <path to cazy_webscraper.py>``. For example, if you were located in the root of the repository, you would use: ``python3 scraper/cazy_webscraper.py``.
 
 
+----------------------------------
 Configuration via the command line
-###########################################
+----------------------------------
 
-There are no required arguments for ``cazy_webscraper``, therefore the scraper can be enabled 
-by simply calling the scraper at the command line in the terminal: 
+``cazy_webscraper`` has only one required argument: the user email address. Therefore, 
+ the scraper can be enabled by simply calling the scraper at the command line in the terminal: 
 
 .. code-block:: bash
-  cazy_webscraper
+  cazy_webscraper myemail@domain.com
 
 When NO optional arguments are provided the default behaviour of the scraper will be performed. 
 The default behaviour is to:
 
 * Scrape the entire CAZy databases
-* Write the resulting database to standard out (STDOUT)
+* Write the resulting database to the current working directory
 * Not to retrieve subfamilies (members of subfamilies will be retrieved but only their parent family will be listed)
 
 .. note::
    **For those new to using command-line tools: arguments**  
    Arguments are additional pieces of information we add onto the end of the command. They are used to configure the specific behaviour 
-   performed by computer when we tell it to perform a specific command. In the examples above the command is ``cazy_webscraper.py``, 
-   where we have told to computer to run the Python program ``cazy_webscraper``, and because no additional information was provided, the computer 
+   performed by computer when we tell it to perform a specific command. In the examples above the command is ``cazy_webscraper myemail@domain.com``, 
+   where we have told to computer to run the Python program ``cazy_webscraper`` and submit the user email 
+   address to NCBI for the retrieval of source orgnaism data. No additional information was provided, the computer 
    will invoke ``cazy_webscraper`` using its default behaviour. If you do not want the default behaviour of ``cazy_webscraper`` then we need to 
    pass additionally arguments to the computer when telling it to run ``cazy_webscraper``, which we cover in the section below.
 
 
-Options configurable at the command line
-############################################
+-----------------------------------------
+Options configurable at the command line 
+-----------------------------------------
 
 The following behaviours of the ``cazy_webscraper`` can be configured at the command-line in the terminal:  
 
-* Limit the scraping of CAZy to specific CAZy classes, CAZy families, kingdoms, genuera, species, strains and/or EC numbers.
+* Limit the scraping of CAZy to specific CAZy classes, CAZy families, kingdoms, genuera, species, and/or strains
 * Force writing out the database to a a new or existing directory
 * Write out a log file of the packages operation
 * Not delete content already present in the output directory
@@ -56,14 +58,15 @@ The following behaviours of the ``cazy_webscraper`` can be configured at the com
 `Here <https://cazy-webscraper.readthedocs.io/en/latest/configuration_scraper.html>`_ you can find a full list of the command-line flags and options.
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 How to use the command-line options
-#############################################
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The command-line options listed above can be used in any combination to customise the scraping of CAZy. The options that apply a 'filter' 
-to restrict which CAZymes are scraped from CAZy are applied in combination. For example, if the ``--families`` option and ``--ec`` option are called then 
-only CAZymes from the specified families **and** annotated with the listed EC numbers will be retrieved.
+to restrict which CAZymes are scraped from CAZy are applied in combination. For example, if the ``--families`` option and ``--genera`` option are called then 
+only CAZymes from the specified families **and** belonging to source organisms within the defined genera will be retrieved.
 
-We will now walk through some examples of how to use ``cazy_webscraper``. All example code provided in this section will presume that the terminal is pointed at the ``scraper`` directory, which contains the ``cazy_webscraper.py`` file.
+We will now walk through some examples of how to use ``cazy_webscraper``. All example code provided in this section will presume that the terminal is pointed at the ``cazy_webscraper`` directory, which contains the ``cazy_webscraper.py`` file.
 
 .. note::
    **For those new to using command-line tools: flags**
@@ -77,21 +80,30 @@ We will now walk through some examples of how to use ``cazy_webscraper``. All ex
    ``cazy_webscraper --help``.
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Configuring were the output is saved
-*************************************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We can name the directory that the database created by ``cazy_webscraper`` is written to by calling the ``--output`` flag. 
-We add the flag to the command that invokes ``cazy_webscraper``. For example, to write the output to the directory 'cazyme_database' we can use:
+Instead of writing out database to the current working directory using the default database name 
+(``cazy_webscraper_<date>_<time>.db``), we can name the database and directory that the database 
+created by ``cazy_webscraper`` is written by calling the ``--output`` flag. 
+
+We add the flag to the command that invokes ``cazy_webscraper``. For example, to write the output to the directory 'cazyme_database' with the file 
+name 'cazyme_database.db' we can use:
 
 .. code-block:: bash
 
-   cazy_webscraper --output cazyme_database
+   cazy_webscraper --output cazyme_database/cazyme_database.db
 
 OR we can use the short hand version of the ``--output`` flag, ``-o``:
 
 .. code-block:: bash
 
-   cazy_webscraper -o cazyme_database
+   cazy_webscraper -o cazyme_database/cazyme_database.db
+
+.. NOTE::
+   The final element of the path provided after the ``--output``/``-o`` flag is the name of database compiled by 
+   ``cazy_webscraper``.
 
 The output directory does not have to exist when ``cazy_webscraper`` is invoked. ``cazy_webscraper`` can make 
 the output directory, including all necessary parent directories. 
@@ -100,23 +112,10 @@ The ``--output`` flag can take an infinetly long path. For example, we could use
 
 .. code-block:: bash
 
-   cazy_webscraper -o data/cazyme_research/cazyme_database
+   cazy_webscraper -o data/cazyme_research/cazyme_database/cazyme_database.db
 
 If the directories ``cazymes_research`` and ``cazyme_database`` did not exist then ``cazy_webscraper`` will build 
 these for you.
-
-In the Bash terminal paths are **relative**, meaning that the terminal starts in the directory it is currently 
-looking at and follows the path from there. The installation section of this tutorial covers this when 
-discussing how to change directory.
-
-.. warning::
-   When requesting ``cazy_webscraper`` make an output directory, the parent of the directory we wish to make 
-   **must already exist**. For examlple, if we asked ``cazy_webscraper`` to write its output to the directory 
-   'data/cazyme_research/cazyme_database' and the directory 'cazyme_database' did not exist, *if* the directory 
-   'cazyme_research' did exist ``cazy_webscraper`` would build the directory 'cazyme_database' within 'cazyme_research'. 
-   However, if 'cazyme_research' *and* 'cazyme_database' did not exist, then ``cazy_webscraper`` would raise an error saying 
-   the path 'data/cazyme_research' does not exist.
-
 
 **Writing the output to an existing database**
 If you want to write the output CAZyme database to a directory that already exists, you will need to add the force (``--force`` *or* ``-f``) flag 
@@ -124,9 +123,9 @@ anywhere to the ``cazy_webscraper`` command. For example:
 
 .. code-block:: bash
 
-   cazy_webscraper -o data/cazyme_research/cazyme_database -f
+   cazy_webscraper -o data/cazyme_research/cazyme_database/cazyme_database.db -f
 
-By default ``cazy_webscraper`` will delete or content in an already existing output directory. Therefore, in the above example, 
+By default ``cazy_webscraper`` will delete all content in an already existing output directory. Therefore, in the above example, 
 if the directory ``cazyme_database`` already existed, ``cazy_webscraper`` would delete all content in the directory then proceed. 
 
 You may wish to retain the data already in that directory. To do this add the 'no delete' (``--nodelete`` *or* ``-n``) flag anywhere 
@@ -134,22 +133,22 @@ to the ``cazy_webscraper`` command. For example:
 
 .. code-block:: bash
 
-   cazy_webscraper -o data/cazyme_research/cazyme_database -f -n
+   cazy_webscraper -o data/cazyme_research/cazyme_database/cazyme_database.db -f -n
 
 The order you invoke *any* of the optional flags does not matter, for example the following three examples perform the 
 exact same operation as the code given above:
 
 .. code-block:: bash
 
-   cazy_webscraper --force -o data/cazyme_research/cazyme_database -f
+   cazy_webscraper --force -o data/cazyme_research/cazyme_database/cazyme_database.db -f
 
 .. code-block:: bash
 
-   cazy_webscraper -n -o data/cazyme_research/cazyme_database -f
+   cazy_webscraper -n -o data/cazyme_research/cazyme_database/cazyme_database.db -f
 
 .. code-block:: bash
 
-   cazy_webscraper --nodelete --force --output data/cazyme_research/cazyme_database
+   cazy_webscraper --nodelete --force --output data/cazyme_research/cazyme_database/cazyme_database.db
 
 The above examples also highlight that it does not matter if you use the long or short versions of each of the flags.
 
