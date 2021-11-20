@@ -399,7 +399,7 @@ we would use would be:
    using the command ``cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015`` 
    will retrieve all CAZymes from *all* Aspergillus species *once*.
 
-When combining taxonomy filters, the higher taxonomy levels take president. For example, the :command:`
+When combining taxonomy filters, the higher taxonomy levels take president. For example, the :command:
    
 .. code-block:: bash
    cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015
@@ -407,9 +407,57 @@ When combining taxonomy filters, the higher taxonomy levels take president. For 
 will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well. 
 ``cazy_webscraper`` will retrieval all CAZymes for all strains of *Aspergillus niger*.
 
+-----------------------------------------
+Enabling retrieving subfamily annotations
+-----------------------------------------
 
+By default ``cazy_webscraper`` only retrieves the CAZy family annotation for each protein, it does not 
+retrieve the CAZy subfamily annotation. For example, a CAZyme within the CAZy subfamily GH3_1, will be 
+stored in the local CAZyme database as only a GH3 CAZyme.
+
+To retrieve the CAZy family **and** CAZy subfamily annotations, add the ``-subfamilies``/``-s`` flag, anywhere in the 
+``cazy_webscraper`` command. For example:
+
+.. code-block:: bash
+   cazy_webscraper --families GH3 --subfamilies
+
+This command will retrieve all CAZymes from GH3, and will retrieve the CAZy family **and** CAZy subfamily 
+annotations. For example, a CAZyme in CAZy subfamily GH3_1 will be stored in the local database under the 
+CAZy family GH3 and the CAZy subfamily GH3_1.
+
+------------------------------------------------------
+Combining CAZy class, CAZy family and taxonomy filters
+------------------------------------------------------
+
+You can use any combination of the CAZy class, CAZy family and taxonomy filters to fully customise the scrape of 
+CAZy.
+
+Below are some examples:
+
+**Example 1**
+To retrieve all CAZymes from all CBM families, GH1, GH2 and PL9, and that are derived from any Aspergillus species:
+
+.. code-block:: bash
+
+   cazy_webscraper --classes CBM --families GH1,GH2,PL9 --genera Aspergillus
+
+**Example 2**  
+To retrieve all CAZymes from GH1, and GH2 that are derived from any bacterial species:
+
+.. code-block:: bash
+
+   cazy_webscraper --families GH1,GH2 --kingdoms bacteria 
+
+**Example 3**  
+To retrieve CAZymes from all viral species, and all Aspergillus niger strains which are catalogued within GH3_1 and GH3_2
+
+.. code-block:: bash
+
+   cazy_webscraper --families GH3_1,GH3_2 --subfamilies --species Aspergillus niger --kingdoms Bacteria
+
+------------------
 Configuration file
-################################
+------------------
 
 Whenever ``cazy_webscraper`` is invoked and adds data to a database, the configuration of ``cazy_webscraper`` 
 (this is the kingdoms, genera, species, strains, EC numbers, CAZy classes and CAZy family filters which were applied) 
