@@ -644,28 +644,22 @@ To use a configuration file and a the command-line to configure ``cazy_webscrape
 Additional operations to fine tune how ``cazy_webscraper`` operates
 -------------------------------------------------------------------
 
-
-Retrieving CAZy family and CAZy subfamily annotations
-********************************************************
-
-The default behaviour of ``cazy_webscraper`` retrieves only the CAZy family annotations of CAZymes, and 
-does **not** catalogue the child CAZy subfamily annotations as well. If you want to retrieve the CAZy subfamily 
-annotations then add the ``--subfamilies`` flag anywhere to the ``cazy_webscraper`` command. For example:
-
-.. code-block:: bash
-
-   cazy_webscraper --subfamilies
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Add the scraped data to an existing CAZyme database
-*********************************************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You may wish to scrape CAZy in multiple stages, maybe your internet dropped out while scraping CAZy 
-and you don't want to start again, or maybe you scraped CAZy but forget missed out a species of interest. No matter 
+You may wish to scrape CAZy in multiple stages; maybe your internet dropped out while scraping CAZy 
+and you don't want to start again, or maybe you scraped CAZy but missed out a species of interest. No matter 
 the reason ``cazy_webscraper`` allows you to add more CAZyme data to an existing database previously created by 
 ``cazy_webscraper``.
 
 To do this add the database (``--database`` or ``-d``) flag to the ``cazy_webscraper`` command, followed by the path 
-to the SQL database you want to add your scraped CAZy data to.
+to the CAZyme database you want to add your scraped CAZy data to. For example, to add data to an existing 
+database in ``cazy/cazyme_db.db`` use the command:
+
+.. code-block:: bash
+
+   cazy_webscraper -- database cazy/cazyme_db.db
 
 .. note::
    Don't forget the .db file extension at the end of the path!
@@ -681,11 +675,12 @@ Then the computer will look for a directory called ``my_cazyme_databases`` in th
 ``my_cazyme_databases`` directory the computer will look for the file ``my_cazyme_database.db``.
 
 
+^^^^^^^^^^^^^^^^^^^^^^
 Writing out a log file
-******************************
+^^^^^^^^^^^^^^^^^^^^^^
 
 If you want to have a log file of all terminal output produced by ``cazy_webscraper`` then add the log 
-``--log`` flag (or the shorthand version ``-l``) anywhere to the ``cazy_webscraper`` command, followed by a 
+``--log``/``-l`` anywhere to the ``cazy_webscraper`` command, followed by a 
 path to write the log file to. This path is a *relative* path and must include target a log file specifically. 
 For example:
 
@@ -697,13 +692,13 @@ For example:
    The log file does not already have to exist for ``cazy_webscraper`` to write to it; however, all 
    directories included in the path must already exist.
 
-
+^^^^^^^^^^^^^^^
 Verbose logging
-*********************************
+^^^^^^^^^^^^^^^
 
-For more detailed logging (logging more detail and not only when warnings and errors are raised by 
-``cazy_webscraper``), add the verbose logging flag (``--verbose`` or ``-v``) anywhere to the ``cazy_webscraper`` 
-command. You need only add the verbose flag and nothing else, for example:
+For more detailed logging (which includes not only error and warning messages (the default) but also 
+configuration setup, number of proteins retrieved etc.), add the verbose logging flag (``--verbose`` or ``-v``) anywhere to the ``cazy_webscraper`` 
+command. For example:
 
 .. code-block:: bash
 
@@ -711,14 +706,16 @@ command. You need only add the verbose flag and nothing else, for example:
 
 The verbose flag can be used in combination with the log flag to write all terminal output to a log file.
 
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changing the connection timeout limit
-*****************************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Sometimes the connection to the CAZy server times out. By default if a connection is attempted to made to CAZy 
 and no response is recieved within 45 seconds, then ``cazy_webscraper`` interprets this as the connection 
-timing out, waits 10 seconds and retries the connection.  You can change how long the computer waits for a 
-response from the CAZy server before classifying the connection as timed out by adding the timeout flag to the 
+timing out. ``cazy_webscraper`` then waits 10 seconds and retries the connection.
+
+You can change how long the computer waits for a 
+response from the CAZy server before classifying the connection as timed out by adding the ``--timeout`` flag to the 
 ``cazy_webscraper`` command, followed by the number of seconds you want the computer to wait for a response from CAZy 
 before classifying the connection as timing out.
 
@@ -733,32 +730,3 @@ The timeout flag can be used in combination with other flags, for example:
 .. code-block:: bash
 
    cazy_webscraper --subfamilies --genera Aspergillus -v --timeout 30
-
-You can use the long version ``--timeout`` or short version ``-t`` of the timeout flag.
-
-.. code-block:: bash
-
-   cazy_webscraper --subfamilies --genera Aspergillus -v -t 60
-
-
-Configuration when scraping subfamilies
-################################################
-
-The default behaviour of ``cazy_webscraper`` retrieves only the CAZy family annotations of CAZymes, and 
-does **not** catalogue the child CAZy subfamily annotations as well. If you want to retrieve the CAZy subfamily 
-annotations then add the ``--subfamilies`` flag anywhere to the ``cazy_webscraper`` command. For example:
-
-.. code-block:: bash
-
-   cazy_webscraper --subfamilies
-
-This will retrieve both the parent CAZy family annotations and the child CAZy subfamily annotations for all applicable CAZymes. 
-If a CAZyme is not part of a subfamily only its CAZy family annotations will be catagloued.
-
-If any subfamilies are listed within the configuration file, the retrieval of subfamilies **must** 
-be enabled at the command line uisng ``--subfamilies``.
-
-If the parent family, e.g GH3, is listed in the configuration file and ``--subfamilies`` is enabled, 
-all proteins catalogued under GH3 and its subfamilies will be retrieved. This is to save time 
-having to write out all the subfamilies for a given CAZy family. The scraper will remove any 
-duplicate proteins automatically.
