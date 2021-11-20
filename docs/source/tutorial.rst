@@ -258,8 +258,8 @@ CAZy classifies source organisms under one of 5 kingdoms:
 * Viruses
 * Unclassified
 
-To restrict the scraping of CAZy to retrieve CAZymes only derived from species from specific taxonomic kingdoms 
-then add the ``--kingdoms`` flag to the ``cazy_webscraper`` command followed by the kingdoms to limit the retrieval 
+To restrict the scraping of CAZy to retrieve CAZymes only derived from species from specific taxonomic kingdoms
+ add the ``--kingdoms`` flag to the ``cazy_webscraper`` command followed by the kingdoms to limit the retrieval 
 of CAZymes to. To list multiple kingdoms you need only add the ``--kingdoms`` flag *once*, then list all the kingdoms 
 you are interested in, separated by a single comma.
 
@@ -285,10 +285,11 @@ Speciying Genera to scrape
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can customise the scraping of CAZy to retrieve only CAZymes from *all* species from specific 
-genera. To do this add the ``--genera`` flag to the ``cazy_webscraper`` command followed by all 
-the genera you want to retrieve CAZymes from. CAZymes from any genera that you do not list will 
-**not** be retrieved. To list multiple genera, you need to only add the ``--genera`` flag once followed 
-by a list of all genera, with each genera separated with a single comma and *no* spaces.
+genera. To do this add the ``--genera`` flag to the ``cazy_webscraper`` command followed by your
+genera of interes.
+
+To list multiple genera, you need to only add the ``--genera`` flag *once* followed 
+by a list of all your genera, with each genera separated with a single comma and *no* spaces.
 
 For example, if we wanted to retrieve all CAZymes from *all* Aspergillus, Trichoderma and Streptomyces species 
 we would use the command:
@@ -313,15 +314,15 @@ we would use the command:
    ASPERGILLUS is **incorrect**
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Specifying species of organisms to scrape
-=============================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-You can specify to retrieve CAZymes only derived from specific species. To do this add the ``--species`` 
+You can specify to retrieve only CAZymes derived from specific species. To do this add the ``--species`` 
 flag to the ``cazy_webscraper`` command, followed by a list of all species you wish to retrist the retrieval of 
 CAZymes to. Separate each species with a single comma. Also for each species use the full scientific name for the species.
 
-For example, if we wanted to retrieve all CAZymes from Aspergillus niger and Aspergillus fumigatus we would use the command:  
+For example, if we wanted to retrieve all CAZymes from *Aspergillus niger* and *Aspergillus fumigatus* we would use the command:  
 
 .. code-block:: bash
 
@@ -347,13 +348,16 @@ For example, if we wanted to retrieve all CAZymes from Aspergillus niger and Asp
    When you specify a species ``cazy_webscraper`` will retrieval CAZymes from *all* strains of the species.
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Specify specific strains of species to scrape
-====================================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You may only be interested in specific strains of a species. Therefore, ``cazy_webscraper`` allows you to 
-restrict the retrieval of CAZymes to only those derived from specific strains of species. To do this 
-add the ``--strains`` flag to the ``cazy_webscraper`` command, followed by a list of all the strains 
-of interest. Separate each strain with a single command and no spaces.
+You may only be interested in specific strains of a species. Instead of scraping CAZymes for all strains 
+of a given speices, add the ``--strains`` flag followed by the specific species strains you wish to restrict 
+the retrieval of CAZymes to.
+
+List the full scientific name followed by the strain name. To specify multiple strains, list all 
+strains of interest and separate with a single comma with **no** space.
 
 For example, if we wanted to retrieve all CAZymes from Aspergillus niger ATCC 1015 and Aspergillus uvarum CBS 121591  we would use the command:
 
@@ -361,31 +365,25 @@ For example, if we wanted to retrieve all CAZymes from Aspergillus niger ATCC 10
 
    cazy_webscraper --strains Aspergillus niger ATCC 1015,Aspergillus uvarum CBS 121591
 
-.. note::
-   The order that the strains are listed does **not** matter, and separate multiple species names with a single comma 
-   with **no** spaces.
+he order that the strains are listed does **not** matter.
 
-.. note::
-   Sometimes in CAZy only the species name is given and no specific strain identifer. To retrieve CAZymes from these 
-   species then you can list the species name and it will only retrieve CAZymes that are listed with the exact species 
-   and with no strain identifers. For example, listing 'Aspergillus niger' will only retrieve CAZymes with their source 
-   organism specifically listed as 'Aspergillus niger' and will not retrieve CAZymes from ''.
-
-.. warning::
+.. NOTE::
    If you use the ``--species``, ``--genera`` and ``--strains`` flags in any combination and a source organism matches 
-   multiple of the taxonomy critera, the CAZymes derived from that species will only be retrieved **once**. For example, 
-   using the command ``cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015`` 
-   will retrieve all CAZymes from *all* Aspergillus species *once*. The higher taxonomy levels take president, and the command 
-   will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well, and then 
-   retrieve another copy of all CAZymes from Aspergillus niger ATCC 1015.
+   multiple of the taxonomy critera, the CAZymes derived from that species will only be retrieved **once**.
+   
+   For example, using the command ``cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015`` 
+   will retrieve all CAZymes from *all* Aspergillus species *once*.
+   
+The higher taxonomy levels take president, and the command will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well, and then retrieve another copy of all CAZymes from Aspergillus niger ATCC 1015.
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Combining taxonomic filters
-=====================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can combine any combination of ``cazy_webscraper`` optional flags, including combining the taxonomic filters. For example,
-you may wish to retrieve all CAZyme derived from all viral and Aspergillus species, Layia carnosa, Layia chrysanthemoides, Trichoderma reesei QM6a and 
-Trichoderma reesei QM9414, we would combine the respective flags for a single ``cazy_webscraper`` command. The command 
+You can combine any combination of ``cazy_webscraper`` optional flags, including combining the taxonomic filtersFor example,
+you may wish to retrieve all CAZyme derived from all viral species, Aspergillus species, Layia carnosa, Layia chrysanthemoides, Trichoderma reesei QM6a and 
+Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cazy_webscraper`` command. The command 
 we would use would be:
 
 .. code-block:: bash
@@ -394,91 +392,20 @@ we would use would be:
 
 .. note::
    This is a single command written on a single line. When typing the command into the terminal do not fit enter until you have finished the command. 
-   Visually the command may spread over multiple lines but it is a *single* command.
 
 .. warning::
    If you use the ``--species``, ``--genera`` and ``--strains`` flags in any combination and a source organism matches 
    multiple of the taxonomy critera, the CAZymes derived from that species will only be retrieved **once**. For example, 
    using the command ``cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015`` 
-   will retrieve all CAZymes from *all* Aspergillus species *once*. The higher taxonomy levels take president, and the command 
-   will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well, and then 
-   retrieve another copy of all CAZymes from Aspergillus niger ATCC 1015.
+   will retrieve all CAZymes from *all* Aspergillus species *once*.
 
-
-EC numbers
-==============
-
-If you are interested in CAZymes with specific activities you can limit the retrieval of CAZymes from CAZy to only those 
-annotated with *at least one* EC number from a set of EC numbers you specify. To specify a set of EC numbers 
-add the ``--ec`` flag to the ``cazy_webscraper`` command, followed by a list of EC numbers. Separate each EC number with a single 
-comma and *no* spaces. Do **not** forget to include the 'EC' prefix from your EC numbers. 
-
-.. note::
-   Use the international accepted '-' (dash) to indicate missing identifiers (numbers) in the EC number.
-   EC1.2.3.- is accepted but EC1.2.3. and EC1.2.3.* are not.
-
-To limit the scraping of CAZy to only retrieve CAZymes that are annotated with *at least one* of the EC numbers 
-EC4.2.2.-, EC1.3.2.- and EC5.4.-.-, use the command:
-
+When combining taxonomy filters, the higher taxonomy levels take president. For example, the :command:`
+   
 .. code-block:: bash
+   cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015
 
-   cazy_webscraper --ec "EC4.2.2.-,EC1.3.2.-,EC5.4.-.-"
-
-.. warning::
-   Some terminals may misinterpret ``EC1.2.-.-`` as trying to invoke the options ``.``, therefore, it is 
-   recommend practise to encase the entire EC number list in single or double quotation marks if any of the EC numbers 
-   include missing identifiers. ``"EC4.2.2.-,EC1.3.2.-,EC5.4.-.-"`` or ``'EC4.2.2.-,EC1.3.2.-,EC5.4.-.-'`` are recommended, 
-   ``EC4.2.2.-,EC1.3.2.-,EC5.4.-.-`` is not recommended, and ``"EC4.2.2.-,EC1.3.2.-,EC5.4.-.-'`` (mismatching double and single 
-   quotation marks) will raise errors.
-
-
-Taxonomy and EC numbers
-=============================
-
-You can use any combination of ``cazy_webscraper`` optional flags to fully customise the scraping of CAZy. 
-For example, you may which to retrieve all CAZymes annotated with the EC number EC4.2.2.- which are only from bacterial 
-species. To do that you would add the ``--kingdoms`` and ``--ec`` flags:
-
-.. code-block:: bash
-
-   cazy_webscraper --ec "EC4.2.2.-" --kingdoms bacteria
-
-The order you add the optional flags **does not** matter, and you can specify multiple EC numbers, kingdoms, strains etc.
-
-
-Combining Taxonomy, EC numbers, CAZy classes and CAZy families filters
-*************************************************************************
-
-The optional flags for ``cazy_webscraper`` can be used in any combination and any order. For example, 
-you can combine the EC number, taxonomy, CAZy class and CAZy family configurations. Below are some examples:
-
-**Example 1**  
-To retrieve all CAZymes from all CBM families, GH1, GH2 and PL9, and that are derived from any Aspergillus species:
-
-.. code-block:: bash
-
-   cazy_webscraper --classes CBM --families GH1,GH2,PL9 --genera Aspergillus
-
-**Example 2**  
-To retrieve all CAZymes from GH1, and GH2, if they are annotated with EC1.2.-.-, and are derived from any bacterial species:
-
-.. code-block:: bash
-
-   cazy_webscraper --families GH1,GH2 --ec "EC1.2.-.-" --kingdoms bacteria 
-
-.. warning::
-   Some terminals may misinterpret ``EC1.2.-.-`` as trying to invoke the options ``.``, therefore, it is 
-   recommend practise to encase the entire EC number list in single or double quotation marks if any of the EC numbers 
-   include missing identifiers. ``"EC4.2.2.-,EC1.3.2.-,EC5.4.-.-"`` or ``'EC4.2.2.-,EC1.3.2.-,EC5.4.-.-'`` are recommended, 
-   ``EC4.2.2.-,EC1.3.2.-,EC5.4.-.-`` is not recommended, and ``"EC4.2.2.-,EC1.3.2.-,EC5.4.-.-'`` (mismatching double and single 
-   quotation marks) will raise errors.
-
-**Example 3**  
-To retrieve CAZymes from all viral species, and all Aspergillus niger strains which are catalogued within GH3_1 and GH3_2
-
-.. code-block:: bash
-
-   cazy_webscraper --families GH3_1,GH3_2 --subfamilies --species Aspergillus niger --kingdoms Bacteria
+will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well. 
+``cazy_webscraper`` will retrieval all CAZymes for all strains of *Aspergillus niger*.
 
 
 Configuration file
