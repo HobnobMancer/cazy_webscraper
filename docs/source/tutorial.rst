@@ -1,5 +1,5 @@
 ================================================================
-Tutorials on configuring ``cazy_webscraper``
+Tutorials on configuring ``cazy_webscraper`` to scrape CAZy
 ================================================================
 
 ``cazy_webscraper`` can be configured to retrieve user specified data sets from CAZy. The configuration 
@@ -190,13 +190,13 @@ For example, if you want to scrape all CAZymes from Glycoside Hydrolase and Carb
    Storing these synonyms allows you to modify this file if you wish to add your own synonoms for each CAZy class.
 
 
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 Scraping specific families
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To specify specific CAZy families to scrape, add the ``--families`` flag followed by the families you want 
-to scrape. If you want to scrape multiple families, add the ``--families`` flag *once* followed by a list of *all* 
-the CAZy families you want to scrape, separated by a single comma.
+to scrape. If you want to scrape multiple families, list all the families you wish to scrape, with each family 
+separated with a single comma.
 
 For example, if you want to scrape all CAZymes from GH2, PL5, CE1, CE2 and AA10 use:
 
@@ -204,17 +204,12 @@ For example, if you want to scrape all CAZymes from GH2, PL5, CE1, CE2 and AA10 
 
    cazy_webscraper --families GH2,PL5,CE1,CE2,AA10
 
-Make sure to use the accepted CAZy nomenclature; 'GH2' is accepted but 'gh2' is not.
+.. WARNING::
+   Make sure to use the accepted CAZy nomenclature; 'GH2' is accepted but 'gh2' is not.
 
-.. note::
-   When ``--families`` is invoked any CAZy classes that do **not** include an of the CAZy families specified will 
-   **not** be scraped. Therefore, using the example above, CAZymes from the families GH2, PL5, CE1, CE2 and AA10 
-   **will** be retrieved; however, CAZymes from any other families from those classes **will not** be retrieved, and CAZymes 
-   from the Carbohydrate Binding Modules (CBM) and GlycoslyTransferases classes will **not** be retrieved.
-
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Scraping specific classes AND families
-========================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you want to specify specific CAZy classes *and* families to scrape then add *both* the ``--classess`` *and* ``-families`` 
 flags, because you can combine, mix-and-match, any combination of optional flags when invoking ``cazy_webscraper``.
@@ -226,7 +221,7 @@ For example, if we wanted to scrape all CAZymes from GH1, PL9 and *all* of CE we
    cazy_webscraper --families GH1,PL9 --classes CE
 
 It does **not** matter what order you add the optional flags to your command. Therefore, if we wanted to 
-scrape all CAZymes from PL1, PL2, PL3 and *all* of GH and CE we both:
+scrape all CAZymes from PL1, PL2, PL3 and *all* of GH and CE, both:
 
 .. code-block:: bash
 
@@ -241,16 +236,18 @@ scrape all CAZymes from PL1, PL2, PL3 and *all* of GH and CE we both:
 are accepted.
 
 .. note::
-   In the example ``cazy_webscraper.py --classes GH,CE --families PL1,PL2,PL3`` all CAZymes from PL1, 
+   In the example ``cazy_webscraper --classes GH,CE --families PL1,PL2,PL3`` all CAZymes from PL1, 
    PL2 and PL3 would be retrieved, but no CAZymes from the other PL families, in addition all CAZymes from all GH and CE 
    families would be retrieved, but no CAZymes from AA, GT or CBM families would be retrieved.
 
 
-Applying taxonomic and EC number filters
-********************************************
+------------------
+Applying taxonomic
+------------------
 
+^^^^^^^^^^^^^^^^^^^
 Specifying kingdoms
-================================
+^^^^^^^^^^^^^^^^^^^
 
 You may only be interest in CAZymes that are derived from species from a specific taxonomic kingdom. 
 CAZy classifies source organisms under one of 5 kingdoms:
@@ -264,7 +261,7 @@ CAZy classifies source organisms under one of 5 kingdoms:
 To restrict the scraping of CAZy to retrieve CAZymes only derived from species from specific taxonomic kingdoms 
 then add the ``--kingdoms`` flag to the ``cazy_webscraper`` command followed by the kingdoms to limit the retrieval 
 of CAZymes to. To list multiple kingdoms you need only add the ``--kingdoms`` flag *once*, then list all the kingdoms 
-you want to restrict the restrival of CAZymes to, separated by a single comma.
+you are interested in, separated by a single comma.
 
 For example, if you want to retrieve CAZymes only from bacterial and eukaryotic species then use the command 
 
@@ -274,13 +271,18 @@ For example, if you want to retrieve CAZymes only from bacterial and eukaryotic 
 
 
 .. warning::
-   The kingomds must be spelt the same way CAZy spells them, for example use 'eukaryot**a**' instead of 'eukaryot**e**'. The kingdoms 
-   are **not** case sensitive, therefore, both ``bacteria`` *and* ``Bacteria`` are accepted. You can also list the kingdoms in 
-   *any* order. Thus, both ``bacteria,eukaryota`` *and* ``eukaryota,bacteria`` are accepted.
+   The kingdoms must be spelt the same way CAZy spells them, for example use 'eukaryot**a**' instead of 'eukaryot**e**'.
+   
+.. NOTE:: 
+   The kingdoms are **not** case sensitive, therefore, both ``bacteria`` *and* ``Bacteria`` are accepted. 
+
+.. NOTE::
+   You can list the kingdoms in *any* order. Thus, both ``bacteria,eukaryota`` *and* ``eukaryota,bacteria`` are accepted.
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 Speciying Genera to scrape
-=======================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can customise the scraping of CAZy to retrieve only CAZymes from *all* species from specific 
 genera. To do this add the ``--genera`` flag to the ``cazy_webscraper`` command followed by all 
