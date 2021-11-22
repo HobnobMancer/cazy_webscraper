@@ -212,12 +212,6 @@ def get_yaml_configuration(
         )
         sys.exit(1)
 
-    # retrieve CAZy classes defined in the YAML configuration file
-    config_dict["classes"] = get_yaml_cazy_classes(
-        yaml_config_dict,
-        cazy_class_synonym_dict,
-    )
-
     for key in yaml_config_dict:
         if key == "classes":
             yaml_cazy_classes = get_yaml_cazy_classes(yaml_config_dict, cazy_class_synonym_dict)
