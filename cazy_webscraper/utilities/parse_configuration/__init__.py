@@ -115,7 +115,7 @@ def parse_configuration(args):
         kingdom_filters = kingdoms
     
     # When no classes or families are defined scrape every class and family
-    if args.classes is None and args.families is None and args.config is None:
+    if (args.classes is None) and (args.families is None) and (args.config is None):
         config_dict["classes"] = set(cazy_class_synonym_dict.keys())
 
     # get list of CAZy classes not to scrape
@@ -425,13 +425,15 @@ def get_excluded_classes(config_dict, cazy_class_synonym_dict):
 
     Return list of CAZy classes not to be scraped.
     """
-    cazy_classes_to_scrape = config_dict["classes"]
 
+    cazy_classes_to_scrape = set()
+    
     # retrieve the names of classes for which specific families to be scraped HAVE BEEN named
     for key in config_dict:
         if (key != "classes") and (len(config_dict[key]) != 0):
             # add the class of families to be scraped to the list of CAZy classes to be scraped
             cazy_classes_to_scrape.add(key)
+    cazy_classes_to_scrape.union(config_dict["classes"])
 
     # create list of CAZy classes not to be scraped
     excluded_classes = list(cazy_class_synonym_dict.keys())
@@ -527,13 +529,9 @@ def get_expansion_configuration(args):
     )
 
     ec_filters = get_ec_config(ec_filters, args)
-
-    user_class_filters = set(config_dict['classes'])
-    class_filters = set()
-    for class_filter in user_class_filters:
-        new_filter = class_filter[class_filter.find('(')+1:class_filter.find(')')-1]
-        class_filters.add(new_filter)
     
+    class_filters = set(config_dict['classes'])
+
     family_filters = set()
     for key in config_dict:
         if key != 'classes':
