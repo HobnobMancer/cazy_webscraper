@@ -122,8 +122,13 @@ For details and updates on development, please consult the `GitHub repository <h
    usage
    tutorial
    database
+   uniprot
+   uniprottutorial
    genbank
+   genbanktutorial
    pdb
+   pdbtutorial
+   cache
    license
 
 
