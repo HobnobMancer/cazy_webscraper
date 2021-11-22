@@ -82,7 +82,7 @@ from tqdm import tqdm
 from cazy_webscraper import crawler
 from cazy_webscraper import cazy
 from cazy_webscraper.sql import sql_orm, sql_interface
-from cazy_webscraper.sql.sql_interface import add_cazyme_data
+from cazy_webscraper.sql.sql_interface import add_cazyme_data, get_table_dicts
 from cazy_webscraper.utilities import (
     build_logger,
     config_logger,
@@ -326,7 +326,9 @@ def get_cazy_data(
     logger = logging.getLogger(__name__)
 
     # define paths for additional logs files
+    # unless specifed they are added to the logs dir in the cache dir
     connection_failures_logger = build_logger(Path(f"{logger_name}_{time_stamp}_connection_failures.log"))
+    multiple_taxa_logger = build_logger(Path(f"{logger_name}_{time_stamp}_multiple_taxa.log"))
     sql_failures_logger = build_logger(Path(f"{logger_name}_{time_stamp}_SQL_errors.log"))
     format_failures_logger = build_logger(Path(f"{logger_name}_{time_stamp}_format_and_parsing_errors.log"))
 
@@ -392,25 +394,19 @@ def get_cazy_data(
         "matching the scraping criteria"
     )
 
-    cazy_data = cazy.replace_multiple_tax(cazy_data, args)
+    cazy_data = cazy.replace_multiple_tax(cazy_data, multiple_taxa_logger, args)
 
     taxa_dict = cazy.build_taxa_dict(cazy_data)  # {kingdom: {organisms}}
 
-    # add kingdoms to the db
     add_cazyme_data.add_kingdoms(taxa_dict, connection)
 
-    # add taxonomy source organisms to the db
     add_cazyme_data.add_source_organisms(taxa_dict, connection)
 
     add_cazyme_data.add_cazy_families(cazy_data, connection)
 
-    # load taxonomy and cazy families from the db into memory for adding
-    # relationships between GenBank accessions, CAZy (sub)fams and taxa
-    db_tax_dict, db_fam_dict = add_cazyme_data.load_taxa_fam_data(connection)
+    add_cazyme_data.add_genbanks(cazy_data, connection)
 
-    gbk_fam_values = add_cazyme_data.add_genbanks(cazy_data, db_tax_dict, db_fam_dict, connection)
-
-    add_cazyme_data.add_genbank_fam_relationships(gbk_fam_values, connection)
+    add_cazyme_data.add_genbank_fam_relationships(cazy_data, connection, args)
     
     return
 
