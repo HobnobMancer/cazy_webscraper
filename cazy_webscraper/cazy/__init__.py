@@ -66,7 +66,71 @@ def extract_cazy_file_data(cazy_txt_path):
     return lines
 
 
-def parse_cazy_data(
+def parse_all_cazy_data(lines, cazy_fam_populations):
+    """Extract ALL GenBank accession, taxonomy data and CAZy (sub)family annotations from CAZy txt file.
+    
+    This is when no filters are applied.
+    
+    :param lines: list of str, lines from CAZy txt file, one unqiue line is one item in the list
+    :param cazy_fam_populations: None if args.validate is False, or dict of CAZy listed CAZy 
+        (sub)fam population sizes if args.validate is True
+    
+    Return cazy_data: dict, {gbk: {"organism": set(str), "families": {'fam': set (subfam)}}}
+    """
+
+    logger = logging.getLogger(__name__)
+
+    # define dicts CAZy data will be stored in
+    cazy_data = {} # {genbank_accession: {organism,}, families: {(fam, subfam,),} }
+    
+    # used for verbose logging
+    gbk_accessions = set()
+    fam_annotations = set()
+    organisms = set()
+    kingdoms = set()
+
+    for line in tqdm(lines, 'Parsing CAZy txt file'):
+        line_str = line.decode()
+        line_data = line_str.split('\t')
+        
+        gbk_accession = line_data[3]
+
+        # retrieve CAZyme data
+        cazy_fam = line_data[0]
+        if cazy_fam.find("_") != -1:
+            cazy_subfam = cazy_fam
+            cazy_fam = cazy_fam[:cazy_fam.find("_")]
+        else:
+            cazy_subfam = None
+        
+        fam_annotations.add( (cazy_fam, cazy_subfam) )
+       
+        kingdom = line_data[1]
+        kingdoms.add(kingdom)
+        
+        organism = line_data[2]
+        organisms.add(organism)
+        
+        gbk_accession = line_data[3]
+        gbk_accessions.add(gbk_accession)
+        
+        add_protein_to_dict(cazy_data, gbk_accession, cazy_fam, cazy_subfam, organism, kingdom)
+
+    if cazy_fam_populations is not None:
+        validate_data_retrieval(cazy_data, cazy_fam_populations)
+        
+    logger.info(
+        "CAZy txt file contained:\n"
+        f"{len(list(gbk_accessions))} unique GenBank accessions\n"
+        f"{len(list(fam_annotations))} unique Fam-Subfam annotations\n"
+        f"{len(list(organisms))} unique source organisms\n"
+        f"{len(list(kingdoms))} unique tax kingdoms\n"
+    )
+
+    return cazy_data
+
+
+def parse_cazy_data_with_filters(
     lines,
     class_filter,
     fam_filter,
@@ -86,10 +150,11 @@ def parse_cazy_data(
     
     Return cazy_data: dict, {gbk: {"organism": set(str), "families": {'fam': set (subfam)}}}
     """
+
     logger = logging.getLogger(__name__)
 
     # define dicts CAZy data will be stored in
-    cazy_data = {} # {genbank_accession: {organism,}, families: {(fam, subfam,),} }
+    cazy_data = {} # {genbank_accession: {organism,}, families: {fam: {subfams}} }
     taxa_data = {} # {kingdom: organism}
     
     # used for verbose logging
@@ -97,10 +162,17 @@ def parse_cazy_data(
     fam_annotations = set()
     organisms = set()
     kingdoms = set()
+    
+    gbks_to_scrape = set()  # gbks matching filter criteria are added to enable retrieving ALL
+    # family annotations for each protein
 
     for line in tqdm(lines, 'Parsing CAZy txt file'):
         line_str = line.decode()
         line_data = line_str.split('\t')
+        
+        kingdom = line_data[1]
+        organism = line_data[2]
+        gbk_accession = line_data[3]
 
         # retrieve CAZyme data
         cazy_fam = line_data[0]
@@ -109,20 +181,11 @@ def parse_cazy_data(
             cazy_fam = cazy_fam[:cazy_fam.find("_")]
         else:
             cazy_subfam = None
-        fam_annotations.add( (cazy_fam, cazy_subfam) )
-       
-        kingdom = line_data[1]
-        kingdoms.add(kingdom)
-        
-        organism = line_data[2]
-        organisms.add(organism)
-        
-        gbk_accession = line_data[3]
-        gbk_accessions.add(gbk_accession)
-
-        # Apply filters
-        if (len(class_filter) == 0) and (len(fam_filter) == 0):
-            cazy_data = apply_kingdom_tax_filters(
+            
+        # check if protein previously matched filter criteria, and additional CAZy (sub)fam annotations
+        # are to be added to the db
+        if gbk_accession in gbks_to_scrape:
+            cazy_data, stored_gbk_accession = apply_kingdom_tax_filters(
                 cazy_data,
                 kingdom_filter,
                 tax_filter,
@@ -132,13 +195,12 @@ def parse_cazy_data(
                 organism,
                 kingdom,
             )
-
-        # check if scraping the class the family belongs to
-        if len(class_filter) != 0:
-            fam_class = re.match(r"\D{2,3}", cazy_fam).group()
+        
+        else:  # check if protein matches the filter criteria
             
-            if fam_class in class_filter:
-                cazy_data = apply_kingdom_tax_filters(
+            # only apply tax filters
+            if (len(class_filter) == 0) and (len(fam_filter) == 0):
+                cazy_data, stored_gbk_accession = apply_kingdom_tax_filters(
                     cazy_data,
                     kingdom_filter,
                     tax_filter,
@@ -149,24 +211,57 @@ def parse_cazy_data(
                     kingdom,
                 )
 
-                continue
-            
-        if (cazy_fam in fam_filter) or (cazy_subfam in fam_filter):
-            cazy_data = apply_kingdom_tax_filters(
-                cazy_data,
-                kingdom_filter,
-                tax_filter,
-                gbk_accession,
-                cazy_fam,
-                cazy_subfam,
-                organism,
-                kingdom,
-            )
+                if stored_gbk_accession:  # protein matched tax criteria and added to db
+                    gbks_to_scrape.add(gbk_accession)
 
-            continue
+                    fam_annotations.add( (cazy_fam, cazy_subfam) )
+                    kingdoms.add(kingdom)
+                    organisms.add(organism)
+                    gbk_accessions.add(gbk_accession)
+
+                
+            else:
+                # check against CAZy class and family filters
+                cazy_class = re.match(r'\D{2,3}\d', cazy_fam).group()[:-1]
+
+                scrape = False  # mark whether to scrape the protein or not
+
+                # check if another propety of the protein matches the filter criteria previously
+                if gbk_accession in gbks_to_scrape:
+                    scrape = True
+
+                # apply class filter
+                if cazy_class in class_filter:
+                    scrape = True
+
+                if cazy_fam in fam_filter:
+                    scrape = True
+
+                if cazy_subfam in fam_filter:
+                    scrape = True
+
+                if scrape:
+                    cazy_data, stored_gbk_accession = apply_kingdom_tax_filters(
+                        cazy_data,
+                        kingdom_filter,
+                        tax_filter,
+                        gbk_accession,
+                        cazy_fam,
+                        cazy_subfam,
+                        organism,
+                        kingdom,
+                    )
+
+                    if stored_gbk_accession:  # protein matched tax criteria and added to db
+                        gbks_to_scrape.add(gbk_accession)
+
+                        fam_annotations.add( (cazy_fam, cazy_subfam) )
+                        kingdoms.add(kingdom)
+                        organisms.add(organism)
+                        gbk_accessions.add(gbk_accession)
 
     if cazy_fam_populations is not None:
-        validate_data_retrieval(cazy_data, cazy_fam_populations)
+       validate_data_retrieval(cazy_data, cazy_fam_populations)
         
     logger.info(
         "CAZy txt file contained:\n"
@@ -176,7 +271,7 @@ def parse_cazy_data(
         f"{len(list(kingdoms))} unique tax kingdoms\n"
     )
 
-    return cazy_data, taxa_data
+    return cazy_data
 
 
 def apply_kingdom_tax_filters(
@@ -200,8 +295,12 @@ def apply_kingdom_tax_filters(
     :param cazy_subfam: str, CAZy subfamily annotation, or None if protein is not a CAZy subfamily
     :param kingdom: str, taxonomy kingdom of the source organism of the protein
 
-    Return nothing.
+    Return
+    - cazy_data ({gbk_acc: {kingdom: str, organism: str, families: {(fam, subfam, )}}})
+    - boolean if data for the given protein was (True) or was not (False) added to the db
     """
+    stored_gbk_accession = False
+    
     if (len(kingdom_filter) == 0) and (len(tax_filter) == 0):  # kingdom and tax filters NOT enabled
         cazy_data = add_protein_to_dict(
             cazy_data,
@@ -211,30 +310,31 @@ def apply_kingdom_tax_filters(
             organism,
             kingdom,
         )
+        stored_gbk_accession = True
 
-    if len(kingdom_filter) != 0:  # user enabled kingdom filter
-        if kingdom in kingdom_filter:
-            cazy_data = add_protein_to_dict(
-                cazy_data,
-                gbk_accession,
-                cazy_fam,
-                cazy_subfam,
-                organism,
-                kingdom,
-            )
+    elif kingdom in kingdom_filter:
+        cazy_data = add_protein_to_dict(
+            cazy_data,
+            gbk_accession,
+            cazy_fam,
+            cazy_subfam,
+            organism,
+            kingdom,
+        )
+        stored_gbk_accession = True
 
-    if len(tax_filter) != 0:  # user enabled tax filter
-        if any(filter in organism for filter in tax_filter):
-            cazy_data = add_protein_to_dict(
-                cazy_data,
-                gbk_accession,
-                cazy_fam,
-                cazy_subfam,
-                organism,
-                kingdom,
-            )
+    elif any(filter in organism for filter in tax_filter):
+        cazy_data = add_protein_to_dict(
+            cazy_data,
+            gbk_accession,
+            cazy_fam,
+            cazy_subfam,
+            organism,
+            kingdom,
+        )
+        stored_gbk_accession = True
     
-    return cazy_data
+    return cazy_data, stored_gbk_accession
 
 
 def add_protein_to_dict(cazy_data, gbk_accession, cazy_fam, cazy_subfam, organism, kingdom):

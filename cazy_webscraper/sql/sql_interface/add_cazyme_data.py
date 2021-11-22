@@ -60,7 +60,7 @@ def add_kingdoms(taxa_dict, connection):
         {kingdom: {organism}}
     :param connection: open sqlalchemy connection to a local SQLite db engine
     
-    Return dict {kingdom: {organisms}}
+    Return nothing
     """
     kingdom_table_dict = get_table_dicts.get_kingdom_table_dict(connection)
     # dict {kingdom: {organisms}}
@@ -77,7 +77,7 @@ def add_kingdoms(taxa_dict, connection):
     if len(kingdoms_db_insert_values) != 0:
         insert_data(connection, 'Kingdoms', ['kingdom'], kingdoms_db_insert_values)
     
-    return kingdom_table_dict
+    return
 
 
 def add_source_organisms(taxa_dict, connection):
@@ -109,8 +109,10 @@ def add_source_organisms(taxa_dict, connection):
         kingdom_id = kingdom_table_dict[kingdom]
         
         existing_taxa_records = list(tax_table_dict.keys())
+
+        organisms = taxa_dict[kingdom]
         
-        for organism in taxa_dict[kingdom]:  # organisms from the CAZy txt file
+        for organism in organisms:  # organisms from the CAZy txt file
             if organism not in existing_taxa_records:  # new record to add
                 genus = organism.split(" ")[0]
                 species = ' '.join(organism.split(" ")[1:])
