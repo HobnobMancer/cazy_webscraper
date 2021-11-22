@@ -484,7 +484,7 @@ def connect_to_new_db(args, time_stamp):
             )
 
         if str((args.db_output).parent) != '.':  # dirs defined in output put
-            file_io.make_target_directory(args.db_output, args.force)
+            file_io.make_output_directory(args.db_output, args.force, args.nodelete)
             cache_dir = Path(f"{str(args.db_output.parent)}/.cazy_webscraper_{time_stamp}/cache")
             
         else:  # writing to cwd
