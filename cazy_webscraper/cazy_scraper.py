@@ -374,14 +374,19 @@ def get_cazy_data(
     cazy_txt_lines = cazy.extract_cazy_file_data(cazy_txt_path)
     logger.info(f"Retrieved {len(cazy_txt_lines)} lines from the CAZy db txt file")
 
-    cazy_data, taxa_data = cazy.parse_cazy_data(
-        cazy_txt_lines,
-        class_filters,
-        fam_filters,
-        kingdom_filters,
-        taxonomy_filters,
-        cazy_fam_populations,
-    )
+    if (len(class_filters) == 0) and (len(fam_filters) == 0) and (len(kingdom_filters) == 0) and (len(taxonomy_filters) == 0):
+        cazy_data = cazy.parse_all_cazy_data(cazy_txt_lines, cazy_fam_populations)
+
+    else:
+        cazy_data = cazy.parse_cazy_data_with_filters(
+            cazy_txt_lines,
+            class_filters,
+            fam_filters,
+            kingdom_filters,
+            taxonomy_filters,
+            cazy_fam_populations,
+        )
+
     logger.info(
         f"Retrieved {len((list(cazy_data.keys())))} proteins from the CAZy txt file "
         "matching the scraping criteria"
@@ -389,12 +394,13 @@ def get_cazy_data(
 
     cazy_data = cazy.replace_multiple_tax(cazy_data, args)
 
+    taxa_dict = cazy.build_taxa_dict(cazy_data)  # {kingdom: {organisms}}
+
     # add kingdoms to the db
-    # create dict of taxa data {kingdom: set(organism)}
-    taxa_data = add_cazyme_data.add_kingdoms(cazy_data, connection)
+    add_cazyme_data.add_kingdoms(taxa_dict, connection)
 
     # add taxonomy source organisms to the db
-    add_cazyme_data.add_source_organisms(taxa_data, connection)
+    add_cazyme_data.add_source_organisms(taxa_dict, connection)
 
     add_cazyme_data.add_cazy_families(cazy_data, connection)
 
