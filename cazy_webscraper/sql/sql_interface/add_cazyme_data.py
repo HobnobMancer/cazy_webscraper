@@ -60,9 +60,10 @@ def add_kingdoms(taxa_dict, connection):
         {kingdom: {organism}}
     :param connection: open sqlalchemy connection to a local SQLite db engine
     
-    Return nothing
+    Return dict {kingdom: {organisms}}
     """
     kingdom_table_dict = get_table_dicts.get_kingdom_table_dict(connection)
+    # dict {kingdom: {organisms}}
 
     # retrieve the Kingdoms retrieved from the CAZy txt file
     cazy_kingdoms = list(taxa_dict.keys())
@@ -76,7 +77,7 @@ def add_kingdoms(taxa_dict, connection):
     if len(kingdoms_db_insert_values) != 0:
         insert_data(connection, 'Kingdoms', ['kingdom'], kingdoms_db_insert_values)
     
-    return
+    return kingdom_table_dict
 
 
 def add_source_organisms(taxa_dict, connection):
