@@ -455,16 +455,16 @@ def validate_data_retrieval(cazy_data, cazy_fam_populations):
     return
 
 
-def replace_multiple_tax(cazy_data, args):
+def replace_multiple_tax(cazy_data, multiple_taxa_logger, args):
     """
     Identify GenBank accessions which have multiple source organisms listedi in CAZy. Replace with
     the latest source organism from NCBI.
 
     :param cazy_data: dict of CAZy data
+    :param multiple_taxa_logger: Path, log file where proteins withe multiple taxa are listed
     :param args: cmd-line args parser
 
-    Return dict of proteins with multiple source organisms listed in CAZy
-    {genbank_accession: {"families": {fam: set(subfam)} }}
+    Return dict updated cazy_data dict
     """
     logger = logging.getLogger(__name__)
 
@@ -517,6 +517,7 @@ def replace_multiple_tax(cazy_data, args):
             retmode="xml",
         ) as record_handle:
             protein_records = Entrez.read(record_handle, validate=False)
+
     # if no record is returned from call to Entrez
     except (TypeError, AttributeError) as error:
         logger.error(
@@ -525,9 +526,14 @@ def replace_multiple_tax(cazy_data, args):
         )
     
     for protein in tqdm(protein_records, desc="Retrieving organism from NCBI"):
+        # retrieve NCBI taxonomy data
         accession = protein['GBSeq_accession-version']
         organism = protein['GBSeq_organism']
         kingdom = protein['GBSeq_taxonomy'].split(';')[0]
+
+        # retrieve CAZy taxonomy data
+        cazy_kingdom = cazy_data[accession]["kingdom"]
+        cazy_organisms = cazy_data[accession]["organism"]
         
         try:
             cazy_data[accession] = {
@@ -535,10 +541,20 @@ def replace_multiple_tax(cazy_data, args):
                 "organism": (organism,),
                 "families": multi_taxa_gbk[accession]["families"],
             }
+
+            # log the difference
+            cazy_organism_str = ','.join(cazy_organisms)
+            file_content = f"{accession}\t{cazy_kingdom}: {cazy_organism_str}\t{kingdom}: {organism}"
+            with open(multiple_taxa_logger, 'a') as fh:
+                fh.write(file_content)
+
         except KeyError:
-            logger.error(
-                f'GenBank accession {accession} retrieved from NCBI, but it is not present in CAZy'
-            )
+            err = f'GenBank accession {accession} retrieved from NCBI, but it is not present in CAZy'
+            logger.error(err)
+
+            file_content = f"{accession}\t{cazy_kingdom}: {cazy_organism_str}\t{err}"
+            with open(multiple_taxa_logger, 'a') as fh:
+                fh.write(file_content)
 
     return cazy_data
 
