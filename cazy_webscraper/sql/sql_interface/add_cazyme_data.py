@@ -324,10 +324,12 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
             # add all CAZy (sub)family associations to db for this GenBank accession
             families = cazy_data[genbank_accession]['families']
             for fam in families:
-                if families[fam] is None:
-                    family = f"{fam} _"
-                else:
-                    family = f"{fam} {families[fam]}"
+                subfamilies = families[fam]
+                for subfam in subfamilies:
+                    if subfam is None:
+                        family = f"{fam} _"
+                    else:
+                        family = f"{fam} {subfam}"
                 
                 fam_id = fam_table_dict[family]
                 
