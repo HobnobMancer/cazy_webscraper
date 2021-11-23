@@ -230,7 +230,7 @@ def add_genbanks(cazy_data, connection):
             
             # get the taxa_id for the organism listed in the CAZy txt file
             organism = cazy_data[gbk_accession]['organism']
-            cazy_data_taxa_id = taxa_table_dict[organism]
+            cazy_data_taxa_id = taxa_table_dict[organism]['tax_id']
             
             if cazy_data_taxa_id != existing_record_id:
                 # need to update the record
