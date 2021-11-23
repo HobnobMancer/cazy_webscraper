@@ -297,11 +297,15 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
             cazy_families = set()  # used for checking which existing relationships are no longer in CAZy
             
             for fam in families:
-                if families[fam] is None:
-                    family = f"{fam} _"
-                else:
-                    family = f"{fam} {families[fam]}"
-                cazy_families.add(family)
+
+                subfamilies = families[fam]
+
+                for subfam in subfamilies:
+                    if subfam is None:
+                        family = f"{fam} _"
+                    else:
+                        family = f"{fam} {subfam}"
+                    cazy_families.add(family)
                 
                 if family not in (list(existing_families_rel_dict.keys())):
                     # add new relationship
