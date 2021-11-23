@@ -92,38 +92,17 @@ from cazy_webscraper.utilities import (
 )
 from cazy_webscraper.utilities.parsers import cazy_webscraper_parser
 
-# Define constants
 
 __version__ = "2.0.0-beta"
 
-VERSION_INFO = [
-    termcolour(
-        f"cazy_webscraper version: {__version__}",
-        "cyan",
-    ),
-]
+VERSION_INFO = [f"cazy_webscraper version: {__version__}"]
 
 CITATION_INFO = [
-    termcolour(
-        "If you use cazy_webscraper in your work, please cite the following publication:",
-        "green",
-    ),
-    termcolour(
-        "\tHobbs, E. E. M., Pritchard, L., Chapman, S., Gloster, T. M.,",
-        "yellow",
-    ),
-    termcolour(
-        "\t(2021) cazy_webscraper Microbiology Society Annual Conference 2021 poster. ",
-        "yellow",
-    ),
-    termcolour(
-        "\tFigShare. Poster.",
-        "yellow",
-    ),
-    termcolour(
-        "\thttps://doi.org/10.6084/m9.figshare.14370860.v7",
-        "yellow",
-    ),
+    "If you use cazy_webscraper in your work, please cite the following publication:",
+    "\tHobbs, E. E. M., Pritchard, L., Chapman, S., Gloster, T. M.,",
+    "\t(2021) cazy_webscraper Microbiology Society Annual Conference 2021 poster.",
+    "\tFigShare. Poster.",
+    "\thttps://doi.org/10.6084/m9.figshare.14370860.v7",
 ]
 
 
