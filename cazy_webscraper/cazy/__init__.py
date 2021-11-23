@@ -42,6 +42,7 @@
 
 import logging
 import re
+import sys
 
 from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
@@ -49,21 +50,56 @@ from zipfile import ZipFile
 
 from Bio import Entrez
 
+from cazy_webscraper import crawler
 
-def extract_cazy_file_data(cazy_txt_path):
-    """Retrieve data from the text file downloaded from CAZy.
+
+def get_cazy_txt_file_data(cache_dir, time_stamp, args):
+    """Retrieve txt file of CAZy db dump from CAZy or the local disk.
     
-    :param cazy_txt_path: Path, location where CAZy text file was downloaded
+    :param cache_dir: Path(), path to directory where cache is written to
+    :param time_stamp: str, date and time cazy_webscraper was intiated
+    :param args: cmd-line args parser
     
-    Return list of lines from the CAZy text file.
-    """
-    with ZipFile(cazy_txt_path) as zip_handle:
-        cazy_filepath = zip_handle.namelist()[0]
+    Return list of lines from CAZy txt file, one line is one item in the list"""
+    logger = logging.getLogger(__name__)
+
+    if args.cazy_data is not None:   # retrieve lines from predownloaded CAZy txt file
+        with open(args.cazy_data, 'r') as fh:
+            cazy_txt_lines = fh.read().splitlines()
     
-        with zip_handle.open(cazy_filepath) as fh:
-            lines = fh.read().splitlines()
-    
-    return lines
+    else:
+        # download CAZy database txt file
+        cazy_txt_path = cache_dir / f"cazy_db_{time_stamp}.zip"
+
+        tries, retries, success = 0, (args.retries + 1), False
+
+        err_message = None
+        while (tries <= retries) and (not success):
+            err_message = crawler.get_cazy_file(cazy_txt_path, args, max_tries=(args.retries + 1))
+
+            if err_message is None:
+                break
+
+            else:
+                tries += 1
+        
+        if err_message is not None:
+            logger.error(
+                "Could not connect to CAZy to download the CAZy db txt file after "
+                f"{(args.retries + 1)*(args.retries + 1)}\n"
+                f"The following error was raised:\n{err_message}"
+                f"File would have been written to {cazy_txt_path}"
+                "Terminating program"
+            )
+            sys.exit(1)
+        
+        with ZipFile(cazy_txt_path) as zip_handle:
+            cazy_filepath = zip_handle.namelist()[0]
+        
+            with zip_handle.open(cazy_filepath) as fh:
+                cazy_txt_lines = fh.read().splitlines()
+
+    return cazy_txt_lines
 
 
 def parse_all_cazy_data(lines, cazy_fam_populations):

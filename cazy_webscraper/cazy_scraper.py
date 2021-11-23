@@ -226,6 +226,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.info("Starting retrieval of data from CAZy")
 
+    if args.cazy_data is not None:
+        logger.warning(f"Retrieving CAZy data from predownloaded CAZy db dump at:\n{args.cazy_data}")
+
     get_cazy_data(
         cazy_home_url,
         excluded_classes,
@@ -324,33 +327,8 @@ def get_cazy_data(
     else:
         cazy_fam_populations = None
 
-    # download CAZy database txt file
-    cazy_txt_path = cache_dir / f"cazy_db_{time_stamp}.zip"
-
-    tries, retries, success = 0, (args.retries + 1), False
-
-    err_message = None
-    while (tries <= retries) and (not success):
-        err_message = crawler.get_cazy_file(cazy_txt_path, args, max_tries=(args.retries + 1))
-
-        if err_message is None:
-            break
-
-        else:
-            tries += 1
+    cazy_txt_lines = cazy.get_cazy_txt_file_data(args)
     
-    if err_message is not None:
-        logger.error(
-            "Could not connect to CAZy to download the CAZy db txt file after "
-            f"{(args.retries + 1)*(args.retries + 1)}\n"
-            f"The following error was raised:\n{err_message}"
-            f"File would have been written to {cazy_txt_path}"
-            "Terminating program"
-        )
-        sys.exit(1)
-    
-    # extract the CAZy family data and add to the local CAZyme database
-    cazy_txt_lines = cazy.extract_cazy_file_data(cazy_txt_path)
     logger.info(f"Retrieved {len(cazy_txt_lines)} lines from the CAZy db txt file")
 
     if (len(class_filters) == 0) and (len(fam_filters) == 0) and (len(kingdom_filters) == 0) and (len(taxonomy_filters) == 0):

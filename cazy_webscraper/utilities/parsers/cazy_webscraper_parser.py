@@ -72,6 +72,14 @@ def build_parser(argv: Optional[List] = None):
         help="Target path for cache dir to be used instead of default path",
     )
 
+    # Add option to use a pre-downloaded CAZy txt file
+    parser.add_argument(
+        "--cazy_data",
+        type=Path,
+        default=None,
+        help="Path predownloaded CAZy txt file",
+    )
+
     # Add option to use own CAZy class synoymn dict
     parser.add_argument(
         "--cazy_synonyms",
