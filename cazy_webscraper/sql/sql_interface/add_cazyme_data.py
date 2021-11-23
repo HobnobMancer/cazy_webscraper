@@ -331,8 +331,6 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
                     else:
                         family = f"{fam} {subfam}"
 
-                print(fam_table_dict)
-                
                 fam_id = fam_table_dict[family]
                 
                 genbank_id = gbk_table_dict[genbank_accession]['id']
