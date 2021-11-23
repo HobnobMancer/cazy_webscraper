@@ -469,7 +469,7 @@ def get_filter_set(taxonomy_filters_dict):
 
     Return a set.
     """
-    taxonomy_filters = {}
+    taxonomy_filters = set()
 
     for key in taxonomy_filters_dict:
         try:
