@@ -202,7 +202,7 @@ def add_genbanks(cazy_data, connection):
     :param cazy_data: dict of CAZy data
     :param connection: open sqlalchemy connection to an SQLite db
     
-    Return set of tuples, of (genbank_acc, fam_id)
+    Return Nothing
     """
     logger = logging.getLogger(__name__)
 
@@ -250,6 +250,8 @@ def add_genbanks(cazy_data, connection):
                     f"WHERE genbank_id = '{record[0]}'"
                 )
             )
+    
+    return
 
 
 def add_genbank_fam_relationships(cazy_data, connection, args):
@@ -360,3 +362,5 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
                 where(genbanks_families.c.family_id == record[1])
             )
             connection.execute(stmt)
+
+    return
