@@ -182,7 +182,7 @@ def add_cazy_families(cazy_data, connection):
                     cazy_subfam = subfam
                 fam_key = f"{cazy_fam} {cazy_subfam}"
                 
-                if fam_key in existing_fam_records:
+                if fam_key not in existing_fam_records:
                     families_db_insert_values.add( (cazy_fam, cazy_subfam) )
             
     if len(families_db_insert_values) != 0:
@@ -330,6 +330,8 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
                         family = f"{fam} _"
                     else:
                         family = f"{fam} {subfam}"
+
+                print(fam_table_dict)
                 
                 fam_id = fam_table_dict[family]
                 
