@@ -183,7 +183,7 @@ def add_cazy_families(cazy_data, connection):
                 fam_key = f"{cazy_fam} {cazy_subfam}"
                 
                 if fam_key not in existing_fam_records:
-                    families_db_insert_values.add( (cazy_fam, cazy_subfam) )
+                    families_db_insert_values.add( (cazy_fam, subfam) )  # add None for subfam if is None
             
     if len(families_db_insert_values) != 0:
         logger.info(
