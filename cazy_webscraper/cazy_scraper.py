@@ -98,11 +98,11 @@ __version__ = "2.0.0-beta"
 VERSION_INFO = f"cazy_webscraper version: {__version__}"
 
 CITATION_INFO = (
-    "If you use cazy_webscraper in your work, please cite the following publication:\n",
-    "\tHobbs, E. E. M., Pritchard, L., Chapman, S., Gloster, T. M.,\n",
-    "\t(2021) cazy_webscraper Microbiology Society Annual Conference 2021 poster.\n",
-    "\tFigShare. Poster.\n",
-    "\thttps://doi.org/10.6084/m9.figshare.14370860.v7",
+    "If you use cazy_webscraper in your work, please cite the following publication:\n"
+    "\tHobbs, E. E. M., Pritchard, L., Chapman, S., Gloster, T. M.,\n"
+    "\t(2021) cazy_webscraper Microbiology Society Annual Conference 2021 poster.\n"
+    "\tFigShare. Poster.\n"
+    "\thttps://doi.org/10.6084/m9.figshare.14370860.v7"
 )
 
 
