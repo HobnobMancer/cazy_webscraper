@@ -80,6 +80,7 @@ def add_kingdoms(cazy_taxa_dict, connection):
     
     return
 
+
 def add_source_organisms(taxa_dict, connection):
     """Add taxonomy (source organism) data to the local CAZyme database
     
@@ -91,10 +92,11 @@ def add_source_organisms(taxa_dict, connection):
     logger = logging.getLogger(__name__)
 
     # retrieve db kingdom objects for retrieving the kingdom_id for the Taxs table
-    kingdom_table_dict = get_table_dicts.get_kingdom_table_dict(connection)  # {kingdom: kingdom_id}
+    kingdom_table_dict = get_table_dicts.get_kingdom_table_dict(connection)
+    # {kingdom: kingdom_id}
     tax_table_dict = get_table_dicts.get_taxs_table_dict(connection)
-    # {genus species: {'tax_id': db_tax_id, 'kingdom_id': kingdom_id}
-
+    # {genus species: {'tax_id': int(db_tax_id), 'kingdom_id': int(kingdom_id)}
+    
     # compare taxa already in the db against taxa retrieved from the CAZy txt file
     # to identify new taxa objects to be added to the db
 
@@ -107,23 +109,23 @@ def add_source_organisms(taxa_dict, connection):
         desc='Create tax objects per Kingdom',
     ):
         kingdom_id = kingdom_table_dict[kingdom]
-        
-        existing_taxa_records = list(tax_table_dict.keys())  # list of scientific names
-
         organisms = taxa_dict[kingdom]
         
         for organism in organisms:  # organisms from the CAZy txt file
             
-            if organism not in existing_taxa_records:  # new record to add
-                genus = organism.split(" ")[0]
-                species = ' '.join(organism.split(" ")[1:])
-                taxonomy_db_insert_values.append( (genus, species, kingdom_id,) )
-            
-            else:  # check kingdom is correct
+            try:
+                existing_record_data = tax_table_dict[organism]
+                # check kingdom is correct
                 existing_record_kngdm_id = tax_table_dict[organism]['kingdom_id']
                 if existing_record_kngdm_id != kingdom_id:
                     records_to_update.add( (genus, species, kingdom_id,) )
                 
+            except KeyError:  # organism not in the db, build new record
+                genus = organism.split(" ")[0]
+                species = ' '.join(organism.split(" ")[1:])
+                new_record = (genus, species, kingdom_id,)
+                taxonomy_db_insert_values.add( new_record )
+    
     if len(taxonomy_db_insert_values) != 0:
         logger.info(
             f"Adding {len(taxonomy_db_insert_values)} new tax records to the db"
