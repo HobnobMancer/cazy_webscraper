@@ -108,18 +108,19 @@ def add_source_organisms(taxa_dict, connection):
     ):
         kingdom_id = kingdom_table_dict[kingdom]
         
-        existing_taxa_records = list(tax_table_dict.keys())
+        existing_taxa_records = list(tax_table_dict.keys())  # list of scientific names
 
         organisms = taxa_dict[kingdom]
         
         for organism in organisms:  # organisms from the CAZy txt file
+            
             if organism not in existing_taxa_records:  # new record to add
                 genus = organism.split(" ")[0]
                 species = ' '.join(organism.split(" ")[1:])
                 taxonomy_db_insert_values.append( (genus, species, kingdom_id,) )
             
             else:  # check kingdom is correct
-                existing_record_kngdm_id = existing_taxa_records[organism]['kingdom_id']
+                existing_record_kngdm_id = tax_table_dict[organism]['kingdom_id']
                 if existing_record_kngdm_id != kingdom_id:
                     records_to_update.add( (genus, species, kingdom_id,) )
                 
