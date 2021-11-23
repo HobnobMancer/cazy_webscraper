@@ -203,7 +203,10 @@ def parse_cazy_data_with_filters(
     # family annotations for each protein
 
     for line in tqdm(lines, 'Parsing CAZy txt file'):
-        line_str = line.decode()
+        try:  # decode line if retrieved from downloaded and zipped CAZy txt file
+            line_str = line.decode()
+        except AttributeError:
+            line_str = line
         line_data = line_str.split('\t')
         
         kingdom = line_data[1]
@@ -580,9 +583,9 @@ def replace_multiple_tax(cazy_data, multiple_taxa_logger, args):
 
             # log the difference
             cazy_organism_str = ','.join(cazy_organisms)
-            file_content = f"{accession}\t{cazy_kingdom}: {cazy_organism_str}\t{kingdom}: {organism}"
-            with open(multiple_taxa_logger, 'a') as fh:
-                fh.write(file_content)
+            multiple_taxa_logger.warning(
+                f"{accession}\t{cazy_kingdom}: {cazy_organism_str}\t{kingdom}: {organism}"
+            )
 
         except KeyError:
             err = f'GenBank accession {accession} retrieved from NCBI, but it is not present in CAZy'
