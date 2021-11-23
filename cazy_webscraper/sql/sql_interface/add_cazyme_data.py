@@ -340,7 +340,7 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
                 # check for relationships to delete: a relationship that is in the db but no longer in CAZy
                 for family in list(existing_families_rel_dict.keys()):
                     if family not in cazy_families:  # relationship no longer in CAZy
-                        genbank_id = gbk_table_dict[genbank_accession]['id']
+                        genbank_id = gbk_table_dict[genbank_accession]['gbk_id']
                         fam_id = fam_table_dict[family]
                         gbk_fam_records_to_del.add( (genbank_id, fam_id) )
                 
@@ -359,7 +359,7 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
 
                 fam_id = fam_table_dict[family]
                 
-                genbank_id = gbk_table_dict[genbank_accession]['id']
+                genbank_id = gbk_table_dict[genbank_accession]['gbk_id']
                 
                 gbk_fam_db_insert_values.add( (genbank_id, fam_id,) )
         

@@ -170,7 +170,7 @@ def get_gbk_table_dict(connection):
     for gbk in all_genbank:
         db_gbk_dict[f"{gbk.genbank_accession}"] = {
             'taxa_id': gbk.taxonomy_id,
-            'id': gbk.genbank_id
+            'gbk_id': gbk.genbank_id
         }
     
     return db_gbk_dict
