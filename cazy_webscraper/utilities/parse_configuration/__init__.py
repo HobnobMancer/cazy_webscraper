@@ -113,10 +113,6 @@ def parse_configuration(args):
             if user_kingdom in correct_kingdoms:
                 kingdoms.add(f"{kingdom[0].upper()}{kingdom[1:].lower()}")
         kingdom_filters = kingdoms
-    
-    # When no classes or families are defined scrape every class and family
-    if (args.classes is None) and (args.families is None) and (args.config is None):
-        config_dict["classes"] = set(cazy_class_synonym_dict.keys())
 
     # get list of CAZy classes not to scrape
     excluded_classes = get_excluded_classes(config_dict, cazy_class_synonym_dict)
@@ -124,7 +120,8 @@ def parse_configuration(args):
     # convert dict into a single set of filters
     taxonomy_filter_set = get_filter_set(taxonomy_filter_dict)
 
-    class_filters = set(config_dict['classes'])
+    # retrieve class abbreivations
+    class_filters = [cazy_class.split(" (")[0] for cazy_class in set(config_dict['classes'])]
 
     family_filters = set()
     for key in config_dict:
