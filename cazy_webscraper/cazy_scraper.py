@@ -95,15 +95,15 @@ from cazy_webscraper.utilities.parsers import cazy_webscraper_parser
 
 __version__ = "2.0.0-beta"
 
-VERSION_INFO = [f"cazy_webscraper version: {__version__}"]
+VERSION_INFO = f"cazy_webscraper version: {__version__}"
 
-CITATION_INFO = [
-    "If you use cazy_webscraper in your work, please cite the following publication:",
-    "\tHobbs, E. E. M., Pritchard, L., Chapman, S., Gloster, T. M.,",
-    "\t(2021) cazy_webscraper Microbiology Society Annual Conference 2021 poster.",
-    "\tFigShare. Poster.",
+CITATION_INFO = (
+    "If you use cazy_webscraper in your work, please cite the following publication:\n",
+    "\tHobbs, E. E. M., Pritchard, L., Chapman, S., Gloster, T. M.,\n",
+    "\t(2021) cazy_webscraper Microbiology Society Annual Conference 2021 poster.\n",
+    "\tFigShare. Poster.\n",
     "\thttps://doi.org/10.6084/m9.figshare.14370860.v7",
-]
+)
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -331,7 +331,10 @@ def get_cazy_data(
     
     logger.info(f"Retrieved {len(cazy_txt_lines)} lines from the CAZy db txt file")
 
-    if (len(class_filters) == 0) and (len(fam_filters) == 0) and (len(kingdom_filters) == 0) and (len(taxonomy_filters) == 0):
+    if (len(class_filters) == 0) and \
+        (len(fam_filters) == 0) and \
+            (len(kingdom_filters) == 0) and \
+                (len(taxonomy_filters) == 0):
         cazy_data = cazy.parse_all_cazy_data(cazy_txt_lines, cazy_fam_populations)
 
     else:
