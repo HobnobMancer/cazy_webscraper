@@ -209,7 +209,7 @@ def add_genbanks(cazy_data, connection):
 
     # retrieve existing records from the db
     gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
-    existing_gbk_records = list(gbk_table_dict.keys)
+    existing_gbk_records = list(gbk_table_dict.keys())
     taxa_table_dict = get_table_dicts.get_taxs_table_dict(connection)
 
     gbk_record_updates = set()  # {gbk_accession: 'taxa_id': (new taxa_id) int, 'gbk_id': int}
