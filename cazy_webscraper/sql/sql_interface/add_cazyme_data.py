@@ -275,14 +275,16 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
 
     # get dict of GenBank and CazyFamilies tables, used for getting gbk_ids  and fam_ids of accessions and
     # families without entries in the CazyFamilies_Genbanks table
+
     gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection) 
     # {genbank_accession: 'taxa_id': int, 'gbk_id': int}
+
     fam_table_dict = get_table_dicts.get_fams_table_dict(connection) 
     # {fam: fam_id}
 
     # load current relationships in the db
     gbk_fam_table_dict = get_table_dicts.get_gbk_fam_table_dict(connection)
-    # {genbank_accession: families: {fam: fam_id}, id: int (db_id)}
+    # {genbank_accession: families: {str(fam subfam): int(fam_id)}, id: int(gbk_db_id)}
     
     gbks_with_existing_relationships = list(gbk_fam_table_dict.keys())
 
@@ -290,11 +292,16 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
         
         if genbank_accession in gbks_with_existing_relationships:
             # identify which genbank-fam relationships in the CAZy data to delete or add
-            existing_families_rel_dict = gbk_fam_table_dict[genbank_accession]['families']  # {fam: fam_id}
+            existing_families_rel_dict = gbk_fam_table_dict[genbank_accession]['families']
             
-            families = cazy_data[genbank_accession]['families']
+            # {str(fam subfam): int(fam_id)}
+            existing_families_rel = list(existing_families_rel_dict.keys())
             
-            cazy_families = set()  # used for checking which existing relationships are no longer in CAZy
+            families = cazy_data[genbank_accession]['families']  # {fam: {subfams}}
+
+            # create set to store all gbk-fam relationships retrieve from CAZy
+            # used for checking which existing relationships are no longer in CAZy
+            cazy_families = set()
             
             for fam in families:
 
@@ -306,23 +313,24 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
                     else:
                         family = f"{fam} {subfam}"
                     cazy_families.add(family)
-                
-                if family not in (list(existing_families_rel_dict.keys())):
-                    # add new relationship
-                    genbank_id = gbk_table_dict[genbank_accession]['id']
-                    fam_id = fam_table_dict[family]
-                    gbk_fam_db_insert_values.add( (genbank_id, fam_id,) )
+
+                    if family not in existing_families_rel:
+                        # add new relationship
+                        genbank_id = gbk_table_dict[genbank_accession]['id']
+                        fam_id = fam_table_dict[family]
+                        gbk_fam_db_insert_values.add( (genbank_id, fam_id,) )
                     
-                # else: gbk-fam already in db
+                    # else: gbk-fam already in db
+            
+            if args.delete_old_relationships:
+                # check for relationships to delete: a relationship that is in the db but no longer in CAZy
+                for family in list(existing_families_rel_dict.keys()):
+                    if family not in cazy_families:  # relationship no longer in CAZy
+                        genbank_id = gbk_table_dict[genbank_accession]['id']
+                        fam_id = fam_table_dict[family]
+                        gbk_fam_records_to_del.add( (genbank_id, fam_id) )
                 
-            # check for relationships to delete: a relationship that is in the db but no longer in CAZy
-            for family in list(existing_families_rel_dict.keys()):
-                if family not in cazy_families:  # relationship no longer in CAZy
-                    genbank_id = gbk_table_dict[genbank_accession]['id']
-                    fam_id = fam_table_dict[family]
-                    gbk_fam_records_to_del.add( (genbank_id, fam_id) )
-                
-                # else: fam relationship in the db is still in CAZy
+                    # else: fam relationship in the db is still in CAZy
         
         else:
             # add all CAZy (sub)family associations to db for this GenBank accession
