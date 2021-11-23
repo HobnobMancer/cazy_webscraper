@@ -327,7 +327,7 @@ def get_cazy_data(
     else:
         cazy_fam_populations = None
 
-    cazy_txt_lines = cazy.get_cazy_txt_file_data(args)
+    cazy_txt_lines = cazy.get_cazy_txt_file_data(cache_dir, time_stamp, args)
     
     logger.info(f"Retrieved {len(cazy_txt_lines)} lines from the CAZy db txt file")
 
