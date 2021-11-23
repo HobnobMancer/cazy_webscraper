@@ -290,7 +290,7 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
 
     existing_rel_tuples = set()
     for gbk_acc in gbk_fam_table_dict:
-        gbk_id = gbk_fam_table_dict[gbk_acc]['id']
+        gbk_id = gbk_fam_table_dict[gbk_acc]['gbk_id']
         families = gbk_fam_table_dict[gbk_acc]['families']
         for fam in families:
             fam_id = gbk_fam_table_dict[gbk_acc]['families'][fam]

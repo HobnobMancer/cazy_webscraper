@@ -227,7 +227,7 @@ def get_gbk_fam_table_dict(connection):
         except KeyError:
             db_gbk_fam_dict[genbank_accession] = {
                 "families": {family: record[1].family_id},
-                "id": record[0].genbank_id,
+                "gbk_id": record[0].genbank_id,
             }
     
     return db_gbk_fam_dict
