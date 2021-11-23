@@ -121,7 +121,7 @@ def parse_configuration(args):
     taxonomy_filter_set = get_filter_set(taxonomy_filter_dict)
 
     # retrieve class abbreivations
-    class_filters = [cazy_class.split(" (")[0] for cazy_class in set(config_dict['classes'])]
+    class_filters = set([cazy_class.split(" (")[0] for cazy_class in set(config_dict['classes'])])
 
     family_filters = set()
     for key in config_dict:
