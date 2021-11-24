@@ -27,6 +27,8 @@ Command line options
 
 ``--cache_dir`` - Path to cache dir to be used instead of default cache dir path.
 
+``--cazy_data`` - Path to a txt file downloaded from CAZy containing a CAZy database dump
+
 ``--cazy_synonyms`` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
 
 ``--config``, ``-c`` - Path to a configuration YAML file. Default: None.
@@ -111,6 +113,11 @@ and members of distinct families and classes can be selected simultaneously, e.g
 .. code-block:: bash
 
   cazy_webscraper --families GH169,GH1,GH2,GH3 --classes AA,CBM -o complex_query.db
+
+.. NOTE::
+  CAZy families should be named using the standard CAZy syntax.
+  GH1 is **accepted**.
+  gh1 and Glycoside hydrolase 1 are **note** accepted.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Specifying output data location
