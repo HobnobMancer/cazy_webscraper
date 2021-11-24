@@ -257,7 +257,7 @@ Below are listed the command-line flags for configuring the retrieval of protein
 
 `database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
 
-`email` - \[REQUIRED\] User email address, required by NCBI.Entrez.
+`email` - \[REQUIRED\] User email address, required by NCBI Entrez.
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
@@ -292,7 +292,7 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--strains` - List of specific species strains to restrict the scraping of CAZymes to.
 
-`--update` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
+`--update_seq` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
