@@ -126,7 +126,10 @@ def parse_all_cazy_data(lines, cazy_fam_populations):
     kingdoms = set()
 
     for line in tqdm(lines, 'Parsing CAZy txt file'):
-        line_str = line.decode()
+        try:
+            line_str = line.decode()  # used when parsing zipped CAZy file
+        except AttributeError:
+            line_str = line   # used when parsing local CAZy file
         line_data = line_str.split('\t')
         
         gbk_accession = line_data[3]
