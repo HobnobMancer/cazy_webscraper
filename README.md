@@ -101,19 +101,20 @@ Options are written in alphabetical order.
 
 `--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
 
+`--classes` - list of classes from which all families are to be scrape.
+
 `--config`, `-c` - Path to a configuration YAML file. Default: None.
 
 `--citation`, `-C` - Print the `cazy_webscraper` citation. When called, the program terminates after printng the citation and CAZy is **not** scraped.
 
-`--classes` - list of classes from which all families are to be scrape.
-
 `--database`, `-d` - Path to an **existings** local CAZyme database to add newly scraped too. Default: None.
 
-`--db_output`, `-o` - Path to write out a **new** local CAZyme database to. Include the name of the new database, including the `.db` extension. Default: None.
 
 _Do not use `--db_output` **and** `--database` at the same time._
 
 _If `--db_output` **and** `--database` are **not** called, `cazy_webscraper` write out a local CAZyme database to the cwd with the standardised name `cazy_webscraper_<date>_<time>.db`_
+
+`--delete_old_relationships` - Detele old CAZy family annotations of GenBank accessions. These are CAZy family annotations of a given GenBank accession are in the local database but the accession is not longer associated with those CAZy families, so delete old accession-family relationships.
 
 `--families` - List of CAZy (sub)families to scrape.
 
