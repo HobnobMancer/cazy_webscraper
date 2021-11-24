@@ -357,7 +357,7 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
                 for pdb in pdb_accessions:
                     uniprot_dict[uniprot_acc]["pdb"].add(pdb)
             
-            if args.sequences:
+            if args.sequence:
                 sequence = row['Sequence']
 
                 try:

@@ -200,8 +200,9 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--sequence_new",
-        dest="sequence_new",
+        "-s",
+        "--sequence",
+        dest="sequence",
         action="store_true",
         default=False,
         help=(

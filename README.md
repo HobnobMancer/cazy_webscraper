@@ -197,9 +197,9 @@ Below are listed the command-line flags for configuring the retrieval of UniProt
 
 `--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
 
-`--config`, `-c` - Path to a configuration YAML file. Default: None.
-
 `--classes` - List of classes to retrieve UniProt data for.
+
+`--config`, `-c` - Path to a configuration YAML file. Default: None.
 
 `--ec`, `-e` - Enable retrieval of EC number annotations from UniProt
 
@@ -219,6 +219,8 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--nodelete_log` - When called, content in the existing log dir will **not** be deleted. Default: False (existing content is deleted).
 
 `--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
+
+`--sequence`, `-s` - Retrieve protein amino acid sequences from UniProt
 
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
