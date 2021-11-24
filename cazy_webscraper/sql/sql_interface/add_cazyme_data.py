@@ -100,7 +100,7 @@ def add_source_organisms(taxa_dict, connection):
     # compare taxa already in the db against taxa retrieved from the CAZy txt file
     # to identify new taxa objects to be added to the db
 
-    taxonomy_db_insert_values = []
+    taxonomy_db_insert_values = set()
     records_to_update = set()  # used incase kingdom has changed for a species
 
     for kingdom in tqdm(
@@ -134,7 +134,7 @@ def add_source_organisms(taxa_dict, connection):
             connection,
             'Taxs',
             ['genus', 'species', 'kingdom_id'],
-            taxonomy_db_insert_values,
+            list(taxonomy_db_insert_values),
         )
     else:
         logger.info(
@@ -344,13 +344,12 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
             f"Adding {len(gbk_fam_db_insert_values)} new GenBank accession - "
             "CAZy (sub)family relationships to the db"
         )
-        for tup in gbk_fam_db_insert_values:
-            insert_data(
-                connection,
-                'Genbanks_CazyFamilies',
-                ['genbank_id', 'family_id'],
-                [tup],
-            )
+        insert_data(
+            connection,
+            'Genbanks_CazyFamilies',
+            ['genbank_id', 'family_id'],
+            list(gbk_fam_db_insert_values),
+        )
     else:
         logger.info(
             "No new Genbank accession-CAZy (sub)family relationships to add to the db"
