@@ -220,7 +220,7 @@ def add_genbanks(cazy_data, connection):
     gbk_record_updates = set()  # {gbk_accession: 'taxa_id': (new taxa_id) int, 'gbk_id': int}
     gbk_db_insert_values = set()
 
-    for gbk_accession in tqdm(cazy_data, desc="Finding Genbank records for insertion"):
+    for gbk_accession in tqdm(cazy_data, desc="Compiling Genbank records for insertion"):
         if gbk_accession not in existing_gbk_records:
             organism = list(cazy_data[gbk_accession]['organism'])[0]
             taxa_id = taxa_table_dict[organism]['tax_id']
