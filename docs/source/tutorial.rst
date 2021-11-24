@@ -152,6 +152,10 @@ exact same operation as the code given above:
 
 The above examples also highlight that it does not matter if you use the long or short versions of each of the flags.
 
+.. NOTE::
+   If you elect to write the database to a file in the current working directory, you do not need to worry 
+   about ``cazy_webscraper`` deleting content in the current working directory. This only applies if you chose to
+   write the database to a directory over than the current working directory.
 
 ----------------------------------------------
 Specifying CAZy classes and families to scrape
