@@ -97,6 +97,8 @@ Options are written in alphabetical order.
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
+`--cazy_data` - Path to a txt file downloaded from CAZy containing a CAZy db data dump.
+
 `--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
 
 `--config`, `-c` - Path to a configuration YAML file. Default: None.
@@ -188,7 +190,7 @@ Below are listed the command-line flags for configuring the retrieval of UniProt
 
 `database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
 
-`--bioservices_batch_size` - Change the query batch size submitted via [`bioservices`]() to UniProt to retrieve protein data. Default is 150. `bioservices` recommands queries not larger than 200 objects.
+`--bioservices_batch_size` - Change the query batch size submitted via [`bioservices`](https://bioservices.readthedocs.io/en/master/) to UniProt to retrieve protein data. Default is 150. `bioservices` recommands queries not larger than 200 objects.
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
@@ -196,7 +198,7 @@ Below are listed the command-line flags for configuring the retrieval of UniProt
 
 `--config`, `-c` - Path to a configuration YAML file. Default: None.
 
-`--classes` - List of classes from which all families are to be scrape.
+`--classes` - List of classes to retrieve UniProt data for.
 
 `--ec`, `-e` - Enable retrieval of EC number annotations from UniProt
 
@@ -213,6 +215,8 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
+`--nodelete_log` - When called, content in the existing log dir will **not** be deleted. Default: False (existing content is deleted).
+
 `--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
 
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
@@ -223,7 +227,7 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--timeout`, `-t` - Connection timout limit (seconds). Default: 45.
 
-`--uniprot_batch_size` - Size of an individual batch query submitted to the [UniProt REST API]() to retrieve the UniProt accessions of proteins identified by the GenBank accession. Default is 150. The UniProt API documentation recommands batch sizes of less than 20,000 but batch sizes of 1,000 often result in HTTP 400 errors. It is recommend to keep batch sizes less than 1,000, and ideally less than 200.
+`--uniprot_batch_size` - Size of an individual batch query submitted to the [UniProt REST API](https://www.uniprot.org/help/programmatic_access) to retrieve the UniProt accessions of proteins identified by the GenBank accession. Default is 150. The UniProt API documentation recommands batch sizes of less than 20,000 but batch sizes of 1,000 often result in HTTP 400 errors. It is recommend to keep batch sizes less than 1,000, and ideally less than 200.
 
 `--update_seq` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
