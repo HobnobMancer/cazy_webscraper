@@ -48,6 +48,8 @@ Command line options
   If ``--db_output`` **and** ``--database`` are **not** called,
   ``cazy_webscraper`` will write out a local CAZyme database to the cwd with the standardised name ``cazy_webscraper_<date>_<time>.db``
 
+``--delete_old_relationships`` - Detele old CAZy family annotations of GenBank accessions. These are CAZy family annotations of a given GenBank accession are in the local database but the accession is not longer associated with those CAZy families, so delete old accession-family relationships.
+
 ``--families`` - List of CAZy (sub)families to scrape.
 
 ``--force``, ``-f`` - force overwriting existing output file. Default: False.
