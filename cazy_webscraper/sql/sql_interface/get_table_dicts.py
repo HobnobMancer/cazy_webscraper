@@ -205,32 +205,49 @@ def get_gbk_fam_table_dict(connection):
     
     :param connection: open sqlalchemy connection to an SQLite3 db engine
     
-    Return dict {gbk_id: {fam_id}}"""
+    Return 
+    - dict: {gbk_acc: {'families': {'fam subfam': fam_id}}, 'gbk_id': gbk_id }
+    - set of tuples: (gbk_id, fam_id), each representing one row in the table
+    """
     with Session(bind=connection) as session:
         all_gbk_fam_records = session.query(Genbank, CazyFamily).\
         join(CazyFamily, Genbank.families).\
         all()
-        
-    db_gbk_fam_dict = {}  # {genbank_accession: families: {fam: fam_id}, id: int (db_id)}
-    
-    for record in all_gbk_fam_records:
-        genbank_accession = record[0].genbank_accession
+
+    existing_rel_tuples = set()  # set of tuples (gbk_id, fam_id)
+
+    gbk_fam_table_dict = {}
+    # {gbk_acc: {'families': {'fam subfam': fam_id}}, 'gbk_id': gbk_id }
+
+    for record in tqdm(all_gbk_fam_records, ' Retreving existing gbk-fam relationships from db'):
+        gbk_accession = record[0].genbank_accession
+        gbk_id = record[0].genbank_id
+
         family = record[1].family
-        subfamily = record[1].subfamily
-        if subfamily is None:
+        if record[1].subfamily is None:
             subfamily = '_'
-        
-        family = f"{family} {subfamily}"
-        
+        else:
+            subfamily = record[1].subfamily
+        fam_id = record[1].family_id
+
+        existing_rel_tuples.add( (gbk_id, fam_id) )
+
         try:
-            db_gbk_fam_dict[genbank_accession][family] = record[1].family_id
+            gbk_fam_table_dict[gbk_accession]
+
+            try:
+                gbk_fam_table_dict[gbk_accession][f'{family} {subfamily}']
+
+            except KeyError:
+                gbk_fam_table_dict[gbk_accession][f'{family} {subfamily}'] = fam_id
+
         except KeyError:
-            db_gbk_fam_dict[genbank_accession] = {
-                "families": {family: record[1].family_id},
-                "gbk_id": record[0].genbank_id,
+            gbk_fam_table_dict[gbk_accession] = {
+                'families': {f'{family} {subfamily}': fam_id},
+                'gbk_id': gbk_id,
             }
-    
-    return db_gbk_fam_dict
+
+    return gbk_fam_table_dict, existing_rel_tuples
 
 
 def get_kingdom_table_dict(connection):

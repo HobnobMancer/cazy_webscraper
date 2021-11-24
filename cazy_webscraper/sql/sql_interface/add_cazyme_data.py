@@ -277,115 +277,86 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
 
     # get dict of GenBank and CazyFamilies tables, used for getting gbk_ids  and fam_ids of accessions and
     # families without entries in the CazyFamilies_Genbanks table
-
+    
     gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection) 
     # {genbank_accession: 'taxa_id': int, 'gbk_id': int}
 
+
     fam_table_dict = get_table_dicts.get_fams_table_dict(connection) 
-    # {fam: fam_id}
+    # {'fam subfam': fam_id}
 
     # load current relationships in the db
-    gbk_fam_table_dict = get_table_dicts.get_gbk_fam_table_dict(connection)
-    # {genbank_accession: families: {str(fam subfam): int(fam_id)}, id: int(gbk_db_id)}
+    gbk_fam_table_dict, existing_rel_tuples = get_table_dicts.get_gbk_fam_table_dict(connection)
+    # {genbank_accession: {'families': {str(fam subfam): int(fam_id)}, 'gbk_id': int(gbk_db_id)} }
 
-    existing_rel_tuples = set()
-    for gbk_acc in gbk_fam_table_dict:
-        gbk_id = gbk_fam_table_dict[gbk_acc]['gbk_id']
-        families = gbk_fam_table_dict[gbk_acc]['families']
-        for fam in families:
-            fam_id = gbk_fam_table_dict[gbk_acc]['families'][fam]
-            existing_rel_tuples.add( (gbk_id, fam_id) )
-    
-    gbks_with_existing_relationships = list(gbk_fam_table_dict.keys())
-
-    for genbank_accession in tqdm(cazy_data, desc="Extract Genbank-Family relationships from CAZy data"):
+    for genbank_accession in tqdm(cazy_data, desc="Extracting Genbank-Family relationships from CAZy data"):
         
-        if genbank_accession in gbks_with_existing_relationships:
-            gbk_id = gbk_fam_table_dict[genbank_accession]['id']
-
-            # identify which genbank-fam relationships in the CAZy data to delete or add
-            existing_families_rel_dict = gbk_fam_table_dict[genbank_accession]['families']
-
-            existing_fam_ids = []
-            for fam in existing_families_rel_dict:
-                existing_fam_ids.append(existing_families_rel_dict[fam])
+        gbk_id = gbk_table_dict[genbank_accession]['gbk_id']
+        
+        cazy_fam_dict = cazy_data[genbank_accession]['families']
+        # cazy_data = { gbk_acc: {'families': {fam: {subfamilies}} } }
+        # cazy_fam_dict = {fam : {subfamilies}}
+        
+        try:
+            existing_relation_dict = gbk_fam_table_dict[genbank_accession]['families']
+            # existing_relation_dict = { str(fam subfam) : fam_id }
             
-            families = cazy_data[genbank_accession]['families']  # {fam: {subfams}}
-
-            # create set to store all gbk-fam relationships retrieve from CAZy
-            # used for checking which existing relationships are no longer in CAZy
-            cazy_families = set()
-            
-            for fam in families:
-
-                subfamilies = families[fam]
-
-                for subfam in subfamilies:
+            for fam in cazy_fam_dict:
+                subfamilies = cazy_fam_dict[fam] # set of subfams for parent fam from CAZy data
+                
+                for subfam in subfamilies:  # add each fam-subfam pair
                     if subfam is None:
-                        family = f"{fam} _"
+                        family_key = f"{fam} _"
                     else:
-                        family = f"{fam} {subfam}"
-                    cazy_families.add(family)
-
-                    fam_id = fam_table_dict[family]
-
-                    if fam_id not in existing_fam_ids:  # add new relationship
-                        relationship_tuple = (gbk_id, fam_id,)
-                        if relationship_tuple not in existing_rel_tuples:
-                            gbk_fam_db_insert_values.add( (gbk_id, fam_id,) )
+                        family_key = f"{fam} {subfam}"
                     
-                    # else: gbk-fam already in db
+                    try:
+                        existing_relation_dict[family_key]
+                        # already in db, don't add relationship again
+                    
+                    except KeyError:
+                        fam_id = fam_table_dict[family_key]
+                        
+                        new_row = (gbk_id, fam_id,)
+                        if new_row not in existing_rel_tuples:
+                            gbk_fam_db_insert_values.add( (gbk_id, fam_id,) )
+        
+        except KeyError:  # GenBank not present in the Genbanks_CazyFamilies table, create new record
             
-            if args.delete_old_relationships:
-                # check for relationships to delete: a relationship that is in the db but no longer in CAZy
-                for family in list(existing_families_rel_dict.keys()):
-                    if family not in cazy_families:  # relationship no longer in CAZy
-                        genbank_id = gbk_table_dict[genbank_accession]['gbk_id']
-                        fam_id = fam_table_dict[family]
-                        gbk_fam_records_to_del.add( (genbank_id, fam_id) )
+            for fam in cazy_fam_dict:
+                subfamilies = cazy_fam_dict[fam] # set of subfams for parent fam from CAZy data
                 
-                    # else: fam relationship in the db is still in CAZy
-        
-        else:
-            # add all CAZy (sub)family associations to db for this GenBank accession
-            families = cazy_data[genbank_accession]['families']
-            for fam in families:
-                subfamilies = families[fam]
-                for subfam in subfamilies:
+                for subfam in subfamilies:  # add each fam-subfam pair
                     if subfam is None:
-                        family = f"{fam} _"
+                        family_key = f"{fam} _"
                     else:
-                        family = f"{fam} {subfam}"
+                        family_key = f"{fam} {subfam}"
 
-                fam_id = fam_table_dict[family]
+                    fam_id = fam_table_dict[family_key]
                 
-                genbank_id = gbk_table_dict[genbank_accession]['gbk_id']
-                
-                gbk_fam_db_insert_values.add( (genbank_id, fam_id,) )
-        
-        
+                    new_row = (gbk_id, fam_id,)
+                    if new_row not in existing_rel_tuples:
+                        gbk_fam_db_insert_values.add( (gbk_id, fam_id,) )
+
     if len(gbk_fam_db_insert_values) != 0:
-
-        dups = existing_rel_tuples.intersection(gbk_fam_db_insert_values)
-
-        print("==============================\n", dups, "\n=====================================")
 
         logger.info(
             f"Adding {len(gbk_fam_db_insert_values)} new GenBank accession - "
             "CAZy (sub)family relationships to the db"
         )
-        insert_data(
-            connection,
-            'Genbanks_CazyFamilies',
-            ['genbank_id', 'family_id'],
-            list(gbk_fam_db_insert_values),
-        )
+        for tup in gbk_fam_db_insert_values:
+            insert_data(
+                connection,
+                'Genbanks_CazyFamilies',
+                ['genbank_id', 'family_id'],
+                [tup],
+            )
     else:
         logger.info(
             "No new Genbank accession-CAZy (sub)family relationships to add to the db"
         )
     
-    if (len(gbk_fam_records_to_del) != 0) and args.delete_old_relationships:
+    if (len(gbk_fam_records_to_del) != 0):
         logger.info(
             "Deleting {(len(gbk_fam_records_to_del)} GenBank accession - "
             "CAZy (sub)family relationships\n"
