@@ -12,7 +12,7 @@ the scraping of CAZy. These tutorials are designed for those with less experienc
 
 .. NOTE::
   If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` call it using ``cazy_webscraper`` - this is the method used in this tutorial.  
-  If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` using the command ``python3 <path to cazy_webscraper.py>``. For example, if you were located in the root of the repository, you would use: ``python3 scraper/cazy_webscraper.py``.
+  If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` using the command ``python3 <path to cazy_webscraper.py>``. For example, if you were located in the root of the repository, you would use: ``python3 cazy_webscraper/cazy_scraper.py``.
 
 
 ----------------------------------
@@ -25,7 +25,7 @@ Configuration via the command line
 .. code-block:: bash
   cazy_webscraper myemail@domain.com
 
-When NO optional arguments are provided the default behaviour of the scraper will be performed. 
+When no optional arguments are provided the default behaviour of the scraper will be performed. 
 The default behaviour is to:
 
 * Scrape the entire CAZy databases
@@ -673,6 +673,28 @@ the terminal is currently pointed out, and follow the path from there. For examp
 
 Then the computer will look for a directory called ``my_cazyme_databases`` in the directory the terminal is looking at, then within the 
 ``my_cazyme_databases`` directory the computer will look for the file ``my_cazyme_database.db``.
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Scraping data from a previously downloaded CAZy txt file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+CAZy provides access to data within its database via text files. ``cazy_webscraper`` downloads the CAZy 
+text file containing all data within the CAZy database, providing a database dump. This file is then written to the cache directory 
+(by default, called ``.cazy_webscraper_<date>_<time>``).
+
+For consistency in the dataset, you may wish to perform multiple scrapes of CAZyme data from the same CAZy text file. 
+This could be a CAZy text file you have downloaded from CAZy or a text file downloaded by ``cazy_webscrapper``.
+
+To direct ``cazy_webscraper`` to retrieve CAZyme data from a previously downloaded CAZy text file, using the 
+``--cazy_data`` flag, followed by the path to the text file. For example:
+
+.. code-block:: bash
+   cazy_webscraper --cazy_data cazy_db/cazy_data.txt
+
+.. WARNING::
+   ``--cazy_data`` must be pointed directly at the text file, **not** a zipped file containing the CAZy 
+   data text file.
 
 
 ^^^^^^^^^^^^^^^^^^^^^^
