@@ -5,12 +5,12 @@ Retrieving data from UniProt
 ``cazy_webscraper`` can be used to retrieve user-specified data sets from the UniProt database, for a given subset
 of proteins in a local CAZyme database created using ``cazy_webscraper``. The ``cazy_webscraper`` application can be invoked *via* the command line
 
-----------------------
+-----------
 Quick Start
-----------------------
+-----------
 
-To download the entire all UniProt protein accessions and names from UniProt, and save the data to
-a local CAZyme database, use the following command structure:  
+To download UniProt protein accessions and names from UniProt for all protein in the local CAZyme database, and save the data to
+the local CAZyme database, use the following command structure:  
 
 .. code-block:: bash
    cw_get_uniprot_data <path to local CAZyme db>
@@ -29,8 +29,6 @@ Command line options
 to retrieve protein data. Default 150. ``bioservices`` recommends submitting    ueries no larger than 200 objects.
 
 ``--cache_dir`` - Path to cache dir to be used instead of default cache dir path.
-
-``--cazy_data`` - Path to a txt file downloaded from CAZy containing a CAZy database dump
 
 ``--cazy_synonyms`` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
 
@@ -76,7 +74,7 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 Basic Usage
 -----------
 
-The command-line options listed above can be used in combination to customise the scraping of CAZy. Some options (e.g. ``--families`` and ``--classes``) define the broad group of data that will be scraped, others (e.g. ``--species``) are used to filter and fine-tune the data that is scraped.
+The command-line options listed above can be used in combination to customise the retrieval of protein data from UniProt. Some options (e.g. ``--families`` and ``--classes``) define the broad group of proteins for which data will be retrieved from UniProt, others (e.g. ``--species``) are used to filter and fine-tune the protein dataset for which protein data will be retrieved.
 
 The ``--classes``, ``--families``, ``--kingdoms``, ``--genera``, ``--species``, and ``--strains`` filteres are applied 
 in the exactly same for retrieving data from CAZy as retrieving data from UniProt. Examples of using these flags 
@@ -93,8 +91,8 @@ Here we discuss using the new flags ``--ec``, ``--pdb``, ``--sequence``, ``--upd
 Data retrievable from UniProt
 -----------------------------
 
-By default ``cazy_webscraper`` retrieves the UniProt protein accession and protein name from UniProt, for proteins in a 
-local CAZyme database. ``cazy_webscraper`` can also retrieve from UniProt:
+By default ``cw_get_uniprot_data`` retrieves the UniProt protein accession and protein name from UniProt, for proteins in a 
+local CAZyme database. ``cw_get_uniprot_data`` can also retrieve from UniProt:
 
 * EC number annotations
 * PDB accessions
@@ -158,7 +156,7 @@ OR
 
     cw_get_uniprot_data cazy_db.db -s
 
-``cazy_webscraper`` stores the protein amino acids sequence within the local CAZyme database, as well 
+``cw_get_uniprot_data`` stores the protein amino acids sequence within the local CAZyme database, as well 
 as the 'last modified date' retrieved from UniProt.
 
 
@@ -166,18 +164,18 @@ as the 'last modified date' retrieved from UniProt.
 Updating local sequences
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-When using ``--sequence`` flag, ``cazy_webscraper`` will only add *new* protein sequences to the database, i.e.
+When using ``--sequence`` flag, ``cw_get_uniprot_data`` will only add *new* protein sequences to the database, i.e.
 it will only add protein sequences to records that do not have a sequence. Therefore, if a protein
 already has a sequence in the local database, this sequence is **not** overwritten.
 
 You may wish to update the protein sequences in your local CAZyme database. To do this use the ``--sequence``/``-s`` 
-flag to tell ``cazy_webscraper`` to retrieve protein sequences, **and** use the ``--update_seq`` flag.
+flag to tell ``cw_get_uniprot_data`` to retrieve protein sequences, **and** use the ``--update_seq`` flag.
 
 .. code-block:: bash
 
     cw_get_uniprot_data cazy_db.db -s --update_seq
 
-This instructs ``cazy_webscraper`` to overwriting existing protein sequences in the local database *if* a newer version 
+This instructs ``cw_get_uniprot_data`` to overwriting existing protein sequences in the local database *if* a newer version 
 of the sequence is retrieved from UniProt. This is checked by comparing the 'last modified date' of the 
 protein sequence in the local database against the sequence retrieved from UniProt.
 
@@ -202,19 +200,19 @@ wish to retrieve protein data for CAZymes annotated with specific EC numbers. To
     EC number list in single or double quotation marks. Some terminals may misinterpret EC1.2.-.- as trying to invoke the options '.'
 
 .. NOTE::
-    ``cazy_webscraper`` will retrieve the specified UniProt data for all proteins in the local CAZyme 
+    ``cw_get_uniprot_data`` will retrieve the specified UniProt data for all proteins in the local CAZyme 
     database that are annotated with **at least one** of the given EC numbers. Therefore, if multiple 
     EC numbers are given this **does not mean** only CAZymes will all provided EC numbers will have data retrieved
     from UniProt for them.
 
 ``--ec_filter`` is based upon EC number annotations stored within the local CAZyme database. For 
 example, if protein A is annotated with the EC1.2.3.4, but this annotation is not stored in the 
-local CAZyme database, using ``--ec_filter EC1.2.3.4`` will **not** cause ``cazy_webscraper`` to retrieve
-data for protein A. This is because ``cazy_webscraper`` does not know protein A is annotated with 
+local CAZyme database, using ``--ec_filter EC1.2.3.4`` will **not** cause ``cw_get_uniprot_data`` to retrieve
+data for protein A. This is because ``cw_get_uniprot_data`` does not know protein A is annotated with 
 EC1.2.3.4, because this annotation is not within its database.
 
 .. WARNING::
-    If ``--ec_filter`` is used along side ``--ec``, ``cazy_webscraper`` will retrieve **all** EC number 
+    If ``--ec_filter`` is used along side ``--ec``, ``cw_get_uniprot_data`` will retrieve **all** EC number 
     annotations from UniProt for all proteins in the local CAZyme database that are associated with 
     at least one of the EC numbers provided via ``--ec_filter`` within the CAZyme database.
 
