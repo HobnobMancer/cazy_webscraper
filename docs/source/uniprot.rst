@@ -5,7 +5,6 @@ Retrieving data from UniProt
 ``cazy_webscraper`` can be used to retrieve user-specified data sets from the UniProt database, for a given subset
 of proteins in a local CAZyme database created using ``cazy_webscraper``. The ``cazy_webscraper`` application can be invoked *via* the command line
 
-
 -----------
 Quick Start
 -----------
@@ -30,8 +29,6 @@ Command line options
 to retrieve protein data. Default 150. ``bioservices`` recommends submitting    ueries no larger than 200 objects.
 
 ``--cache_dir`` - Path to cache dir to be used instead of default cache dir path.
-
-``--cazy_data`` - Path to a txt file downloaded from CAZy containing a CAZy database dump
 
 ``--cazy_synonyms`` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
 
@@ -205,19 +202,19 @@ wish to retrieve protein data for CAZymes annotated with specific EC numbers. To
     EC number list in single or double quotation marks. Some terminals may misinterpret EC1.2.-.- as trying to invoke the options '.'
 
 .. NOTE::
-    ``cazy_webscraper`` will retrieve the specified UniProt data for all proteins in the local CAZyme 
+    ``cw_get_uniprot_data`` will retrieve the specified UniProt data for all proteins in the local CAZyme 
     database that are annotated with **at least one** of the given EC numbers. Therefore, if multiple 
     EC numbers are given this **does not mean** only CAZymes will all provided EC numbers will have data retrieved
     from UniProt for them.
 
 ``--ec_filter`` is based upon EC number annotations stored within the local CAZyme database. For 
 example, if protein A is annotated with the EC1.2.3.4, but this annotation is not stored in the 
-local CAZyme database, using ``--ec_filter EC1.2.3.4`` will **not** cause ``cazy_webscraper`` to retrieve
-data for protein A. This is because ``cazy_webscraper`` does not know protein A is annotated with 
+local CAZyme database, using ``--ec_filter EC1.2.3.4`` will **not** cause ``cw_get_uniprot_data`` to retrieve
+data for protein A. This is because ``cw_get_uniprot_data`` does not know protein A is annotated with 
 EC1.2.3.4, because this annotation is not within its database.
 
 .. WARNING::
-    If ``--ec_filter`` is used along side ``--ec``, ``cazy_webscraper`` will retrieve **all** EC number 
+    If ``--ec_filter`` is used along side ``--ec``, ``cw_get_uniprot_data`` will retrieve **all** EC number 
     annotations from UniProt for all proteins in the local CAZyme database that are associated with 
     at least one of the EC numbers provided via ``--ec_filter`` within the CAZyme database.
 
