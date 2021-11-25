@@ -5,12 +5,13 @@ Retrieving data from UniProt
 ``cazy_webscraper`` can be used to retrieve user-specified data sets from the UniProt database, for a given subset
 of proteins in a local CAZyme database created using ``cazy_webscraper``. The ``cazy_webscraper`` application can be invoked *via* the command line
 
-----------------------
-Quick Start
-----------------------
 
-To download the entire all UniProt protein accessions and names from UniProt, and save the data to
-a local CAZyme database, use the following command structure:  
+-----------
+Quick Start
+-----------
+
+To download UniProt protein accessions and names from UniProt for all protein in the local CAZyme database, and save the data to
+the local CAZyme database, use the following command structure:  
 
 .. code-block:: bash
    cw_get_uniprot_data <path to local CAZyme db>
@@ -58,6 +59,8 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 
 ``--sequence``, ``-s`` - Enable retrieving protein amino acid sequences. Default, sequences are **not** retrieved.
 
+``--seq_update`` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
+
 ``--sql_echo`` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
 ``--species`` - List of species (organsim scientific names) to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given species.
@@ -68,33 +71,33 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 
 ``--uniprot_batch_size`` - Size of an individual batch query submitted to the `UniProt REST API <https://www.uniprot.org/help/programmatic_access>_` to retrieve the UniProt accessions of proteins identified by the GenBank accession. Default is 150. The UniProt API documentation recommands batch sizes of less than 20,000 but batch sizes of 1,000 often result in HTTP 400 errors. It is recommend to keep batch sizes less than 1,000, and ideally less than 200.
 
-``--update_seq`` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
-
 ``--verbose``, ``-v`` - Enable verbose logging. This does **not** set the SQLite engine ``echo`` parameter to True. Default: False.
 
 -----------
 Basic Usage
 -----------
 
-The command-line options listed above can be used in combination to customise the scraping of CAZy. Some options (e.g. ``--families`` and ``--classes``) define the broad group of data that will be scraped, others (e.g. ``--species``) are used to filter and fine-tune the data that is scraped.
+The command-line options listed above can be used in combination to customise the retrieval of protein data from UniProt. Some options (e.g. ``--families`` and ``--classes``) define the broad group of proteins for which data will be retrieved from UniProt, others (e.g. ``--species``) are used to filter and fine-tune the protein dataset for which protein data will be retrieved.
 
 The ``--classes``, ``--families``, ``--kingdoms``, ``--genera``, ``--species``, and ``--strains`` filteres are applied 
 in the exactly same for retrieving data from CAZy as retrieving data from UniProt. Examples of using these flags 
 can be found in the ``cazy_webscraper`` tutorial in this documentation.
 
-Here we discuss using the new flags ``--ec``, ``--pdb``, ``--sequence``, ``--update_seq``, and ``--ec_filter``.
+Here we discuss using the new flags ``--ec``, ``--pdb``, ``--sequence``, ``--seq_update``, and ``--ec_filter``.
 
 .. NOTE::
     To retrieve data for members of specific CAZy subfamilies, list the subfamilies after the ``--families`` 
     flag.
 
+.. NOTE::
+    The command for retrieving protein data from UniProt for proteins in a local CAZyme database is ``cw_get_uniprot_data``.
 
 -----------------------------
 Data retrievable from UniProt
 -----------------------------
 
-By default ``cazy_webscraper`` retrieves the UniProt protein accession and protein name from UniProt, for proteins in a 
-local CAZyme database. ``cazy_webscraper`` can also retrieve from UniProt:
+By default ``cw_get_uniprot_data`` retrieves the UniProt protein accession and protein name from UniProt, for proteins in a 
+local CAZyme database. ``cw_get_uniprot_data`` can also retrieve from UniProt:
 
 * EC number annotations
 * PDB accessions
@@ -158,7 +161,7 @@ OR
 
     cw_get_uniprot_data cazy_db.db -s
 
-``cazy_webscraper`` stores the protein amino acids sequence within the local CAZyme database, as well 
+``cw_get_uniprot_data`` stores the protein amino acids sequence within the local CAZyme database, as well 
 as the 'last modified date' retrieved from UniProt.
 
 
@@ -166,18 +169,18 @@ as the 'last modified date' retrieved from UniProt.
 Updating local sequences
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-When using ``--sequence`` flag, ``cazy_webscraper`` will only add *new* protein sequences to the database, i.e.
+When using ``--sequence`` flag, ``cw_get_uniprot_data`` will only add *new* protein sequences to the database, i.e.
 it will only add protein sequences to records that do not have a sequence. Therefore, if a protein
 already has a sequence in the local database, this sequence is **not** overwritten.
 
 You may wish to update the protein sequences in your local CAZyme database. To do this use the ``--sequence``/``-s`` 
-flag to tell ``cazy_webscraper`` to retrieve protein sequences, **and** use the ``--update_seq`` flag.
+flag to tell ``cw_get_uniprot_data`` to retrieve protein sequences, **and** use the ``--seq_update`` flag.
 
 .. code-block:: bash
 
-    cw_get_uniprot_data cazy_db.db -s --update_seq
+    cw_get_uniprot_data cazy_db.db -s --seq_update
 
-This instructs ``cazy_webscraper`` to overwriting existing protein sequences in the local database *if* a newer version 
+This instructs ``cw_get_uniprot_data`` to overwriting existing protein sequences in the local database *if* a newer version 
 of the sequence is retrieved from UniProt. This is checked by comparing the 'last modified date' of the 
 protein sequence in the local database against the sequence retrieved from UniProt.
 

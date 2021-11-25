@@ -172,6 +172,17 @@ def build_parser(argv: Optional[List] = None):
         help="Defines log file name and/or path",
     )
 
+    parser.add_argument(
+        "--name_update",
+        dest="name_update",
+        action="store_true",
+        default=False,
+        help=(
+            "Overwrite the existing protein name from UniProt if a different\n"
+            "protein name is retrieve for the same UniProt accession"
+        ),
+    )
+
     # Add option to not delete content in the existing cache dir
     parser.add_argument(
         "--nodelete_cache",
@@ -212,8 +223,8 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--sequence_update",
-        dest="sequence_update",
+        "--seq_update",
+        dest="seq_update",
         action="store_true",
         default=False,
         help=(
@@ -265,17 +276,6 @@ def build_parser(argv: Optional[List] = None):
         type=int,
         default=150,
         help="Batch size for queries sent to the UniProt REST API to retrieved UniProt accessions"
-    )
-
-    parser.add_argument(
-        "--update_name",
-        dest="update_name",
-        action="store_true",
-        default=False,
-        help=(
-            "Overwrite the existing protein name from UniProt if a different\n"
-            "protein name is retrieve for the same UniProt accession"
-        ),
     )
 
     # Add option for more detail (verbose) logging

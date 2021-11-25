@@ -170,6 +170,17 @@ def build_parser(argv: Optional[List] = None):
         help="Do not delete content in existing cache dir",
     )
 
+    # Add option to update sequences if the retrieved sequence is different
+    # If not enabled then sequences will only be retrieved and added for proteins that do not
+    # already have a protein sequence
+    parser.add_argument(
+        "--seq_update",
+        dest="seq_update",
+        action="store_true",
+        default=False,
+        help="Enable overwriting sequences in the database if the retrieved sequence is different",
+    )
+
     # Add option to force file over writting
     parser.add_argument(
         "--sql_echo",
@@ -198,18 +209,6 @@ def build_parser(argv: Optional[List] = None):
             "Specific strains of organisms to restrict the scrape to "
             "(written as Genus Species Strain)"
         ),
-    )
-
-    # Add option to update sequences if the retrieved sequence is different
-    # If not enabled then sequences will only be retrieved and added for proteins that do not
-    # already have a protein sequence
-    parser.add_argument(
-        "-u",
-        "--update",
-        dest="update",
-        action="store_true",
-        default=False,
-        help="Enable overwriting sequences in the database if the retrieved sequence is different",
     )
 
     # Add option for more detail (verbose) logging
