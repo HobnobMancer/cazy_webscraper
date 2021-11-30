@@ -229,7 +229,11 @@ def get_yaml_configuration(
         elif key == "kingdoms":
             if yaml_config_dict["kingdoms"] is not None:
                 for kingdom in yaml_config_dict["kingdoms"]:
-                    kingdom_filters["kingdoms"].add(kingdom)
+                    if kingdom.lower() == 'unclassified':
+                        kingdom_filters["kingdoms"].add(kingdom.lower())
+                    else:
+                        new_kingdom = kingdom[0].upper() + kingdom[1:].lower()
+                        kingdom_filters["kingdoms"].add(new_kingdom)
 
         else:  # key is a CAZy class and underneath are CAZy families to scrape
             if yaml_config_dict[key] is not None:  # CAZy families were listed
@@ -354,7 +358,11 @@ def get_cmd_scrape_config(
     if args.kingdoms is not None:
         cmd_kingdoms = (args.kingdoms).split(",")
         for kingdom in cmd_kingdoms:
-            kingdom_filters.add(kingdom)
+            if kingdom.lower() == 'unclassified':
+                kingdom_filters.add(kingdom.lower())
+            else:
+                new_kingdom = kingdom[0].upper() + kingdom[1:].lower()
+                kingdom_filters.add(new_kingdom)
     
     return config_dict, taxonomy_filter, kingdom_filters
 
