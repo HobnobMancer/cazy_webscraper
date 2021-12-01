@@ -296,7 +296,6 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
-
 ## Extracting protein sequences from the local CAZyme database and building a BLAST database
 
 Protein sequences from GenBank and UniProt that are stored in the local CAZyme database can be extracted using `cazy_webscraper`, and written to any combination of:
@@ -310,7 +309,6 @@ To extract all protein seqeunces from the local CAZyme database using the follow
 ```bash
 cw_extract_sequences <path_to_local_CAZyme_db> --genbank --uniprot
 ```
-
 
 ### Configuring extracting sequences from a local CAZyme db
 
@@ -433,6 +431,74 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--timeout`, `-t` - Connection timout limit (seconds). Default: 45.
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
+
+
+## Interrogating the local CAZyme database
+
+The SQLite3 database compiled by `cazy_webscraper` can be interrogated in the native interface (i.e. queries written in SQL can be used to interrogate the database). `cazy_webscraper` also provides its own API for interrogating the local CAZyme database: `cw_query_database`.
+
+By default `cw_query_database` retrieves only the GenBank accessions of CAZymes matching the user criteria. Users can use the same criteria for customising the retrieval of data from UniProt, GenBank and PDB, to retrieve CAZymes which match their criteria of interest.
+
+Optional flags can be applied to retrieve additional data about CAZymes that match the user's criteria of interest.
+
+The output is written out as a `.csv` file, by default to the current working directory and the name `<database_name>_<retrieved_data>_YYYY-MM-DD_HH-MM-SS.csv`, and/or a `JSON` file, by default to the current working directory and the name `<database_name>_<retrieved_data>_YYYY-MM-DD_HH-MM-SS.json`
+
+To retrieve GenBank accessions for all CAZymes in the local CAZyme database, and write the data to a `.csv` and 
+`.json` file use the following command:
+```bash
+cw_query_database <path_to_local_CAZyme_db> csv,json
+```
+
+### Configuring interrogating the local CAZyme database
+
+Below are listed the command-line flags for configuring the interrogation of the local CAZyme database.
+
+`database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
+
+`file_types` - \[REQUIRED\] file types to write the interrogation output to. Accepted file types are
+`JSON` and `CSV`. These are *not* case sensitive, and the order does not matter.
+
+`--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
+
+`--config`, `-c` - Path to a configuration YAML file. Default: None.
+
+`--class` - Include a 'Class' column in the output `csv` file, listing the CAZy class of all retrieved CAZymes
+
+`--classes` - List of classes from which all families are to be retrieval.
+
+`--ec` - Include a 'EC' column in the output `csv` file, listing the all EC numbers for all retrieved CAZymes
+
+`--ec_filter` - Limist retrieval of protein data to proteins annotated with a provided list of EC numbers. Separate the EC numbers bu single commas without spaces. Recommend to wrap the entire str in quotation marks, for example:
+```bash
+cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
+```
+
+`--family` - Include a 'Family' column in the output `csv` file, listing the all CAZy family annotations for all retrieved CAZymes
+
+`--families` - List of CAZy (sub)families to retrieve CAZymes from.
+
+`--genus` - Include a 'Genus' column in the output `csv` file, listing the genus for each retrieved CAZymes
+
+`--genera` - List of genera to restrict the retrieval to. Default: None, filter not applied to scrape.
+
+`--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+`--nodelete` - When called, content in the existing output dir will **not** be deleted. Default: False (existing content is deleted).
+
+`--organism` - Include a 'Organism' column in the output `csv` file, listing the scientific name (including the strain if given) for each retrieved CAZymes
+
+`--output`, `-o` - Output path to write the compiled `csv` file. Default is to write out the `csv` file to the current working directory.
+
+`--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
+
+`--species` - List of species written as Genus Species) to restrict the retrieval of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
+
+`--strains` - List of specific species strains to restrict the retrieval of CAZymes to.
+
+`--subfamily` - Include a 'Subfamily' column in the output `csv` file, listing the subfamily annotation for each parent CAZy family annotation for each retrieved CAZymes
+
+`--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
+
 
 ## Configuring using a YAML file
 
