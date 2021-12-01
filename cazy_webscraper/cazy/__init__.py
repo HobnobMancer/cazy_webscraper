@@ -630,6 +630,73 @@ def replace_multiple_tax(cazy_data, args):
     return cazy_data
 
 
+def get_ncbi_tax(epost_results, cazy_data, replaced_taxa_logger, args):
+    """Parse the ePost output from Entrez and add the NCBI tax classifications to the CAZy data
+    
+    :param epost_results: Entrez ePost output
+    :param cazy_data: dict, data retrieved from CAZy
+    :param args: cmd-line args parser
+    :param replaced_taxa_logger: logger, used for logging GenBank accessions with multiple taxa in CAZy
+    
+    Return cazy_data (dict)
+    """
+    logger = logging.getLogger(__name__)
+    
+    # Retrieve web environment and query key from Entrez epost
+    epost_webenv = epost_results["WebEnv"]
+    epost_query_key = epost_results["QueryKey"]
+
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.efetch,
+            db="Protein",
+            query_key=epost_query_key,
+            WebEnv=epost_webenv,
+            retmode="xml",
+        ) as record_handle:
+            protein_records = Entrez.read(record_handle, validate=False)
+
+    # if no record is returned from call to Entrez
+    except (TypeError, AttributeError) as error:
+        logger.error(
+            f"Entrez failed to retireve accession numbers."
+            "Exiting retrieval of accession numbers, and returning null value 'NA'"
+        )
+    
+    for protein in tqdm(protein_records, desc="Retrieving organism from NCBI"):
+        # retrieve NCBI taxonomy data
+        accession = protein['GBSeq_accession-version']
+        organism = protein['GBSeq_organism']
+        kingdom = protein['GBSeq_taxonomy'].split(';')[0]
+
+        # retrieve CAZy taxonomy data
+        cazy_kingdom = cazy_data[accession]["kingdom"]
+        cazy_organisms = cazy_data[accession]["organism"]
+    
+        cazy_kingdom_str = ",".join(cazy_kingdom)
+        cazy_organism_str = ','.join(cazy_organisms)
+        
+        try:
+            cazy_data[accession]['kingdom'] = kingdom
+            cazy_data[accession]['organism'] = organism
+
+            # log the difference
+            replaced_taxa_logger.warning(
+               f"{accession}\t{cazy_kingdom_str}: {cazy_organism_str}\t{kingdom}: {organism}"
+            )
+
+        except KeyError:
+            err = f'GenBank accession {accession} retrieved from NCBI, but it is not present in CAZy'
+            logger.error(err)
+            
+            replaced_taxa_logger.warning(
+               f"{accession}\t{cazy_kingdom_str}: {cazy_organism_str}\t{err}"
+            )
+
+    return cazy_data
+
+
 def select_first_organism(cazy_data, gbk_accessions, replaced_taxa_logger):
     """Select the first organism listed for each GenBank accession
     
