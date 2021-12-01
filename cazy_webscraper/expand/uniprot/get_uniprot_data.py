@@ -175,8 +175,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             f"Scrape initated at {start_time}\n"
             f"Scrape finished at {end_time}\n"
             f"Total run time: {total_time}"
-            f"Version: {cazy_webscraper.VERSION_INFO}\n"
-            f"Citation: {cazy_webscraper.CITATION_INFO}"
+            f"Version: {cazy_scraper.VERSION_INFO}\n"
+            f"Citation: {cazy_scraper.CITATION_INFO}"
         )
 
 
