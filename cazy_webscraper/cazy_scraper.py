@@ -105,13 +105,7 @@ CITATION_INFO = (
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
-    """Set up parser, logger and coordinate overal scrapping of CAZy.
-
-    The collected data can be stored as a singel dataframe containing (not split), split into
-    separate dataframes by class or by family. Excluded classes are CAZy classes not specified in
-    the configuration file and thus, will not be scraped. User_cazy_families is the list of CAZy
-    families specified to be scraped in the configration file.
-    """
+    """Set up parser, logger and coordinate overal scrapping of CAZy."""
     cazy_home_url = "http://www.cazy.org"
 
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
