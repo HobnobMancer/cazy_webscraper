@@ -48,109 +48,101 @@ from tqdm import tqdm
 from Bio import Entrez
 
 
-def replace_multiple_tax(cazy_data, args):
+def identify_multiple_taxa(cazy_data, multiple_taxa_logger):
+    """Identify GenBank accessions in the CAZy data
+    
+    :param cazy_data: dict of CAZy data, keyed by GenBank accessions, valued by dict with the keys
+        kingdom, organism, families
+    :param multiple_taxa_logger: logger, used for logging GenBank accessions with multiple taxa in CAZy
+        
+    Return list of GenBank accessions
     """
-    Identify GenBank accessions which have multiple source organisms listedi in CAZy. Replace with
+    multiple_taxa_gbk = []
+    
+    for genbank_accession in tqdm(cazy_data, total=len(list(cazy_data.keys())), desc='Searching for multiple taxa annotations'):
+        
+        gbk_organisms = cazy_data[genbank_accession]["organism"]
+        
+        if len(gbk_organisms) > 1:
+            multiple_taxa_gbk.append(genbank_accession)
+
+            kingdoms = ",".join(list(cazy_data[genbank_accession]["kingdom"]))
+            gbk_organisms = ",".join(list(gbk_organisms))
+
+            multiple_taxa_logger.warning(
+                f"{genbank_accession}\t{kingdoms}\t{gbk_organisms}"
+            )
+            
+    return multiple_taxa_gbk
+
+
+def replace_multiple_tax(cazy_data, genbank_accessions, replaced_taxa_logger, args, invalid_ids):
+    """Identify GenBank accessions which have multiple source organisms listedi in CAZy. Replace with
     the latest source organism from NCBI.
 
     :param cazy_data: dict of CAZy data
-    :param multiple_taxa_logger: Path, log file where proteins withe multiple taxa are listed
+    :param genbank_accessions: list of genbank accessions with multiple taxa in CAZy
+    :param replaced_taxa_logger: logger, used for logging GenBank accessions with multiple taxa in CAZy,
+        and the data this replaced and what is replaced by
     :param args: cmd-line args parser
+    :param invalid_ids: boolean, potential presence of invalid GenBank accessions
+        Set as true when func is called by replace_multiple_tax_with_invalid_ids()
 
-    Return dict updated cazy_data dict
+    Return dict updated cazy_data dict and boolean, if multiple taxa were replaced by single taxa
     """
     logger = logging.getLogger(__name__)
-
-    Entrez.email = args.email
-
-    multi_taxa_gbk = {}
-
-    for genbank_accession in tqdm(cazy_data, total=len(list(cazy_data.keys())), desc='Searching for multiple taxa annotations'):
-        gbk_organisms = cazy_data[genbank_accession]["organism"]
-        if len(gbk_organisms) > 1:
-            multi_taxa_gbk[genbank_accession] = {"families": cazy_data[genbank_accession]["families"]}
-            logger.warning(
-                f"{genbank_accession} annotated with multiple taxa:\n"
-                f"{cazy_data[genbank_accession]['organism']}"
-            )
     
-    logger.warning(
-        f"{len(list(multi_taxa_gbk.keys()))} proteins found with multiple source organisms in CAZy\n"
-        "Querying NCBI to retrieve the latest source organisms"
-    )
+    id_post_list = str(",".join(genbank_accessions))
 
-    if len(list(multi_taxa_gbk.keys())) == 0:
-        return cazy_data
+    success = False
 
-    id_post_list = str(",".join(list(multi_taxa_gbk.keys())))
     try:
         epost_results = Entrez.read(
             entrez_retry(
-                args.retries, Entrez.epost, "Protein", id=id_post_list
+                args.retries,
+                Entrez.epost,
+                "Protein",
+                id=id_post_list,
             )
         )
-    # if no record is returned from call to Entrez
-    except (TypeError, AttributeError):
+        success = True
+
+    except (TypeError, AttributeError):  # if no record is returned from call to Entrez
         logger.error(
-                f"Entrez failed to post assembly IDs.\n"
-                "Exiting retrieval of accession numbers, and returning null value 'NA'"
+            f"Entrez failed to post assembly IDs.\n"
+            "Not retrieving taxonomy classification from NCBI.\n"
+            "Selecting the first organism retrieved from CAZy as the source organism"
         )
-    # except RuntimeError:
+        cazy_data = select_first_organism(cazy_data, genbank_accessions)
+        success = True
 
-    # Retrieve web environment and query key from Entrez epost
-    epost_webenv = epost_results["WebEnv"]
-    epost_query_key = epost_results["QueryKey"]
+    except RuntimeError:
+        logger.warning("Found GenBank accessions in CAZy data that are no longer in NCBI")
 
-    try:
-        with entrez_retry(
-            args.retries,
-            Entrez.efetch,
-            db="Protein",
-            query_key=epost_query_key,
-            WebEnv=epost_webenv,
-            retmode="xml",
-        ) as record_handle:
-            protein_records = Entrez.read(record_handle, validate=False)
+        if invalid_ids:
+            # replace_multiple_tax was called by replace_multiple_tax_with_invalid_ids
+            # return results, don't use recursive programming
+            return cazy_data, success 
 
-    # if no record is returned from call to Entrez
-    except (TypeError, AttributeError) as error:
+        else:
+            # first time replace_multiple_tax was called
+            cazy_data, success = replace_multiple_tax_with_invalid_ids(cazy_data, args)
+
+    if success is False:
         logger.error(
-            f"Entrez failed to retireve accession numbers."
-            "Exiting retrieval of accession numbers, and returning null value 'NA'"
+            "Could not retrieve taxonomy data from NCBI,\n"
+             "Using the first source organism retrieved from CAZy for each GenBank accession"
         )
+
+        cazy_data = select_first_organism(cazy_data, genbank_accessions, replaced_taxa_logger)
+        success = True
     
-    for protein in tqdm(protein_records, desc="Retrieving organism from NCBI"):
-        # retrieve NCBI taxonomy data
-        accession = protein['GBSeq_accession-version']
-        organism = protein['GBSeq_organism']
-        kingdom = protein['GBSeq_taxonomy'].split(';')[0]
-
-        # retrieve CAZy taxonomy data
-        cazy_kingdom = cazy_data[accession]["kingdom"]
-        cazy_organisms = cazy_data[accession]["organism"]
+    else:
+        logger.info("Parsing data retrieved from NCBI")
+        cazy_data = get_ncbi_tax(epost_results, cazy_data, replaced_taxa_logger, args)
         
-        try:
-            cazy_data[accession] = {
-                "kingdom": (kingdom,),
-                "organism": (organism,),
-                "families": multi_taxa_gbk[accession]["families"],
-            }
-
-            # log the difference
-            cazy_organism_str = ','.join(cazy_organisms)
-            multiple_taxa_logger.warning(
-                f"{accession}\t{cazy_kingdom}: {cazy_organism_str}\t{kingdom}: {organism}"
-            )
-
-        except KeyError:
-            err = f'GenBank accession {accession} retrieved from NCBI, but it is not present in CAZy'
-            logger.error(err)
-
-            file_content = f"{accession}\t{cazy_kingdom}: {cazy_organism_str}\t{err}"
-            with open(multiple_taxa_logger, 'a') as fh:
-                fh.write(file_content)
-
-    return cazy_data
+    return cazy_data, success
+    
 
 
 def get_ncbi_tax(epost_results, cazy_data, replaced_taxa_logger, args):
@@ -218,6 +210,87 @@ def get_ncbi_tax(epost_results, cazy_data, replaced_taxa_logger, args):
             )
 
     return cazy_data
+
+
+def replace_multiple_tax_with_invalid_ids(cazy_data, gbk_accessions, replaced_taxa_logger, args):
+    """Retrieve the latest taxonomy classification for proteins with multiple source organisms.
+    
+    If a GenBank accession is not longer present in NCBI, select the first organism retrieved from CAZy.
+    
+    :param cazy_data: dict of CAZy data
+    :param genbank_accessions: list of GenBank accessions
+    :param replaced_taxa_logger: logger, log tax data that is replaced and what it is replaced with
+    :param args: cmd-line args parser
+
+    Return dict updated cazy_data dict
+    """
+    # retrieve the first half of the list
+    mid_point = int((len(gbk_accessions)/2))
+    
+    half_gbk_accs = gbk_accessions[:mid_point]
+    
+    cazy_data, success = replace_multiple_tax(
+        cazy_data,
+        half_gbk_accs,
+        replaced_taxa_logger, 
+        args,
+        invalid_ids=True,
+    )
+      
+    if success:
+        # invalid IDs are stored in the second half of the accessions list
+        half_gbk_accs = gbk_accessions[mid_point:]
+        
+        for accession in tqdm(half_gbk_accs, desc='Retrieving taxonomies individually'):
+            cazy_data, success = replace_multiple_tax(
+                cazy_data,
+                [accession],
+                replaced_taxa_logger,
+                args,
+                invalid_ids=True,
+            )
+            
+            if success is False:
+                cazy_data = select_first_organism(cazy_data, [accession], replaced_taxa_logger)
+    
+    else:
+        # invalid gbk ID present in the first half of the accessions list
+        for accession in tqdm(half_gbk_accs, desc='Retrieving taxonomies individually'):
+            cazy_data, success = replace_multiple_tax(
+                cazy_data,
+                [accession],
+                replaced_taxa_logger,
+                args,
+                invalid_ids=True,
+            )
+            
+            if success is False:
+                cazy_data = select_first_organism(cazy_data, [accession], replaced_taxa_logger)
+                
+        # parse the second half of the accessions list
+        half_gbk_accs = gbk_accessions[mid_point:]
+        
+        cazy_data, success = replace_multiple_tax(cazy_data, half_gbk_accs, True)
+        
+        if success is False:
+            # invalid gbk ID present in the second half of the accessions list
+            for accession in tqdm(half_gbk_accs, desc='Retrieving taxonomies'):
+                cazy_data, success = replace_multiple_tax(
+                    cazy_data,
+                    [accession],
+                    replaced_taxa_logger,
+                    args,
+                    invalid_ids=True,
+                )
+                
+                if success is False:
+                    cazy_data = select_first_organism(
+                        cazy_data,
+                        [accession],
+                        replaced_taxa_logger,
+                    )
+                
+    return cazy_data, True
 
 
 def select_first_organism(cazy_data, gbk_accessions, replaced_taxa_logger):

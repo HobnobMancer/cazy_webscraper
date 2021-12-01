@@ -497,34 +497,6 @@ def validate_data_retrieval(cazy_data, cazy_fam_populations):
     return
 
 
-def identify_multiple_taxa(cazy_data, multiple_taxa_logger):
-    """Identify GenBank accessions in the CAZy data
-    
-    :param cazy_data: dict of CAZy data, keyed by GenBank accessions, valued by dict with the keys
-        kingdom, organism, families
-    :param multiple_taxa_logger: logger, used for logging GenBank accessions with multiple taxa in CAZy
-        
-    Return list of GenBank accessions
-    """
-    multiple_taxa_gbk = []
-    
-    for genbank_accession in tqdm(cazy_data, total=len(list(cazy_data.keys())), desc='Searching for multiple taxa annotations'):
-        
-        gbk_organisms = cazy_data[genbank_accession]["organism"]
-        
-        if len(gbk_organisms) > 1:
-            multiple_taxa_gbk.append(genbank_accession)
-
-            kingdoms = ",".join(list(cazy_data[genbank_accession]["kingdom"]))
-            gbk_organisms = ",".join(list(gbk_organisms))
-
-            multiple_taxa_logger.warning(
-                f"{genbank_accession}\t{kingdoms}\t{gbk_organisms}"
-            )
-            
-    return multiple_taxa_gbk
-
-
 def build_taxa_dict(cazy_data):
     """Createa a dict of taxa data extracted from the CAZy plain text file.
     
