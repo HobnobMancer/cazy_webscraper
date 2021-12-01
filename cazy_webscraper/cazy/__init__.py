@@ -525,7 +525,7 @@ def identify_multiple_taxa(cazy_data, multiple_taxa_logger):
     return multiple_taxa_gbk
 
 
-def replace_multiple_tax(cazy_data, multiple_taxa_logger, args):
+def replace_multiple_tax(cazy_data, args):
     """
     Identify GenBank accessions which have multiple source organisms listedi in CAZy. Replace with
     the latest source organism from NCBI.
@@ -627,6 +627,33 @@ def replace_multiple_tax(cazy_data, multiple_taxa_logger, args):
             with open(multiple_taxa_logger, 'a') as fh:
                 fh.write(file_content)
 
+    return cazy_data
+
+
+def select_first_organism(cazy_data, gbk_accessions, replaced_taxa_logger):
+    """Select the first organism listed for each GenBank accession
+    
+    :param cazy_data: dict of data retrieved from CAZy
+    :param gbk_accessions: list of GenBank accessions
+    :param replaced_taxa_logger: logger, used for logging GenBank accessions with multiple taxa in CAZy
+    
+    Return cazy_data (dict)
+    """
+    for accession in tqdm(gbk_accessions, desc='Selecting the first retrieved organism'):
+        cazy_kingdoms_str = ",".join(list(cazy_data[accession]["kingdom"]))
+        cazy_organisms_str = ",".join(list(cazy_data[accession]["organism"]))
+
+        cazy_kingdom = list(cazy_data[accession]["kingdom"])[0]
+        cazy_organism = list(cazy_data[accession]["organism"])[0]
+
+        cazy_data[accession]["kingdom"] = {cazy_kingdom}
+        cazy_data[accession]["organism"] = {cazy_organism}
+
+        # log the data that was replaced and the data it was replaced with
+        replaced_taxa_logger.warning(
+            f"{accession}\t{cazy_kingdoms_str}: {cazy_organisms_str}\t{cazy_kingdom}: {cazy_organism}"
+        )
+    
     return cazy_data
 
 
