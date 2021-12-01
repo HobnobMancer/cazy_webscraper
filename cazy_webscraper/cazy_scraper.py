@@ -352,7 +352,12 @@ def get_cazy_data(
         "matching the scraping criteria"
     )
 
-    cazy_data = cazy.replace_multiple_tax(cazy_data, multiple_taxa_logger, args)
+    # check for GenBank accessions with multiple source organisms in the CAZy data
+    multiple_taxa_gbks = cazy.identify_multiple_taxa(cazy_data, multiple_taxa_logger)
+
+    if len(multiple_taxa_gbks) != 0:
+        # remove the multiple taxa, and retrieve the latest taxa from NCBI
+        cazy_data = cazy.replace_multiple_tax(cazy_data, multiple_taxa_logger, args)
 
     taxa_dict = cazy.build_taxa_dict(cazy_data)  # {kingdom: {organisms}}
 
