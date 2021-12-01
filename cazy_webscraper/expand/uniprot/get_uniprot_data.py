@@ -54,7 +54,7 @@ from urllib.error import HTTPError
 from bioservices import UniProt
 from tqdm import tqdm
 
-from cazy_webscraper import cazy_webscraper
+from cazy_webscraper import cazy_scraper
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface import get_selected_gbks
@@ -87,7 +87,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         config_logger(args)
     
     # parse the configuration data (cache the uniprot data as .csv files)
-    connection, logger_name, cache_dir = cazy_webscraper.connect_existing_db(args, time_stamp)
+    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
