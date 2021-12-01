@@ -77,6 +77,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
+from Bio import Entrez
 from cazy_webscraper import cazy, crawler, taxonomy
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface import add_cazyme_data
@@ -148,6 +149,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
         logger.warning(termcolour(warning_message, "red"))
         return
+
+    Entrez.email = args.email
 
     logger.info("Parsing configuration")
     (
@@ -355,7 +358,7 @@ def get_cazy_data(
 
     if len(multiple_taxa_gbks) != 0:
         # remove the multiple taxa, and retrieve the latest taxa from NCBI
-        cazy_data = taxonomy.replace_multiple_tax(
+        cazy_data, successful_replacement = taxonomy.replace_multiple_tax(
             cazy_data,
             multiple_taxa_gbks,
             replaced_taxa_logger,
