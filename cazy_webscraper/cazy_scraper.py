@@ -308,6 +308,7 @@ def get_cazy_data(
     # unless specifed they are added to the logs dir in the cache dir
     connection_failures_logger = build_logger(Path(f"{logger_name}_{time_stamp}_connection_failures.log"))
     multiple_taxa_logger = build_logger(Path(f"{logger_name}_{time_stamp}_multiple_taxa.log"))
+    replaced_taxa_logger = build_logger(Path(f"{logger_name}_{time_stamp}_replaced_taxa.log"))
 
     if args.validate:  # retrieve CAZy family population sizes for validating all data was retrieved
         # {fam (str): pop size (int)}
@@ -354,7 +355,13 @@ def get_cazy_data(
 
     if len(multiple_taxa_gbks) != 0:
         # remove the multiple taxa, and retrieve the latest taxa from NCBI
-        cazy_data = taxonomy.replace_multiple_tax(cazy_data, multiple_taxa_logger, args)
+        cazy_data = taxonomy.replace_multiple_tax(
+            cazy_data,
+            multiple_taxa_gbks,
+            replaced_taxa_logger,
+            args,
+            invalid_ids=False,
+        )
 
     taxa_dict = cazy.build_taxa_dict(cazy_data)  # {kingdom: {organisms}}
 
