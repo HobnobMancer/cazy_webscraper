@@ -79,10 +79,9 @@ from typing import List, Optional
 
 from tqdm import tqdm
 
-from cazy_webscraper import crawler
-from cazy_webscraper import cazy
+from cazy_webscraper import cazy, crawler, taxonomy
 from cazy_webscraper.sql import sql_orm, sql_interface
-from cazy_webscraper.sql.sql_interface import add_cazyme_data, get_table_dicts
+from cazy_webscraper.sql.sql_interface import add_cazyme_data
 from cazy_webscraper.utilities import (
     build_logger,
     config_logger,
@@ -353,11 +352,11 @@ def get_cazy_data(
     )
 
     # check for GenBank accessions with multiple source organisms in the CAZy data
-    multiple_taxa_gbks = cazy.identify_multiple_taxa(cazy_data, multiple_taxa_logger)
+    multiple_taxa_gbks = taxonomy.identify_multiple_taxa(cazy_data, multiple_taxa_logger)
 
     if len(multiple_taxa_gbks) != 0:
         # remove the multiple taxa, and retrieve the latest taxa from NCBI
-        cazy_data = cazy.replace_multiple_tax(cazy_data, multiple_taxa_logger, args)
+        cazy_data = taxonomy.replace_multiple_tax(cazy_data, multiple_taxa_logger, args)
 
     taxa_dict = cazy.build_taxa_dict(cazy_data)  # {kingdom: {organisms}}
 
