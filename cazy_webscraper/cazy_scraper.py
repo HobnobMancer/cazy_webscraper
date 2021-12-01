@@ -77,8 +77,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from tqdm import tqdm
-
 from cazy_webscraper import cazy, crawler, taxonomy
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface import add_cazyme_data
