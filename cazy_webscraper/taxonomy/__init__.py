@@ -193,8 +193,8 @@ def get_ncbi_tax(epost_results, cazy_data, replaced_taxa_logger, args):
         cazy_organism_str = ','.join(cazy_organisms)
         
         try:
-            cazy_data[accession]['kingdom'] = kingdom
-            cazy_data[accession]['organism'] = organism
+            cazy_data[accession]['kingdom'] = {kingdom}
+            cazy_data[accession]['organism'] = {organism}
 
             # log the difference
             replaced_taxa_logger.warning(
