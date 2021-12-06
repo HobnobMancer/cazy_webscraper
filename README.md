@@ -489,6 +489,10 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--output`, `-o` - Output path to write the compiled `csv` file. Default is to write out the `csv` file to the current working directory.
 
+`--seq_genbank` - Add the protein sequences retrieved from GenBank to the query output
+
+`--seq_uniprot` - Add the protein sequences retrieved from GenBank to the query output
+
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
 `--species` - List of species written as Genus Species) to restrict the retrieval of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
