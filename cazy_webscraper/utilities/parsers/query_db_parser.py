@@ -84,7 +84,7 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--class",
+        "--cazy_class",
         dest="class",
         action="store_true",
         default=False,
@@ -136,11 +136,19 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--family",
-        dest="family",
+        "--cazy_family",
+        dest="cazy_family",
         action="store_true",
         default=False,
         help="Include CAZy family annotations in the query output. This is only CAZy families NOT subfamilies"
+    )
+
+    parser.add_argument(
+        "--cazy_subfamily",
+        dest="cazy_subfamily",
+        action="store_true",
+        default=False,
+        help="Include CAZy subfamily annotations in the query output."
     )
 
     # Add option to specify families to scrape
