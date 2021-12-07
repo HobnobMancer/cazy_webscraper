@@ -52,6 +52,8 @@ If you use `cazy_webscraper`, please cite the following publication:
 - [Retrieving protein structure files from PDB](#retrieving-protein-structure-files-from-pdb)
     - [Configuring PDB protein structure file retrieval](#configuring-pdb-protein-structure-file-retrieval)
 - [Configuring `cazy_webscraper` using a YAML file](#configuring-using-a-yaml-file)
+- [CAZy coverage of GenBank](#cazy-coverage-of-genbank)
+    - [Configure calculating CAZy coverage of GenBank](#configure-calculating-cazy-coverage-of-genbank)
 - [Contributions](#contributions)
 - [License and copyright](#license-and-copyright)
 <!-- /TOC -->
@@ -538,6 +540,48 @@ When listing EC numbers, the 'EC' prefix can be included or excluded. For exampl
 `cazy_webscraper` performs a direct EC number comparison. Therefore, supplying `cazy_webscraper` with the EC number EC1.2.3.- will only retrieve protein specifically annotated with EC1.2.3.-. `cazy_webscraper` will **not** retrieve proteins will all completed EC numbers under EC1.2.3.-, thus, `cazy_webscraper` will **not** retrieve data for proteins annotated with EC1.2.3.1, EC1.2.3.2, EC1.2.3.3, etc.
 
 Example configuration files, and an empty configuraiton file template are located in the [`config_files`]() directory of this repo.
+
+
+## CAZy coverage of GenBank
+
+The number of genomes represented by the local CAZyme database per taxonomy Kingdom can be compared to the number 
+GenBank genomic assemblies in NCBI. This done using the command `cw_cazy_genbank_coverage`, which requires two 
+positional arguments:
+1. Path to the local CAZyme database
+2. The users email address
+For example:
+```bash
+cw_cazy_genbank_coverage cazymes.db my_email@domain.com
+```
+
+This produces several output files (where time stamp is the date and time the command was invoked):
+1. `cazy_genomic_accessions_{time_stamp}.json`, a JSON file contained a multi-layer dictionary: {kingdom: {genus: {species: {genomic_accession: {proteins: {protein_accessions}, count=int(# of proteins)}}}}}
+2. `genomic_accessions_{time_stamp}.csv`, containing the columns 'Kingdom','Genus','Species','Genomic_accession','#ofProteins', where the number of proteins represents the number of proteins from the genome which are catalogued in CAZy
+3. `protein_genomic_accessions_{time_stamp}.csv`, containing the 'Kingdom', 'Genus', 'Species', 'Genomic_accession', 'Protein_accession'. A unique protein accession is listed on each row, and lists which protein accesison is derived from each genomic assembly.
+4. `cazy_genbank_genome_coverage_{time_stamp}.csv`, containing the columns 'Kingdom', 'NCBI_genomes', 'CAZy_genomes', 'Coverage_percent'. The dataframe lists the number of genomes catalogued in GenBank (NCBI) and the local CAZyme database per taxonomy Kingdom.
+5. `gbk_cazy_genomes_plot_{time_stamp}.png`, a plot of a stacked bar chart with the number of genomes in GenBank (NCBI) and CAZy (the local CAZyme database) per taxonomy Kingdom.
+
+### Configure calculating CAZy coverage of GenBank
+
+Optional cmd-line arguments for `cw_cazy_genbank_coverage` are listed below:
+
+`--batch_size` - The number of accessions posted to NCBI per epost, advice to be max 200. Default=150.
+
+``--force``, ``-f`` - Force writing in existing output directory.
+
+``--force_cache`` - Force writing in existing cache directory.
+
+`--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+`--nodelete` - When called, content in the existing output dir will **not** be deleted. Default: False (existing content is deleted).
+
+`--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
+
+`--output_dir`, `-o` - Path to output directory.
+
+`--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
+
+`--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
 ## Contributions
 

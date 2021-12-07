@@ -79,6 +79,7 @@ setuptools.setup(
             "cw_get_uniprot_data = cazy_webscraper.expand.uniprot.get_uniprot_data:main",
             "cw_extract_sequences = cazy_webscraper.expand.extract.extract_sequences:main",
             "cw_get_pdb_structures = cazy_webscraper.expand.pdb.get_pdb_structures:main",
+            "cw_cazy_genbank_coverage = cazy_webscraper.genomes.cazy_genbank_coverage:main",
         ]
     },
     install_requires=[
