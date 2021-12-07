@@ -579,6 +579,8 @@ Optional cmd-line arguments for `cw_cazy_genbank_coverage` are listed below:
 
 `--output_dir`, `-o` - Path to output directory.
 
+`--retries` - Number of times to retry connection to NCBI Entrez if connection fails.
+
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
