@@ -48,6 +48,7 @@ from typing import List, Optional
 
 from Bio import Entrez
 from saintBioutils.genbank import entrez_retry
+from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
@@ -79,13 +80,18 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # connect to the local CAZyme database
     connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
+    make_output_directory(cache_dir, args.force_cache, args.nodelete_cache)
+
+    no_accession_logger = cache_dir / "logs"
+    make_output_directory(cache_dir, args.force_cache, args.nodelete_cache)
+    no_accession_logger = no_accession_logger / f"no_genomic_accession_retrieved_{time_stamp}.log"
 
     # load Genbank and Kingdom records from the db
     genbank_kingdom_dict = get_gbk_kingdom_dict(connection)
 
-    genomic_assembly_names = get_assebmly_names(genbank_kingdom_dict, args)
+    genomic_assembly_names = get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args)
 
-    genomic_accession_dict = get_genomic_accessions(genomic_assembly_names, args)
+    genomic_accession_dict = get_genomic_accessions(genomic_assembly_names, no_accession_logger, args)
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     end_time = pd.to_datetime(end_time)
@@ -136,11 +142,13 @@ def get_gbk_kingdom_dict(connection):
     return genbank_kingdom_dict
 
 
-def get_assebmly_names(genbank_kingdom_dict, args):
+def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
     """Retrieve assembly names of the source genomic accessions for the protein accessions in the local db.
     
     :param genbank_kingdom_dict: dict of Genbank and Kingdom records from db
         {kingdom: {genomic_accessions}}
+    :param no_accession_logger: Path, path to log file to save protein accessions for which no 
+        genomic accession was retrieved
     :param args: cmd-line args parser
     
     Return dict {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
@@ -186,6 +194,11 @@ def get_assebmly_names(genbank_kingdom_dict, args):
                     logger.warning(
                         f"Could not retrieve genome assembly name for {protein_accession}"
                     )
+                    with open(no_accession_logger, 'a') as fh:
+                        fh.write(
+                            f"{protein_accession}\tNo genome assembly name retrieved\t"
+                            f"Protein record comment: {record['GBSeq_comment']}\n"
+                        )
                     continue
                 
                 try:
@@ -202,14 +215,18 @@ def get_assebmly_names(genbank_kingdom_dict, args):
     return genomic_assembly_names
 
 
-def get_genomic_accessions(genomic_assembly_names, args):
+def get_genomic_accessions(genomic_assembly_names, no_accession_logger, args):
     """Retrieve genomic accessions for the genomic assemblies
 
     :param genomic_assembly_names: dict
         {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
+    :param no_accession_logger: Path, path to log file to write out assembly names for which no
+        genomic accession was retrieved
     :param args: cmd-line args parser
     
-    Return dict, {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}"""
+    Return dict, {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
+    """
+    logger = logging.getLogger(__name__)
 
     genomic_accession_dict = {}  #  {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
 
@@ -270,13 +287,19 @@ def get_genomic_accessions(genomic_assembly_names, args):
                     genomic_accession_dict[kingdom]
 
                 except KeyError:
-                    genomic_accession_dict[kingdom] = {genomic_accession = {
+                    genomic_accession_dict[kingdom] = {genomic_accession: {
                         "proteins": protein_accessions,
-                        "count": 
+                        "count": len(protein_accessions),
                     }}
 
             except KeyError:
                 logger.warning(f"Retrieved assembly name {latest_assembly_name}, but not retrieved previously")
+                with open(no_accession_logger, 'a') as fh:
+                    fh.write(
+                        f"{latest_assembly_name}\tRetrieved assembly name, but not retrieved previously\t"
+                        f"{latest_accession}\n"
+                    )
+                continue
 
     return genomic_accession_dict
 
