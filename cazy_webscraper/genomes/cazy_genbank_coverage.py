@@ -477,15 +477,23 @@ def write_out_genome_coverage(ncbi_genomes_totals, genomic_accession_dict, time_
 
     fig, ax = plt.subplots()
     # plot CAZy bars
-    ax.bar(graph_df.index, graph_df['CAZy'], label='CAZy')
+    ax.bar(
+        graph_df['Kingdom'],
+        graph_df['CAZy'],
+        label='CAZy',
+        color='orange',
+    )
     # add NCBI bars (the higher bars)
     ax.bar(
-        graph_df.index,
+        graph_df['Kingdom'],
         graph_df['NCBI'],
         bottom=graph_df['CAZy'],
         label='NCBI',
+        color='dodgerblue',
     )
+    ax.set_ylabel(KINGDOMS)
     ax.set_title('GenBank genomes included in CAZy')
+    
     ax.legend()
 
     output_path = args.output_dir / f"gbk_cazy_genomes_plot.png"
