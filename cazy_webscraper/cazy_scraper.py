@@ -461,7 +461,7 @@ def connect_to_new_db(args, time_stamp):
     
     else:
         logger.info("Using default database name and writing to cwd")
-        db_path = Path(f"cazy_webscraper_{time_stamp}")
+        db_path = Path(f"cazy_webscraper_{time_stamp}.db")
         cache_dir = Path(f".cazy_webscraper_{time_stamp}/cache")
         logger_name = f'cazy_webscraper_{time_stamp}'
     
