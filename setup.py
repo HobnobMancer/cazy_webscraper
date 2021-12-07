@@ -87,6 +87,7 @@ setuptools.setup(
         "pandas>=1.0.3",
         "pyyaml",
         "requests",
+        "saintBioutils",
         "sqlalchemy>=1.4.20",
         "tqdm",
     ],
