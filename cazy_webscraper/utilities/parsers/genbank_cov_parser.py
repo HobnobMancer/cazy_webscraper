@@ -93,7 +93,7 @@ def build_parser(argv: Optional[List] = None):
     )
     parser.add_argument(
         "--force_cache",
-        dest="force",
+        dest="force_cache",
         action="store_true",
         default=False,
         help="Force writing in existing cache dir",
