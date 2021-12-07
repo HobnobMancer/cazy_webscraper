@@ -39,6 +39,7 @@
 """Explore the number of GenBank genomes annotated by CAZy."""
 
 
+import json
 import logging
 
 import pandas as pd
@@ -93,6 +94,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     genomic_assembly_names = get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args)
 
     genomic_accession_dict = get_genomic_accessions(genomic_assembly_names, no_accession_logger, args)
+
+    write_output(genomic_accession_dict, time_stamp, args)
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     end_time = pd.to_datetime(end_time)
@@ -303,6 +306,56 @@ def get_genomic_accessions(genomic_assembly_names, no_accession_logger, args):
                 continue
 
     return genomic_accession_dict
+
+
+def write_output(genomic_accession_dict, time_stamp, args):
+    """Compile and write output.
+    
+    :param genomic_accession_dict:
+    :param time_stamp: str, date and time script was invoked
+    :param args: cmd-line args parser
+    
+    Return nothing
+    """
+    raw_json_path = args.output_dir / f"cazy_genomic_accessions_{time_stamp}.json"
+    with open(raw_json_path, 'w') as fh:
+        json.dump(genomic_accession_dict, fh)
+
+    genomic_df_column_names = ['Kingdom','Genus','Species','Genomic_accession','#ofProteins']
+    genomic_df = pd.DataFrame(columns=genomic_df_column_names)
+
+    protein_df_column_names = ['Kingdom', 'Genus', 'Species', 'Genomic_accession', 'Protein_accession']
+    protein_df = pd.DataFrame(columns=protein_df_column_names)
+
+    for kingdom in genomic_accession_dict:
+        kingdom_genomes = genomic_accession_dict[kingdom]
+
+        for genus in kingdom_genomes:
+            organisms = kingdom_genomes[genus]
+            
+            for organism in organisms:
+                genomes = organisms[organism]
+            
+                for genomic_accession in genomes:
+                    protein_accessions = organisms[genomic_accession]['Proteins']
+                    number_of_proteins = organisms[genomic_accession]['Count']
+
+                    g_new_row_data = [kingdom, genus, organism, genomic_accession, number_of_proteins]
+                    g_new_row = pd.DataFrame([g_new_row_data], columns=genomic_df_column_names)
+                    genomic_df = genomic_df.append(g_new_row)
+
+                    for protein in protein_accessions:
+                        p_new_row_data = [kingdom, genus, organism, genomic_accession, protein]
+                        p_new_row = pd.DataFrame([p_new_row_data], columns=protein_df_column_names)
+                        protein_df = protein_df.append(p_new_row)
+    
+    genomic_csv = args.output_dir / f"genomic_accessions_{time_stamp}.csv"
+    genomic_df.to_csv(genomic_csv)
+
+    protein_csv = args.output_dir / f"protein_genomic_accessions_{time_stamp}.csv"
+    protein_df.to_csv(protein_csv)
+
+    return
 
 
 if __name__ == "__main__":
