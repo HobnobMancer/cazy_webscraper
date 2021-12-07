@@ -241,6 +241,8 @@ def get_genomic_accessions(genomic_assembly_names, args):
         ) as handle:
             batch_fetch = Entrez.read(handle)
 
+        genomic_accessions = {}
+
         for genome_record in tqdm(batch_fetch, desc="Retrieving assembly IDs"):
             index = 0
             accessions = set()
@@ -250,13 +252,31 @@ def get_genomic_accessions(genomic_assembly_names, args):
                     10, Entrez.efetch, db="Assembly", id=genome_record['IdList'][index], retmode="xml", rettype="docsum",
                 ) as handle:
                     result = Entrez.read(handle)
-                accessions.add(result['DocumentSummarySet']['DocumentSummary'][0]['AssemblyAccession'])
+                genomic_accession = result['DocumentSummarySet']['DocumentSummary'][0]['AssemblyAccession']
+                assembly_name = result['DocumentSummarySet']['DocumentSummary'][0]['AssemblyName']
 
-            accessions = list(accessions)
+                genomic_accessions[genomic_accession] = assembly_name
+
+            accessions = list(genomic_accessions.keys)
             accessions.sort(reverse=True)
-            genomic_accession = accessions[0]
+            latest_accession = accessions[0]
+            latest_assembly_name = genomic_accessions[latest_accession]
 
             # replace assemlby name for genomic accession
+            try:
+                protein_accessions = genomic_assembly_names[kingdom][latest_assembly_name]
+
+                try:
+                    genomic_accession_dict[kingdom]
+
+                except KeyError:
+                    genomic_accession_dict[kingdom] = {genomic_accession = {
+                        "proteins": protein_accessions,
+                        "count": 
+                    }}
+
+            except KeyError:
+                logger.warning(f"Retrieved assembly name {latest_assembly_name}, but not retrieved previously")
 
     return genomic_accession_dict
 
