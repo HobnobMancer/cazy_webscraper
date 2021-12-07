@@ -180,8 +180,7 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
                     ) as handle:
                         batch_post = Entrez.read(handle)
 
-
-                    # eFetch against the PRotein database, retrieve in xml retmode
+                    # eFetch against the Protein database, retrieve in xml retmode
                     with entrez_retry(
                         args.retries,
                         Entrez.efetch,
