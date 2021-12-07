@@ -491,7 +491,8 @@ def write_out_genome_coverage(ncbi_genomes_totals, genomic_accession_dict, time_
         label='NCBI',
         color='dodgerblue',
     )
-    ax.set_ylabel(KINGDOMS)
+    ax.set_ylabel('Kingdom')
+    ax.set_xlabel('Number of genomes in the database')
     ax.set_title('GenBank genomes included in CAZy')
     
     ax.legend()
