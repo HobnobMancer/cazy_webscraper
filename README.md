@@ -555,11 +555,11 @@ cw_cazy_genbank_coverage cazymes.db my_email@domain.com
 ```
 
 This produces several output files (where time stamp is the date and time the command was invoked):
-1. `cazy_genomic_accessions_{time_stamp}.json`, a JSON file contained a multi-layer dictionary: {kingdom: {genus: {species: {genomic_accession: {proteins: {protein_accessions}, count=int(# of proteins)}}}}}
-2. `genomic_accessions_{time_stamp}.csv`, containing the columns 'Kingdom','Genus','Species','Genomic_accession','#ofProteins', where the number of proteins represents the number of proteins from the genome which are catalogued in CAZy
-3. `protein_genomic_accessions_{time_stamp}.csv`, containing the 'Kingdom', 'Genus', 'Species', 'Genomic_accession', 'Protein_accession'. A unique protein accession is listed on each row, and lists which protein accesison is derived from each genomic assembly.
-4. `cazy_genbank_genome_coverage_{time_stamp}.csv`, containing the columns 'Kingdom', 'NCBI_genomes', 'CAZy_genomes', 'Coverage_percent'. The dataframe lists the number of genomes catalogued in GenBank (NCBI) and the local CAZyme database per taxonomy Kingdom.
-5. `gbk_cazy_genomes_plot_{time_stamp}.png`, a plot of a stacked bar chart with the number of genomes in GenBank (NCBI) and CAZy (the local CAZyme database) per taxonomy Kingdom.
+1. `cazy_genomic_accessions_<time_stamp>.json`, a JSON file contained a multi-layer dictionary: {kingdom: {genus: {species: {genomic_accession: {proteins: {protein_accessions}, count=int(# of proteins)}}}}}
+2. `genomic_accessions_<time_stamp>.csv`, containing the columns 'Kingdom','Genus','Species','Genomic_accession','#ofProteins', where the number of proteins represents the number of proteins from the genome which are catalogued in CAZy
+3. `protein_genomic_accessions_<time_stamp>.csv`, containing the 'Kingdom', 'Genus', 'Species', 'Genomic_accession', 'Protein_accession'. A unique protein accession is listed on each row, and lists which protein accesison is derived from each genomic assembly.
+4. `cazy_genbank_genome_coverage_<time_stamp>.csv`, containing the columns 'Kingdom', 'NCBI_genomes', 'CAZy_genomes', 'Coverage_percent'. The dataframe lists the number of genomes catalogued in GenBank (NCBI) and the local CAZyme database per taxonomy Kingdom.
+5. `gbk_cazy_genomes_plot_<time_stamp>.png`, a plot of a stacked bar chart with the number of genomes in GenBank (NCBI) and CAZy (the local CAZyme database) per taxonomy Kingdom.
 
 ### Configure calculating CAZy coverage of GenBank
 
