@@ -119,6 +119,13 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
+        "--nodelete",
+        dest="nodelete",
+        action="store_true",
+        default=False,
+        help="Do not delete content in existing output dir",
+    )
+    parser.add_argument(
         "--nodelete_cache",
         dest="nodelete_cache",
         action="store_true",
