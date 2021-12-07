@@ -150,71 +150,103 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
     """Retrieve assembly names of the source genomic accessions for the protein accessions in the local db.
     
     :param genbank_kingdom_dict: dict of Genbank and Kingdom records from db
-        {kingdom: {genomic_accessions}}
+        {kingdom: {genus: {species: {protein_accessions}}}
     :param no_accession_logger: Path, path to log file to save protein accessions for which no 
         genomic accession was retrieved
     :param args: cmd-line args parser
     
-    Return dict {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
+    Return dict {kingdom: {genus: {species: {assembly_name: {protein_accessions},},},},}
     """
     logger = logging.getLogger(__name__)
 
-    genomic_assembly_names = {}  # {kingdom: {assembly_name: {protein_accessions}}}
+    genomic_assembly_names = {}
+    # {kingdom: {genus: {species: {assembly_name: {protein_accessions},},},},}
     
     for kingdom in tqdm(genbank_kingdom_dict, desc="Retrieving genomic assembly names per kingdom"):
-        gbk_accessions = genbank_kingdom_dict[kingdom]
+        genera = genbank_kingdom_dict[kingdom]
+        for genus in genera:
+            organisms = genera[genus]
+            for species in organisms:
+                # retrieve all Gbk protein accessions for the given organism
+                gbk_accessions = list(organisms[species])
 
-        # break up the list into a series of smaller lists that can be batched querried
-        batch_queries = get_chunks_list(args.batch_size, gbk_accessions)
+                # break up the list into a series of smaller lists that can be batched querried
+                batch_queries = get_chunks_list(args.batch_size, gbk_accessions)
 
-        for batch_query in batch_queries:
-            batch_query_ids = ",".join(batch_query)
-            with entrez_retry(
-                args.retries, Entrez.epost, "Protein", id=batch_query_ids,
-            ) as handle:
-                batch_post = Entrez.read(handle)
+                for batch_query in batch_queries:
+                    batch_query_ids = ",".join(batch_query)
+                    with entrez_retry(
+                        args.retries, Entrez.epost, "Protein", id=batch_query_ids,
+                    ) as handle:
+                        batch_post = Entrez.read(handle)
 
 
-            # eFetch against the PRotein database, retrieve in xml retmode
-            with entrez_retry(
-                args.retries,
-                Entrez.efetch,
-                db="Protein",
-                query_key=batch_post['QueryKey'],
-                WebEnv=batch_post['WebEnv'],
-                retmode="xml",
-            ) as handle:
-                batch_fetch = Entrez.read(handle)
-            
-            for record in tqdm(batch_fetch, desc="Retrieving assembly name from protein records"):
-                assembly_name = None
-                protein_accession = record['GBSeq_accession-version']
+                    # eFetch against the PRotein database, retrieve in xml retmode
+                    with entrez_retry(
+                        args.retries,
+                        Entrez.efetch,
+                        db="Protein",
+                        query_key=batch_post['QueryKey'],
+                        WebEnv=batch_post['WebEnv'],
+                        retmode="xml",
+                    ) as handle:
+                        batch_fetch = Entrez.read(handle)
+                    
+                    for record in tqdm(batch_fetch, desc="Retrieving assembly name from protein records"):
+                        assembly_name = None
+                        protein_accession = record['GBSeq_accession-version']
 
-                for item in record['GBSeq_comment'].split(";"):
-                    if item.strip().startswith("Assembly Name ::"):
-                        assembly_name = item.strip()[len("Assembly Name :: "):]
+                        for item in record['GBSeq_comment'].split(";"):
+                            if item.strip().startswith("Assembly Name ::"):
+                                assembly_name = item.strip()[len("Assembly Name :: "):]
 
-                if assembly_name is None:
-                    logger.warning(
-                        f"Could not retrieve genome assembly name for {protein_accession}"
-                    )
-                    with open(no_accession_logger, 'a') as fh:
-                        fh.write(
-                            f"{protein_accession}\tNo genome assembly name retrieved\t"
-                            f"Protein record comment: {record['GBSeq_comment']}\n"
-                        )
-                    continue
-                
-                try:
-                    genomic_assembly_names[kingdom]
+                        if assembly_name is None:
+                            logger.warning(
+                                f"Could not retrieve genome assembly name for {protein_accession}"
+                            )
+                            with open(no_accession_logger, 'a') as fh:
+                                fh.write(
+                                    f"{protein_accession}\tNo genome assembly name retrieved\t"
+                                    f"Protein record comment: {record['GBSeq_comment']}\t"
+                                    f"{genus} {species}\n"
+                                )
+                            continue
+                        
+                        try:
+                            genomic_assembly_names[kingdom]
 
-                    try:
-                        genomic_assembly_names[kingdom][assembly_name].add(protein_accession)
-                    except KeyError:
-                        genomic_assembly_names[kingdom][assembly_name] = {protein_accession}
+                            try:
+                                genomic_assembly_names[kingdom][genus]
 
-                except KeyError:
-                    genomic_assembly_names[kingdom] = {assembly_name: {protein_accession}}
+                                try:
+                                    genomic_assembly_names[kingdom][genus][species]
+
+                                    try:
+                                        genomic_assembly_names[kingdom][genus][species][assembly_name].add(protein_accession)
+                                    
+                                    except KeyError:
+                                        genomic_assembly_names[kingdom][genus][species][assembly_name] = {protein_accession}
+
+                                except KeyError:
+                                    genomic_assembly_names[kingdom][genus][species] = {
+                                        assembly_name: {protein_accession},
+                                    }
+                                
+                            except KeyError:
+                                genomic_assembly_names[kingdom][genus] = {
+                                    species: {
+                                        assembly_name: {protein_accession},
+                                    },
+                                }
+
+                        except KeyError:
+                            genomic_assembly_names[kingdom] = {
+                                genus: {
+                                    species: {
+                                        assembly_name: {protein_accession},
+                                    },
+                                },
+                            }
 
     return genomic_assembly_names
 
@@ -223,87 +255,124 @@ def get_genomic_accessions(genomic_assembly_names, no_accession_logger, args):
     """Retrieve genomic accessions for the genomic assemblies
 
     :param genomic_assembly_names: dict
-        {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
+        {kingdom: {genus: {species: {assembly_name: {protein_accessions},},},},}
     :param no_accession_logger: Path, path to log file to write out assembly names for which no
         genomic accession was retrieved
     :param args: cmd-line args parser
     
-    Return dict, {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
+    Return dict,
+    {kingdom: {genus: {species: {genomic_accession: {proteins: {protein_accessions}, count=int},},},},}
     """
     logger = logging.getLogger(__name__)
 
-    genomic_accession_dict = {}  #  {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
+    genomic_accession_dict = {}
+    # {kingdom: {genus: {species: {genomic_accession: {proteins: {protein_accessions}, count=int},},},},}
 
     for kingdom in tqdm(genomic_assembly_names, desc='Retrieving genomic accessions per kingdom'):
-        assembly_names = list(genomic_assembly_names[kingdom].keys())
+        genera = genomic_assembly_names[kingdom]
+        for genus in genera:
+            organisms = genera[genus]
+            for species in organisms:
+                # retrieve all genomic assembly names for the given species
+                assembly_names = list(organisms[species].keys()) 
 
-        # break up the list into a series of smaller lists that can be batched querried
-        batch_queries = get_chunks_list(args.batch_size, assembly_names)
+                # break up the list into a series of smaller lists that can be batched querried
+                batch_queries = get_chunks_list(args.batch_size, assembly_names)
 
-        for batch_query in batch_queries:
-            batch_query_ids = ",".join(batch_query)
+                for batch_query in batch_queries:
+                    batch_query_ids = ",".join(batch_query)
 
-        # retrieve the records IDs for the assembly names
-        with entrez_retry(
-            args.retries,
-            Entrez.esearch,
-            "Assembly",
-            id=batch_query_ids,
-        ) as handle:
-            batch_post = Entrez.read(handle)
-        
-        with entrez_retry(
-            args.retries,
-            Entrez.efetch,
-            db="Assembly",
-            query_key=batch_post['QueryKey'],
-            WebEnv=batch_post['WebEnv'],
-            retmode="xml",
-        ) as handle:
-            batch_fetch = Entrez.read(handle)
-
-        genomic_accessions = {}
-
-        for genome_record in tqdm(batch_fetch, desc="Retrieving assembly IDs"):
-            index = 0
-            accessions = set()
-
-            for index in range(len(genome_record['IdList'])):
+                # retrieve the records IDs for the assembly names
                 with entrez_retry(
-                    10, Entrez.efetch, db="Assembly", id=genome_record['IdList'][index], retmode="xml", rettype="docsum",
+                    args.retries,
+                    Entrez.esearch,
+                    "Assembly",
+                    id=batch_query_ids,
                 ) as handle:
-                    result = Entrez.read(handle)
-                genomic_accession = result['DocumentSummarySet']['DocumentSummary'][0]['AssemblyAccession']
-                assembly_name = result['DocumentSummarySet']['DocumentSummary'][0]['AssemblyName']
+                    batch_post = Entrez.read(handle)
+                
+                with entrez_retry(
+                    args.retries,
+                    Entrez.efetch,
+                    db="Assembly",
+                    query_key=batch_post['QueryKey'],
+                    WebEnv=batch_post['WebEnv'],
+                    retmode="xml",
+                ) as handle:
+                    batch_fetch = Entrez.read(handle)
 
-                genomic_accessions[genomic_accession] = assembly_name
+                genomic_accessions = {}
 
-            accessions = list(genomic_accessions.keys)
-            accessions.sort(reverse=True)
-            latest_accession = accessions[0]
-            latest_assembly_name = genomic_accessions[latest_accession]
+                for genome_record in tqdm(batch_fetch, desc="Retrieving assembly IDs"):
+                    index = 0
+                    accessions = set()
 
-            # replace assemlby name for genomic accession
-            try:
-                protein_accessions = genomic_assembly_names[kingdom][latest_assembly_name]
+                    for index in range(len(genome_record['IdList'])):
+                        with entrez_retry(
+                            10, Entrez.efetch, db="Assembly", id=genome_record['IdList'][index], retmode="xml", rettype="docsum",
+                        ) as handle:
+                            result = Entrez.read(handle)
+                        genomic_accession = result['DocumentSummarySet']['DocumentSummary'][0]['AssemblyAccession']
+                        assembly_name = result['DocumentSummarySet']['DocumentSummary'][0]['AssemblyName']
 
-                try:
-                    genomic_accession_dict[kingdom]
+                        genomic_accessions[genomic_accession] = assembly_name
 
-                except KeyError:
-                    genomic_accession_dict[kingdom] = {genomic_accession: {
-                        "proteins": protein_accessions,
-                        "count": len(protein_accessions),
-                    }}
+                    accessions = list(genomic_accessions.keys)
+                    accessions.sort(reverse=True)
+                    latest_accession = accessions[0]
+                    latest_assembly_name = genomic_accessions[latest_accession]
 
-            except KeyError:
-                logger.warning(f"Retrieved assembly name {latest_assembly_name}, but not retrieved previously")
-                with open(no_accession_logger, 'a') as fh:
-                    fh.write(
-                        f"{latest_assembly_name}\tRetrieved assembly name, but not retrieved previously\t"
-                        f"{latest_accession}\n"
-                    )
-                continue
+                    # replace assemlby name for genomic accession
+                    try:
+                        protein_accessions = genomic_assembly_names[kingdom][genus][species][latest_assembly_name]
+
+                    except KeyError:
+                        logger.warning(f"Retrieved assembly name {latest_assembly_name}, but not retrieved previously")
+                        with open(no_accession_logger, 'a') as fh:
+                            fh.write(
+                                f"{latest_assembly_name}\tRetrieved assembly name, but not retrieved previously\t"
+                                f"{latest_accession}\t{genus} {species}\n"
+                            )
+                        continue
+
+                    try:
+                        genomic_accession_dict[kingdom]
+
+                        try:
+                            genomic_accession_dict[kingdom][genus]
+
+                            try:
+                                genomic_accession_dict[kingdom][genus][species]
+
+                            except KeyError:
+                                genomic_accession_dict[kingdom][genus][species] = {
+                                    genomic_accession: {
+                                        'proteins': protein_accessions,
+                                        'count': len(protein_accessions),
+                                    },
+                                }
+
+                        except KeyError:
+                            genomic_accession_dict[kingdom][genus] = {
+                                species: {
+                                    genomic_accession: {
+                                        'proteins': protein_accessions,
+                                        'count': len(protein_accessions),
+                                    },
+                                },
+                            }
+
+                    except KeyError:
+                        genomic_accession_dict[kingdom] = {
+                            genus: {
+                                species: {
+                                    genomic_accession: {
+                                        'proteins': protein_accessions,
+                                        'count': len(protein_accessions),
+                                    },
+                                },
+                            },
+                        }
 
     return genomic_accession_dict
 
@@ -328,10 +397,10 @@ def write_output(genomic_accession_dict, time_stamp, args):
     protein_df = pd.DataFrame(columns=protein_df_column_names)
 
     for kingdom in genomic_accession_dict:
-        kingdom_genomes = genomic_accession_dict[kingdom]
+        genera = genomic_accession_dict[kingdom]
 
-        for genus in kingdom_genomes:
-            organisms = kingdom_genomes[genus]
+        for genus in genera:
+            organisms = genera[genus]
             
             for organism in organisms:
                 genomes = organisms[organism]
