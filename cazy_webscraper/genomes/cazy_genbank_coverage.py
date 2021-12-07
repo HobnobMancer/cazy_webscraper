@@ -162,7 +162,7 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
                 # break up the list into a series of smaller lists that can be batched querried
                 batch_queries = get_chunks_list(gbk_accessions, args.batch_size)
 
-                for batch_query in batch_queries:
+                for batch_query in tqdm(batch_queries, desc=f"Batch querying NCBI for {genus} {species}"):
                     batch_query_ids = ",".join(batch_query)
                     with entrez_retry(
                         args.retries, Entrez.epost, "Protein", id=batch_query_ids,
@@ -267,7 +267,7 @@ def get_genomic_accessions(genomic_assembly_names, no_accession_logger, args):
                 # break up the list into a series of smaller lists that can be batched querried
                 batch_queries = get_chunks_list(args.batch_size, assembly_names)
 
-                for batch_query in batch_queries:
+                for batch_query in tqdm(batch_queries, desc=f"Batch querying for {genus} {species}"):
                     batch_query_ids = ",".join(batch_query)
 
                 # retrieve the records IDs for the assembly names
