@@ -41,6 +41,7 @@
 
 import json
 import logging
+import os
 
 import pandas as pd
 
@@ -83,7 +84,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     Entrez.email = args.email
 
     # check if need to build output dir
-    ???
+    if os.getcwd() != args.output_dir:
+        make_output_directory(args.output_dir, args.force, args.nodelete)
 
     # connect to the local CAZyme database
     connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
