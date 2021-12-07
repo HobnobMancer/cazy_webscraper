@@ -96,7 +96,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     no_accession_logger = no_accession_logger / f"no_genomic_accession_retrieved_{time_stamp}.log"
 
     # load Genbank and Kingdom records from the db
+    logger.warning("Retrieving Genbanks, Taxs and Kingdoms records from the local CAZyme db")
     genbank_kingdom_dict = get_table_dicts.get_gbk_kingdom_dict(connection)
+    logger.warning("Retrieved Genbanks, Taxs and Kingdoms records from the local CAZyme db")
 
     genomic_assembly_names = get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args)
 
@@ -158,7 +160,7 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
                 gbk_accessions = list(organisms[species])
 
                 # break up the list into a series of smaller lists that can be batched querried
-                batch_queries = get_chunks_list(args.batch_size, gbk_accessions)
+                batch_queries = get_chunks_list(gbk_accessions, args.batch_size)
 
                 for batch_query in batch_queries:
                     batch_query_ids = ",".join(batch_query)
@@ -449,7 +451,7 @@ def write_out_genome_coverage(ncbi_genomes_totals, genomic_accession_dict, time_
     
     Return nothing
     """
-    column_names = ['NCBI_genomes', 'CAZy_genomes', 'Coverage_percent']
+    column_names = ['Kingdom', 'NCBI_genomes', 'CAZy_genomes', 'Coverage_percent']
     coverage_df = pd.DataFrame(columns=column_names)
     graph_columns = ['Kingdom', 'NCBI', 'CAZy']
     graph_df = pd.DateFrame(columns=graph_columns)
@@ -467,7 +469,7 @@ def write_out_genome_coverage(ncbi_genomes_totals, genomic_accession_dict, time_
 
         coverage = (cazy / ncbi) * 100
 
-        row_data = [ncbi, cazy, coverage]
+        row_data = [kingdom, ncbi, cazy, coverage]
         new_row = pd.DataFrame([row_data], columns=column_names)
         coverage_df = coverage_df.append(new_row)
 
@@ -500,7 +502,7 @@ def write_out_genome_coverage(ncbi_genomes_totals, genomic_accession_dict, time_
     
     ax.legend()
 
-    output_path = args.output_dir / f"gbk_cazy_genomes_plot.png"
+    output_path = args.output_dir / f"gbk_cazy_genomes_plot_{time_stamp}.png"
     fig.savefig(output_path, bbox_inches='tight', dpi=360)
 
     return
