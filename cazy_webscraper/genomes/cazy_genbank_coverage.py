@@ -45,6 +45,7 @@ import logging
 import pandas as pd
 
 from datetime import datetime
+from matplotlib import pyplot as plt
 from typing import List, Optional
 
 from Bio import Entrez
@@ -55,6 +56,10 @@ from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper
 from cazy_webscraper.expand import get_chunks_list
+from cazy_webscraper.utilities.parsers import genbank_cov_parser
+
+
+KINGDOMS = ['Bacteria', 'Eukaryota', 'Archaea', 'Viruses', 'unclassified']
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -64,10 +69,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # Program preparation
     if argv is None:
-        parser = genbank_parser.build_parser()
+        parser = genbank_cov_parser.build_parser()
         args = parser.parse_args()
     else:
-        parser = genbank_parser.build_parser(argv)
+        parser = genbank_cov_parser.build_parser(argv)
         args = parser.parse_args()
 
     if logger is None:
@@ -75,7 +80,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         config_logger(args)
 
     Entrez.email = args.email
-
 
     # check if need to build output dir
     ???
@@ -95,7 +99,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     genomic_accession_dict = get_genomic_accessions(genomic_assembly_names, no_accession_logger, args)
 
-    write_output(genomic_accession_dict, time_stamp, args)
+    write_out_genomic_accessions(genomic_accession_dict, time_stamp, args)
+
+    ncbi_genomes_totals = get_ncbi_counts(args)
+
+    write_out_genome_coverage(ncbi_genomes_totals, genomic_accession_dict, time_stamp, args)
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     end_time = pd.to_datetime(end_time)
@@ -352,8 +360,8 @@ def get_genomic_accessions(genomic_assembly_names, no_accession_logger, args):
     return genomic_accession_dict
 
 
-def write_output(genomic_accession_dict, time_stamp, args):
-    """Compile and write output.
+def write_out_genomic_accessions(genomic_accession_dict, time_stamp, args):
+    """Compile and write output listing the genomic accessions.
     
     :param genomic_accession_dict:
     :param time_stamp: str, date and time script was invoked
@@ -398,6 +406,90 @@ def write_output(genomic_accession_dict, time_stamp, args):
 
     protein_csv = args.output_dir / f"protein_genomic_accessions_{time_stamp}.csv"
     protein_df.to_csv(protein_csv)
+
+    return
+
+
+def get_ncbi_counts(args):
+    """Retrieve the number of genomic assemblies per Kingdom from NCBI.
+    
+    :param args: cmd-line args parser
+    
+    Return dict {kingdom: count}
+    """
+    counts = {}
+    
+    for kingdom in KINGDOMS:
+        with entrez_retry(
+            args.retries,
+            Entrez.esearch,
+            db="Assembly",
+            term=kingdom,
+            retmode="xml",
+        ) as record_handle:
+            record = Entrez.read(record_handle, validate=False)
+    
+        number_of_assemblies = record['Count']
+        counts[kingdom] = number_of_assemblies
+
+    return counts
+
+
+def write_out_genome_coverage(ncbi_genomes_totals, genomic_accession_dict, time_stamp, args):
+    """Write out the genome coverage of NCBI GenBank database by the local CAZyme database
+    
+    :param ncbi_genomes_totals: dict {kingdom: number of NCBI GenBank genomes
+    :param genomic_accession_dict: dict
+        {kingdom: {genus: {species: {accession: {proteins: set(), counts: int}}}}
+    :param time_stamp: str, date and time script was invoked
+    :param args: cmd-line args parser
+    
+    Return nothing
+    """
+    column_names = ['NCBI_genomes', 'CAZy_genomes', 'Coverage_percent']
+    coverage_df = pd.DataFrame(columns=column_names)
+    graph_columns = ['Kingdom', 'NCBI', 'CAZy']
+    graph_df = pd.DateFrame(columns=graph_columns)
+
+    for kingdom in KINGDOMS:
+        ncbi = ncbi_genomes_totals[kingdom]
+
+        cazy = 0
+        genera = genomic_accession_dict[kingdom]
+        for genus in genera:
+            organisms = genera[genus]
+            for species in organisms:
+                species_genome_accessions = len(list(organisms[species].keys()))
+                cazy += species_genome_accessions
+
+        coverage = (cazy / ncbi) * 100
+
+        row_data = [ncbi, cazy, coverage]
+        new_row = pd.DataFrame([row_data], columns=column_names)
+        coverage_df = coverage_df.append(new_row)
+
+        row_data = [kingdom, int(ncbi), int(cazy)]
+        new_row = pd.DataFrame([row_data], columns=graph_columns)
+        graph_df = graph_df.append(new_row)
+
+    output_path = args.output_dir / f"cazy_genbank_genome_coverage_{time_stamp}.csv"
+    coverage_df.to_csv(output_path)
+
+    fig, ax = plt.subplots()
+    # plot CAZy bars
+    ax.bar(graph_df.index, graph_df['CAZy'], label='CAZy')
+    # add NCBI bars (the higher bars)
+    ax.bar(
+        graph_df.index,
+        graph_df['NCBI'],
+        bottom=graph_df['CAZy'],
+        label='NCBI',
+    )
+    ax.set_title('GenBank genomes included in CAZy')
+    ax.legend()
+
+    output_path = args.output_dir / f"gbk_cazy_genomes_plot.png"
+    fig.savefig(output_path, bbox_inches='tight', dpi=360)
 
     return
 
