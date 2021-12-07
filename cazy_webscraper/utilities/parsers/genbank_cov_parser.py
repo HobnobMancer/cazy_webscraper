@@ -92,7 +92,6 @@ def build_parser(argv: Optional[List] = None):
         help="Force file over writting",
     )
     parser.add_argument(
-        "-f",
         "--force_cache",
         dest="force",
         action="store_true",
