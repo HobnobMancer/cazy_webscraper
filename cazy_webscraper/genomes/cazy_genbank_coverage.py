@@ -47,6 +47,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from Bio import Entrez
+from saintBioutils.genbank import entrez_retry
 from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
@@ -72,13 +73,17 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     Entrez.email = args.email
 
-    # connect to the local CAZyme database
-    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
 
     # check if need to build output dir
     ???
 
+    # connect to the local CAZyme database
+    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
 
+    # load Genbank and Kingdom records from the db
+    genbank_kingdom_dict = get_gbk_kingdom_dict(connection)
+
+    genomic_assembly_names = get_assebmly_names(genbank_kingdom_dict, args)
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     end_time = pd.to_datetime(end_time)
@@ -105,13 +110,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
 
 
-def get_genomic_accessions():
-    """Retrieve genomic accessions for the protein accessions in the local db.
+def get_gbk_kingdom_dict(connection):
+    """Compile dict of Genbank and Kingdom records
     
-    :param connection: open sqlalchemy connection to a SQLite db
-    :param args: cmd-line args parser
+    :param connection: open sqlalchemy db connection
     
-    Return dict {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
+    Return dict {kingdom: {genbank_accessions}}
     """
     # load the Genbank and Kingdom records from the local CAZyme db
     genbank_kingdom_records = []
@@ -127,6 +131,22 @@ def get_genomic_accessions():
         except KeyError:
             genbank_kingdom_dict[kingdom] = gbk_acc
 
+    return genbank_kingdom_dict
+
+
+def get_assebmly_names(genbank_kingdom_dict, args):
+    """Retrieve assembly names of the source genomic accessions for the protein accessions in the local db.
+    
+    :param genbank_kingdom_dict: dict of Genbank and Kingdom records from db
+        {kingdom: {genomic_accessions}}
+    :param args: cmd-line args parser
+    
+    Return dict {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
+    """
+    logger = logging.getLogger(__name__)
+
+    genomic_assembly_names = {}  # {kingdom: {assembly_name: {protein_accessions}}}
+
     genomic_accession_dict = {}  #  {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
     
     for kingdom in tqdm(genbank_kingdom_dict, desc="Retrieving genomic accessions per kingdom"):
@@ -136,8 +156,51 @@ def get_genomic_accessions():
         batch_queries = []
 
         for batch_query in batch_queries:
+            batch_query_ids = ",".join(batch_query)
+            with entrez_retry(
+                args.retries, Entrez.epost, "Protein", id=batch_query_ids,
+            ) as handle:
+                batch_post = Entrez.read(handle)
 
-            # 
+
+            # eFetch against the PRotein database, retrieve in xml retmode
+            with entrez_retry(
+                args.retries,
+                Entrez.efetch,
+                db="Protein",
+                query_key=batch_post['QueryKey'],
+                WebEnv=batch_post['WebEnv'],
+                retmode="xml",
+            ) as handle:
+                batch_fetch = Entrez.read(handle)
+            
+            for record in tqdm(batch_fetch, desc="Retrieving assembly name from protein records"):
+                assembly_name = None
+                protein_accession = record['GBSeq_accession-version']
+
+                for item in record['GBSeq_comment'].split(";"):
+                    if item.strip().startswith("Assembly Name ::"):
+                        assembly_name = item.strip()[len("Assembly Name :: "):]
+
+                if assembly_name is None:
+                    logger.warning(
+                        f"Could not retrieve genome assembly name for {protein_accession}"
+                    )
+                    continue
+                
+                try:
+                    genomic_assembly_names[kingdom]
+
+                    try:
+                        genomic_assembly_names[kingdom][assembly_name].add(protein_accession)
+                    except KeyError:
+                        genomic_assembly_names[kingdom][assembly_name] = {protein_accession}
+
+                except KeyError:
+                    genomic_assembly_names[kingdom] = {assembly_name: {protein_accession}}
+
+    return genomic_assembly_names
+
 
 if __name__ == "__main__":
     main()
