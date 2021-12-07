@@ -122,30 +122,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
 
 
-def get_gbk_kingdom_dict(connection):
-    """Compile dict of Genbank and Kingdom records
-    
-    :param connection: open sqlalchemy db connection
-    
-    Return dict {kingdom: {genbank_accessions}}
-    """
-    # load the Genbank and Kingdom records from the local CAZyme db
-    genbank_kingdom_records = []
-
-    # extract the GenBank accessions and Kingdoms from the records
-    genbank_kingdom_dict = {}  # kingdom: {genbank_accessions}
-    for record in genbank_kingdom_records:
-        kingdom = record[1].kingdom
-        gbk_acc = record[0].genbank_accession
-
-        try:
-            genbank_kingdom_dict[kingdom].add(gbk_acc)
-        except KeyError:
-            genbank_kingdom_dict[kingdom] = gbk_acc
-
-    return genbank_kingdom_dict
-
-
 def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
     """Retrieve assembly names of the source genomic accessions for the protein accessions in the local db.
     

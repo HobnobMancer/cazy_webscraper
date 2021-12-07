@@ -338,3 +338,49 @@ def get_uniprot_table_dict(connection):
         }
     
     return uniprot_table_dict
+
+
+def get_gbk_kingdom_dict(connection):
+    """Compile dict of Genbank, Taxonomy and Kingdom records
+    
+    :param connection: open sqlalchemy db connection
+    
+    Return dict {kingdom: {genus: {species: {protein_accessions}}}
+    """
+    with Session(bind=connection) as session:
+        query_results = session.query(Genbank, Taxonomy, Kingdom).\
+            join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+            join(Genbank, (Genbank.taxonomy_id == Taxonomy.taxonomy_id)).\
+            all()
+
+    genbank_kingdom_dict = {}  # kingdom: {genus: {species: {protein_accessions}}}
+
+    for result in tqdm(query_results, desc="Retreving GenBank accessions and taxonomy"):
+        genbank_accession = result[0].genbank_accession
+        genus = result[1].genus
+        species = result[1].species
+        kingdom = result[2].kingdom
+
+        try:
+            genbank_kingdom_dict[kingdom]
+
+            try:
+                genbank_kingdom_dict[kingdom][genus]
+
+                try:
+                    genbank_kingdom_dict[kingdom][genus][species].add(genbank_accession)
+                
+                except KeyError:
+                    genbank_kingdom_dict[kingdom][genus][species] = {genbank_accession}
+
+            except KeyError:
+                genbank_kingdom_dict[kingdom][genus] = {species: {genbank_accession}}
+
+        except KeyError:
+            genbank_kingdom_dict[kingdom] = {
+                genus: {
+                    species: {genbank_accession},
+                },
+            }
+
+    return genbank_kingdom_dict
