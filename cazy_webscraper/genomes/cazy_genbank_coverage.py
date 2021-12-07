@@ -56,6 +56,7 @@ from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper
 from cazy_webscraper.expand import get_chunks_list
+from cazy_webscraper.sql.sql_interface import get_table_dicts
 from cazy_webscraper.utilities.parsers import genbank_cov_parser
 
 
@@ -93,7 +94,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     no_accession_logger = no_accession_logger / f"no_genomic_accession_retrieved_{time_stamp}.log"
 
     # load Genbank and Kingdom records from the db
-    genbank_kingdom_dict = get_gbk_kingdom_dict(connection)
+    genbank_kingdom_dict = get_table_dicts.get_gbk_kingdom_dict(connection)
 
     genomic_assembly_names = get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args)
 
