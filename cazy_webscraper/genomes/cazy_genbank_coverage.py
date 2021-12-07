@@ -53,6 +53,7 @@ from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper
+from cazy_webscraper.expand import get_chunks_list
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -161,7 +162,7 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
         gbk_accessions = genbank_kingdom_dict[kingdom]
 
         # break up the list into a series of smaller lists that can be batched querried
-        batch_queries = []
+        batch_queries = get_chunks_list(args.batch_size, gbk_accessions)
 
         for batch_query in batch_queries:
             batch_query_ids = ",".join(batch_query)
@@ -234,7 +235,7 @@ def get_genomic_accessions(genomic_assembly_names, no_accession_logger, args):
         assembly_names = list(genomic_assembly_names[kingdom].keys())
 
         # break up the list into a series of smaller lists that can be batched querried
-        batch_queries = []
+        batch_queries = get_chunks_list(args.batch_size, assembly_names)
 
         for batch_query in batch_queries:
             batch_query_ids = ",".join(batch_query)
