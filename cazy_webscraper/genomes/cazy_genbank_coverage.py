@@ -85,6 +85,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     genomic_assembly_names = get_assebmly_names(genbank_kingdom_dict, args)
 
+    genomic_accession_dict = get_genomic_accessions(genomic_assembly_names, args)
+
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     end_time = pd.to_datetime(end_time)
     total_time = end_time - start_time
@@ -146,10 +148,8 @@ def get_assebmly_names(genbank_kingdom_dict, args):
     logger = logging.getLogger(__name__)
 
     genomic_assembly_names = {}  # {kingdom: {assembly_name: {protein_accessions}}}
-
-    genomic_accession_dict = {}  #  {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
     
-    for kingdom in tqdm(genbank_kingdom_dict, desc="Retrieving genomic accessions per kingdom"):
+    for kingdom in tqdm(genbank_kingdom_dict, desc="Retrieving genomic assembly names per kingdom"):
         gbk_accessions = genbank_kingdom_dict[kingdom]
 
         # break up the list into a series of smaller lists that can be batched querried
@@ -200,6 +200,65 @@ def get_assebmly_names(genbank_kingdom_dict, args):
                     genomic_assembly_names[kingdom] = {assembly_name: {protein_accession}}
 
     return genomic_assembly_names
+
+
+def get_genomic_accessions(genomic_assembly_names, args):
+    """Retrieve genomic accessions for the genomic assemblies
+
+    :param genomic_assembly_names: dict
+        {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
+    :param args: cmd-line args parser
+    
+    Return dict, {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}"""
+
+    genomic_accession_dict = {}  #  {kingdom: {genomic_acc: {'proteins': [p_acc], 'count':#ofProteins}}}
+
+    for kingdom in tqdm(genomic_assembly_names, desc='Retrieving genomic accessions per kingdom'):
+        assembly_names = list(genomic_assembly_names[kingdom].keys())
+
+        # break up the list into a series of smaller lists that can be batched querried
+        batch_queries = []
+
+        for batch_query in batch_queries:
+            batch_query_ids = ",".join(batch_query)
+
+        # retrieve the records IDs for the assembly names
+        with entrez_retry(
+            args.retries,
+            Entrez.esearch,
+            "Assembly",
+            id=batch_query_ids,
+        ) as handle:
+            batch_post = Entrez.read(handle)
+        
+        with entrez_retry(
+            args.retries,
+            Entrez.efetch,
+            db="Assembly",
+            query_key=batch_post['QueryKey'],
+            WebEnv=batch_post['WebEnv'],
+            retmode="xml",
+        ) as handle:
+            batch_fetch = Entrez.read(handle)
+
+        for genome_record in tqdm(batch_fetch, desc="Retrieving assembly IDs"):
+            index = 0
+            accessions = set()
+
+            for index in range(len(genome_record['IdList'])):
+                with entrez_retry(
+                    10, Entrez.efetch, db="Assembly", id=genome_record['IdList'][index], retmode="xml", rettype="docsum",
+                ) as handle:
+                    result = Entrez.read(handle)
+                accessions.add(result['DocumentSummarySet']['DocumentSummary'][0]['AssemblyAccession'])
+
+            accessions = list(accessions)
+            accessions.sort(reverse=True)
+            genomic_accession = accessions[0]
+
+            # replace assemlby name for genomic accession
+
+    return genomic_accession_dict
 
 
 if __name__ == "__main__":
