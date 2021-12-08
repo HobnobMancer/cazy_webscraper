@@ -89,10 +89,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # connect to the local CAZyme database
     connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
+    # make cache_dir
     make_output_directory(cache_dir, args.force_cache, args.nodelete_cache)
 
     no_accession_logger = cache_dir / "logs"
-    make_output_directory(cache_dir, args.force_cache, args.nodelete_cache)
+    # make logs dir
+    make_output_directory(no_accession_logger, args.force_cache, args.nodelete_cache)
     no_accession_logger = no_accession_logger / f"no_genomic_accession_retrieved_{time_stamp}.log"
 
     # load Genbank and Kingdom records from the db
@@ -101,8 +103,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.warning("Retrieved Genbanks, Taxs and Kingdoms records from the local CAZyme db")
 
     genomic_assembly_names = get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args)
-
+    output_path = cache_dir / f"genomic_assembly_names_{time_stamp}.json"
+    with open(output_path, 'w') as fh:
+        json.dump(genomic_assembly_names, fh)
+    
     genomic_accession_dict = get_genomic_accessions(genomic_assembly_names, no_accession_logger, args)
+    output_path = cache_dir / f"genomic_accession_numbers_{time_stamp}.json"
+    with open(output_path, 'w') as fh:
+        json.dump(genomic_accession_dict, fh)
 
     write_out_genomic_accessions(genomic_accession_dict, time_stamp, args)
 
@@ -116,7 +124,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     if args.verbose:
         logger.info(
-            "Finished getting data from UniProt\n"
+            "Finished calculting the local CAZyme db's coverage of GenBank\n"
             f"Scrape initated at {start_time}\n"
             f"Scrape finished at {end_time}\n"
             f"Total run time: {total_time}"
@@ -126,7 +134,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     else:
         print(
             "=====================cazy_webscraper=====================\n"
-            "Finished getting data from UniProt\n"
+            "Finished calculting the local CAZyme db's coverage of GenBank\n"
             f"Scrape initated at {start_time}\n"
             f"Scrape finished at {end_time}\n"
             f"Total run time: {total_time}"
@@ -178,8 +186,32 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
                         WebEnv=batch_post['WebEnv'],
                         retmode="xml",
                     ) as handle:
-                        batch_fetch = Entrez.read(handle)
-                    
+                        try:
+                            batch_fetch = Entrez.read(handle)
+                        except Exception:
+                            with entrez_retry(
+                                args.retries,
+                                Entrez.efetch,
+                                db="Protein",
+                                query_key=batch_post['QueryKey'],
+                                WebEnv=batch_post['WebEnv'],
+                                retmode="xml",
+                            ) as handle:
+                                try:
+                                    batch_fetch = Entrez.read(handle)
+                                except Exception as err:
+                                    logger.warning(
+                                        f"Could not retrieve assembly names for:\n{batch_query}"
+                                    )
+                                    with open(no_accession_logger, 'a') as fh:
+                                        fh.write(
+                                            f"{batch_query}\t"
+                                            "Could not retrieve genome assembly name\t"
+                                            f"{err}\t"
+                                            f"{genus} {species}\n"
+                                        )
+                                    continue
+
                     for record in tqdm(batch_fetch, desc="Retrieving assembly name from protein records"):
                         assembly_name = None
                         protein_accession = record['GBSeq_accession-version']
