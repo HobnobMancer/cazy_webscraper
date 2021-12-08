@@ -161,132 +161,146 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
     
     for kingdom in tqdm(genbank_kingdom_dict, desc="Retrieving genomic assembly names per kingdom"):
         genera = genbank_kingdom_dict[kingdom]
-        for genus in tqdm(genera, desc="Retrieving genomic assembly names per genus"):
-            organisms = genera[genus]
 
-            gbk_species_dict = {}   # protein_acc: species
+        gbk_organism_dict = {}  # protein_accession: {species: str, genus: str}
+
+        for genus in genera:
+            organisms = genera[genus]
 
             for species in organisms:
                 for gbk_acc in organisms[species]:
-                    gbk_species_dict[gbk_acc] = species
-            
-            # retrieve all Gbk protein accessions for the given genera
-            gbk_accessions = list(organisms[species])
+                    gbk_organism_dict[gbk_acc] = {'species': species, 'genus': genus}
+        
+        # retrieve all Gbk protein accessions for the given genera
+        gbk_accessions = list(organisms[species])
 
-            # break up the list into a series of smaller lists that can be batched querried
-            batch_queries = get_chunks_list(gbk_accessions, args.batch_size)
+        # break up the list into a series of smaller lists that can be batched querried
+        batch_queries = get_chunks_list(gbk_accessions, args.batch_size)
 
-            for batch_query in tqdm(batch_queries, desc=f"Batch querying NCBI for {genus} {species}"):
-                batch_query_ids = ",".join(batch_query)
-                with entrez_retry(
-                    args.retries, Entrez.epost, "Protein", id=batch_query_ids,
-                ) as handle:
-                    batch_post = Entrez.read(handle)
+        for batch_query in tqdm(batch_queries, desc=f"Batch querying NCBI for {kingdom}"):
+            batch_query_ids = ",".join(batch_query)
+            with entrez_retry(
+                args.retries, Entrez.epost, "Protein", id=batch_query_ids,
+            ) as handle:
+                batch_post = Entrez.read(handle)
 
-                # eFetch against the Protein database, retrieve in xml retmode
-                with entrez_retry(
-                    args.retries,
-                    Entrez.efetch,
-                    db="Protein",
-                    query_key=batch_post['QueryKey'],
-                    WebEnv=batch_post['WebEnv'],
-                    retmode="xml",
-                ) as handle:
-                    try:
-                        batch_fetch = Entrez.read(handle)
-                    except Exception:
-                        with entrez_retry(
-                            args.retries,
-                            Entrez.efetch,
-                            db="Protein",
-                            query_key=batch_post['QueryKey'],
-                            WebEnv=batch_post['WebEnv'],
-                            retmode="xml",
-                        ) as handle:
-                            try:
-                                batch_fetch = Entrez.read(handle)
-                            except Exception as err:
-                                logger.warning(
-                                    f"Could not retrieve assembly names for:\n{batch_query}"
-                                )
-                                with open(no_accession_logger, 'a') as fh:
-                                    fh.write(
-                                        f"{batch_query}\t"
-                                        "Could not retrieve genome assembly name\t"
-                                        f"{err}\t"
-                                        f"{genus} {species}\n"
-                                    )
-                                continue
-
-                for record in tqdm(batch_fetch, desc="Retrieving assembly name from protein records"):
-                    assembly_name = None
-                    protein_accession = record['GBSeq_accession-version']
-                    try:
-                        species = gbk_species_dict[protein_accession]
-                    except KeyError:
-                        logger.error(
-                            f"Retrieved protein accession from NCBI that is not in the local CAZyme db"
-                        )
-                        with open(no_accession_logger, 'a') as fh:
-                            fh.write(
-                                f"{protein_accession}\t"
-                                "Retrieved protein accession from NCBI that is not in the local CAZyme db\t"
-                                f"Protein record comment: {record['GBSeq_comment']}\t"
-                                f"{genus} {species}\n"
+            # eFetch against the Protein database, retrieve in xml retmode
+            with entrez_retry(
+                args.retries,
+                Entrez.efetch,
+                db="Protein",
+                query_key=batch_post['QueryKey'],
+                WebEnv=batch_post['WebEnv'],
+                retmode="xml",
+            ) as handle:
+                try:
+                    batch_fetch = Entrez.read(handle)
+                except Exception:
+                    with entrez_retry(
+                        args.retries,
+                        Entrez.efetch,
+                        db="Protein",
+                        query_key=batch_post['QueryKey'],
+                        WebEnv=batch_post['WebEnv'],
+                        retmode="xml",
+                    ) as handle:
+                        try:
+                            batch_fetch = Entrez.read(handle)
+                        except Exception as err:
+                            logger.warning(
+                                f"Could not retrieve assembly names for:\n{batch_query}"
                             )
-                        continue
+                            with open(no_accession_logger, 'a') as fh:
+                                fh.write(
+                                    f"{batch_query}\t"
+                                    "Could not retrieve genome assembly name\t"
+                                    f"{err}\t"
+                                    f"{genus} {species}\n"
+                                )
+                            continue
 
+            for record in tqdm(batch_fetch, desc="Retrieving assembly name from protein records"):
+                assembly_name = None
+                protein_accession = record['GBSeq_accession-version']
+
+                try:
+                    species = gbk_organism_dict[protein_accession]['species']
+                    genus = gbk_organism_dict[protein_accession]['genus']
+                except KeyError:
+                    logger.error(
+                        f"Retrieved protein accession from NCBI that is not in the local CAZyme db"
+                    )
+                    with open(no_accession_logger, 'a') as fh:
+                        fh.write(
+                            f"{protein_accession}\t"
+                            "Retrieved protein accession from NCBI that is not in the local CAZyme db\t"
+                            f"{genus} {species}\n"
+                        )
+                    continue
+
+                try:
                     for item in record['GBSeq_comment'].split(";"):
                         if item.strip().startswith("Assembly Name ::"):
                             assembly_name = item.strip()[len("Assembly Name :: "):]
-
-                    if assembly_name is None:
-                        logger.warning(
-                            f"Could not retrieve genome assembly name for {protein_accession}"
+                except KeyError as err:
+                    logger.warning(
+                        f"Could not retrieve genome assembly name for {protein_accession}"
+                    )
+                    with open(no_accession_logger, 'a') as fh:
+                        fh.write(
+                            f"{protein_accession}\tNo genome assembly name retrieved\t"
+                            f"{err}\t"
+                            f"{genus} {species}\n"
                         )
-                        with open(no_accession_logger, 'a') as fh:
-                            fh.write(
-                                f"{protein_accession}\tNo genome assembly name retrieved\t"
-                                f"Protein record comment: {record['GBSeq_comment']}\t"
-                                f"{genus} {species}\n"
-                            )
-                        continue
-                    
+                    continue
+
+                if assembly_name is None:
+                    logger.warning(
+                        f"Could not retrieve genome assembly name for {protein_accession}"
+                    )
+                    with open(no_accession_logger, 'a') as fh:
+                        fh.write(
+                            f"{protein_accession}\tNo genome assembly name retrieved\t"
+                            f"Protein record comment: {record['GBSeq_comment']}\t"
+                            f"{genus} {species}\n"
+                        )
+                    continue
+                
+                try:
+                    genomic_assembly_names[kingdom]
+
                     try:
-                        genomic_assembly_names[kingdom]
+                        genomic_assembly_names[kingdom][genus]
 
                         try:
-                            genomic_assembly_names[kingdom][genus]
+                            genomic_assembly_names[kingdom][genus][species]
 
                             try:
-                                genomic_assembly_names[kingdom][genus][species]
-
-                                try:
-                                    genomic_assembly_names[kingdom][genus][species][assembly_name].add(protein_accession)
-                                
-                                except KeyError:
-                                    genomic_assembly_names[kingdom][genus][species][assembly_name] = {protein_accession}
-
-                            except KeyError:
-                                genomic_assembly_names[kingdom][genus][species] = {
-                                    assembly_name: {protein_accession},
-                                }
+                                genomic_assembly_names[kingdom][genus][species][assembly_name].add(protein_accession)
                             
-                        except KeyError:
-                            genomic_assembly_names[kingdom][genus] = {
-                                species: {
-                                    assembly_name: {protein_accession},
-                                },
-                            }
+                            except KeyError:
+                                genomic_assembly_names[kingdom][genus][species][assembly_name] = {protein_accession}
 
+                        except KeyError:
+                            genomic_assembly_names[kingdom][genus][species] = {
+                                assembly_name: {protein_accession},
+                            }
+                        
                     except KeyError:
-                        genomic_assembly_names[kingdom] = {
-                            genus: {
-                                species: {
-                                    assembly_name: {protein_accession},
-                                },
+                        genomic_assembly_names[kingdom][genus] = {
+                            species: {
+                                assembly_name: {protein_accession},
                             },
                         }
+
+                except KeyError:
+                    genomic_assembly_names[kingdom] = {
+                        genus: {
+                            species: {
+                                assembly_name: {protein_accession},
+                            },
+                        },
+                    }
 
     return genomic_assembly_names
 
