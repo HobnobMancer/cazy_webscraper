@@ -42,6 +42,7 @@
 import json
 import logging
 import os
+import time
 
 import pandas as pd
 
@@ -102,7 +103,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     genbank_kingdom_dict = get_table_dicts.get_gbk_kingdom_dict(connection)
     logger.warning("Retrieved Genbanks, Taxs and Kingdoms records from the local CAZyme db")
 
-    genomic_assembly_names = get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args)
+    add_bioproject_id, genomic_assembly_names = get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args)
+
+    output_path = cache_dir / f"genomic_bioproject_ids_{time_stamp}.json"
+    with open(output_path, 'w') as fh:
+        json.dump(add_bioproject_id, fh)
+
     output_path = cache_dir / f"genomic_assembly_names_{time_stamp}.json"
     with open(output_path, 'w') as fh:
         json.dump(genomic_assembly_names, fh)
@@ -158,6 +164,8 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
 
     genomic_assembly_names = {}
     # {kingdom: {genus: {species: {assembly_name: {protein_accessions},},},},}
+    genomic_bioproject_ids = {}
+    # {kingdom: {genus: {species: {bioproject_acc: {protein_accessions},},},},}
     
     for kingdom in tqdm(genbank_kingdom_dict, desc="Retrieving genomic assembly names per kingdom"):
         genera = genbank_kingdom_dict[kingdom]
@@ -172,7 +180,7 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
                     gbk_organism_dict[gbk_acc] = {'species': species, 'genus': genus}
         
         # retrieve all Gbk protein accessions for the given genera
-        gbk_accessions = list(organisms[species])
+        gbk_accessions = list(gbk_organism_dict.keys())
 
         # break up the list into a series of smaller lists that can be batched querried
         batch_queries = get_chunks_list(gbk_accessions, args.batch_size)
@@ -183,6 +191,8 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
                 args.retries, Entrez.epost, "Protein", id=batch_query_ids,
             ) as handle:
                 batch_post = Entrez.read(handle)
+
+            time.sleep(0.5)  # minimise possibility of overloading the NCBI server
 
             # eFetch against the Protein database, retrieve in xml retmode
             with entrez_retry(
@@ -220,7 +230,7 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
                             continue
 
             for record in tqdm(batch_fetch, desc="Retrieving assembly name from protein records"):
-                assembly_name = None
+    
                 protein_accession = record['GBSeq_accession-version']
 
                 try:
@@ -238,71 +248,152 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
                         )
                     continue
 
+                bioproject_acc = None
                 try:
-                    for item in record['GBSeq_comment'].split(";"):
-                        if item.strip().startswith("Assembly Name ::"):
-                            assembly_name = item.strip()[len("Assembly Name :: "):]
-                except KeyError as err:
-                    logger.warning(
-                        f"Could not retrieve genome assembly name for {protein_accession}"
+                    xrefs = record['GBSeq_xrefs']
+                    for xref_list in xrefs:
+                        try:
+                            if xref_list['GBXref_dbname'].strip() == 'BioProject':
+                                bioproject_acc = xref_list['PRJNA279657']
+                        except KeyError:
+                            pass
+                except KeyError:
+                    pass
+
+                if bioproject_acc is not None:
+                    genomic_bioproject_ids = add_bioproject_id(
+                        assembly_name,
+                        kingdom,
+                        genus,
+                        species,
+                        protein_accession,
                     )
-                    with open(no_accession_logger, 'a') as fh:
-                        fh.write(
-                            f"{protein_accession}\tNo genome assembly name retrieved\t"
-                            f"{err}\t"
-                            f"{genus} {species}\n"
-                        )
                     continue
 
-                if assembly_name is None:
-                    logger.warning(
-                        f"Could not retrieve genome assembly name for {protein_accession}"
-                    )
-                    with open(no_accession_logger, 'a') as fh:
-                        fh.write(
-                            f"{protein_accession}\tNo genome assembly name retrieved\t"
-                            f"Protein record comment: {record['GBSeq_comment']}\t"
-                            f"{genus} {species}\n"
-                        )
-                    continue
-                
-                try:
-                    genomic_assembly_names[kingdom]
+                else:
+                    # attempt to retrieve assembly name
+                    assembly_name = None
 
                     try:
-                        genomic_assembly_names[kingdom][genus]
+                        for item in record['GBSeq_comment'].split(";"):
+                            if item.strip().startswith("Assembly Name ::"):
+                                assembly_name = item.strip()[len("Assembly Name :: "):]
+                    except KeyError as err:
+                        pass
 
-                        try:
-                            genomic_assembly_names[kingdom][genus][species]
+                    if assembly_name is not None:
+                        genomic_assembly_names = add_assembly_name(
+                            assembly_name,
+                            kingdom,
+                            genus,
+                            species,
+                            protein_accession,
+                        )
+                        continue
 
-                            try:
-                                genomic_assembly_names[kingdom][genus][species][assembly_name].add(protein_accession)
-                            
-                            except KeyError:
-                                genomic_assembly_names[kingdom][genus][species][assembly_name] = {protein_accession}
+                    else:
+                        message = (
+                            f"Could not retrieve BioProject ID or assembly name for {protein_accession}\t"
+                            f"{kingdom}: {genus} {species}"
+                        )
+                        logger.warning(message)
+                        with open(no_accession_logger, 'a') as fh:
+                            fh.write(message)
+                        continue
 
-                        except KeyError:
-                            genomic_assembly_names[kingdom][genus][species] = {
-                                assembly_name: {protein_accession},
-                            }
-                        
-                    except KeyError:
-                        genomic_assembly_names[kingdom][genus] = {
-                            species: {
-                                assembly_name: {protein_accession},
-                            },
-                        }
+    return genomic_bioproject_ids, genomic_assembly_names
 
+
+def add_assembly_name(genomic_assembly_names, assembly_name, kingdom, genus, species, protein_accession):
+    """Add assembly name to dict.
+    
+    :param:
+    
+    Return dict
+    """
+    try:
+        genomic_assembly_names[kingdom]
+
+        try:
+            genomic_assembly_names[kingdom][genus]
+
+            try:
+                genomic_assembly_names[kingdom][genus][species]
+
+                try:
+                    genomic_assembly_names[kingdom][genus][species][assembly_name].add(protein_accession)
+                
                 except KeyError:
-                    genomic_assembly_names[kingdom] = {
-                        genus: {
-                            species: {
-                                assembly_name: {protein_accession},
-                            },
-                        },
-                    }
+                    genomic_assembly_names[kingdom][genus][species][assembly_name] = {protein_accession}
 
+            except KeyError:
+                genomic_assembly_names[kingdom][genus][species] = {
+                    assembly_name: {protein_accession},
+                }
+            
+        except KeyError:
+            genomic_assembly_names[kingdom][genus] = {
+                species: {
+                    assembly_name: {protein_accession},
+                },
+            }
+
+    except KeyError:
+        genomic_assembly_names[kingdom] = {
+            genus: {
+                species: {
+                    assembly_name: {protein_accession},
+                },
+            },
+        }
+    
     return genomic_assembly_names
+
+
+def add_bioproject_id(genomic_bioproject_ids, bioproject_acc, kingdom, genus, species, protein_accession):
+    """Add assembly name to dict.
+    
+    :param:
+    
+    Return dict
+    """
+    try:
+        genomic_bioproject_ids[kingdom]
+
+        try:
+            genomic_bioproject_ids[kingdom][genus]
+
+            try:
+                genomic_bioproject_ids[kingdom][genus][species]
+
+                try:
+                    genomic_bioproject_ids[kingdom][genus][species][bioproject_acc].add(protein_accession)
+                
+                except KeyError:
+                    genomic_bioproject_ids[kingdom][genus][species][bioproject_acc] = {protein_accession}
+
+            except KeyError:
+                genomic_bioproject_ids[kingdom][genus][species] = {
+                    bioproject_acc: {protein_accession},
+                }
+            
+        except KeyError:
+            genomic_bioproject_ids[kingdom][genus] = {
+                species: {
+                    bioproject_acc: {protein_accession},
+                },
+            }
+
+    except KeyError:
+        genomic_bioproject_ids[kingdom] = {
+            genus: {
+                species: {
+                    bioproject_acc: {protein_accession},
+                },
+            },
+        }
+    
+    return genomic_bioproject_ids
 
 
 def get_genomic_accessions(genomic_assembly_names, no_accession_logger, args):
