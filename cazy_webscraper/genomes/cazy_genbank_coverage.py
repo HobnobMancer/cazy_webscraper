@@ -161,7 +161,7 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
     
     for kingdom in tqdm(genbank_kingdom_dict, desc="Retrieving genomic assembly names per kingdom"):
         genera = genbank_kingdom_dict[kingdom]
-        for genus in genera:
+        for genus in tqdm(genera, desc="Retrieving genomic assembly names per genus"):
             organisms = genera[genus]
 
             gbk_species_dict = {}   # protein_acc: species
