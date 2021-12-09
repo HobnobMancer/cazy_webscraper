@@ -170,7 +170,8 @@ def get_query_data(gbk_dict, connection, args):
         query_data = get_api_data.get_tax_annotations(gbk_dict, query_data, connection, args)
 
     if args.ec:
-       # retrieve the ec numbers from the local CAZyme database 
+       # retrieve the ec numbers from the local CAZyme database
+       query_data = get_api_data.get_ec_annotations(gbk_dict, query_data, connection)
 
     if args.pdb:
         # retrieve the PDB accessions from the local CAZyme database
