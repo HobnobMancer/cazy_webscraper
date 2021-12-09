@@ -202,7 +202,7 @@ def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, args):
                 batch_post = Entrez.read(handle)
 
             # {protein record ID: {nucleotide records IDs}}
-            nucleotide_ids = entrez.get_linked_nucleotide_record_ids(batch_post)
+            nucleotide_ids = entrez.get_linked_nucleotide_record_ids(batch_post, args)
 
             if nucleotide_ids is None: 
                 # issue with at least one accession in the batch
@@ -322,7 +322,11 @@ def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, args):
 
             if starting_loop_length == len(remaining_accessions) and len(remaining_accessions) != 0:
                 # failing to retrieve data for protein accessions
-                nucleotide_ids, no_nucleotides = entrez.link_nucleotide_ids_individually(accessions_to_parse)
+                nucleotide_ids, no_nucleotides = entrez.link_nucleotide_ids_individually(
+                    accessions_to_parse,
+                    no_accession_logger, 
+                    args,
+                )
 
                 if nucleotide_ids is None:
                     for protein_accession in remaining_accessions:
