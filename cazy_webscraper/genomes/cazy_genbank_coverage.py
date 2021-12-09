@@ -162,13 +162,11 @@ def get_nucleotide_ids(genbank_kingdom_dict, no_accession_logger, args):
     """
     logger = logging.getLogger(__name__)
 
-    genomic_assembly_names = {}
-    # {kingdom: {genus: {species: {assembly_name: {protein_accessions},},},},}
-    genomic_bioproject_ids = {}
-    # {kingdom: {genus: {species: {bioproject_acc: {protein_accessions},},},},}
+    nucleotide_accessions_dict = {}
+    # {kingdom: {genus: {species: {nucleotide record accessio: {protein_accessions},},},},}
 
     retrieved_proteins = {}  # {protein_accession: nucleotide record accession}
-    all_parsed_nucleotide_ids = set()
+
     # store all retrieved ncucleotide accessions to prevent retrieval of the same assembly record multiple times
     
     for kingdom in tqdm(genbank_kingdom_dict, desc="Retrieving nucleotide record accessions per kingdom"):
@@ -204,15 +202,20 @@ def get_nucleotide_ids(genbank_kingdom_dict, no_accession_logger, args):
             ) as handle:
                 batch_post = Entrez.read(handle)
 
-            # eLink Protein to Nuccuore db
+            # eLink Protein to Nuccore db and retrieve IDs of linked nucleotide records
+            # {protein record ID: {nucleotide records IDs}}
             nucleotide_ids = get_linked_nucleotide_record_ids(batch_post)
+            if nucleotide_ids is None:
+                failed_gbk_batches.append(cleaned_batch)
+                continue  # onto the next batch of protein accessions
 
-            single_nucleotide_ids = set()
             # retrieves the nucleotide records IDs for protein records for whcih only one
             # nuclotide ID was retrieved
-            protein_records_multi_nuc = set()
+            single_nucleotide_ids = set()
+
             # retrieve the protein_record_ids of protein records from which multiple nucletoide 
             # record IDs were retrieved
+            protein_records_multi_nuc = set()
 
             for protein_record_id in nucleotide_ids:
                 if len(nucleotide_ids[protein_record_id]) == 1:
@@ -222,45 +225,20 @@ def get_nucleotide_ids(genbank_kingdom_dict, no_accession_logger, args):
 
             # batch query to fetch nucletoide records for protein records
             # from which only a sinlge nucleotide ID was retrieved
-            batch_query_ids = ",".join(list(single_nucleotide_ids))
-            with entrez_retry(
-                args.retries, Entrez.epost, "Nucleotide", id=batch_query_ids,
-            ) as handle:
-                batch_post = Entrez.read(handle)
+            retrieved_proteins, newly_retrieved_proteins, succcess = extract_protein_accessions(
+                single_nucleotide_ids,
+                retrieved_proteins,
+                gbk_accessions,
+                args,
+            )
+            if succcess is False:
+               failed_nuc_batches.append(single_nucleotide_ids)
+                continue  # on to the next batch of protein accessions
 
-            with entrez_retry(
-                args.retries,
-                Entrez.efetch,
-                db="Nucleotide",
-                query_key=batch_post['QueryKey'],
-                WebEnv=batch_post['WebEnv'],
-                retmode="xml",
-            ) as handle:
-                try:
-                    batch_nucleotide = Entrez.read(handle)
-                except Exception:
-                    failed_nuc_batches.append(batch_query)
-                    continue  # onto the next batch
-            
-            for record in tqdm(batch_nucleotide, desc="Extracting data from Nucleotide records"):
-                nucleotide_accession = record['GBSeq_accession-version']
-
-                # retrieve protein accessions of proteins features in the nucletide record
-                for feature_dict in record['GBSeq_feature-table']:
-                    # feature-table contains a list of features, one feature is one feature_dict
-
-                    for feature_qual in feature_dict['GBFeature_quals']:
-                        # feature_quals contains a list of dicts, one dict is feature_qual
-                        # looking for dict containing protein accession (protein_id)
-                        # e.g. {'GBQualifier_name': 'protein_id', 'GBQualifier_value': 'APS93952.1'}
-                        if feature_qual['GBQualifier_name'] == 'protein_id':
-                            protein_accession = feature_qual['GBQualifier_value']
-
-                            try:
-                                retrieved_proteins[protein_accession].add(nucleotide_accession)
-                            except KeyError:
-                                retrieved_proteins[protein_accession] = {nucleotide_accession}
-
+            # add the nucleotide accessions to the nucleotide_accessions_dict
+            # {kingdom: {genus: {species: {nucleotide record accessio: {protein_accessions},},},},}
+            for protein_accession in newly_retrieved_proteins:
+                nucleotide_accession = retrieved_proteins[protein_accession]
 
                 try:
                     species = gbk_organism_dict[protein_accession]['species']
@@ -277,22 +255,44 @@ def get_nucleotide_ids(genbank_kingdom_dict, no_accession_logger, args):
                         )
                     continue
 
-                bioproject_acc = None
+            bioproject_acc = None
+            try:
+                xrefs = record['GBSeq_xrefs']
+                for xref_dict in xrefs:
+                    try:
+                        if xref_dict['GBXref_dbname'].strip() == 'BioProject':
+                            bioproject_acc = xref_dict['GBXref_id']
+                    except KeyError:
+                        pass
+            except KeyError:
+                pass
+
+            if bioproject_acc is not None:
+                genomic_bioproject_ids = add_bioproject_id(
+                    genomic_bioproject_ids,
+                    bioproject_acc,
+                    kingdom,
+                    genus,
+                    species,
+                    protein_accession,
+                )
+                continue
+
+            else:
+                # attempt to retrieve assembly name
+                assembly_name = None
+
                 try:
-                    xrefs = record['GBSeq_xrefs']
-                    for xref_dict in xrefs:
-                        try:
-                            if xref_dict['GBXref_dbname'].strip() == 'BioProject':
-                                bioproject_acc = xref_dict['GBXref_id']
-                        except KeyError:
-                            pass
-                except KeyError:
+                    for item in record['GBSeq_comment'].split(";"):
+                        if item.strip().startswith("Assembly Name ::"):
+                            assembly_name = item.strip()[len("Assembly Name :: "):]
+                except KeyError as err:
                     pass
 
-                if bioproject_acc is not None:
-                    genomic_bioproject_ids = add_bioproject_id(
-                        genomic_bioproject_ids,
-                        bioproject_acc,
+                if assembly_name is not None:
+                    genomic_assembly_names = add_assembly_name(
+                        genomic_assembly_names,
+                        assembly_name,
                         kingdom,
                         genus,
                         species,
@@ -301,36 +301,14 @@ def get_nucleotide_ids(genbank_kingdom_dict, no_accession_logger, args):
                     continue
 
                 else:
-                    # attempt to retrieve assembly name
-                    assembly_name = None
-
-                    try:
-                        for item in record['GBSeq_comment'].split(";"):
-                            if item.strip().startswith("Assembly Name ::"):
-                                assembly_name = item.strip()[len("Assembly Name :: "):]
-                    except KeyError as err:
-                        pass
-
-                    if assembly_name is not None:
-                        genomic_assembly_names = add_assembly_name(
-                            genomic_assembly_names,
-                            assembly_name,
-                            kingdom,
-                            genus,
-                            species,
-                            protein_accession,
-                        )
-                        continue
-
-                    else:
-                        message = (
-                            f"Could not retrieve BioProject ID or assembly name for {protein_accession}\t"
-                            f"{kingdom}: {genus} {species}"
-                        )
-                        logger.warning(message)
-                        with open(no_accession_logger, 'a') as fh:
-                            fh.write(message)
-                        continue
+                    message = (
+                        f"Could not retrieve BioProject ID or assembly name for {protein_accession}\t"
+                        f"{kingdom}: {genus} {species}"
+                    )
+                    logger.warning(message)
+                    with open(no_accession_logger, 'a') as fh:
+                        fh.write(message)
+                    continue
 
     return genomic_bioproject_ids, genomic_assembly_names
 
@@ -365,7 +343,7 @@ def get_linked_nucleotide_record_ids(batch_post, all_parsed_nucleotide_ids, args
         try:
             batch_nuccore = Entrez.read(handle)
         except Exception:
-            return None
+            return
 
     for record in tqdm(batch_nuccore, desc="Retrieving Nucleotide db records IDs from nuccore"):
         protein_record_id = record['IdList'][0]
@@ -383,10 +361,8 @@ def get_linked_nucleotide_record_ids(batch_post, all_parsed_nucleotide_ids, args
                 # link = {'Id': '1127815138'}
                 nucleotide_id = link['Id']
 
-                if nucleotide_id not in all_parsed_nucleotide_ids:
-                    record_nucleotide_ids.add(nucleotide_id)
-                # else: retrieved and extracted protein accessions from record before
-    
+                record_nucleotide_ids.add(nucleotide_id)
+
         try:
             existing_ids = nucleotide_ids[protein_record_id]
             all_ids = existing_ids.union(record_nucleotide_ids)
@@ -395,6 +371,61 @@ def get_linked_nucleotide_record_ids(batch_post, all_parsed_nucleotide_ids, args
             nucleotide_ids[protein_record_id] = record_nucleotide_ids
     
     return nucleotide_ids
+
+
+def extract_protein_accessions(single_nucleotide_ids, retrieved_proteins, gbk_accessions, args):
+    """Retrieve and parse Nucleotide db records, for NCBI.Protein records from which only
+    one NCBI.Nucleotide db record ID was retrieved.
+    
+    :param retrieved_proteins: dict, {protein_accession: nucleotide record accession}
+    :param single_nucleotide_ids: list of nucloetide record IDs
+    :param gbk_accessions: list of protein GenBank accessions from the local CAZyme database
+    :param args: cmd-line args parser
+    
+    Return retrieved_proteins (dict) and bool
+        True if successful Entrez connection, False is connection fails
+    """
+    batch_query_ids = ",".join(list(single_nucleotide_ids))
+    with entrez_retry(
+        args.retries, Entrez.epost, "Nucleotide", id=batch_query_ids,
+    ) as handle:
+        batch_post = Entrez.read(handle)
+
+    with entrez_retry(
+        args.retries,
+        Entrez.efetch,
+        db="Nucleotide",
+        query_key=batch_post['QueryKey'],
+        WebEnv=batch_post['WebEnv'],
+        retmode="xml",
+    ) as handle:
+        try:
+            batch_nucleotide = Entrez.read(handle)
+        except Exception:
+            return retrieved_proteins, False
+    
+    for record in tqdm(batch_nucleotide, desc="Extracting data from Nucleotide records"):
+        nucleotide_accession = record['GBSeq_accession-version']
+
+        # retrieve protein accessions of proteins features in the nucletide record
+        for feature_dict in record['GBSeq_feature-table']:
+            # feature-table contains a list of features, one feature is one feature_dict
+
+            for feature_qual in feature_dict['GBFeature_quals']:
+                # feature_quals contains a list of dicts, one dict is feature_qual
+                # looking for dict containing protein accession (protein_id)
+                # e.g. {'GBQualifier_name': 'protein_id', 'GBQualifier_value': 'APS93952.1'}
+                if feature_qual['GBQualifier_name'] == 'protein_id':
+                    protein_accession = feature_qual['GBQualifier_value']
+
+                    if protein_accession in gbk_accessions:
+                        # protein is in the local CAZyme database
+                        try:
+                            retrieved_proteins[protein_accession].add(nucleotide_accession)
+                        except KeyError:
+                            retrieved_proteins[protein_accession] = {nucleotide_accession}
+
+    return retrieved_proteins, True
 
 
 def add_assembly_name(genomic_assembly_names, assembly_name, kingdom, genus, species, protein_accession):
