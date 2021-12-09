@@ -51,6 +51,7 @@ If you use `cazy_webscraper`, please cite the following publication:
     - [Configuring extracting sequences from a local CAZyme db](#configuring-extracting-sequences-from-a-local-cazyme-db)
 - [Retrieving protein structure files from PDB](#retrieving-protein-structure-files-from-pdb)
     - [Configuring PDB protein structure file retrieval](#configuring-pdb-protein-structure-file-retrieval)
+- [The `cazy_webscraper` API or Interrogating the local CAZyme database](#the_cazy_webscraper_api_or_interrogating_the_local_cazyme_database)
 - [Configuring `cazy_webscraper` using a YAML file](#configuring-using-a-yaml-file)
 - [CAZy coverage of GenBank](#cazy-coverage-of-genbank)
     - [Configure calculating CAZy coverage of GenBank](#configure-calculating-cazy-coverage-of-genbank)
@@ -435,20 +436,28 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
 
-## Interrogating the local CAZyme database
+## The `cazy_webscraper` API or Interrogating the local CAZyme database
 
-The SQLite3 database compiled by `cazy_webscraper` can be interrogated in the native interface (i.e. queries written in SQL can be used to interrogate the database). `cazy_webscraper` also provides its own API for interrogating the local CAZyme database: `cw_query_database`.
+The SQLite3 database compiled by `cazy_webscraper` can be interrogated in the native interface (i.e. queries written in SQL can be used to interrogate the database). This can be achieved via the command-line or via an SQL database browser (such as [DB Browser for SQLite](https://sqlitebrowser.org/)).
 
-By default `cw_query_database` retrieves only the GenBank accessions of CAZymes matching the user criteria. Users can use the same criteria for customising the retrieval of data from UniProt, GenBank and PDB, to retrieve CAZymes which match their criteria of interest.
+`cazy_webscraper` also provides its own API (Application Programming Interface) for interrogating the local CAZyme database: `cw_query_database`. The API faciliates the intergration of the dataset in the local CAZyme database into downstream bioinformatic pipelines, _and_ provides a method of interrograting the dataset for those who do not use SQL.
 
-Optional flags can be applied to retrieve additional data about CAZymes that match the user's criteria of interest.
+`cw_query_database` is the command that can be used to interrogate the dataset in the local CAZyme database, and extract protein data of interest for the proteins matching the user's cirteria of 
+interest.
 
-The output is written out as a `.csv` file, by default to the current working directory and the name `<database_name>_<retrieved_data>_YYYY-MM-DD_HH-MM-SS.csv`, and/or a `JSON` file, by default to the current working directory and the name `<database_name>_<retrieved_data>_YYYY-MM-DD_HH-MM-SS.json`
+By default `cw_query_database` retrieves only the GenBank accessions of proteins matching the user's criteria of interest. If not criteria of interest are provided, all GenBank accessions are retrieved. Optional flags can be applied to retrieve additional data about CAZymes that match the user's criteria of interest.
 
-To retrieve GenBank accessions for all CAZymes in the local CAZyme database, and write the data to a `.csv` and 
-`.json` file use the following command:
+`cw_query_database` currently supports writing the output in two file formats:
+- `json`, by default this is written to the current working directory and with name `<database_name>_<retrieved_data>_YYYY-MM-DD_HH-MM-SS.json`
+- `csv`, by default this is written to the current working directory and with name `<database_name>_<retrieved_data>_YYYY-MM-DD_HH-MM-SS.csv`
+
+`cw_query_database` takes two positional arguments:
+1. The path to the local CAZyme database
+2. The file formats of the output files, presented as a list with each file type separated by as single comma (e.g. `json,csv`). This is **not** case sensitive and the order does **not** matter.
+For example, to retrieve all GenBank accessions for all proteins in the local CAZyme database, and 
+write them to a `json` file, the following command could be used for a database called `cazy.db`:
 ```bash
-cw_query_database <path_to_local_CAZyme_db> csv,json
+cw_query_database cazy.db json
 ```
 
 ### Configuring interrogating the local CAZyme database
@@ -506,7 +515,7 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
 
-## Configuring using a YAML file
+## Configuring `cazy_webscraper` using a YAML file
 
 The retrieval of data from CAZy, UniProt, GenBank and PDB can be configured at the command-line **and** via a YAML file.
 
