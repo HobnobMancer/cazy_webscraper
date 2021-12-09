@@ -52,7 +52,7 @@ from saintBioutils.utilities.logger import config_logger
 from saintBioutils.utilities import file_io
 
 from cazy_webscraper import cazy_scraper
-from cazy_webscraper.sql.sql_interface import get_selected_gbks
+from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_api_data
 from cazy_webscraper.utilities.parsers import query_db_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
@@ -84,7 +84,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_dir = cache_dir / "uniprot_data_retrieval"
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
-    output_files = validate_file_types(args)
+    output_file_types = validate_file_types(args)
 
     (
         config_dict,
@@ -98,6 +98,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     output_dict = {}  # dict to store all output from interrogating the CAZyme db
 
     # get the records of GenBank accessions matching the criteria of interest
+    # {gbk_acc: gbk_id}
     gbk_dict = get_selected_gbks.get_genbank_accessions(
         class_filters,
         family_filters,
@@ -109,7 +110,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     query_data = get_query_data(gbk_dict)
 
-    write_output(query_data, args)
+    write_output(query_data, output_file_types, args)
 
 
 def validate_file_types(args):
@@ -143,7 +144,16 @@ def validate_file_types(args):
     return chosen_types
 
 
-def get_query_data(gbk_dict, args):
+def get_query_data(gbk_dict, connection, args):
+    """Retrieve additional data as requested per retrieved GenBank accession
+    
+    :param gbk_dict: dict, {gbk_acc: gbk_id} GenBank accessions matching user criteria
+    :param connection: open sqlaclchemy connection for an SQLite db
+    :param args: cmd-line args parser
+    
+    Retrun dict of retrieved data, keyed by GenBank accession and valued by dict containing
+        requested data.
+    """
     # create dict to store all data retrieved from the databsae query
     query_data = {}
     
@@ -153,9 +163,11 @@ def get_query_data(gbk_dict, args):
 
     if args.cazy_class or args.cazy_family or args.cazy_subfamily:
         # retrieve the CAZy family annotations from the local CAZyme database
-    
-    if args.genus or args.organism:
+        query_data = get_api_data.get_class_fam_annotations(gbk_dict, query_data, connection, args)
+
+    if args.kingdom or args.genus or args.organism:
         # retrieve the taxonomy data from the local CAZyme database
+        query_data = get_api_data.get_tax_annotations(gbk_dict, query_data, connection, args)
 
     if args.ec:
        # retrieve the ec numbers from the local CAZyme database 
