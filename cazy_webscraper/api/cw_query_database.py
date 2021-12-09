@@ -175,12 +175,15 @@ def get_query_data(gbk_dict, connection, args):
 
     if args.pdb:
         # retrieve the PDB accessions from the local CAZyme database
+        query_data = get_api_data.get_pdb_accessions(gbk_dict, query_data, connection)
 
     if args.uniprot or args.seq_uniprot:
         # retrieve the UniProt data from the local CAZyme database
+        query_data = get_api_data.get_uniprot_data(gbk_dict, query_data, connection, args)
 
     if args.seq_genbank:
         # retrieve GEnbank protein sequences from the local CAZyme database
+        query_data = get_api_data.get_gbk_seq(gbk_dict, query_data, connection)
 
 
 if __name__ == "__main__":
