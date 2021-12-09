@@ -50,6 +50,7 @@ from cazy_webscraper.sql.sql_orm import (
     Ec,
     Genbank,
     Kingdom,
+    Pdb,
     Taxonomy,
     Session,
 )
@@ -209,7 +210,7 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
 
 
 def get_ec_annotations(gbk_dict, query_data, connection):
-    """Retrieve kingdom, genus and/or scientific name of the source organism for the provided Gbks.
+    """Retrieve EC number annotations for the provided Gbks.
     
     :param gbk_dict: dict of selected GenBank accessions {acc: id}
     :param query_data: dict containing all data retrieved from the db
@@ -248,5 +249,48 @@ def get_ec_annotations(gbk_dict, query_data, connection):
 
         except KeyError:
             query_data[gbk_acc] = {'ec_numbers': {ec_number}}
+
+    return query_data
+
+
+def get_pdb_accessions(gbk_dict, query_data, connection):
+    """Retrieve PDB accessions for the provided Gbks.
+    
+    :param gbk_dict: dict of selected GenBank accessions {acc: id}
+    :param query_data: dict containing all data retrieved from the db
+    :param connection: open sqlaclchemy connection for an SQLite db
+
+    Return query_data: dict containing all data retrieved from the db
+    """
+    logger = logging.getLogger(__name__)
+    
+    gbk_accessions = list(gbk_dict.keys())
+
+    # retrieve the data from the Taxonomy and Kingdom tables
+    with Session(bind=connection) as session:
+        pdb_query = session.query(Genbank, Pdb).\
+            join(Pdb, (Pdb.genbank_id == Genbank.genbank_id)).\
+            filter(Genbank.genbank_accession.in_(gbk_accessions)).\
+            all()
+
+    if len(pdb_query) == 0:
+        logger.warning("No PDB accessions retrieved for any of the selected GenBank accessions.")
+        return query_data
+
+    for record in tqdm(pdb_query, desc="Getting PDB accessions"):
+        gbk_acc = record[0].genbank_accession
+
+        pdb_accession = record[1].pdb_accession
+
+        try:
+            query_data[gbk_acc]
+            
+            try:
+                query_data[gbk_acc]['pdb_accessions'].add(pdb_accession)
+            except KeyError:
+                query_data[gbk_acc]['pdb_accessions'] = {pdb_accession}
+
+        except KeyError:
+            query_data[gbk_acc] = {'pdb_accessions': {pdb_accession}}
 
     return query_data
