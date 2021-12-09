@@ -182,7 +182,7 @@ def get_query_data(gbk_dict, connection, args):
         query_data = get_api_data.get_uniprot_data(gbk_dict, query_data, connection, args)
 
     if args.seq_genbank:
-        # retrieve GEnbank protein sequences from the local CAZyme database
+        # retrieve GenBank protein sequences from the local CAZyme database
         query_data = get_api_data.get_gbk_seq(gbk_dict, query_data, connection)
 
 
