@@ -132,7 +132,6 @@ def get_class_fam_annotations(gbk_dict, query_data, connection, args):
     return query_data
 
 
-
 def get_tax_annotations(gbk_dict, query_data, connection, args):
     """Retrieve kingdom, genus and/or scientific name of the source organism for the provided Gbks.
     
@@ -205,5 +204,49 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
 
             except KeyError:
                 query_data[gbk_acc] = {'organism': {organism}}
+
+    return query_data
+
+
+def get_ec_annotations(gbk_dict, query_data, connection):
+    """Retrieve kingdom, genus and/or scientific name of the source organism for the provided Gbks.
+    
+    :param gbk_dict: dict of selected GenBank accessions {acc: id}
+    :param query_data: dict containing all data retrieved from the db
+    :param connection: open sqlaclchemy connection for an SQLite db
+
+    Return query_data: dict containing all data retrieved from the db
+    """
+    logger = logging.getLogger(__name__)
+    
+    gbk_accessions = list(gbk_dict.keys())
+
+    # retrieve the data from the Taxonomy and Kingdom tables
+    with Session(bind=connection) as session:
+        ec_query = session.query(Genbank, Ec).\
+            join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+            join(Ec, Genbank.ecs).\
+            filter(Genbank.genbank_accession.in_(gbk_accessions)).\
+            all()
+
+    if len(ec_query) == 0:
+        logger.warning("No EC annotations retrieved for any of the selected GenBank accessions.")
+        return query_data
+
+    for record in tqdm(ec_query, desc="Getting EC number annotations"):
+        gbk_acc = record[0].genbank_accession
+
+        ec_number = record[1].ec_number
+
+        try:
+            query_data[gbk_acc]
+            
+            try:
+                query_data[gbk_acc]['ec_numbers'].add(ec_number)
+            except KeyError:
+                query_data[gbk_acc]['ec_numbers'] = {ec_number}
+
+        except KeyError:
+            query_data[gbk_acc] = {'ec_numbers': {ec_number}}
 
     return query_data
