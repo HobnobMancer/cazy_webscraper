@@ -58,6 +58,7 @@ from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper
 from cazy_webscraper.expand import get_chunks_list
+from cazy_webscraper.genomes import entrez
 from cazy_webscraper.sql.sql_interface import get_table_dicts
 from cazy_webscraper.utilities.parsers import genbank_cov_parser
 
@@ -201,13 +202,13 @@ def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, args):
                 batch_post = Entrez.read(handle)
 
             # {protein record ID: {nucleotide records IDs}}
-            nucleotide_ids = get_linked_nucleotide_record_ids(batch_post)
+            nucleotide_ids = entrez.get_linked_nucleotide_record_ids(batch_post)
 
             if nucleotide_ids is None: 
                 # issue with at least one accession in the batch
                 # e.g. it is not longer stored in NCBI
                 # pass individually to find/parse the bad accession(s)
-                nucleotide_ids, no_nucleotides = link_nucleotide_ids_individually(
+                nucleotide_ids, no_nucleotides = entrez.link_nucleotide_ids_individually(
                     accessions_to_parse,
                     no_accession_logger,
                     args,
@@ -250,7 +251,7 @@ def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, args):
 
             # batch query to fetch nucletoide records for protein records
             # from which only a sinlge nucleotide ID was retrieved
-            retrieved_proteins, newly_retrieved_proteins, succcess = extract_protein_accessions(
+            retrieved_proteins, newly_retrieved_proteins, succcess = entrez.extract_protein_accessions(
                 single_nucleotide_ids,
                 retrieved_proteins,
                 gbk_accessions,
@@ -260,7 +261,7 @@ def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, args):
                 # issue with at least one accession in the batch
                 # e.g. it is not longer stored in NCBI
                 # pass individually to find/parse the bad accession(s)
-                retrieved_proteins, newly_retrieved_proteins = extract_protein_accessions_individually(
+                retrieved_proteins, newly_retrieved_proteins = entrez.extract_protein_accessions_individually(
                     single_nucleotide_ids,
                     retrieved_proteins,
                     gbk_accessions,
@@ -284,7 +285,7 @@ def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, args):
             for protein_record_id in tqdm(protein_records_multi_nuc, "Parsing protein records with multiple linked Nucletide records"):
                 nucleotide_record_ids = nucleotide_ids[protein_record_id]
 
-                retrieved_proteins, newly_retrieved_proteins, success = parse_longest_record(
+                retrieved_proteins, newly_retrieved_proteins, success = entrez.parse_longest_record(
                     nucleotide_record_ids,
                     retrieved_proteins,
                     gbk_accessions,
@@ -295,7 +296,7 @@ def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, args):
                     # issue with at least one accession in the batch
                     # e.g. it is not longer stored in NCBI
                     # pass individually to find/parse the bad accession(s)
-                    retrieved_proteins, newly_retrieved_proteins, success = parse_longest_record_individually(
+                    retrieved_proteins, newly_retrieved_proteins, success = entrez.parse_longest_record_individually(
                         nucleotide_record_ids,
                         retrieved_proteins,
                         gbk_accessions,
@@ -321,7 +322,7 @@ def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, args):
 
             if starting_loop_length == len(remaining_accessions) and len(remaining_accessions) != 0:
                 # failing to retrieve data for protein accessions
-                nucleotide_ids, no_nucleotides = link_nucleotide_ids_individually(accessions_to_parse)
+                nucleotide_ids, no_nucleotides = entrez.link_nucleotide_ids_individually(accessions_to_parse)
 
                 if nucleotide_ids is None:
                     for protein_accession in remaining_accessions:
