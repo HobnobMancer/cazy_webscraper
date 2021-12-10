@@ -215,6 +215,7 @@ def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, args):
                 )
 
                 if len(no_nucleotides) != 0:
+                    logger.warning(f"{len(no_nucleotides)} proteins found with no linked Nucleotide records")
                     for protein_accession in no_nucleotides:
                         # already logged in link_nucleotide_ids_individually()
                         try:

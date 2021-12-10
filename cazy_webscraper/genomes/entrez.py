@@ -61,6 +61,8 @@ def get_linked_nucleotide_record_ids(batch_post, args):
     Return dict {protein_accession: {nucleotide records IDs}}
     Return None if cannot retrieve data from NCBI
     """
+    logger = logging.getLogger(__name__)
+
     nucleotide_ids = {}  # {protein_record_id: {nucleotide_ids}}
     # used for identifying which nucleotide record to retrieve protein accessions from
     with entrez_retry(
@@ -74,7 +76,8 @@ def get_linked_nucleotide_record_ids(batch_post, args):
     ) as handle:
         try:
             batch_nuccore = Entrez.read(handle)
-        except Exception:
+        except Exception as err:
+            logger.warning(f"Failed Entrez connection: {err}\nNo nucletoide IDs retrieved for batch query")
             return
 
     for record in tqdm(batch_nuccore, desc="Retrieving Nucleotide db records IDs from nuccore"):
@@ -204,6 +207,7 @@ def extract_protein_accessions(single_nucleotide_ids, retrieved_proteins, gbk_ac
         newly_retrieved_proteins: set of CAZyme protein accessions retrieved from parsed records
         bool: True if successful Entrez connection, False is connection fails
     """
+    logger = logging.getLogger(__name__)
     newly_retrieved_proteins = set()
 
     batch_query_ids = ",".join(list(single_nucleotide_ids))
@@ -222,7 +226,10 @@ def extract_protein_accessions(single_nucleotide_ids, retrieved_proteins, gbk_ac
     ) as handle:
         try:
             batch_nucleotide = Entrez.read(handle)
-        except Exception:
+        except Exception as err:
+            logger.warning(
+                f"Failed Entrez connection for fetching Nucleotide records: {err}"
+            )
             return retrieved_proteins, False
     
     for record in tqdm(batch_nucleotide, desc="Extracting data from Nucleotide records"):
@@ -335,6 +342,9 @@ def parse_longest_record(nucleotide_record_ids, retrieved_proteins, gbk_accessio
         try:
             batch_nucleotide = Entrez.read(handle)
         except Exception:
+            logger.warning(
+                f"Failed Entrez connection for fetching Nucleotide records: {err}"
+            )
             return retrieved_proteins, False
 
     record_lengths = {}  # {Nucleotide record accession: {len: Number of features (int), record: record}
