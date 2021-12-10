@@ -252,33 +252,34 @@ def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, args):
 
             # batch query to fetch nucletoide records for protein records
             # from which only a sinlge nucleotide ID was retrieved
-            retrieved_proteins, newly_retrieved_proteins, succcess = entrez.extract_protein_accessions(
-                single_nucleotide_ids,
-                retrieved_proteins,
-                gbk_accessions,
-                args,
-            )
-            if succcess is False:
-                # issue with at least one accession in the batch
-                # e.g. it is not longer stored in NCBI
-                # pass individually to find/parse the bad accession(s)
-                retrieved_proteins, newly_retrieved_proteins = entrez.extract_protein_accessions_individually(
+            if len(single_nucleotide_ids) != 0:
+                retrieved_proteins, newly_retrieved_proteins, succcess = entrez.extract_protein_accessions(
                     single_nucleotide_ids,
                     retrieved_proteins,
                     gbk_accessions,
                     args,
                 )
+                if succcess is False:
+                    # issue with at least one accession in the batch
+                    # e.g. it is not longer stored in NCBI
+                    # pass individually to find/parse the bad accession(s)
+                    retrieved_proteins, newly_retrieved_proteins = entrez.extract_protein_accessions_individually(
+                        single_nucleotide_ids,
+                        retrieved_proteins,
+                        gbk_accessions,
+                        args,
+                    )
 
-            # add the nucleotide accessions to the nucleotide_accessions_dict
-            # {kingdom: {genus: {species: {nucleotide record accessio: {protein_accessions},},},},}
-            nucleotide_accessions_dict = add_nucleotide_accessions(
-                nucleotide_accessions_dict,
-                gbk_organism_dict,
-                retrieved_proteins,
-                newly_retrieved_proteins,
-                kingdom,
-                no_accession_logger,
-            )
+                # add the nucleotide accessions to the nucleotide_accessions_dict
+                # {kingdom: {genus: {species: {nucleotide record accessio: {protein_accessions},},},},}
+                nucleotide_accessions_dict = add_nucleotide_accessions(
+                    nucleotide_accessions_dict,
+                    gbk_organism_dict,
+                    retrieved_proteins,
+                    newly_retrieved_proteins,
+                    kingdom,
+                    no_accession_logger,
+                )
 
             # for Protein records for which multiple Nucleotide record IDs were retrieved
             # Identify the longest Nucleotide record and retrieve protein accessions from it
