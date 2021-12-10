@@ -230,7 +230,7 @@ def extract_protein_accessions(single_nucleotide_ids, retrieved_proteins, gbk_ac
             logger.warning(
                 f"Failed Entrez connection for fetching Nucleotide records: {err}"
             )
-            return retrieved_proteins, False
+            return retrieved_proteins, newly_retrieved_proteins, False
     
     for record in tqdm(batch_nucleotide, desc="Extracting data from Nucleotide records"):
         nucleotide_accession = record['GBSeq_accession-version']
@@ -270,6 +270,8 @@ def extract_protein_accessions_individually(single_nucleotide_ids, retrieved_pro
     Return retrieved_proteins (dict)
         newly_retrieved_proteins: set of CAZyme protein accessions retrieved from parsed records
     """
+    logger = logging.getLogger(__name__)
+
     newly_retrieved_proteins = set()
 
     for nucleotide_id in tqdm(single_nucleotide_ids, desc="Parsing nucelotide records individually"):
@@ -282,7 +284,10 @@ def extract_protein_accessions_individually(single_nucleotide_ids, retrieved_pro
         ) as handle:
             try:
                 batch_nucleotide = Entrez.read(handle)
-            except Exception:
+            except Exception as err:
+                logger.warning(
+                    f"Failed Entrez connection for fetching Nucleotide records: {err}"
+                )
                 pass
     
         for record in tqdm(batch_nucleotide, desc="Extracting data from Nucleotide records"):
@@ -323,6 +328,7 @@ def parse_longest_record(nucleotide_record_ids, retrieved_proteins, gbk_accessio
         newly_retrieved_proteins: set of CAZyme protein accessions retrieved from parsed records
         bool: True if successful Entrez connection, False is connection fails
     """
+    logger = logging.getLogger(__name__)
     newly_retrieved_proteins = set()
 
     batch_query_ids = ",".join(list(nucleotide_record_ids))
@@ -341,11 +347,11 @@ def parse_longest_record(nucleotide_record_ids, retrieved_proteins, gbk_accessio
     ) as handle:
         try:
             batch_nucleotide = Entrez.read(handle)
-        except Exception:
+        except Exception as err:
             logger.warning(
                 f"Failed Entrez connection for fetching Nucleotide records: {err}"
             )
-            return retrieved_proteins, False
+            return retrieved_proteins, newly_retrieved_proteins, False
 
     record_lengths = {}  # {Nucleotide record accession: {len: Number of features (int), record: record}
     # longest (most features) record interpretted as the most complete record
