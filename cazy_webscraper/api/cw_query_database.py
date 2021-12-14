@@ -41,7 +41,7 @@
 
 
 import logging
-import sys
+import json
 
 import pandas as pd
 
@@ -168,6 +168,50 @@ def get_query_data(gbk_dict, connection, args):
     if args.seq_genbank:
         # retrieve GenBank protein sequences from the local CAZyme database
         query_data = get_api_data.get_gbk_seq(gbk_dict, query_data, connection)
+
+
+def write_output(query_data, args, time_stamp):
+    """Write out query data to disk.
+    
+    :param query_data: dict containing db query data.
+    :param args: cmd-line args parser
+    
+    Return nothing"""
+    output_path = compile_output_name(args, time_stamp)
+
+    if 'json' in args.file_types:
+        with open(output_path, 'w') as fh:
+            json.dump(query_data, fh)
+
+        
+def compile_output_name(args, time_stamp):
+    db_name = args.database.name.replace(".db","")
+    output_path = args.output_dir / f"{db_name}_{time_stamp}"
+
+    if args.cazy_class:
+        output_path += "_classes"
+    if args.cazy_family:
+        output_path += "_fams"
+    if args.cazy_subfamily:
+        output_path += "_subfams"
+    if args.kingdom:
+        output_path += "_kngdm"
+    if args.genus:
+        output_path += "_genus"
+    if args.organism:
+        output_path += "_orgnsm"
+    if args.ec:
+        output_path += "_ec"
+    if args.pdb:
+        output_path += "_pdb"
+    if args.uniprot:
+        output_path += "_uniprot"
+    if args.seq_uniprot:
+        output_path += "_uniprotSeq"
+    if args.seq_genbank:
+        output_path += "_gbkSeq"
+
+    return output_path
 
 
 if __name__ == "__main__":
