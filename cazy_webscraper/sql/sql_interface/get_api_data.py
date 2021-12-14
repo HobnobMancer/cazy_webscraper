@@ -171,7 +171,10 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
                 
                 try:
                     query_data[gbk_acc]['kingdom']
-                    logger.warning(f"Multiple taxa found for {gbk_acc}")
+                    logger.warning(
+                        f"Multiple taxa found for {gbk_acc}\n"
+                        "Retreiving only one record."
+                    )
                     query_data[gbk_acc]['kingdom'] = kingdom
                 except KeyError:
                     query_data[gbk_acc]['kingdom'] = kingdom
@@ -187,7 +190,10 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
                 
                 try:
                     query_data[gbk_acc]['genus']
-                    logger.warning(f"Multiple taxa found for {gbk_acc}")
+                    logger.warning(
+                        f"Multiple taxa found for {gbk_acc}\n"
+                        "Retreiving only one record."
+                    )
                     query_data[gbk_acc]['genus'] = genus
                 except KeyError:
                     query_data[gbk_acc]['genus'] = genus
@@ -205,7 +211,10 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
                 
                 try:
                     query_data[gbk_acc]['organism']
-                    logger.warning(f"Multiple taxa found for {gbk_acc}")
+                    logger.warning(
+                        f"Multiple taxa found for {gbk_acc}\n"
+                        "Retreiving only one record."
+                    )
                     query_data[gbk_acc]['organism'] = organism
                 except KeyError:
                     query_data[gbk_acc]['organism'] = organism
