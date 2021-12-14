@@ -336,7 +336,7 @@ def parse_longest_record(nucleotide_record_ids, retrieved_proteins, gbk_accessio
         args.retries, Entrez.epost, "Nucleotide", id=batch_query_ids,
     ) as handle:
         batch_post = Entrez.read(handle)
-    
+    print("posted")
     with entrez_retry(
         args.retries,
         Entrez.efetch,
@@ -352,7 +352,7 @@ def parse_longest_record(nucleotide_record_ids, retrieved_proteins, gbk_accessio
                 f"Failed Entrez connection for fetching Nucleotide records: {err}"
             )
             return retrieved_proteins, newly_retrieved_proteins, False
-
+    print("fetched")
     record_lengths = {}  # {Nucleotide record accession: {len: Number of features (int), record: record}
     # longest (most features) record interpretted as the most complete record
     
