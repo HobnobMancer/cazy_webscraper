@@ -50,8 +50,10 @@ from cazy_webscraper.sql.sql_orm import (
     Ec,
     Genbank,
     Kingdom,
+    Pdb,
     Taxonomy,
     Session,
+    Uniprot,
 )
 
 
@@ -209,7 +211,7 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
 
 
 def get_ec_annotations(gbk_dict, query_data, connection):
-    """Retrieve kingdom, genus and/or scientific name of the source organism for the provided Gbks.
+    """Retrieve EC number annotations for the provided Gbks.
     
     :param gbk_dict: dict of selected GenBank accessions {acc: id}
     :param query_data: dict containing all data retrieved from the db
@@ -250,3 +252,159 @@ def get_ec_annotations(gbk_dict, query_data, connection):
             query_data[gbk_acc] = {'ec_numbers': {ec_number}}
 
     return query_data
+
+
+def get_pdb_accessions(gbk_dict, query_data, connection):
+    """Retrieve PDB accessions for the provided Gbks.
+    
+    :param gbk_dict: dict of selected GenBank accessions {acc: id}
+    :param query_data: dict containing all data retrieved from the db
+    :param connection: open sqlaclchemy connection for an SQLite db
+
+    Return query_data: dict containing all data retrieved from the db
+    """
+    logger = logging.getLogger(__name__)
+    
+    gbk_accessions = list(gbk_dict.keys())
+
+    # retrieve the data from the Taxonomy and Kingdom tables
+    with Session(bind=connection) as session:
+        pdb_query = session.query(Genbank, Pdb).\
+            join(Pdb, (Pdb.genbank_id == Genbank.genbank_id)).\
+            filter(Genbank.genbank_accession.in_(gbk_accessions)).\
+            all()
+
+    if len(pdb_query) == 0:
+        logger.warning("No PDB accessions retrieved for any of the selected GenBank accessions.")
+        return query_data
+
+    for record in tqdm(pdb_query, desc="Getting PDB accessions"):
+        gbk_acc = record[0].genbank_accession
+
+        pdb_accession = record[1].pdb_accession
+
+        try:
+            query_data[gbk_acc]
+            
+            try:
+                query_data[gbk_acc]['pdb_accessions'].add(pdb_accession)
+            except KeyError:
+                query_data[gbk_acc]['pdb_accessions'] = {pdb_accession}
+
+        except KeyError:
+            query_data[gbk_acc] = {'pdb_accessions': {pdb_accession}}
+
+    return query_data
+
+
+def get_uniprot_data(gbk_dict, query_data, connection, args):
+    """Retrieve UniProt data for the provided Gbks.
+    
+    :param gbk_dict: dict of selected GenBank accessions {acc: id}
+    :param query_data: dict containing all data retrieved from the db
+    :param connection: open sqlaclchemy connection for an SQLite db
+    :param args: cmd-line args parser
+
+    Return query_data: dict containing all data retrieved from the db
+    """
+    logger = logging.getLogger(__name__)
+    
+    gbk_accessions = list(gbk_dict.keys())
+
+    # retrieve the data from the Taxonomy and Kingdom tables
+    with Session(bind=connection) as session:
+        uniprot_query = session.query(Genbank, Uniprot).\
+            join(Uniprot, (Uniprot.genbank_id == Genbank.genbank_id)).\
+            filter(Genbank.genbank_accession.in_(gbk_accessions)).\
+            all()
+
+    if len(uniprot_query) == 0:
+        logger.warning("No UniProt records retrieved for any of the selected GenBank accessions.")
+        return query_data
+
+    for record in tqdm(uniprot_query, desc="Getting UniProt data"):
+        gbk_acc = record[0].genbank_accession
+
+        if args.uniprot:
+            uniprot_accession = record[1].uniprot_accession
+            uniprot_name = record[1].uniprot_name
+
+            try:
+                query_data[gbk_acc]
+                
+                try:
+                    query_data[gbk_acc]['uniprot_accession'].add(uniprot_accession)
+                    query_data[gbk_acc]['uniprot_name'].add(uniprot_name)
+                except KeyError:
+                    query_data[gbk_acc]['uniprot_accession'] = {uniprot_accession}
+                    query_data[gbk_acc]['uniprot_name'] = {uniprot_name}
+
+            except KeyError:
+                query_data[gbk_acc] = {
+                    'uniprot_accession': {uniprot_accession},
+                    'uniprot_name': {uniprot_name},
+                }
+        
+        if args.seq_uniprot:
+            seq = record[1].sequence
+            seq_date = record[1].seq_update_date
+
+            try:
+                query_data[gbk_acc]
+                
+                try:
+                    query_data[gbk_acc]['sequence'].add(seq)
+                    query_data[gbk_acc]['sequence_date'].add(seq_date)
+                except KeyError:
+                    query_data[gbk_acc]['sequence'] = {seq}
+                    query_data[gbk_acc]['sequence_date'] = {seq_date}
+
+            except KeyError:
+                query_data[gbk_acc] = {'sequence': {seq}, 'sequence_date': {seq_date}}
+
+    return query_data
+
+
+def get_gbk_seq(gbk_dict, query_data, connection):
+    """Retrieve GenBank protein sequences for the provided Gbks.
+    
+    :param gbk_dict: dict of selected GenBank accessions {acc: id}
+    :param query_data: dict containing all data retrieved from the db
+    :param connection: open sqlaclchemy connection for an SQLite db
+
+    Return query_data: dict containing all data retrieved from the db
+    """
+    logger = logging.getLogger(__name__)
+    
+    gbk_accessions = list(gbk_dict.keys())
+
+    # retrieve the data from the Taxonomy and Kingdom tables
+    with Session(bind=connection) as session:
+        gbk_query = session.query(Genbank).\
+            filter(Genbank.genbank_accession.in_(gbk_accessions)).\
+            all()
+
+    if len(gbk_query) == 0:
+        logger.warning("No GenBank records retrieved for any of the selected GenBank accessions.")
+        return query_data
+
+    for record in tqdm(gbk_query, desc="Getting GenBank protein sequences"):
+        gbk_acc = record[0].genbank_accession
+        seq = record[0].sequence
+        seq_date = record[0].seq_update_date
+
+        try:
+            query_data[gbk_acc]
+            
+            try:
+                query_data[gbk_acc]['sequence'].add(seq)
+                query_data[gbk_acc]['sequence_date'].add(seq_date)
+            except KeyError:
+                query_data[gbk_acc]['sequence'] = {seq}
+                query_data[gbk_acc]['sequence_date'] = {seq_date}
+
+        except KeyError:
+            query_data[gbk_acc] = {'sequence': {seq}, 'sequence_date': {seq_date}}
+
+    return query_data
+

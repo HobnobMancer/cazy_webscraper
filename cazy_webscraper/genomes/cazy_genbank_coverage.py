@@ -58,6 +58,7 @@ from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper
 from cazy_webscraper.expand import get_chunks_list
+from cazy_webscraper.genomes import entrez
 from cazy_webscraper.sql.sql_interface import get_table_dicts
 from cazy_webscraper.utilities.parsers import genbank_cov_parser
 
@@ -103,17 +104,17 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     genbank_kingdom_dict = get_table_dicts.get_gbk_kingdom_dict(connection)
     logger.warning("Retrieved Genbanks, Taxs and Kingdoms records from the local CAZyme db")
 
-    add_bioproject_id, genomic_assembly_names = get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args)
+    nucleotide_accessions_dict = get_nucleotide_accessions(
+        genbank_kingdom_dict,
+        no_accession_logger,
+        args,
+    )
 
-    output_path = cache_dir / f"genomic_bioproject_ids_{time_stamp}.json"
+    output_path = cache_dir / f"nucleotide_accessions_{time_stamp}.json"
     with open(output_path, 'w') as fh:
-        json.dump(add_bioproject_id, fh)
-
-    output_path = cache_dir / f"genomic_assembly_names_{time_stamp}.json"
-    with open(output_path, 'w') as fh:
-        json.dump(genomic_assembly_names, fh)
+        json.dump(nucleotide_accessions_dict, fh)
     
-    genomic_accession_dict = get_genomic_accessions(genomic_assembly_names, no_accession_logger, args)
+    genomic_accession_dict = get_genomic_accessions(nucleotide_accessions_dict, no_accession_logger, args)
     output_path = cache_dir / f"genomic_accession_numbers_{time_stamp}.json"
     with open(output_path, 'w') as fh:
         json.dump(genomic_accession_dict, fh)
@@ -149,8 +150,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
 
 
-def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
-    """Retrieve assembly names of the source genomic accessions for the protein accessions in the local db.
+def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, args):
+    """Retrieve the NCBI Nucleotide db records ID's containing the GenBank protein accessions.
     
     :param genbank_kingdom_dict: dict of Genbank and Kingdom records from db
         {kingdom: {genus: {species: {protein_accessions}}}
@@ -158,16 +159,18 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
         genomic accession was retrieved
     :param args: cmd-line args parser
     
-    Return dict {kingdom: {genus: {species: {assembly_name: {protein_accessions},},},},}
+    Return dict {kingdom: {genus: {species: {nucleotide_accession: {protein_accessions},},},},}
     """
     logger = logging.getLogger(__name__)
 
-    genomic_assembly_names = {}
-    # {kingdom: {genus: {species: {assembly_name: {protein_accessions},},},},}
-    genomic_bioproject_ids = {}
-    # {kingdom: {genus: {species: {bioproject_acc: {protein_accessions},},},},}
+    nucleotide_accessions_dict = {}
+    # {kingdom: {genus: {species: {nucleotide record accessio: {protein_accessions},},},},}
+
+    retrieved_proteins = {}  # {protein_accession: nucleotide record accession}
+
+    # store all retrieved ncucleotide accessions to prevent retrieval of the same assembly record multiple times
     
-    for kingdom in tqdm(genbank_kingdom_dict, desc="Retrieving genomic assembly names per kingdom"):
+    for kingdom in tqdm(genbank_kingdom_dict, desc="Retrieving nucleotide record accessions per kingdom"):
         genera = genbank_kingdom_dict[kingdom]
 
         gbk_organism_dict = {}  # protein_accession: {species: str, genus: str}
@@ -182,225 +185,276 @@ def get_assebmly_names(genbank_kingdom_dict, no_accession_logger, args):
         # retrieve all Gbk protein accessions for the given genera
         gbk_accessions = list(gbk_organism_dict.keys())
 
-        # break up the list into a series of smaller lists that can be batched querried
-        batch_queries = get_chunks_list(gbk_accessions, args.batch_size)
+        # gbk accessions waiting for a nucleotide id to be retrieved
+        remaining_accessions = list(gbk_organism_dict.keys())
 
-        for batch_query in tqdm(batch_queries, desc=f"Batch querying NCBI for {kingdom}"):
-            batch_query_ids = ",".join(batch_query)
+        while len(remaining_accessions) != 0:
+            starting_loop_length = len(remaining_accessions)
+            logger.warning(f"{len(remaining_accessions)} Gbk accessions remaining to be parsed for {kingdom}")
+            
+            accessions_to_parse = remaining_accessions[:args.batch_size]
+
+            # eLink Protein to Nuccore db and retrieve IDs of linked nucleotide records
+            batch_query_ids = ",".join(accessions_to_parse)
             with entrez_retry(
                 args.retries, Entrez.epost, "Protein", id=batch_query_ids,
             ) as handle:
                 batch_post = Entrez.read(handle)
 
-            time.sleep(0.5)  # minimise possibility of overloading the NCBI server
+            # {protein record ID: {nucleotide records IDs}}
+            nucleotide_ids = entrez.get_linked_nucleotide_record_ids(batch_post, args)
 
-            # eFetch against the Protein database, retrieve in xml retmode
-            with entrez_retry(
-                args.retries,
-                Entrez.efetch,
-                db="Protein",
-                query_key=batch_post['QueryKey'],
-                WebEnv=batch_post['WebEnv'],
-                retmode="xml",
-            ) as handle:
-                try:
-                    batch_fetch = Entrez.read(handle)
-                except Exception:
-                    with entrez_retry(
-                        args.retries,
-                        Entrez.efetch,
-                        db="Protein",
-                        query_key=batch_post['QueryKey'],
-                        WebEnv=batch_post['WebEnv'],
-                        retmode="xml",
-                    ) as handle:
+            if nucleotide_ids is None: 
+                # issue with at least one accession in the batch
+                # e.g. it is not longer stored in NCBI
+                # pass individually to find/parse the bad accession(s)
+                nucleotide_ids, no_nucleotides = entrez.link_nucleotide_ids_individually(
+                    accessions_to_parse,
+                    no_accession_logger,
+                    args,
+                )
+
+                if len(no_nucleotides) != 0:
+                    logger.warning(f"{len(no_nucleotides)} proteins found with no linked Nucleotide records")
+                    for protein_accession in no_nucleotides:
+                        # already logged in link_nucleotide_ids_individually()
                         try:
-                            batch_fetch = Entrez.read(handle)
-                        except Exception as err:
-                            logger.warning(
-                                f"Could not retrieve assembly names for:\n{batch_query}"
-                            )
-                            with open(no_accession_logger, 'a') as fh:
-                                fh.write(
-                                    f"{batch_query}\t"
-                                    "Could not retrieve genome assembly name\t"
-                                    f"{err}\t"
-                                    f"{genus} {species}\n"
-                                )
-                            continue
-
-            for record in tqdm(batch_fetch, desc="Retrieving assembly name from protein records"):
-    
-                protein_accession = record['GBSeq_accession-version']
-
-                try:
-                    species = gbk_organism_dict[protein_accession]['species']
-                    genus = gbk_organism_dict[protein_accession]['genus']
-                except KeyError:
-                    logger.error(
-                        f"Retrieved protein accession from NCBI that is not in the local CAZyme db"
-                    )
-                    with open(no_accession_logger, 'a') as fh:
-                        fh.write(
-                            f"{protein_accession}\t"
-                            "Retrieved protein accession from NCBI that is not in the local CAZyme db\t"
-                            f"{genus} {species}\n"
-                        )
-                    continue
-
-                bioproject_acc = None
-                try:
-                    xrefs = record['GBSeq_xrefs']
-                    for xref_list in xrefs:
-                        try:
-                            if xref_list['GBXref_dbname'].strip() == 'BioProject':
-                                bioproject_acc = xref_list['PRJNA279657']
-                        except KeyError:
+                            remaining_accessions.remove(protein_accession)
+                        except ValueError:
                             pass
-                except KeyError:
+            
+            if len(list(nucleotide_ids.values())) == 0:
+                # no linked Nucleotide records retrieved for the current batch of protein accessions
+                for protein_accession in accessions_to_parse:
+                    logger.warning(
+                        f"Could not reitreve linked Nucleotide record for {protein_accession}"
+                    )
+                    # do not try to retrieve record again
+                    try:
+                        remaining_accessions.remove(protein_accession)
+                    except ValueError:
+                        pass
+                continue
+
+            # retrieves the nucleotide records IDs for protein records for whcih only one
+            # nuclotide ID was retrieved
+            single_nucleotide_ids = set()
+
+            # retrieve the protein_record_ids of protein records from which multiple nucletoide 
+            # record IDs were retrieved
+            protein_records_multi_nuc = set()
+
+            for protein_record_id in tqdm(nucleotide_ids, desc="Idenitfying proteins with multiple linked nucleotide records"):
+                if len(nucleotide_ids[protein_record_id]) == 1:
+                    single_nucleotide_ids.add(list(nucleotide_ids[protein_record_id])[0])
+                else:
+                    logger.warning(
+                        f"Found {len(nucleotide_ids[protein_record_id])} linked nucletoide records "
+                        f"for protein record {protein_record_id}"
+                        )
+                    protein_records_multi_nuc.add(protein_record_id)
+
+            # batch query to fetch nucletoide records for protein records
+            # from which only a sinlge nucleotide ID was retrieved
+            if len(single_nucleotide_ids) != 0:
+                retrieved_proteins, newly_retrieved_proteins, succcess = entrez.extract_protein_accessions(
+                    single_nucleotide_ids,
+                    retrieved_proteins,
+                    gbk_accessions,
+                    args,
+                )
+                if succcess is False:
+                    # issue with at least one accession in the batch
+                    # e.g. it is not longer stored in NCBI
+                    # pass individually to find/parse the bad accession(s)
+                    retrieved_proteins, newly_retrieved_proteins = entrez.extract_protein_accessions_individually(
+                        single_nucleotide_ids,
+                        retrieved_proteins,
+                        gbk_accessions,
+                        args,
+                    )
+
+                # add the nucleotide accessions to the nucleotide_accessions_dict
+                # {kingdom: {genus: {species: {nucleotide record accessio: {protein_accessions},},},},}
+                nucleotide_accessions_dict = add_nucleotide_accessions(
+                    nucleotide_accessions_dict,
+                    gbk_organism_dict,
+                    retrieved_proteins,
+                    newly_retrieved_proteins,
+                    kingdom,
+                    no_accession_logger,
+                )
+
+            # for Protein records for which multiple Nucleotide record IDs were retrieved
+            # Identify the longest Nucleotide record and retrieve protein accessions from it
+            # The longest record is most likely to be the most complete record
+            for protein_record_id in tqdm(protein_records_multi_nuc, "Parsing protein records with multiple linked Nucletide records"):
+                nucleotide_record_ids = nucleotide_ids[protein_record_id]
+
+                retrieved_proteins, newly_retrieved_proteins, success = entrez.parse_longest_record(
+                    nucleotide_record_ids,
+                    retrieved_proteins,
+                    gbk_accessions,
+                    args,
+                )
+
+                if success is False:
+                    # issue with at least one accession in the batch
+                    # e.g. it is not longer stored in NCBI
+                    # pass individually to find/parse the bad accession(s)
+                    retrieved_proteins, newly_retrieved_proteins, success = entrez.parse_longest_record_individually(
+                        nucleotide_record_ids,
+                        retrieved_proteins,
+                        gbk_accessions,
+                        args,
+                    )
+
+                nucleotide_accessions_dict = add_nucleotide_accessions(
+                    nucleotide_accessions_dict,
+                    gbk_organism_dict,
+                    retrieved_proteins,
+                    newly_retrieved_proteins,
+                    kingdom,
+                    no_accession_logger,
+                )
+
+            # remove protein accessions from remaining_accessions because the linked Nucleotide 
+            # record ID has already been retrieved
+            for protein_accession in retrieved_proteins:
+                try:
+                    remaining_accessions.remove(protein_accession)
+                except ValueError:
                     pass
 
-                if bioproject_acc is not None:
-                    genomic_bioproject_ids = add_bioproject_id(
-                        assembly_name,
-                        kingdom,
-                        genus,
-                        species,
-                        protein_accession,
-                    )
+            if starting_loop_length == len(remaining_accessions) and len(remaining_accessions) != 0:
+                # failing to retrieve data for protein accessions
+                nucleotide_ids, no_nucleotides = entrez.link_nucleotide_ids_individually(
+                    accessions_to_parse,
+                    no_accession_logger, 
+                    args,
+                )
+
+                if nucleotide_ids is None:
+                    for protein_accession in remaining_accessions:
+                        logger.warning(
+                                f"Could not retrieve  Nucletoide record for {protein_accession}"
+                            )
+                        try:
+                            remaining_accessions.remove(protein_accession)
+                        except ValueError:
+                            pass
                     continue
-
-                else:
-                    # attempt to retrieve assembly name
-                    assembly_name = None
-
+                
+            if len(list(nucleotide_ids.values())) == 0:
+                # no linked Nucleotide records retrieved for the current batch of protein accessions
+                for protein_accession in accessions_to_parse:
+                    logger.warning(
+                        f"Could not reitreve linked Nucleotide record for {protein_accession}"
+                    )
+                    # do not try to retrieve record again
                     try:
-                        for item in record['GBSeq_comment'].split(";"):
-                            if item.strip().startswith("Assembly Name ::"):
-                                assembly_name = item.strip()[len("Assembly Name :: "):]
-                    except KeyError as err:
+                        remaining_accessions.remove(protein_accession)
+                    except ValueError:
                         pass
-
-                    if assembly_name is not None:
-                        genomic_assembly_names = add_assembly_name(
-                            assembly_name,
-                            kingdom,
-                            genus,
-                            species,
-                            protein_accession,
-                        )
-                        continue
-
-                    else:
-                        message = (
-                            f"Could not retrieve BioProject ID or assembly name for {protein_accession}\t"
-                            f"{kingdom}: {genus} {species}"
-                        )
-                        logger.warning(message)
-                        with open(no_accession_logger, 'a') as fh:
-                            fh.write(message)
-                        continue
-
-    return genomic_bioproject_ids, genomic_assembly_names
+        
+            if len(no_nucleotides) != 0:
+                for protein_accession in no_nucleotides:
+                    # already logged in link_nucleotide_ids_individually()
+                    try:
+                        remaining_accessions.remove(protein_accession)
+                    except ValueError:
+                        pass
+            
+    return nucleotide_accessions_dict
 
 
-def add_assembly_name(genomic_assembly_names, assembly_name, kingdom, genus, species, protein_accession):
-    """Add assembly name to dict.
+def add_nucleotide_accessions(
+    nucleotide_accessions_dict,
+    gbk_organism_dict,
+    retrieved_proteins,
+    newly_retrieved_proteins,
+    kingdom,
+    no_accession_logger,
+):
+    """Add Nucleotide accession and protein acccession to the nucleotide_accessions_dict.
     
-    :param:
+    :param nucleotide_accessions_dict: dict
+        {kingdom: {genus: {species: {nucleotide record accessio: {protein_accessions},},},},}
+    :param gbk_organism_dict: dict,
+        {protein_accession: {species: str, genus: str}}
+    :param retrieved_proteins: dict
+        {protein record id: {nucleotide records ids}}
+    :param newly_retrieved_proteins: list of protein's retrieved from Nucleotide records and 
+        not yet added to nucleotide_accessions_dict
+    :param kingdom: str, taxonomic kingdom of protein's source organism
+    :param no_accession_logger: Path, path to log file to save protein accessions for which no 
+            genomic accession was retrieved
     
     Return dict
     """
-    try:
-        genomic_assembly_names[kingdom]
+    logger = logging.getLogger(__name__)
+
+    for protein_accession in newly_retrieved_proteins:
+        nucleotide_accession = retrieved_proteins[protein_accession]
 
         try:
-            genomic_assembly_names[kingdom][genus]
+            species = gbk_organism_dict[protein_accession]['species']
+            genus = gbk_organism_dict[protein_accession]['genus']
+        except KeyError:
+            logger.error(
+                f"Retrieved protein accession from NCBI that is not in the local CAZyme db"
+            )
+            with open(no_accession_logger, 'a') as fh:
+                fh.write(
+                    f"{protein_accession}\t"
+                    "Retrieved protein accession from NCBI that is not in the local CAZyme db\t"
+                    f"{genus} {species}\n"
+                )
+            continue
+    try:
+        nucleotide_accessions_dict[kingdom]
+
+        try:
+            nucleotide_accessions_dict[kingdom][genus]
 
             try:
-                genomic_assembly_names[kingdom][genus][species]
+                nucleotide_accessions_dict[kingdom][genus][species]
 
                 try:
-                    genomic_assembly_names[kingdom][genus][species][assembly_name].add(protein_accession)
+                    nucleotide_accessions_dict[kingdom][genus][species][nucleotide_accession].add(protein_accession)
                 
                 except KeyError:
-                    genomic_assembly_names[kingdom][genus][species][assembly_name] = {protein_accession}
+                    nucleotide_accessions_dict[kingdom][genus][species][nucleotide_accession] = {protein_accession}
 
             except KeyError:
-                genomic_assembly_names[kingdom][genus][species] = {
-                    assembly_name: {protein_accession},
+                nucleotide_accessions_dict[kingdom][genus][species] = {
+                    nucleotide_accession: {protein_accession},
                 }
             
         except KeyError:
-            genomic_assembly_names[kingdom][genus] = {
+            nucleotide_accessions_dict[kingdom][genus] = {
                 species: {
-                    assembly_name: {protein_accession},
+                    nucleotide_accession: {protein_accession},
                 },
             }
 
     except KeyError:
-        genomic_assembly_names[kingdom] = {
+        nucleotide_accessions_dict[kingdom] = {
             genus: {
                 species: {
-                    assembly_name: {protein_accession},
+                    nucleotide_accession: {protein_accession},
                 },
             },
         }
     
-    return genomic_assembly_names
+    return nucleotide_accessions_dict
 
 
-def add_bioproject_id(genomic_bioproject_ids, bioproject_acc, kingdom, genus, species, protein_accession):
-    """Add assembly name to dict.
-    
-    :param:
-    
-    Return dict
-    """
-    try:
-        genomic_bioproject_ids[kingdom]
-
-        try:
-            genomic_bioproject_ids[kingdom][genus]
-
-            try:
-                genomic_bioproject_ids[kingdom][genus][species]
-
-                try:
-                    genomic_bioproject_ids[kingdom][genus][species][bioproject_acc].add(protein_accession)
-                
-                except KeyError:
-                    genomic_bioproject_ids[kingdom][genus][species][bioproject_acc] = {protein_accession}
-
-            except KeyError:
-                genomic_bioproject_ids[kingdom][genus][species] = {
-                    bioproject_acc: {protein_accession},
-                }
-            
-        except KeyError:
-            genomic_bioproject_ids[kingdom][genus] = {
-                species: {
-                    bioproject_acc: {protein_accession},
-                },
-            }
-
-    except KeyError:
-        genomic_bioproject_ids[kingdom] = {
-            genus: {
-                species: {
-                    bioproject_acc: {protein_accession},
-                },
-            },
-        }
-    
-    return genomic_bioproject_ids
-
-
-def get_genomic_accessions(genomic_assembly_names, no_accession_logger, args):
+def get_genomic_accessions(nucleotide_accessions_dict, no_accession_logger, args):
     """Retrieve genomic accessions for the genomic assemblies
 
-    :param genomic_assembly_names: dict
-        {kingdom: {genus: {species: {assembly_name: {protein_accessions},},},},}
+    :param nucleotide_accessions_dict: dict
+        {kingdom: {genus: {species: {nucleotide record accession: {protein_accessions},},},},}
     :param no_accession_logger: Path, path to log file to write out assembly names for which no
         genomic accession was retrieved
     :param args: cmd-line args parser
@@ -413,8 +467,8 @@ def get_genomic_accessions(genomic_assembly_names, no_accession_logger, args):
     genomic_accession_dict = {}
     # {kingdom: {genus: {species: {genomic_accession: {proteins: {protein_accessions}, count=int},},},},}
 
-    for kingdom in tqdm(genomic_assembly_names, desc='Retrieving genomic accessions per kingdom'):
-        genera = genomic_assembly_names[kingdom]
+    for kingdom in tqdm(nucleotide_accessions_dict, desc='Retrieving genomic accessions per kingdom'):
+        genera = nucleotide_accessions_dict[kingdom]
         for genus in genera:
             organisms = genera[genus]
             for species in organisms:
@@ -469,7 +523,7 @@ def get_genomic_accessions(genomic_assembly_names, no_accession_logger, args):
 
                     # replace assemlby name for genomic accession
                     try:
-                        protein_accessions = genomic_assembly_names[kingdom][genus][species][latest_assembly_name]
+                        protein_accessions = nucleotide_accessions_dict[kingdom][genus][species][latest_assembly_name]
 
                     except KeyError:
                         logger.warning(f"Retrieved assembly name {latest_assembly_name}, but not retrieved previously")
