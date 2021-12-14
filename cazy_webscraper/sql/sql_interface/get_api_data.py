@@ -424,14 +424,18 @@ def get_gbk_seq(gbk_dict, query_data, connection):
             query_data[gbk_acc]
             
             try:
-                query_data[gbk_acc]['gbk_sequence'].add(seq)
-                query_data[gbk_acc]['gbk_sequence_date'].add(seq_date)
+                logger.warning(
+                    f"Multiple GBK records found for GBK acc {gbk_acc}\n"
+                    "Retreiving only one gbk sequence."
+                )
+                query_data[gbk_acc]['gbk_sequence'] = seq
+                query_data[gbk_acc]['gbk_sequence_date'] = seq_date
             except KeyError:
-                query_data[gbk_acc]['gbk_sequence'] = {seq}
-                query_data[gbk_acc]['gbk_sequence_date'] = {seq_date}
+                query_data[gbk_acc]['gbk_sequence'] = seq
+                query_data[gbk_acc]['gbk_sequence_date'] = seq_date
 
         except KeyError:
-            query_data[gbk_acc] = {'gbk_sequence': {seq}, 'gbk_sequence_date': {seq_date}}
+            query_data[gbk_acc] = {'gbk_sequence': seq, 'gbk_sequence_date': seq_date}
 
     return query_data
 
