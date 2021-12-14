@@ -170,12 +170,13 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
                 query_data[gbk_acc]
                 
                 try:
-                    query_data[gbk_acc]['kingdom'].add(kingdom)
+                    logger.warning(f"Multiple taxa found for {gbk_acc}")
+                    query_data[gbk_acc]['kingdom'] = kingdom
                 except KeyError:
-                    query_data[gbk_acc]['kingdom'] = {kingdom}
+                    query_data[gbk_acc]['kingdom'] = kingdom
 
             except KeyError:
-                query_data[gbk_acc] = {'kingdom': {kingdom}}
+                query_data[gbk_acc] = {'kingdom': kingdom}
         
         if args.genus:
             genus = record[1].genus
@@ -184,12 +185,13 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
                 query_data[gbk_acc]
                 
                 try:
-                    query_data[gbk_acc]['genus'].add(genus)
+                    logger.warning(f"Multiple taxa found for {gbk_acc}")
+                    query_data[gbk_acc]['genus'] = genus
                 except KeyError:
-                    query_data[gbk_acc]['genus'] = {genus}
+                    query_data[gbk_acc]['genus'] = genus
 
             except KeyError:
-                query_data[gbk_acc] = {'genus': {genus}}
+                query_data[gbk_acc] = {'genus': genus}
 
         if args.organism:
             genus = record[1].genus
@@ -200,12 +202,13 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
                 query_data[gbk_acc]
                 
                 try:
-                    query_data[gbk_acc]['organism'].add(organism)
+                    logger.warning(f"Multiple taxa found for {gbk_acc}")
+                    query_data[gbk_acc]['organism'] = organism
                 except KeyError:
-                    query_data[gbk_acc]['organism'] = {organism}
+                    query_data[gbk_acc]['organism'] = organism
 
             except KeyError:
-                query_data[gbk_acc] = {'organism': {organism}}
+                query_data[gbk_acc] = {'organism': organism}
 
     return query_data
 
