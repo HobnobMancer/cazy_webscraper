@@ -244,10 +244,14 @@ def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, args):
             # record IDs were retrieved
             protein_records_multi_nuc = set()
 
-            for protein_record_id in nucleotide_ids:
+            for protein_record_id in tqdm(nucleotide_ids, desc="Idenitfying proteins with multiple linked nucleotide records"):
                 if len(nucleotide_ids[protein_record_id]) == 1:
                     single_nucleotide_ids.add(list(nucleotide_ids[protein_record_id])[0])
                 else:
+                    logger.warning(
+                        f"Found {len(nucleotide_ids[protein_record_id])} linked nucletoide records "
+                        f"for protein record {protein_record_id}"
+                        )
                     protein_records_multi_nuc.add(protein_record_id)
 
             # batch query to fetch nucletoide records for protein records
