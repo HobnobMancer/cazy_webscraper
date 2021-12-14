@@ -366,16 +366,16 @@ def get_uniprot_data(gbk_dict, query_data, connection, args):
                 query_data[gbk_acc]
                 
                 try:
-                    query_data[gbk_acc]['sequence']
+                    query_data[gbk_acc]['uniprot_sequence']
                     logger.warning(
                         f"Multiple UniProt records found for GBK acc {gbk_acc}\n"
                         "Retreiving only one record."
                     )
-                    query_data[gbk_acc]['sequence'] = seq
-                    query_data[gbk_acc]['sequence_date'] = seq_date
+                    query_data[gbk_acc]['uniprot_sequence'] = seq
+                    query_data[gbk_acc]['uniprot_sequence_date'] = seq_date
                 except KeyError:
-                    query_data[gbk_acc]['sequence'] = seq
-                    query_data[gbk_acc]['sequence_date'] = seq_date
+                    query_data[gbk_acc]['uniprot_sequence'] = seq
+                    query_data[gbk_acc]['uniprot_sequence_date'] = seq_date
 
             except KeyError:
                 query_data[gbk_acc] = {'sequence': seq, 'sequence_date': seq_date}
@@ -415,14 +415,14 @@ def get_gbk_seq(gbk_dict, query_data, connection):
             query_data[gbk_acc]
             
             try:
-                query_data[gbk_acc]['sequence'].add(seq)
-                query_data[gbk_acc]['sequence_date'].add(seq_date)
+                query_data[gbk_acc]['gbk_sequence'].add(seq)
+                query_data[gbk_acc]['gbk_sequence_date'].add(seq_date)
             except KeyError:
-                query_data[gbk_acc]['sequence'] = {seq}
-                query_data[gbk_acc]['sequence_date'] = {seq_date}
+                query_data[gbk_acc]['gbk_sequence'] = {seq}
+                query_data[gbk_acc]['gbk_sequence_date'] = {seq_date}
 
         except KeyError:
-            query_data[gbk_acc] = {'sequence': {seq}, 'sequence_date': {seq_date}}
+            query_data[gbk_acc] = {'gbk_sequence': {seq}, 'gbk_sequence_date': {seq_date}}
 
     return query_data
 
