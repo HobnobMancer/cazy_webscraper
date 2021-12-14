@@ -115,6 +115,25 @@ def get_query_data(gbk_dict, connection, args):
     :param gbk_dict: dict, {gbk_acc: gbk_id} GenBank accessions matching user criteria
     :param connection: open sqlaclchemy connection for an SQLite db
     :param args: cmd-line args parser
+
+    Structure of dict if all data is retrievied:
+    query_data = {
+        genbank_accession: 
+            'class': {CAZy classes},
+            'family': {CAZy families},
+            'subfamily': {CAZy subfamilies},
+            'kingdom': kingdom,
+            'genus': genus,
+            'organism': genus species strain,
+            'ec_numbers': {EC number annotations},
+            'pdb_accessions': {PDB accessions},
+            'uniprot_accession': UniProt protein accession,
+            'uniprot_name': Name of the protein from UniProt,
+            'uniprot_sequence': Protein Aa seq from UniProt,
+            'uniprot_sequence_date': Date the seq was last modified in UniProt,
+            'gbk_sequence': Protein Aa seq from GenBank
+            'gbk_sequence_date': Date the seq was last modified in Gbk,
+    }
     
     Retrun dict of retrieved data, keyed by GenBank accession and valued by dict containing
         requested data.
