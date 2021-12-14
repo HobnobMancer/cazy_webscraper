@@ -64,7 +64,10 @@ def build_parser(argv: Optional[List] = None):
 
     parser.add_argument(
         "file_types",
-        type=str,
+        dest="file_types",
+        action="store",
+        nargs="+",
+        choices=["csv", "json"],
         help="File types to write the query output in [csv,json]"
     )
 

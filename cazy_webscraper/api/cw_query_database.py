@@ -84,8 +84,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_dir = cache_dir / "uniprot_data_retrieval"
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
-    output_file_types = validate_file_types(args)
-
     (
         config_dict,
         class_filters,
@@ -94,8 +92,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         taxonomy_filter_dict,
         ec_filters,
     ) = get_expansion_configuration(args)
-
-    output_dict = {}  # dict to store all output from interrogating the CAZyme db
 
     # get the records of GenBank accessions matching the criteria of interest
     # {gbk_acc: gbk_id}
@@ -110,38 +106,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     query_data = get_query_data(gbk_dict)
 
-    write_output(query_data, output_file_types, args)
-
-
-def validate_file_types(args):
-    """Validate the output files types chosen by the user
-    
-    :param args: cmd-line args parser
-    
-    Return list of output file types
-    """
-    logger = logging.getLogger(__name__)
-
-    file_types = args.file_types.split(",")
-
-    accepted_file_types = ['csv', 'json']
-    
-    chosen_types = [ftype.lower() for ftype in file_types if ftype.lower() in accepted_file_types]
-    for ftype in file_types:
-        if ftype.lower() in accepted_file_types:
-            chosen_types.append(ftype.lower())
-        else:
-            logger.error(f'File type: {ftype} not supported by cazy_webscraper')
-
-    if len(chosen_types) == 0:
-        logger.error(
-            "No accepted file types provided. Please chose at least one of the following:\n"
-            "csv, json\n"
-            "Terminating program"
-        )
-        sys.exit(1)
-    
-    return chosen_types
+    write_output(query_data, args)
 
 
 def get_query_data(gbk_dict, connection, args):
