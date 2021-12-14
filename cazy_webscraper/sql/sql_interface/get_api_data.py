@@ -336,16 +336,23 @@ def get_uniprot_data(gbk_dict, query_data, connection, args):
                 query_data[gbk_acc]
                 
                 try:
-                    query_data[gbk_acc]['uniprot_accession'].add(uniprot_accession)
-                    query_data[gbk_acc]['uniprot_name'].add(uniprot_name)
+                    query_data[gbk_acc]['uniprot_accession']
+                    query_data[gbk_acc]['uniprot_name']
+                    logger.warning(
+                        f"Multiple UniProt records found for GBK acc {gbk_acc}\n"
+                        "Retreiving only one."
+                    )
+                    query_data[gbk_acc]['uniprot_accession'] = uniprot_accession
+                    query_data[gbk_acc]['uniprot_name'] = uniprot_name
                 except KeyError:
-                    query_data[gbk_acc]['uniprot_accession'] = {uniprot_accession}
-                    query_data[gbk_acc]['uniprot_name'] = {uniprot_name}
+
+                    query_data[gbk_acc]['uniprot_accession'] = uniprot_accession
+                    query_data[gbk_acc]['uniprot_name'] = uniprot_name
 
             except KeyError:
                 query_data[gbk_acc] = {
-                    'uniprot_accession': {uniprot_accession},
-                    'uniprot_name': {uniprot_name},
+                    'uniprot_accession': uniprot_accession,
+                    'uniprot_name': uniprot_name,
                 }
         
         if args.seq_uniprot:
@@ -356,14 +363,19 @@ def get_uniprot_data(gbk_dict, query_data, connection, args):
                 query_data[gbk_acc]
                 
                 try:
-                    query_data[gbk_acc]['sequence'].add(seq)
-                    query_data[gbk_acc]['sequence_date'].add(seq_date)
+                    query_data[gbk_acc]['sequence']
+                    logger.warning(
+                        f"Multiple UniProt records found for GBK acc {gbk_acc}\n"
+                        "Retreiving only one record."
+                    )
+                    query_data[gbk_acc]['sequence'] = seq
+                    query_data[gbk_acc]['sequence_date'] = seq_date
                 except KeyError:
-                    query_data[gbk_acc]['sequence'] = {seq}
-                    query_data[gbk_acc]['sequence_date'] = {seq_date}
+                    query_data[gbk_acc]['sequence'] = seq
+                    query_data[gbk_acc]['sequence_date'] = seq_date
 
             except KeyError:
-                query_data[gbk_acc] = {'sequence': {seq}, 'sequence_date': {seq_date}}
+                query_data[gbk_acc] = {'sequence': seq, 'sequence_date': seq_date}
 
     return query_data
 
