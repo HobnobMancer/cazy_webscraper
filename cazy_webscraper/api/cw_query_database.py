@@ -198,6 +198,8 @@ def write_output(query_data, args, time_stamp):
 
             # create one row for each CAZy class, CAZy family and CAZy subfamily annotation
             # link the parent-child relationships between CAZy class, family and subfamily
+            if args.cazy_class is False and args.cazy_family is False and args.cazy_subfamily is False:
+                new_rows.append([gbk_acc])  # don't need to create multiple rows to separate the class/fam/subfam annotations
 
             if args.kingdom:
                 for row in new_rows:
