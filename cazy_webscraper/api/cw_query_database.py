@@ -207,25 +207,25 @@ def write_output(query_data, args, time_stamp):
                     row.append(query_data[gbk_acc]["genus"])
             if args.organism:
                 for row in new_rows:
-                    row.append(query_data[gbk_acc]"organism"])
+                    row.append(query_data[gbk_acc]["organism"])
             if args.ec:
                 for row in new_rows:
-                    row.append(" ".join(list(query_data[gbk_acc]"ec_numbers"])))
+                    row.append(" ".join(list(query_data[gbk_acc]["ec_numbers"])))
             if args.pdb:
                 for row in new_rows:
-                    row.append(" ".join(list(query_data[gbk_acc]"pdb_accessions"])))
+                    row.append(" ".join(list(query_data[gbk_acc]["pdb_accessions"])))
             if args.uniprot:
                 for row in new_rows:
-                    row.append(query_data[gbk_acc]"uniprot_accession"])
-                    row.append(query_data[gbk_acc]"uniprot_name"])
+                    row.append(query_data[gbk_acc]["uniprot_accession"])
+                    row.append(query_data[gbk_acc]["uniprot_name"])
             if args.seq_uniprot:
                 for row in new_rows:
-                    row.append(query_data[gbk_acc]"uniprot_sequence"])
-                    row.append(query_data[gbk_acc]"uniprot_sequence_date"])
+                    row.append(query_data[gbk_acc]["uniprot_sequence"])
+                    row.append(query_data[gbk_acc]["uniprot_sequence_date"])
             if args.seq_genbank:
                 for row in new_rows:
-                    row.append(query_data[gbk_acc]"gbk_sequence"])
-                    row.append(query_data[gbk_acc]"gbk_sequence_date"])
+                    row.append(query_data[gbk_acc]["gbk_sequence"])
+                    row.append(query_data[gbk_acc]["gbk_sequence_date"])
 
             for row in new_rows:
                 df_data.append(row)
