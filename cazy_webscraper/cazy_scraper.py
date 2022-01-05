@@ -139,6 +139,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 "Force is True\n"
                 "Ovewriting existing database."
             )
+            os.remove(args.db_output)
         else:
             logger.warning(
                 f"Local db {args.database} already exists\n"
@@ -184,10 +185,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info(termcolour(scrape_config_message, "cyan"))
 
     if args.database:  # adding data to an EXISTING database
-        connection, logger_name, cache_dir = connect_existing_db(args, time_stamp)
+        connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
     
     else:  # build a new database
-        connection, logger_name, cache_dir = connect_to_new_db(args, time_stamp)
+        connection, logger_name, cache_dir = connect_to_new_db(args, time_stamp, start_time)
 
     logger.info("Adding log of scrape to the local CAZyme database")
     with sql_orm.Session(bind=connection) as session:
@@ -243,6 +244,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         time_stamp,
         args,
     )
+
+    closing_message("cazy_webscraper", start_time, args)
 
 
 def get_cazy_data(
@@ -356,11 +359,12 @@ def get_cazy_data(
     return
 
 
-def connect_existing_db(args, time_stamp):
+def connect_existing_db(args, time_stamp, start_time):
     """Coordinate connecting to an existing local CAZyme database, define logger name and cache dir
     
     :param args: cmd-line args parser
     :param time_stamp: str, time cazy_webscraper was invoked
+    :param start_time: pd date-time obj, time cazy_webscraper was invoked
 
     Return connection to local CAZyme database, logger file name, and path to cache dir
     """
@@ -374,6 +378,7 @@ def connect_existing_db(args, time_stamp):
             "Check path is correct.\n"
             "Terminating programme."
         )
+        closing_message("cazy_webscraper", start_time, args)
         sys.exit(1)
 
     try:
@@ -385,6 +390,7 @@ def connect_existing_db(args, time_stamp):
             "Terminating program\n",
             exc_info=True,
         )
+        closing_message("cazy_webscraper", start_time, args)
         sys.exit(1)
     
     # used for naming additional log files
@@ -396,11 +402,12 @@ def connect_existing_db(args, time_stamp):
     return connection, logger_name, cache_dir
     
 
-def connect_to_new_db(args, time_stamp):
+def connect_to_new_db(args, time_stamp, start_time):
     """Build and connect to a new local CAZyme database.
     
     :param args: cmd-line args parser
-    :param time_stamp: str, time cazy_Webscraper was invoked
+    :param time_stamp: str, time cazy_webscraper was invoked
+    :param start_time: pd date-time obj, time cazy_webscraper was invoked
     
     Return connection to the database, name of the logger, and path to the cache dir
     """
@@ -421,6 +428,7 @@ def connect_to_new_db(args, time_stamp):
                     "Either enable forced overwriting (-f) or add data this data (-D).\n"
                     "Terminating program."
                 )
+                closing_message("cazy_webscraper", start_time, args)
                 sys.exit(1)
         
         else:  # may need to build dirs
@@ -455,6 +463,7 @@ def connect_to_new_db(args, time_stamp):
             "Terminating program",
             exc_info=True,
         )
+        closing_message("cazy_webscraper", start_time, args)
         sys.exit(1)
 
     return connection, logger_name, cache_dir
