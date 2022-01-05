@@ -170,12 +170,17 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
                 query_data[gbk_acc]
                 
                 try:
-                    query_data[gbk_acc]['kingdom'].add(kingdom)
+                    query_data[gbk_acc]['kingdom']
+                    logger.warning(
+                        f"Multiple taxa found for {gbk_acc}\n"
+                        "Retreiving only one record."
+                    )
+                    query_data[gbk_acc]['kingdom'] = kingdom
                 except KeyError:
-                    query_data[gbk_acc]['kingdom'] = {kingdom}
+                    query_data[gbk_acc]['kingdom'] = kingdom
 
             except KeyError:
-                query_data[gbk_acc] = {'kingdom': {kingdom}}
+                query_data[gbk_acc] = {'kingdom': kingdom}
         
         if args.genus:
             genus = record[1].genus
@@ -184,12 +189,17 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
                 query_data[gbk_acc]
                 
                 try:
-                    query_data[gbk_acc]['genus'].add(genus)
+                    query_data[gbk_acc]['genus']
+                    logger.warning(
+                        f"Multiple taxa found for {gbk_acc}\n"
+                        "Retreiving only one record."
+                    )
+                    query_data[gbk_acc]['genus'] = genus
                 except KeyError:
-                    query_data[gbk_acc]['genus'] = {genus}
+                    query_data[gbk_acc]['genus'] = genus
 
             except KeyError:
-                query_data[gbk_acc] = {'genus': {genus}}
+                query_data[gbk_acc] = {'genus': genus}
 
         if args.organism:
             genus = record[1].genus
@@ -200,12 +210,17 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
                 query_data[gbk_acc]
                 
                 try:
-                    query_data[gbk_acc]['organism'].add(organism)
+                    query_data[gbk_acc]['organism']
+                    logger.warning(
+                        f"Multiple taxa found for {gbk_acc}\n"
+                        "Retreiving only one record."
+                    )
+                    query_data[gbk_acc]['organism'] = organism
                 except KeyError:
-                    query_data[gbk_acc]['organism'] = {organism}
+                    query_data[gbk_acc]['organism'] = organism
 
             except KeyError:
-                query_data[gbk_acc] = {'organism': {organism}}
+                query_data[gbk_acc] = {'organism': organism}
 
     return query_data
 
@@ -333,16 +348,23 @@ def get_uniprot_data(gbk_dict, query_data, connection, args):
                 query_data[gbk_acc]
                 
                 try:
-                    query_data[gbk_acc]['uniprot_accession'].add(uniprot_accession)
-                    query_data[gbk_acc]['uniprot_name'].add(uniprot_name)
+                    query_data[gbk_acc]['uniprot_accession']
+                    query_data[gbk_acc]['uniprot_name']
+                    logger.warning(
+                        f"Multiple UniProt records found for GBK acc {gbk_acc}\n"
+                        "Retreiving only one."
+                    )
+                    query_data[gbk_acc]['uniprot_accession'] = uniprot_accession
+                    query_data[gbk_acc]['uniprot_name'] = uniprot_name
                 except KeyError:
-                    query_data[gbk_acc]['uniprot_accession'] = {uniprot_accession}
-                    query_data[gbk_acc]['uniprot_name'] = {uniprot_name}
+
+                    query_data[gbk_acc]['uniprot_accession'] = uniprot_accession
+                    query_data[gbk_acc]['uniprot_name'] = uniprot_name
 
             except KeyError:
                 query_data[gbk_acc] = {
-                    'uniprot_accession': {uniprot_accession},
-                    'uniprot_name': {uniprot_name},
+                    'uniprot_accession': uniprot_accession,
+                    'uniprot_name': uniprot_name,
                 }
         
         if args.seq_uniprot:
@@ -353,14 +375,19 @@ def get_uniprot_data(gbk_dict, query_data, connection, args):
                 query_data[gbk_acc]
                 
                 try:
-                    query_data[gbk_acc]['sequence'].add(seq)
-                    query_data[gbk_acc]['sequence_date'].add(seq_date)
+                    query_data[gbk_acc]['uniprot_sequence']
+                    logger.warning(
+                        f"Multiple UniProt records found for GBK acc {gbk_acc}\n"
+                        "Retreiving only one record."
+                    )
+                    query_data[gbk_acc]['uniprot_sequence'] = seq
+                    query_data[gbk_acc]['uniprot_sequence_date'] = seq_date
                 except KeyError:
-                    query_data[gbk_acc]['sequence'] = {seq}
-                    query_data[gbk_acc]['sequence_date'] = {seq_date}
+                    query_data[gbk_acc]['uniprot_sequence'] = seq
+                    query_data[gbk_acc]['uniprot_sequence_date'] = seq_date
 
             except KeyError:
-                query_data[gbk_acc] = {'sequence': {seq}, 'sequence_date': {seq_date}}
+                query_data[gbk_acc] = {'sequence': seq, 'sequence_date': seq_date}
 
     return query_data
 
@@ -397,14 +424,18 @@ def get_gbk_seq(gbk_dict, query_data, connection):
             query_data[gbk_acc]
             
             try:
-                query_data[gbk_acc]['sequence'].add(seq)
-                query_data[gbk_acc]['sequence_date'].add(seq_date)
+                logger.warning(
+                    f"Multiple GBK records found for GBK acc {gbk_acc}\n"
+                    "Retreiving only one gbk sequence."
+                )
+                query_data[gbk_acc]['gbk_sequence'] = seq
+                query_data[gbk_acc]['gbk_sequence_date'] = seq_date
             except KeyError:
-                query_data[gbk_acc]['sequence'] = {seq}
-                query_data[gbk_acc]['sequence_date'] = {seq_date}
+                query_data[gbk_acc]['gbk_sequence'] = seq
+                query_data[gbk_acc]['gbk_sequence_date'] = seq_date
 
         except KeyError:
-            query_data[gbk_acc] = {'sequence': {seq}, 'sequence_date': {seq_date}}
+            query_data[gbk_acc] = {'gbk_sequence': seq, 'gbk_sequence_date': seq_date}
 
     return query_data
 

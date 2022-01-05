@@ -41,7 +41,7 @@
 
 
 import logging
-import sys
+import json
 
 import pandas as pd
 
@@ -50,6 +50,7 @@ from typing import List, Optional
 
 from saintBioutils.utilities.logger import config_logger
 from saintBioutils.utilities import file_io
+from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_api_data
@@ -84,8 +85,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_dir = cache_dir / "uniprot_data_retrieval"
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
-    output_file_types = validate_file_types(args)
-
     (
         config_dict,
         class_filters,
@@ -94,8 +93,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         taxonomy_filter_dict,
         ec_filters,
     ) = get_expansion_configuration(args)
-
-    output_dict = {}  # dict to store all output from interrogating the CAZyme db
 
     # get the records of GenBank accessions matching the criteria of interest
     # {gbk_acc: gbk_id}
@@ -110,38 +107,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     query_data = get_query_data(gbk_dict)
 
-    write_output(query_data, output_file_types, args)
-
-
-def validate_file_types(args):
-    """Validate the output files types chosen by the user
-    
-    :param args: cmd-line args parser
-    
-    Return list of output file types
-    """
-    logger = logging.getLogger(__name__)
-
-    file_types = args.file_types.split(",")
-
-    accepted_file_types = ['csv', 'json']
-    
-    chosen_types = [ftype.lower() for ftype in file_types if ftype.lower() in accepted_file_types]
-    for ftype in file_types:
-        if ftype.lower() in accepted_file_types:
-            chosen_types.append(ftype.lower())
-        else:
-            logger.error(f'File type: {ftype} not supported by cazy_webscraper')
-
-    if len(chosen_types) == 0:
-        logger.error(
-            "No accepted file types provided. Please chose at least one of the following:\n"
-            "csv, json\n"
-            "Terminating program"
-        )
-        sys.exit(1)
-    
-    return chosen_types
+    write_output(query_data, args)
 
 
 def get_query_data(gbk_dict, connection, args):
@@ -150,6 +116,25 @@ def get_query_data(gbk_dict, connection, args):
     :param gbk_dict: dict, {gbk_acc: gbk_id} GenBank accessions matching user criteria
     :param connection: open sqlaclchemy connection for an SQLite db
     :param args: cmd-line args parser
+
+    Structure of dict if all data is retrievied:
+    query_data = {
+        genbank_accession: 
+            'class': {CAZy classes},
+            'family': {CAZy families},
+            'subfamily': {CAZy subfamilies},
+            'kingdom': kingdom,
+            'genus': genus,
+            'organism': genus species strain,
+            'ec_numbers': {EC number annotations},
+            'pdb_accessions': {PDB accessions},
+            'uniprot_accession': UniProt protein accession,
+            'uniprot_name': Name of the protein from UniProt,
+            'uniprot_sequence': Protein Aa seq from UniProt,
+            'uniprot_sequence_date': Date the seq was last modified in UniProt,
+            'gbk_sequence': Protein Aa seq from GenBank
+            'gbk_sequence_date': Date the seq was last modified in Gbk,
+    }
     
     Retrun dict of retrieved data, keyed by GenBank accession and valued by dict containing
         requested data.
@@ -184,6 +169,139 @@ def get_query_data(gbk_dict, connection, args):
     if args.seq_genbank:
         # retrieve GenBank protein sequences from the local CAZyme database
         query_data = get_api_data.get_gbk_seq(gbk_dict, query_data, connection)
+
+
+def write_output(query_data, args, time_stamp):
+    """Write out query data to disk.
+    
+    :param query_data: dict containing db query data.
+    :param args: cmd-line args parser
+    
+    Return nothing"""
+    output_path = compile_output_name(args, time_stamp)
+
+    if 'json' in args.file_types:
+        output_path += ".json"
+        with open(output_path, 'w') as fh:
+            json.dump(query_data, fh)
+
+    if 'csv' in args.file_types:
+        output_path += ".csv"
+
+        # compile pandas df of the data
+        column_names = get_column_names(args)
+        
+        df_data = []  # list of nested lists, one nested list per df row
+
+        for gbk_acc in tqdm(query_data, desc="Compiling output dataframe"):
+            new_rows = []
+
+            # create one row for each CAZy class, CAZy family and CAZy subfamily annotation
+            # link the parent-child relationships between CAZy class, family and subfamily
+            if args.cazy_class is False and args.cazy_family is False and args.cazy_subfamily is False:
+                new_rows.append([gbk_acc])  # don't need to create multiple rows to separate the class/fam/subfam annotations
+
+            if args.kingdom:
+                for row in new_rows:
+                    row.append(query_data[gbk_acc]["kingdom"])
+            if args.genus:
+                for row in new_rows:
+                    row.append(query_data[gbk_acc]["genus"])
+            if args.organism:
+                for row in new_rows:
+                    row.append(query_data[gbk_acc]["organism"])
+            if args.ec:
+                for row in new_rows:
+                    row.append(" ".join(list(query_data[gbk_acc]["ec_numbers"])))
+            if args.pdb:
+                for row in new_rows:
+                    row.append(" ".join(list(query_data[gbk_acc]["pdb_accessions"])))
+            if args.uniprot:
+                for row in new_rows:
+                    row.append(query_data[gbk_acc]["uniprot_accession"])
+                    row.append(query_data[gbk_acc]["uniprot_name"])
+            if args.seq_uniprot:
+                for row in new_rows:
+                    row.append(query_data[gbk_acc]["uniprot_sequence"])
+                    row.append(query_data[gbk_acc]["uniprot_sequence_date"])
+            if args.seq_genbank:
+                for row in new_rows:
+                    row.append(query_data[gbk_acc]["gbk_sequence"])
+                    row.append(query_data[gbk_acc]["gbk_sequence_date"])
+
+            for row in new_rows:
+                df_data.append(row)
+
+        query_df = pd.DataFrame(df_data, columns=column_names)
+
+        query_df.to_csv(output_path)
+
+
+def compile_output_name(args, time_stamp):
+    db_name = args.database.name.replace(".db","")
+    output_path = args.output_dir / f"{db_name}_{time_stamp}"
+
+    if args.cazy_class:
+        output_path += "_classes"
+    if args.cazy_family:
+        output_path += "_fams"
+    if args.cazy_subfamily:
+        output_path += "_subfams"
+    if args.kingdom:
+        output_path += "_kngdm"
+    if args.genus:
+        output_path += "_genus"
+    if args.organism:
+        output_path += "_orgnsm"
+    if args.ec:
+        output_path += "_ec"
+    if args.pdb:
+        output_path += "_pdb"
+    if args.uniprot:
+        output_path += "_uniprot"
+    if args.seq_uniprot:
+        output_path += "_uniprotSeq"
+    if args.seq_genbank:
+        output_path += "_gbkSeq"
+
+    return output_path
+
+
+def get_column_names(args):
+    """Compile the column names for the output df.
+    
+    :param args: cmd-line args parser
+    
+    Return list of column names"""
+    column_names = ["genbank_accession"]
+
+    if args.cazy_class:
+        column_names.append("class")
+    if args.cazy_family:
+        column_names.append("family")
+    if args.cazy_subfamily:
+        column_names.append("subfamily")
+    if args.kingdom:
+        column_names.append("kingdom")
+    if args.genus:
+        column_names.append("genus")
+    if args.organism:
+        column_names.append("source_organism")
+    if args.ec:
+        column_names.append("ec_number")
+    if args.pdb:
+        column_names.append("pdb_accession")
+    if args.uniprot:
+        column_names.append("uniprot_accession")
+        column_names.append("uniprot_name")
+    if args.seq_uniprot:
+        column_names.append("uniprot_sequence")
+        column_names.append("uniprot_sequence_date")
+    if args.seq_genbank:
+        column_names.append("genbank_sequence")
+        column_names.append("genbank_sequence_date")
+
+    return column_names
 
 
 if __name__ == "__main__":
