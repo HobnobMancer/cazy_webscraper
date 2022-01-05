@@ -37,3 +37,54 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 """Web scraper to scrape the CAZy website."""
+
+
+import logging
+
+import pandas as pd
+
+from datetime import datetime
+
+
+__version__ = "2.0.0-beta"
+
+VERSION_INFO = f"cazy_webscraper version: {__version__}"
+
+CITATION_INFO = (
+    "If you use cazy_webscraper in your work, please cite the following publication:\n"
+    "\tHobbs, E. E. M., Pritchard, L., Chapman, S., Gloster, T. M.,\n"
+    "\t(2021) cazy_webscraper Microbiology Society Annual Conference 2021 poster.\n"
+    "\tFigShare. Poster.\n"
+    "\thttps://doi.org/10.6084/m9.figshare.14370860.v7"
+)
+
+
+def closing_message(job, start_time, args):
+    """Write closing messsage to terminal"""
+    logger = logging.getLogger(__name__)
+
+    end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    end_time = pd.to_datetime(end_time)
+    total_time = end_time - start_time
+
+    if args.verbose:
+        logger.info(
+            "Finished scraping CAZy. Terminating program.\n"
+            f"Scrape initated at {start_time}\n"
+            f"Scrape finished at {end_time}\n"
+            f"Total run time: {total_time}"
+            f"Version: {VERSION_INFO}\n"
+            f"Citation: {CITATION_INFO}"
+        )
+    else:
+        print(
+            f"====================={job}=====================\n"
+            "Finished scraping CAZy\n"
+            f"Scrape initated at {start_time}\n"
+            f"Scrape finished at {end_time}\n"
+            f"Total run time: {total_time}"
+            f"Version: {VERSION_INFO}\n"
+            f"Citation: {CITATION_INFO}"
+        )
+
+    return

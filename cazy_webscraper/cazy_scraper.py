@@ -78,7 +78,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from Bio import Entrez
-from cazy_webscraper import cazy, crawler, taxonomy
+from cazy_webscraper import cazy, crawler, taxonomy, closing_message, CITATION_INFO, VERSION_INFO
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface import add_cazyme_data
 from cazy_webscraper.utilities import (
@@ -89,19 +89,6 @@ from cazy_webscraper.utilities import (
     termcolour,
 )
 from cazy_webscraper.utilities.parsers import cazy_webscraper_parser
-
-
-__version__ = "2.0.0-beta"
-
-VERSION_INFO = f"cazy_webscraper version: {__version__}"
-
-CITATION_INFO = (
-    "If you use cazy_webscraper in your work, please cite the following publication:\n"
-    "\tHobbs, E. E. M., Pritchard, L., Chapman, S., Gloster, T. M.,\n"
-    "\t(2021) cazy_webscraper Microbiology Society Annual Conference 2021 poster.\n"
-    "\tFigShare. Poster.\n"
-    "\thttps://doi.org/10.6084/m9.figshare.14370860.v7"
-)
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -134,7 +121,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         return
 
     # check correct output was provided, exit if not operable
-    if args.database and args.db_output:
+    if args.database is not None and args.db_output is not None:
         warning_message = (
             "Target path for a NEW database (--db_output, -d) and\n"
             "a path to an EXISTING database (--database, -D) were provided.\n"
@@ -142,7 +129,25 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             "Terminating program."
         )
         logger.warning(termcolour(warning_message, "red"))
+        closing_message("cazy_webscraper", start_time, args)
         return
+
+    if args.db_output is not None and args.db_output.exists():
+        if args.force:
+            logger.warning(
+                f"Local db {args.database} already exists\n"
+                "Force is True\n"
+                "Ovewriting existing database."
+            )
+        else:
+            logger.warning(
+                f"Local db {args.database} already exists\n"
+                "Force is False\n"
+                "Not ovewriting existing database\n"
+                "Termianting program"
+            )
+            closing_message("cazy_webscraper", start_time, args)
+            return
 
     Entrez.email = args.email
 
@@ -238,30 +243,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         time_stamp,
         args,
     )
-
-    end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    end_time = pd.to_datetime(end_time)
-    total_time = end_time - start_time
-
-    if args.verbose:
-        logger.info(
-            "Finished scraping CAZy. Terminating program.\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {VERSION_INFO}\n"
-            f"Citation: {CITATION_INFO}"
-        )
-    else:
-        print(
-            "=====================cazy_webscraper=====================\n"
-            "Finished scraping CAZy\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {VERSION_INFO}\n"
-            f"Citation: {CITATION_INFO}"
-        )
 
 
 def get_cazy_data(
