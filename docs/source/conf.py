@@ -18,10 +18,6 @@
 
 import sphinx_rtd_theme
 
-# -- Imports -----------------------------------------------------------------
-
-import sphinx_rtd_theme
-
 # -- Project information -----------------------------------------------------
 
 project = 'cazy_webscraper'
@@ -29,8 +25,8 @@ copyright = '2020, Emma E. M. Hobbs'
 author = 'Emma E. M. Hobbs'
 
 # The full version, including alpha/beta/rc tags
+version = '2.0.0'
 release = '2.0.0'
-
 
 # -- General configuration ---------------------------------------------------
 
@@ -72,3 +68,38 @@ html_context = {
 
 # Explicitly set master file to index.rst
 master_doc = "index"
+source_suffix = ".rst"
+
+# Output file base name for HTML help builder.
+htmlhelp_basename = "cazywebscraperdoc"
+
+# Grouping the document tree into LaTeX files. List of tuples
+# (source start file, target name, title,
+#  author, documentclass [howto, manual, or own class]).
+latex_documents = [
+    (master_doc, "cazywebscraper.tex", "cazy_webscraper Documentation", "Emma E. M. Hobbs", "manual")
+]
+
+# -- Options for manual page output ---------------------------------------
+
+# One entry per manual page. List of tuples
+# (source start file, name, description, authors, manual section).
+man_pages = [(master_doc, "cazywebscraper", "cazy_webscraper Documentation", [author], 1)]
+
+# -- Options for Texinfo output -------------------------------------------
+
+# Grouping the document tree into Texinfo files. List of tuples
+# (source start file, target name, title, author,
+#  dir menu entry, description, category)
+texinfo_documents = [
+    (
+        master_doc,
+        "cazywebscraper",
+        "cazy_webscraper Documentation",
+        author,
+        "cazywebscraper",
+        "One line description of project.",
+        "Miscellaneous",
+    )
+]
+
