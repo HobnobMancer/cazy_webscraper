@@ -52,7 +52,7 @@ with Path("README.md").open("r") as long_description_handle:
 
 setuptools.setup(
     name="cazy_webscraper",
-    version="0.1.6",
+    version="2.0.0",
     # Metadata
     author="Emma E. M. Hobbs",
     author_email="eemh1@st-andrews.ac.uk",
@@ -61,8 +61,8 @@ setuptools.setup(
             (
                 "A webscraper to automate retrieving specific data from CAZy and"
                 "build a local CAZyme SQL database, for throughly interrogating the data. "
-                "Also, automate retrieving protein sequences and structure files for specific "
-                "datasets in the CAZyme database."
+                "Also, automate retrieving protein sequences, EC numbers and structure files "
+                "for specific datasets in the CAZyme database."
             )
         ]
     ),
@@ -74,9 +74,12 @@ setuptools.setup(
     url="https://github.com/HobnobMancer/cazy_webscraper",
     entry_points={
         "console_scripts": [
-            "cazy_webscraper = scraper.cazy_webscraper:main",
-            "cw_get_genbank_sequences = scraper.expand.get_genbank_sequences:main",
-            "cw_get_pdb_structures = scraper.expand.get_pdb_structures:main",
+            "cazy_webscraper = cazy_webscraper.cazy_webscraper:main",
+            "cw_get_genbank_seqs = cazy_webscraper.expand.genbank.get_genbank_sequences:main",
+            "cw_get_uniprot_data = cazy_webscraper.expand.uniprot.get_uniprot_data:main",
+            "cw_extract_sequences = cazy_webscraper.expand.extract.extract_sequences:main",
+            "cw_get_pdb_structures = cazy_webscraper.expand.pdb.get_pdb_structures:main",
+            "cw_cazy_genbank_coverage = cazy_webscraper.genomes.cazy_genbank_coverage:main",
         ]
     },
     install_requires=[
@@ -85,7 +88,8 @@ setuptools.setup(
         "pandas>=1.0.3",
         "pyyaml",
         "requests",
-        "sqlalchemy==1.3.20",
+        "saintBioutils",
+        "sqlalchemy>=1.4.20",
         "tqdm",
     ],
     packages=setuptools.find_packages(),

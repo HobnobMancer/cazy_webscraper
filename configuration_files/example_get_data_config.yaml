@@ -1,0 +1,28 @@
+# Under 'classes' list class from which all proteins will retrieved
+# Under each families respective name, list the specific families/subfamilies to be scraped
+# Write the FULL family name, e.g. 'GH1', NOT only its number, e.g. '1'
+# To list multiple families, each familiy must be on a new line starting indented once
+# relative to the parent class name, and the name written within quotation marks.
+# For more information on writing lists in Yaml please see:
+# https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html 
+classes:  # classes from which all proteins will be retrieved
+  - "GH"
+  - "CE"
+Glycoside Hydrolases (GHs):
+GlycosylTransferases (GTs):
+Polysaccharide Lyases (PLs):
+  - "GT1"
+  - "GT5"
+  - "GT6"
+Carbohydrate Esterases (CEs):
+Auxiliary Activities (AAs):
+Carbohydrate-Binding Modules (CBMs):
+genera:  # list genera to be scraped
+ - "Trichoderma"
+ - "Aspergillus"
+species:  # list species, this will scrape all strains under the species
+- "Pythium ultimum"
+strains:  # list specific strains to be scraped
+kingdoms:  # Archaea, Bacteria, Eukaryota, Viruses, Unclassified
+ec:
+- "EC1.2.3.4"
