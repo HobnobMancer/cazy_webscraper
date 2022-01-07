@@ -15,6 +15,25 @@
 
 > `cazy_webscraper` version 1 is depracted. Please ensure you are using `cazy_webscraper` version 2 or newer.
 
+# Beta Version 2
+This release of `cazy_webscraper` is a beta release. The main component of `cazy_webscraper` (for the downloading of data from CAZy) is stable. Expanding the data set to incorproate data from UniProt, GenBank and PDB still require some work to workout all the remaining bugs.
+
+The documentation is being actively updated to match the new `cazy_webscraper` version 2.
+
+## New features in version 2:
+- **Faster scraping:** The entirtity of CAZy can be scraped in 15 minutes
+- **Retrieval of UniProt data:** UniProt accessions, EC numbers, protein sequences, and PDB accessions can be retrieved from UniProt and added to the local CAZyme database
+- **Addition of an API:** As well as retrieving data from the local CAZyme database via an SQL interface, `cazy_webscraper` can retrieved user-specfied data (e.g. the GenBank protein accession and EC number annotations) for proteins matching user-specified critieria. The extracted data can be written to a `JSON` and/or `CSV` file, to facilitate inclusion in downstream analyses.
+- **Caching:** Data downloaded from CAZy is not only parsed and written to a local CAZyme database. The raw data files are written to cache. Data can be scraped directly from a cache (ideal if CAZy updates during the retrieval of multiple datasets from the CAZy database).
+
+## Future work for version 2:
+- Fix any remaining bugs we can find (if you find a bug, please report it!)
+- Update the unit tests to work with the new `cazy_webscraper` architecture
+- Update the documentation
+- Create video tutorials
+
+## cazy_webscraper
+
 `cazy_webscraper` is an application and Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. The code is distributed under the MIT license.
 
 `cazy_webscraper` retrieves protein data from the [CAZy database](https://www.cazy.org) into a local SQLite3 database. This enables users to integrate the dataset into analytical pipelines, and interrogate the data in a manner unachievable through the CAZy website.
