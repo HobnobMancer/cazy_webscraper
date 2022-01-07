@@ -1,52 +1,54 @@
 ================================================================
-Tutorials on configuring ``cazy_webscraper``
+Tutorials on configuring ``cazy_webscraper`` to scrape CAZy
 ================================================================
 
 ``cazy_webscraper`` can be configured to retrieve user specified data sets from CAZy. The configuration 
-applies to the retrieval of protein sequences from GenBank and protein structure files from PDB.
+applies to the retrieval of protein data from UniProt, protein sequences from GenBank and protein structure files from PDB.
 
 ``cazy_webscraper`` can be configured via the **command line** and/or via a **YAML configuration file**.
 
 This page runs through examples of how to combine the various 'filters' that can be applied, to fully customised 
 the scraping of CAZy. These tutorials are designed for those with less experience using command-line tools.
 
-
-.. note::
+.. NOTE::
   If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` call it using ``cazy_webscraper`` - this is the method used in this tutorial.  
-  If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` using the command ``python3 <path to cazy_webscraper.py>``. For example, if you were located in the root of the repository, you would use: ``python3 scraper/cazy_webscraper.py``.
+  If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` using the command ``python3 <path to cazy_webscraper.py>``. For example, if you were located in the root of the repository, you would use: ``python3 cazy_webscraper/cazy_scraper.py``.
 
 
+----------------------------------
 Configuration via the command line
-###########################################
+----------------------------------
 
-There are no required arguments for ``cazy_webscraper``, therefore the scraper can be enabled 
-by simply calling the scraper at the command line in the terminal: 
+``cazy_webscraper`` has only one required argument: the user email address. Therefore, 
+ the scraper can be enabled by simply calling the scraper at the command line in the terminal: 
 
 .. code-block:: bash
-  cazy_webscraper
+  cazy_webscraper myemail@domain.com
 
-When NO optional arguments are provided the default behaviour of the scraper will be performed. 
+When no optional arguments are provided the default behaviour of the scraper will be performed. 
 The default behaviour is to:
 
 * Scrape the entire CAZy databases
-* Write the resulting database to standard out (STDOUT)
+* Write the resulting database to the current working directory
 * Not to retrieve subfamilies (members of subfamilies will be retrieved but only their parent family will be listed)
 
 .. note::
    **For those new to using command-line tools: arguments**  
    Arguments are additional pieces of information we add onto the end of the command. They are used to configure the specific behaviour 
-   performed by computer when we tell it to perform a specific command. In the examples above the command is ``cazy_webscraper.py``, 
-   where we have told to computer to run the Python program ``cazy_webscraper``, and because no additional information was provided, the computer 
+   performed by computer when we tell it to perform a specific command. In the examples above the command is ``cazy_webscraper myemail@domain.com``, 
+   where we have told to computer to run the Python program ``cazy_webscraper`` and submit the user email 
+   address to NCBI for the retrieval of source orgnaism data. No additional information was provided, the computer 
    will invoke ``cazy_webscraper`` using its default behaviour. If you do not want the default behaviour of ``cazy_webscraper`` then we need to 
    pass additionally arguments to the computer when telling it to run ``cazy_webscraper``, which we cover in the section below.
 
 
-Options configurable at the command line
-############################################
+-----------------------------------------
+Options configurable at the command line 
+-----------------------------------------
 
 The following behaviours of the ``cazy_webscraper`` can be configured at the command-line in the terminal:  
 
-* Limit the scraping of CAZy to specific CAZy classes, CAZy families, kingdoms, genuera, species, strains and/or EC numbers.
+* Limit the scraping of CAZy to specific CAZy classes, CAZy families, kingdoms, genuera, species, and/or strains
 * Force writing out the database to a a new or existing directory
 * Write out a log file of the packages operation
 * Not delete content already present in the output directory
@@ -56,14 +58,15 @@ The following behaviours of the ``cazy_webscraper`` can be configured at the com
 `Here <https://cazy-webscraper.readthedocs.io/en/latest/configuration_scraper.html>`_ you can find a full list of the command-line flags and options.
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 How to use the command-line options
-#############################################
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The command-line options listed above can be used in any combination to customise the scraping of CAZy. The options that apply a 'filter' 
-to restrict which CAZymes are scraped from CAZy are applied in combination. For example, if the ``--families`` option and ``--ec`` option are called then 
-only CAZymes from the specified families **and** annotated with the listed EC numbers will be retrieved.
+to restrict which CAZymes are scraped from CAZy are applied in combination. For example, if the ``--families`` option and ``--genera`` option are called then 
+only CAZymes from the specified families **and** belonging to source organisms within the defined genera will be retrieved.
 
-We will now walk through some examples of how to use ``cazy_webscraper``. All example code provided in this section will presume that the terminal is pointed at the ``scraper`` directory, which contains the ``cazy_webscraper.py`` file.
+We will now walk through some examples of how to use ``cazy_webscraper``. All example code provided in this section will presume that the terminal is pointed at the ``cazy_webscraper`` directory, which contains the ``cazy_webscraper.py`` file.
 
 .. note::
    **For those new to using command-line tools: flags**
@@ -77,21 +80,30 @@ We will now walk through some examples of how to use ``cazy_webscraper``. All ex
    ``cazy_webscraper --help``.
 
 
+-------------------------------------
 Configuring were the output is saved
-*************************************************
+-------------------------------------
 
-We can name the directory that the database created by ``cazy_webscraper`` is written to by calling the ``--output`` flag. 
-We add the flag to the command that invokes ``cazy_webscraper``. For example, to write the output to the directory 'cazyme_database' we can use:
+Instead of writing out database to the current working directory using the default database name 
+(``cazy_webscraper_<date>_<time>.db``), we can name the database and directory that the database 
+created by ``cazy_webscraper`` is written by calling the ``--output`` flag. 
+
+We add the flag to the command that invokes ``cazy_webscraper``. For example, to write the output to the directory 'cazyme_database' with the file 
+name 'cazyme_database.db' we can use:
 
 .. code-block:: bash
 
-   cazy_webscraper --output cazyme_database
+   cazy_webscraper --output cazyme_database/cazyme_database.db
 
 OR we can use the short hand version of the ``--output`` flag, ``-o``:
 
 .. code-block:: bash
 
-   cazy_webscraper -o cazyme_database
+   cazy_webscraper -o cazyme_database/cazyme_database.db
+
+.. NOTE::
+   The final element of the path provided after the ``--output``/``-o`` flag is the name of database compiled by 
+   ``cazy_webscraper``.
 
 The output directory does not have to exist when ``cazy_webscraper`` is invoked. ``cazy_webscraper`` can make 
 the output directory, including all necessary parent directories. 
@@ -100,23 +112,10 @@ The ``--output`` flag can take an infinetly long path. For example, we could use
 
 .. code-block:: bash
 
-   cazy_webscraper -o data/cazyme_research/cazyme_database
+   cazy_webscraper -o data/cazyme_research/cazyme_database/cazyme_database.db
 
 If the directories ``cazymes_research`` and ``cazyme_database`` did not exist then ``cazy_webscraper`` will build 
 these for you.
-
-In the Bash terminal paths are **relative**, meaning that the terminal starts in the directory it is currently 
-looking at and follows the path from there. The installation section of this tutorial covers this when 
-discussing how to change directory.
-
-.. warning::
-   When requesting ``cazy_webscraper`` make an output directory, the parent of the directory we wish to make 
-   **must already exist**. For examlple, if we asked ``cazy_webscraper`` to write its output to the directory 
-   'data/cazyme_research/cazyme_database' and the directory 'cazyme_database' did not exist, *if* the directory 
-   'cazyme_research' did exist ``cazy_webscraper`` would build the directory 'cazyme_database' within 'cazyme_research'. 
-   However, if 'cazyme_research' *and* 'cazyme_database' did not exist, then ``cazy_webscraper`` would raise an error saying 
-   the path 'data/cazyme_research' does not exist.
-
 
 **Writing the output to an existing database**
 If you want to write the output CAZyme database to a directory that already exists, you will need to add the force (``--force`` *or* ``-f``) flag 
@@ -124,9 +123,9 @@ anywhere to the ``cazy_webscraper`` command. For example:
 
 .. code-block:: bash
 
-   cazy_webscraper -o data/cazyme_research/cazyme_database -f
+   cazy_webscraper -o data/cazyme_research/cazyme_database/cazyme_database.db -f
 
-By default ``cazy_webscraper`` will delete or content in an already existing output directory. Therefore, in the above example, 
+By default ``cazy_webscraper`` will delete all content in an already existing output directory. Therefore, in the above example, 
 if the directory ``cazyme_database`` already existed, ``cazy_webscraper`` would delete all content in the directory then proceed. 
 
 You may wish to retain the data already in that directory. To do this add the 'no delete' (``--nodelete`` *or* ``-n``) flag anywhere 
@@ -134,35 +133,40 @@ to the ``cazy_webscraper`` command. For example:
 
 .. code-block:: bash
 
-   cazy_webscraper -o data/cazyme_research/cazyme_database -f -n
+   cazy_webscraper -o data/cazyme_research/cazyme_database/cazyme_database.db -f -n
 
 The order you invoke *any* of the optional flags does not matter, for example the following three examples perform the 
 exact same operation as the code given above:
 
 .. code-block:: bash
 
-   cazy_webscraper --force -o data/cazyme_research/cazyme_database -f
+   cazy_webscraper --force -o data/cazyme_research/cazyme_database/cazyme_database.db -f
 
 .. code-block:: bash
 
-   cazy_webscraper -n -o data/cazyme_research/cazyme_database -f
+   cazy_webscraper -n -o data/cazyme_research/cazyme_database/cazyme_database.db -f
 
 .. code-block:: bash
 
-   cazy_webscraper --nodelete --force --output data/cazyme_research/cazyme_database
+   cazy_webscraper --nodelete --force --output data/cazyme_research/cazyme_database/cazyme_database.db
 
 The above examples also highlight that it does not matter if you use the long or short versions of each of the flags.
 
+.. NOTE::
+   If you elect to write the database to a file in the current working directory, you do not need to worry 
+   about ``cazy_webscraper`` deleting content in the current working directory. This only applies if you chose to
+   write the database to a directory over than the current working directory.
 
-
+----------------------------------------------
 Specifying CAZy classes and families to scrape
-**************************************************
+----------------------------------------------
 
+^^^^^^^^^^^^^^^^^^^^^^^^^
 Scraping specific classes
-==============================
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If instead of scraping all of CAZy, you want to only scrape CAZymes from specific CAZy classes then add the 
-``--classes`` flag followed by the classes you want to scrape. If you want to list multiple families, separate the families 
+``--classes`` flag followed by the classes you want to scrape. If you want to list multiple classes, separate the classes 
 with a single comma. When you specify a CAZy class to scrape, *all* CAZy families within that class will be scraped.
 
 For example, if you want to scrape all CAZymes from Glycoside Hydrolase and Carbohydrate Esterases then use the command:
@@ -185,17 +189,18 @@ For example, if you want to scrape all CAZymes from Glycoside Hydrolase and Carb
 
 * **Carbohydrate-Binding Modules (CBMs):** Carbohydrate-Binding-Modules, Carbohydrate_Binding_Modules, Carbohydrate_Binding Modules, CarbohydrateBindingModules, CARBOHYDRATE-BINDING-MODULES, CARBOHYDRATE_BINDING_MODULES, CARBOHYDRATE_BINDING MODULES, CARBOHYDRATEBINDINGMODULES, carbohydrate-binding-modules, carbohydrate_binding_modules, carbohydrate_binding modules, carbohydratebindingmodules, CBMs, CBM, cbms, cbm
 
-.. note::
+.. TIP::
    These synonyms are stored in a JSON found at ``scraper/utilities/parse_configuration/cazy_dictionary.json``. 
    Storing these synonyms allows you to modify this file if you wish to add your own synonoms for each CAZy class.
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 Scraping specific families
-===============================
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To specify specific CAZy families to scrape, add the ``--families`` flag followed by the families you want 
-to scrape. If you want to scrape multiple families, add the ``--families`` flag *once* followed by a list of *all* 
-the CAZy families you want to scrape, separated by a single comma.
+to scrape. If you want to scrape multiple families, list all the families you wish to scrape, with each family 
+separated with a single comma.
 
 For example, if you want to scrape all CAZymes from GH2, PL5, CE1, CE2 and AA10 use:
 
@@ -203,17 +208,12 @@ For example, if you want to scrape all CAZymes from GH2, PL5, CE1, CE2 and AA10 
 
    cazy_webscraper --families GH2,PL5,CE1,CE2,AA10
 
-Make sure to use the accepted CAZy nomenclature; 'GH2' is accepted but 'gh2' is not.
+.. WARNING::
+   Make sure to use the accepted CAZy nomenclature; 'GH2' is accepted but 'gh2' is not.
 
-.. note::
-   When ``--families`` is invoked any CAZy classes that do **not** include an of the CAZy families specified will 
-   **not** be scraped. Therefore, using the example above, CAZymes from the families GH2, PL5, CE1, CE2 and AA10 
-   **will** be retrieved; however, CAZymes from any other families from those classes **will not** be retrieved, and CAZymes 
-   from the Carbohydrate Binding Modules (CBM) and GlycoslyTransferases classes will **not** be retrieved.
-
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Scraping specific classes AND families
-========================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you want to specify specific CAZy classes *and* families to scrape then add *both* the ``--classess`` *and* ``-families`` 
 flags, because you can combine, mix-and-match, any combination of optional flags when invoking ``cazy_webscraper``.
@@ -225,7 +225,7 @@ For example, if we wanted to scrape all CAZymes from GH1, PL9 and *all* of CE we
    cazy_webscraper --families GH1,PL9 --classes CE
 
 It does **not** matter what order you add the optional flags to your command. Therefore, if we wanted to 
-scrape all CAZymes from PL1, PL2, PL3 and *all* of GH and CE we both:
+scrape all CAZymes from PL1, PL2, PL3 and *all* of GH and CE, both:
 
 .. code-block:: bash
 
@@ -240,16 +240,18 @@ scrape all CAZymes from PL1, PL2, PL3 and *all* of GH and CE we both:
 are accepted.
 
 .. note::
-   In the example ``cazy_webscraper.py --classes GH,CE --families PL1,PL2,PL3`` all CAZymes from PL1, 
+   In the example ``cazy_webscraper --classes GH,CE --families PL1,PL2,PL3`` all CAZymes from PL1, 
    PL2 and PL3 would be retrieved, but no CAZymes from the other PL families, in addition all CAZymes from all GH and CE 
    families would be retrieved, but no CAZymes from AA, GT or CBM families would be retrieved.
 
 
-Applying taxonomic and EC number filters
-********************************************
+------------------
+Applying taxonomic
+------------------
 
+^^^^^^^^^^^^^^^^^^^
 Specifying kingdoms
-================================
+^^^^^^^^^^^^^^^^^^^
 
 You may only be interest in CAZymes that are derived from species from a specific taxonomic kingdom. 
 CAZy classifies source organisms under one of 5 kingdoms:
@@ -260,10 +262,10 @@ CAZy classifies source organisms under one of 5 kingdoms:
 * Viruses
 * Unclassified
 
-To restrict the scraping of CAZy to retrieve CAZymes only derived from species from specific taxonomic kingdoms 
-then add the ``--kingdoms`` flag to the ``cazy_webscraper`` command followed by the kingdoms to limit the retrieval 
+To restrict the scraping of CAZy to retrieve CAZymes only derived from species from specific taxonomic kingdoms
+ add the ``--kingdoms`` flag to the ``cazy_webscraper`` command followed by the kingdoms to limit the retrieval 
 of CAZymes to. To list multiple kingdoms you need only add the ``--kingdoms`` flag *once*, then list all the kingdoms 
-you want to restrict the restrival of CAZymes to, separated by a single comma.
+you are interested in, separated by a single comma.
 
 For example, if you want to retrieve CAZymes only from bacterial and eukaryotic species then use the command 
 
@@ -273,19 +275,25 @@ For example, if you want to retrieve CAZymes only from bacterial and eukaryotic 
 
 
 .. warning::
-   The kingomds must be spelt the same way CAZy spells them, for example use 'eukaryot**a**' instead of 'eukaryot**e**'. The kingdoms 
-   are **not** case sensitive, therefore, both ``bacteria`` *and* ``Bacteria`` are accepted. You can also list the kingdoms in 
-   *any* order. Thus, both ``bacteria,eukaryota`` *and* ``eukaryota,bacteria`` are accepted.
+   The kingdoms must be spelt the same way CAZy spells them, for example use 'eukaryot**a**' instead of 'eukaryot**e**'.
+   
+.. NOTE:: 
+   The kingdoms are **not** case sensitive, therefore, both ``bacteria`` *and* ``Bacteria`` are accepted. 
+
+.. NOTE::
+   You can list the kingdoms in *any* order. Thus, both ``bacteria,eukaryota`` *and* ``eukaryota,bacteria`` are accepted.
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 Speciying Genera to scrape
-=======================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can customise the scraping of CAZy to retrieve only CAZymes from *all* species from specific 
-genera. To do this add the ``--genera`` flag to the ``cazy_webscraper`` command followed by all 
-the genera you want to retrieve CAZymes from. CAZymes from any genera that you do not list will 
-**not** be retrieved. To list multiple genera, you need to only add the ``--genera`` flag once followed 
-by a list of all genera, with each genera separated with a single comma and *no* spaces.
+genera. To do this add the ``--genera`` flag to the ``cazy_webscraper`` command followed by your
+genera of interes.
+
+To list multiple genera, you need to only add the ``--genera`` flag *once* followed 
+by a list of all your genera, with each genera separated with a single comma and *no* spaces.
 
 For example, if we wanted to retrieve all CAZymes from *all* Aspergillus, Trichoderma and Streptomyces species 
 we would use the command:
@@ -310,15 +318,15 @@ we would use the command:
    ASPERGILLUS is **incorrect**
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Specifying species of organisms to scrape
-=============================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-You can specify to retrieve CAZymes only derived from specific species. To do this add the ``--species`` 
+You can specify to retrieve only CAZymes derived from specific species. To do this add the ``--species`` 
 flag to the ``cazy_webscraper`` command, followed by a list of all species you wish to retrist the retrieval of 
 CAZymes to. Separate each species with a single comma. Also for each species use the full scientific name for the species.
 
-For example, if we wanted to retrieve all CAZymes from Aspergillus niger and Aspergillus fumigatus we would use the command:  
+For example, if we wanted to retrieve all CAZymes from *Aspergillus niger* and *Aspergillus fumigatus* we would use the command:  
 
 .. code-block:: bash
 
@@ -344,13 +352,16 @@ For example, if we wanted to retrieve all CAZymes from Aspergillus niger and Asp
    When you specify a species ``cazy_webscraper`` will retrieval CAZymes from *all* strains of the species.
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Specify specific strains of species to scrape
-====================================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You may only be interested in specific strains of a species. Therefore, ``cazy_webscraper`` allows you to 
-restrict the retrieval of CAZymes to only those derived from specific strains of species. To do this 
-add the ``--strains`` flag to the ``cazy_webscraper`` command, followed by a list of all the strains 
-of interest. Separate each strain with a single command and no spaces.
+You may only be interested in specific strains of a species. Instead of scraping CAZymes for all strains 
+of a given speices, add the ``--strains`` flag followed by the specific species strains you wish to restrict 
+the retrieval of CAZymes to.
+
+List the full scientific name followed by the strain name. To specify multiple strains, list all 
+strains of interest and separate with a single comma with **no** space.
 
 For example, if we wanted to retrieve all CAZymes from Aspergillus niger ATCC 1015 and Aspergillus uvarum CBS 121591  we would use the command:
 
@@ -358,31 +369,25 @@ For example, if we wanted to retrieve all CAZymes from Aspergillus niger ATCC 10
 
    cazy_webscraper --strains Aspergillus niger ATCC 1015,Aspergillus uvarum CBS 121591
 
-.. note::
-   The order that the strains are listed does **not** matter, and separate multiple species names with a single comma 
-   with **no** spaces.
+he order that the strains are listed does **not** matter.
 
-.. note::
-   Sometimes in CAZy only the species name is given and no specific strain identifer. To retrieve CAZymes from these 
-   species then you can list the species name and it will only retrieve CAZymes that are listed with the exact species 
-   and with no strain identifers. For example, listing 'Aspergillus niger' will only retrieve CAZymes with their source 
-   organism specifically listed as 'Aspergillus niger' and will not retrieve CAZymes from ''.
-
-.. warning::
+.. NOTE::
    If you use the ``--species``, ``--genera`` and ``--strains`` flags in any combination and a source organism matches 
-   multiple of the taxonomy critera, the CAZymes derived from that species will only be retrieved **once**. For example, 
-   using the command ``cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015`` 
-   will retrieve all CAZymes from *all* Aspergillus species *once*. The higher taxonomy levels take president, and the command 
-   will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well, and then 
-   retrieve another copy of all CAZymes from Aspergillus niger ATCC 1015.
+   multiple of the taxonomy critera, the CAZymes derived from that species will only be retrieved **once**.
+   
+   For example, using the command ``cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015`` 
+   will retrieve all CAZymes from *all* Aspergillus species *once*.
+   
+The higher taxonomy levels take president, and the command will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well, and then retrieve another copy of all CAZymes from Aspergillus niger ATCC 1015.
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Combining taxonomic filters
-=====================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can combine any combination of ``cazy_webscraper`` optional flags, including combining the taxonomic filters. For example,
-you may wish to retrieve all CAZyme derived from all viral and Aspergillus species, Layia carnosa, Layia chrysanthemoides, Trichoderma reesei QM6a and 
-Trichoderma reesei QM9414, we would combine the respective flags for a single ``cazy_webscraper`` command. The command 
+You can combine any combination of ``cazy_webscraper`` optional flags, including combining the taxonomic filtersFor example,
+you may wish to retrieve all CAZyme derived from all viral species, Aspergillus species, Layia carnosa, Layia chrysanthemoides, Trichoderma reesei QM6a and 
+Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cazy_webscraper`` command. The command 
 we would use would be:
 
 .. code-block:: bash
@@ -391,65 +396,49 @@ we would use would be:
 
 .. note::
    This is a single command written on a single line. When typing the command into the terminal do not fit enter until you have finished the command. 
-   Visually the command may spread over multiple lines but it is a *single* command.
 
 .. warning::
    If you use the ``--species``, ``--genera`` and ``--strains`` flags in any combination and a source organism matches 
    multiple of the taxonomy critera, the CAZymes derived from that species will only be retrieved **once**. For example, 
    using the command ``cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015`` 
-   will retrieve all CAZymes from *all* Aspergillus species *once*. The higher taxonomy levels take president, and the command 
-   will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well, and then 
-   retrieve another copy of all CAZymes from Aspergillus niger ATCC 1015.
+   will retrieve all CAZymes from *all* Aspergillus species *once*.
 
+When combining taxonomy filters, the higher taxonomy levels take president. For example, the :command:
+   
+.. code-block:: bash
+   cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015
 
-EC numbers
-==============
+will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well. 
+``cazy_webscraper`` will retrieval all CAZymes for all strains of *Aspergillus niger*.
 
-If you are interested in CAZymes with specific activities you can limit the retrieval of CAZymes from CAZy to only those 
-annotated with *at least one* EC number from a set of EC numbers you specify. To specify a set of EC numbers 
-add the ``--ec`` flag to the ``cazy_webscraper`` command, followed by a list of EC numbers. Separate each EC number with a single 
-comma and *no* spaces. Do **not** forget to include the 'EC' prefix from your EC numbers. 
+-----------------------------------------
+Enabling retrieving subfamily annotations
+-----------------------------------------
 
-.. note::
-   Use the international accepted '-' (dash) to indicate missing identifiers (numbers) in the EC number.
-   EC1.2.3.- is accepted but EC1.2.3. and EC1.2.3.* are not.
+By default ``cazy_webscraper`` only retrieves the CAZy family annotation for each protein, it does not 
+retrieve the CAZy subfamily annotation. For example, a CAZyme within the CAZy subfamily GH3_1, will be 
+stored in the local CAZyme database as only a GH3 CAZyme.
 
-To limit the scraping of CAZy to only retrieve CAZymes that are annotated with *at least one* of the EC numbers 
-EC4.2.2.-, EC1.3.2.- and EC5.4.-.-, use the command:
+To retrieve the CAZy family **and** CAZy subfamily annotations, add the ``-subfamilies``/``-s`` flag, anywhere in the 
+``cazy_webscraper`` command. For example:
 
 .. code-block:: bash
+   cazy_webscraper --families GH3 --subfamilies
 
-   cazy_webscraper --ec "EC4.2.2.-,EC1.3.2.-,EC5.4.-.-"
+This command will retrieve all CAZymes from GH3, and will retrieve the CAZy family **and** CAZy subfamily 
+annotations. For example, a CAZyme in CAZy subfamily GH3_1 will be stored in the local database under the 
+CAZy family GH3 and the CAZy subfamily GH3_1.
 
-.. warning::
-   Some terminals may misinterpret ``EC1.2.-.-`` as trying to invoke the options ``.``, therefore, it is 
-   recommend practise to encase the entire EC number list in single or double quotation marks if any of the EC numbers 
-   include missing identifiers. ``"EC4.2.2.-,EC1.3.2.-,EC5.4.-.-"`` or ``'EC4.2.2.-,EC1.3.2.-,EC5.4.-.-'`` are recommended, 
-   ``EC4.2.2.-,EC1.3.2.-,EC5.4.-.-`` is not recommended, and ``"EC4.2.2.-,EC1.3.2.-,EC5.4.-.-'`` (mismatching double and single 
-   quotation marks) will raise errors.
+------------------------------------------------------
+Combining CAZy class, CAZy family and taxonomy filters
+------------------------------------------------------
 
+You can use any combination of the CAZy class, CAZy family and taxonomy filters to fully customise the scrape of 
+CAZy.
 
-Taxonomy and EC numbers
-=============================
+Below are some examples:
 
-You can use any combination of ``cazy_webscraper`` optional flags to fully customise the scraping of CAZy. 
-For example, you may which to retrieve all CAZymes annotated with the EC number EC4.2.2.- which are only from bacterial 
-species. To do that you would add the ``--kingdoms`` and ``--ec`` flags:
-
-.. code-block:: bash
-
-   cazy_webscraper --ec "EC4.2.2.-" --kingdoms bacteria
-
-The order you add the optional flags **does not** matter, and you can specify multiple EC numbers, kingdoms, strains etc.
-
-
-Combining Taxonomy, EC numbers, CAZy classes and CAZy families filters
-*************************************************************************
-
-The optional flags for ``cazy_webscraper`` can be used in any combination and any order. For example, 
-you can combine the EC number, taxonomy, CAZy class and CAZy family configurations. Below are some examples:
-
-**Example 1**  
+**Example 1**
 To retrieve all CAZymes from all CBM families, GH1, GH2 and PL9, and that are derived from any Aspergillus species:
 
 .. code-block:: bash
@@ -457,18 +446,11 @@ To retrieve all CAZymes from all CBM families, GH1, GH2 and PL9, and that are de
    cazy_webscraper --classes CBM --families GH1,GH2,PL9 --genera Aspergillus
 
 **Example 2**  
-To retrieve all CAZymes from GH1, and GH2, if they are annotated with EC1.2.-.-, and are derived from any bacterial species:
+To retrieve all CAZymes from GH1, and GH2 that are derived from any bacterial species:
 
 .. code-block:: bash
 
-   cazy_webscraper --families GH1,GH2 --ec "EC1.2.-.-" --kingdoms bacteria 
-
-.. warning::
-   Some terminals may misinterpret ``EC1.2.-.-`` as trying to invoke the options ``.``, therefore, it is 
-   recommend practise to encase the entire EC number list in single or double quotation marks if any of the EC numbers 
-   include missing identifiers. ``"EC4.2.2.-,EC1.3.2.-,EC5.4.-.-"`` or ``'EC4.2.2.-,EC1.3.2.-,EC5.4.-.-'`` are recommended, 
-   ``EC4.2.2.-,EC1.3.2.-,EC5.4.-.-`` is not recommended, and ``"EC4.2.2.-,EC1.3.2.-,EC5.4.-.-'`` (mismatching double and single 
-   quotation marks) will raise errors.
+   cazy_webscraper --families GH1,GH2 --kingdoms bacteria 
 
 **Example 3**  
 To retrieve CAZymes from all viral species, and all Aspergillus niger strains which are catalogued within GH3_1 and GH3_2
@@ -477,23 +459,26 @@ To retrieve CAZymes from all viral species, and all Aspergillus niger strains wh
 
    cazy_webscraper --families GH3_1,GH3_2 --subfamilies --species Aspergillus niger --kingdoms Bacteria
 
-
+------------------
 Configuration file
-################################
+------------------
 
 Whenever ``cazy_webscraper`` is invoked and adds data to a database, the configuration of ``cazy_webscraper`` 
-(this is the kingdoms, genera, species, strains, EC numbers, CAZy classes and CAZy family filters which were applied) 
+(this is the kingdoms, genera, species, strains, CAZy classes and CAZy family filters which were applied) 
 and the data and time the scrape was initiated is logged in the database. However, for optimal reproduction of 
 how ``cazy_webscraper`` was used in your research, you can create shareable documentation that others can use to 
-invoke ``cazy_webscraper`` and apply the exact sample filters as yourself. This is achieved by creating a configuration file 
+reproduce your CAZy dateset. This is achieved by creating a configuration file 
 rather than configuring the performance of ``cazy_webscraper`` at the command line.
 
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Creating a configuration file
-****************************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-An example and template configuration file is included in ``cazy_webscraper``, it can be found at ``scraper/scraper_config.yaml``. 
-This is a YAML file; if you are new to YAML files please find more detailed information on YAML files [here](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html).
+``cazy_webscraper`` uses the YAML file type for its configuraiton file; 
+if you are new to YAML files please find more detailed information on YAML files [here](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html).
+
+A template and example configuration file for scrapping CAZy using ``cazy_webscraper`` can be found in 
+the repo, in the ``configuration_files`` directory.
 
 The configuration YAML **must** contain the following tags/headings (identical to how they are presented below):
 
@@ -507,34 +492,17 @@ The configuration YAML **must** contain the following tags/headings (identical t
 * genera
 * species
 * strains
-* kingoms
-* ECs
+* kingdoms
 
+.. NOTE::
+   The order of the tags/headings does not matter.
 
-Specifying CAZy classes to scrape
-====================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Scraping specific CAZy classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Under the **classes** heading list any classes to be scrapped. For classes listed under 'classes', 
-all proteins catalogued under that class will be retrieved, **unless** specific families have been 
-listed under the respective classes heading in the configuration file. Then scraping only the 
-specific families takes precident and the entire class is not scraped. _If you believe this should 
-be changed please raise an issue. It is invisioned that very few users would want to simultanious 
-scrape an entire class and also scrape only specific families from that same class._
-
-A ``cazy_dictionary.json`` has been created and packaged within the ``cazy_webscraper`` 
-(the specific location is ``./scraper/file_io/cazy_dictionary.json``, where '.' is the directory 
-where the webscraper is installed). This allows users to use a variety of synonoms for the CAZy 
-classes, for example both "GH" and "Glycoside-Hydrolases" are accepted as synonoms for 
-"Glycoside Hydrolases (GHs)". Additionally, the retrieval of CAZy classes from the configuration 
-file is **not** case sensitive, therefore, both "gh" and "GH" are excepted. The excepted class 
-synonoms have beeen written out in a json file to enale easy editing of this file if additional 
-accepted synonoms are to be added, of it a new CAZy class is defined then this class only needs 
-to be added to the json file, without needing to modify the entire webscraper. 
-
-If you having issues with the scraper retrieving the list of CAZy classes that are written under 
-'classes' in the configuration file, please check the dictionary first to see the full list of 
-accepted synonoms. If you are comfortable modifying json files then feel free to add your own 
-synonoms to the dictionary.
+Under the **classes** heading list any classes to be scrapped. For each CAZy class listed under 'classes', CAZymes 
+will be retrieved for every CAZy family within the CAZy class.
 
 Each class must be listed on a separate line, indented by 4 spaces, and the class name encapsulated 
 with single or double quotation marks. For example:
@@ -543,17 +511,22 @@ with single or double quotation marks. For example:
 
     classes:
         - "GH"
-        - "pl"
+        - "PL"
 
-Specifying CAZy families to scrape
-=========================================
+The same CAZy class name synonyms used for the command line are accepted for the configuration file.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Scraping specific CAZy families
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Under the each of the class names listed in the configuration file, list the names of specific 
 **families** to be scraped from that class. The respective classes of the specificed families do 
 **not** need to be added to the 'classes' list.
 
 Write the true name of the family not only it's number, for example **GH1** is excepted by **1** is 
-not. Name families using the standard CAZy nomenclature, such as **"GT2"** and 
+not.
+
+Name families using the standard CAZy nomenclature, such as **"GT2"** and 
 **NOT "GlycosylTransferases_2"**. Additionally, use the standard CAZy notation for subfamilies 
 (**GH3_1**).
 
@@ -569,12 +542,16 @@ marks. For example:
     Glycoside Hydrolases (GHs):
         - "GH1"
         - "GH2"
+        - "GH3_1"
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 Example configuration file
-*************************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Below is an example of the content you may wish to put in a configuration file.
+Below is an example of the content you may wish to put in a configuration file. Using this file 
+will retrieve all CAZymes in CAZy class AA, CAZy families GH1, GH3 and PL9 that are either derived from 
+a bacterial or *Trichoderma* species.
 
 .. code-block:: yaml
 
@@ -595,9 +572,6 @@ Below is an example of the content you may wish to put in a configuration file.
    strains:
    kingdoms:
       - "Bacteria"
-   ECs:
-      - EC4.2.2.-
-      - EC5.4.-.-
 
 
 .. note::
@@ -628,15 +602,13 @@ allow you to add notes to your configuration file. For example:
    ECs:  # only CAZymes with at least one of these EC numbers will be scrapped
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 Using a configuration file
-************************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Once you have created a configuration file (we recommend modifying the template one provided with ``cazy_webscraper`` 
 you then need to invoke ``cazy_webscraper`` and tell it you are using a configuration file. To do this we add the 
-``--config`` flag to the ``cazy_webscraper`` command, followed by the path to the configuration file.
-
-.. note::
-   You can use the long form of the configuration file flag (``--config``) *or* the short hand (``-c``).
+``--config``/``-c`` flag to the ``cazy_webscraper`` command, followed by the path to the configuration file.
 
 The path we pass to ``cazy_webscraper`` is a *relative* path. This means ``cazy_webscraper`` will start in the directory 
 the terminal is currently pointed out, and follow the path from there. For example, if we used the command:
@@ -645,8 +617,8 @@ the terminal is currently pointed out, and follow the path from there. For examp
 
    cazy_webscraper -c scraper/scraper_config.yaml
 
-Then the computer will look for a directory called ``scraper`` in the directory the terminal is looking at, then within the 
-``scraper`` directory it will look for a yaml file called ``scraper_config.yaml``.
+Then the computer will look for a directory called ``scraper`` in the directory the terminal is looking at, then look within the 
+``scraper`` directory for a yaml file called ``scraper_config.yaml``.
 
 .. note::
    To check which directory ``cazy_webscraper`` is pointed at type ``pwd`` into the terminal and hit enter. This is the 
@@ -655,13 +627,14 @@ Then the computer will look for a directory called ``scraper`` in the directory 
 .. warning::
    Your path must point directly to the YAML file. Don't forget the '.yaml' file extension!
 
-
+------------------------------------------
 Using a configuration and the command-line
-###############################################
+------------------------------------------
 
-If you so wished, you can use a configuration file *and* the command line to configure ``cazy_webscraper``. If you do this 
-``cazy_webscraper`` will **not** retrieve duplicates of the data. If a CAZyme matches at least one of the configuration data then 
-one copy of the CAZyme record will be added to the SQL database, and only one copy will be added to the database no matter how many of the 
+You can configure ``cazy_webscraper`` using a combination of command line arguments and a configuration file. 
+
+If a CAZyme matches at least one of the configuration data (whether if be from the terminal of the configuration file),  
+one copy of the CAZyme record will be added to the SQL database, and only **one copy**, no matter how many of the 
 configuration data the CAZyme meets.
 
 To use a configuration file and a the command-line to configure ``cazy_webscraper``, use the configuration file 
@@ -671,31 +644,26 @@ To use a configuration file and a the command-line to configure ``cazy_webscrape
    The order you invoke the optional flags **does not** matter.
 
 
+-------------------------------------------------------------------
 Additional operations to fine tune how ``cazy_webscraper`` operates
-#############################################################################
+-------------------------------------------------------------------
 
-
-Retrieving CAZy family and CAZy subfamily annotations
-********************************************************
-
-The default behaviour of ``cazy_webscraper`` retrieves only the CAZy family annotations of CAZymes, and 
-does **not** catalogue the child CAZy subfamily annotations as well. If you want to retrieve the CAZy subfamily 
-annotations then add the ``--subfamilies`` flag anywhere to the ``cazy_webscraper`` command. For example:
-
-.. code-block:: bash
-
-   cazy_webscraper --subfamilies
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Add the scraped data to an existing CAZyme database
-*********************************************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You may wish to scrape CAZy in multiple stages, maybe your internet dropped out while scraping CAZy 
-and you don't want to start again, or maybe you scraped CAZy but forget missed out a species of interest. No matter 
+You may wish to scrape CAZy in multiple stages; maybe your internet dropped out while scraping CAZy 
+and you don't want to start again, or maybe you scraped CAZy but missed out a species of interest. No matter 
 the reason ``cazy_webscraper`` allows you to add more CAZyme data to an existing database previously created by 
 ``cazy_webscraper``.
 
 To do this add the database (``--database`` or ``-d``) flag to the ``cazy_webscraper`` command, followed by the path 
-to the SQL database you want to add your scraped CAZy data to.
+to the CAZyme database you want to add your scraped CAZy data to. For example, to add data to an existing 
+database in ``cazy/cazyme_db.db`` use the command:
+
+.. code-block:: bash
+
+   cazy_webscraper -- database cazy/cazyme_db.db
 
 .. note::
    Don't forget the .db file extension at the end of the path!
@@ -711,11 +679,34 @@ Then the computer will look for a directory called ``my_cazyme_databases`` in th
 ``my_cazyme_databases`` directory the computer will look for the file ``my_cazyme_database.db``.
 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Scraping data from a previously downloaded CAZy txt file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+CAZy provides access to data within its database via text files. ``cazy_webscraper`` downloads the CAZy 
+text file containing all data within the CAZy database, providing a database dump. This file is then written to the cache directory 
+(by default, called ``.cazy_webscraper_<date>_<time>``).
+
+For consistency in the dataset, you may wish to perform multiple scrapes of CAZyme data from the same CAZy text file. 
+This could be a CAZy text file you have downloaded from CAZy or a text file downloaded by ``cazy_webscrapper``.
+
+To direct ``cazy_webscraper`` to retrieve CAZyme data from a previously downloaded CAZy text file, using the 
+``--cazy_data`` flag, followed by the path to the text file. For example:
+
+.. code-block:: bash
+   cazy_webscraper --cazy_data cazy_db/cazy_data.txt
+
+.. WARNING::
+   ``--cazy_data`` must be pointed directly at the text file, **not** a zipped file containing the CAZy 
+   data text file.
+
+
+^^^^^^^^^^^^^^^^^^^^^^
 Writing out a log file
-******************************
+^^^^^^^^^^^^^^^^^^^^^^
 
 If you want to have a log file of all terminal output produced by ``cazy_webscraper`` then add the log 
-``--log`` flag (or the shorthand version ``-l``) anywhere to the ``cazy_webscraper`` command, followed by a 
+``--log``/``-l`` anywhere to the ``cazy_webscraper`` command, followed by a 
 path to write the log file to. This path is a *relative* path and must include target a log file specifically. 
 For example:
 
@@ -727,13 +718,13 @@ For example:
    The log file does not already have to exist for ``cazy_webscraper`` to write to it; however, all 
    directories included in the path must already exist.
 
-
+^^^^^^^^^^^^^^^
 Verbose logging
-*********************************
+^^^^^^^^^^^^^^^
 
-For more detailed logging (logging more detail and not only when warnings and errors are raised by 
-``cazy_webscraper``), add the verbose logging flag (``--verbose`` or ``-v``) anywhere to the ``cazy_webscraper`` 
-command. You need only add the verbose flag and nothing else, for example:
+For more detailed logging (which includes not only error and warning messages (the default) but also 
+configuration setup, number of proteins retrieved etc.), add the verbose logging flag (``--verbose`` or ``-v``) anywhere to the ``cazy_webscraper`` 
+command. For example:
 
 .. code-block:: bash
 
@@ -741,14 +732,16 @@ command. You need only add the verbose flag and nothing else, for example:
 
 The verbose flag can be used in combination with the log flag to write all terminal output to a log file.
 
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changing the connection timeout limit
-*****************************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Sometimes the connection to the CAZy server times out. By default if a connection is attempted to made to CAZy 
 and no response is recieved within 45 seconds, then ``cazy_webscraper`` interprets this as the connection 
-timing out, waits 10 seconds and retries the connection.  You can change how long the computer waits for a 
-response from the CAZy server before classifying the connection as timed out by adding the timeout flag to the 
+timing out. ``cazy_webscraper`` then waits 10 seconds and retries the connection.
+
+You can change how long the computer waits for a 
+response from the CAZy server before classifying the connection as timed out by adding the ``--timeout`` flag to the 
 ``cazy_webscraper`` command, followed by the number of seconds you want the computer to wait for a response from CAZy 
 before classifying the connection as timing out.
 
@@ -763,32 +756,3 @@ The timeout flag can be used in combination with other flags, for example:
 .. code-block:: bash
 
    cazy_webscraper --subfamilies --genera Aspergillus -v --timeout 30
-
-You can use the long version ``--timeout`` or short version ``-t`` of the timeout flag.
-
-.. code-block:: bash
-
-   cazy_webscraper --subfamilies --genera Aspergillus -v -t 60
-
-
-Configuration when scraping subfamilies
-################################################
-
-The default behaviour of ``cazy_webscraper`` retrieves only the CAZy family annotations of CAZymes, and 
-does **not** catalogue the child CAZy subfamily annotations as well. If you want to retrieve the CAZy subfamily 
-annotations then add the ``--subfamilies`` flag anywhere to the ``cazy_webscraper`` command. For example:
-
-.. code-block:: bash
-
-   cazy_webscraper --subfamilies
-
-This will retrieve both the parent CAZy family annotations and the child CAZy subfamily annotations for all applicable CAZymes. 
-If a CAZyme is not part of a subfamily only its CAZy family annotations will be catagloued.
-
-If any subfamilies are listed within the configuration file, the retrieval of subfamilies **must** 
-be enabled at the command line uisng ``--subfamilies``.
-
-If the parent family, e.g GH3, is listed in the configuration file and ``--subfamilies`` is enabled, 
-all proteins catalogued under GH3 and its subfamilies will be retrieved. This is to save time 
-having to write out all the subfamilies for a given CAZy family. The scraper will remove any 
-duplicate proteins automatically.

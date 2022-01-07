@@ -74,9 +74,12 @@ setuptools.setup(
     url="https://github.com/HobnobMancer/cazy_webscraper",
     entry_points={
         "console_scripts": [
-            "cazy_webscraper = scraper.cazy_webscraper:main",
-            "cw_get_genbank_sequences = scraper.expand.get_genbank_sequences:main",
-            "cw_get_pdb_structures = scraper.expand.get_pdb_structures:main",
+            "cazy_webscraper = cazy_webscraper.cazy_webscraper:main",
+            "cw_get_genbank_seqs = cazy_webscraper.expand.genbank.get_genbank_sequences:main",
+            "cw_get_uniprot_data = cazy_webscraper.expand.uniprot.get_uniprot_data:main",
+            "cw_extract_sequences = cazy_webscraper.expand.extract.extract_sequences:main",
+            "cw_get_pdb_structures = cazy_webscraper.expand.pdb.get_pdb_structures:main",
+            "cw_cazy_genbank_coverage = cazy_webscraper.genomes.cazy_genbank_coverage:main",
         ]
     },
     install_requires=[
@@ -85,6 +88,7 @@ setuptools.setup(
         "pandas>=1.0.3",
         "pyyaml",
         "requests",
+        "saintBioutils",
         "sqlalchemy>=1.4.20",
         "tqdm",
     ],
