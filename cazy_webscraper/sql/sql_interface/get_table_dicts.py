@@ -170,7 +170,28 @@ def get_gbk_table_dict(connection):
     for gbk in all_genbank:
         db_gbk_dict[f"{gbk.genbank_accession}"] = {
             'taxa_id': gbk.taxonomy_id,
-            'id': gbk.genbank_id
+            'gbk_id': gbk.genbank_id
+        }
+    
+    return db_gbk_dict
+
+
+def get_gbk_table_seq_dict(connection):
+    """Compile a dict of the data in the Genbanks table
+    
+    :param connection: open connection to an SQLite3 database
+    
+    Return dict {genbank_accession: 'taxa_id': int, 'gbk_id': int}
+    """
+    with Session(bind=connection) as session:
+        all_genbank = session.query(Genbank).all()
+
+    db_gbk_dict = {}  # {genbank_accession: 'taxa_id': str, 'id': int}
+    
+    for gbk in all_genbank:
+        db_gbk_dict[f"{gbk.genbank_accession}"] = {
+            'sequence': gbk.sequence,
+            'seq_date': gbk.seq_update_date
         }
     
     return db_gbk_dict
@@ -184,32 +205,49 @@ def get_gbk_fam_table_dict(connection):
     
     :param connection: open sqlalchemy connection to an SQLite3 db engine
     
-    Return dict {gbk_id: {fam_id}}"""
+    Return 
+    - dict: {gbk_acc: {'families': {'fam subfam': fam_id}}, 'gbk_id': gbk_id }
+    - set of tuples: (gbk_id, fam_id), each representing one row in the table
+    """
     with Session(bind=connection) as session:
         all_gbk_fam_records = session.query(Genbank, CazyFamily).\
         join(CazyFamily, Genbank.families).\
         all()
-        
-    db_gbk_fam_dict = {}  # {genbank_accession: families: {fam: fam_id}, id: int (db_id)}
-    
-    for record in all_gbk_fam_records:
-        genbank_accession = record[0].genbank_accession
+
+    existing_rel_tuples = set()  # set of tuples (gbk_id, fam_id)
+
+    gbk_fam_table_dict = {}
+    # {gbk_acc: {'families': {'fam subfam': fam_id}}, 'gbk_id': gbk_id }
+
+    for record in tqdm(all_gbk_fam_records, ' Retreving existing gbk-fam relationships from db'):
+        gbk_accession = record[0].genbank_accession
+        gbk_id = record[0].genbank_id
+
         family = record[1].family
-        subfamily = record[1].subfamily
-        if subfamily is None:
+        if record[1].subfamily is None:
             subfamily = '_'
-        
-        family = f"{family} {subfamily}"
-        
+        else:
+            subfamily = record[1].subfamily
+        fam_id = record[1].family_id
+
+        existing_rel_tuples.add( (gbk_id, fam_id) )
+
         try:
-            db_gbk_fam_dict[genbank_accession][family] = record[1].family_id
+            gbk_fam_table_dict[gbk_accession]
+
+            try:
+                gbk_fam_table_dict[gbk_accession][f'{family} {subfamily}']
+
+            except KeyError:
+                gbk_fam_table_dict[gbk_accession][f'{family} {subfamily}'] = fam_id
+
         except KeyError:
-            db_gbk_fam_dict[genbank_accession] = {
-                "families": {family: record[1].family_id},
-                "id": record[0].genbank_id,
+            gbk_fam_table_dict[gbk_accession] = {
+                'families': {f'{family} {subfamily}': fam_id},
+                'gbk_id': gbk_id,
             }
-    
-    return db_gbk_fam_dict
+
+    return gbk_fam_table_dict, existing_rel_tuples
 
 
 def get_kingdom_table_dict(connection):
@@ -300,3 +338,49 @@ def get_uniprot_table_dict(connection):
         }
     
     return uniprot_table_dict
+
+
+def get_gbk_kingdom_dict(connection):
+    """Compile dict of Genbank, Taxonomy and Kingdom records
+    
+    :param connection: open sqlalchemy db connection
+    
+    Return dict {kingdom: {genus: {species: {protein_accessions}}}
+    """
+    with Session(bind=connection) as session:
+        query_results = session.query(Genbank, Taxonomy, Kingdom).\
+            join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+            join(Genbank, (Genbank.taxonomy_id == Taxonomy.taxonomy_id)).\
+            all()
+
+    genbank_kingdom_dict = {}  # kingdom: {genus: {species: {protein_accessions}}}
+
+    for result in tqdm(query_results, desc="Retreving GenBank accessions and taxonomy"):
+        genbank_accession = result[0].genbank_accession
+        genus = result[1].genus
+        species = result[1].species
+        kingdom = result[2].kingdom
+
+        try:
+            genbank_kingdom_dict[kingdom]
+
+            try:
+                genbank_kingdom_dict[kingdom][genus]
+
+                try:
+                    genbank_kingdom_dict[kingdom][genus][species].add(genbank_accession)
+                
+                except KeyError:
+                    genbank_kingdom_dict[kingdom][genus][species] = {genbank_accession}
+
+            except KeyError:
+                genbank_kingdom_dict[kingdom][genus] = {species: {genbank_accession}}
+
+        except KeyError:
+            genbank_kingdom_dict[kingdom] = {
+                genus: {
+                    species: {genbank_accession},
+                },
+            }
+
+    return genbank_kingdom_dict

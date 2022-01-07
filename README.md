@@ -47,10 +47,14 @@ If you use `cazy_webscraper`, please cite the following publication:
     - [Configuring UniProt data retrieval](#configuring-uniprot-data-retrieval)
 - [Retrieving protein sequences from GenBank](#retrieving-protein-sequences-from-genbank)
     - [Configuring GenBank protein sequence data retrieval](#configuring-genbank-protein-sequence-retrieval)
-- [Extracing protein sequences from the local CAZyme database and building a BLAST database](#extracting-protein-sequences-from-the-local-cazyme-database-and-building-a-blast-database)
+- [Extracting protein sequences from the local CAZyme database and building a BLAST database](#extracting-protein-sequences-from-the-local-cazyme-database-and-building-a-blast-database)
+    - [Configuring extracting sequences from a local CAZyme db](#configuring-extracting-sequences-from-a-local-cazyme-db)
 - [Retrieving protein structure files from PDB](#retrieving-protein-structure-files-from-pdb)
     - [Configuring PDB protein structure file retrieval](#configuring-pdb-protein-structure-file-retrieval)
+- [The `cazy_webscraper` API or Interrogating the local CAZyme database](#the_cazy_webscraper_api_or_interrogating_the_local_cazyme_database)
 - [Configuring `cazy_webscraper` using a YAML file](#configuring-using-a-yaml-file)
+- [CAZy coverage of GenBank](#cazy-coverage-of-genbank)
+    - [Configure calculating CAZy coverage of GenBank](#configure-calculating-cazy-coverage-of-genbank)
 - [Contributions](#contributions)
 - [License and copyright](#license-and-copyright)
 <!-- /TOC -->
@@ -65,7 +69,7 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 
 ### Installation
 
-`cazy_webscraper` can be installed *via* `conda` or `pip`:
+`cazy_webscraper` can be installed via `conda` or `pip`:
 
 ```bash
 conda install -c bioconda cazy_webscraper
@@ -96,21 +100,24 @@ Options are written in alphabetical order.
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
+`--cazy_data` - Path to a txt file downloaded from CAZy containing a CAZy db data dump.
+
 `--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
+
+`--classes` - list of classes from which all families are to be scrape.
 
 `--config`, `-c` - Path to a configuration YAML file. Default: None.
 
 `--citation`, `-C` - Print the `cazy_webscraper` citation. When called, the program terminates after printng the citation and CAZy is **not** scraped.
 
-`--classes` - list of classes from which all families are to be scrape.
+`--database`, `-d` - Path to an **existings** local CAZyme database to add newly scraped too. Default: None.
 
-`--database`, `-D` - Path to an **existings** local CAZyme database to add newly scraped too. Default: None.
-
-`--db_output`, `-d` - Path to write out a **new** local CAZyme database to. Include the name of the new database, including the `.db` extension. Default: None.
 
 _Do not use `--db_output` **and** `--database` at the same time._
 
 _If `--db_output` **and** `--database` are **not** called, `cazy_webscraper` write out a local CAZyme database to the cwd with the standardised name `cazy_webscraper_<date>_<time>.db`_
+
+`--delete_old_relationships` - Detele old CAZy family annotations of GenBank accessions. These are CAZy family annotations of a given GenBank accession are in the local database but the accession is not longer associated with those CAZy families, so delete old accession-family relationships.
 
 `--families` - List of CAZy (sub)families to scrape.
 
@@ -185,17 +192,17 @@ cw_get_uniprot_data <path_to_local_CAZyme_db> --ec --pdb --seq
 
 Below are listed the command-line flags for configuring the retrieval of UniProt data.
 
-The first positional argument is the path to the local CAZyme database, which is **required**.
+`database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
 
-`--bioservices_batch_size` - Change the query batch size submitted via [`bioservices`]() to UniProt to retrieve protein data. Default is 150. `bioservices` recommands queries not larger than 200 objects.
+`--bioservices_batch_size` - Change the query batch size submitted via [`bioservices`](https://bioservices.readthedocs.io/en/master/) to UniProt to retrieve protein data. Default is 150. `bioservices` recommands queries not larger than 200 objects.
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
 `--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
 
-`--config`, `-c` - Path to a configuration YAML file. Default: None.
+`--classes` - List of classes to retrieve UniProt data for.
 
-`--classes` - List of classes from which all families are to be scrape.
+`--config`, `-c` - Path to a configuration YAML file. Default: None.
 
 `--ec`, `-e` - Enable retrieval of EC number annotations from UniProt
 
@@ -212,7 +219,11 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
+`--nodelete_log` - When called, content in the existing log dir will **not** be deleted. Default: False (existing content is deleted).
+
 `--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
+
+`--sequence`, `-s` - Retrieve protein amino acid sequences from UniProt
 
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
@@ -222,9 +233,9 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--timeout`, `-t` - Connection timout limit (seconds). Default: 45.
 
-`--uniprot_batch_size` - Size of an individual batch query submitted to the [UniProt REST API]() to retrieve the UniProt accessions of proteins identified by the GenBank accession. Default is 150. The UniProt API documentation recommands batch sizes of less than 20,000 but batch sizes of 1,000 often result in HTTP 400 errors. It is recommend to keep batch sizes less than 1,000, and ideally less than 200.
+`--uniprot_batch_size` - Size of an individual batch query submitted to the [UniProt REST API](https://www.uniprot.org/help/programmatic_access) to retrieve the UniProt accessions of proteins identified by the GenBank accession. Default is 150. The UniProt API documentation recommands batch sizes of less than 20,000 but batch sizes of 1,000 often result in HTTP 400 errors. It is recommend to keep batch sizes less than 1,000, and ideally less than 200.
 
-`--update_seq` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
+`--seq_update` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
@@ -236,14 +247,20 @@ _Extracting protein sequences from the local CAZyme database and writing them to
 
 To retrieve all GenBank protein seuqneces for all proteins in a local CAZyme datbase, using the following command:
 ```bash
-cw_get_genbank_seq <path_to_local_CAZyme_db>
+cw_get_genbank_seqs <path_to_local_CAZyme_db>
 ```
+
+`cazy_webscraper` produces to cache files, which are written to the cache dir:
+1. `no_seq_retrieved.txt` which lists the GenBank accessions for which no sequence could be retrieved from GenBank
+2. `seq_retrieved.txt` which list GenBank accessiosn for which a sequence was retrieved from GenBank
 
 ### Configuring GenBank protein sequence retrieval
 
 Below are listed the command-line flags for configuring the retrieval of protein sequences from GenBank.
 
-The first positional argument is the path to the local CAZyme database, which is **required**.
+`database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
+
+`email` - \[REQUIRED\] User email address, required by NCBI Entrez.
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
@@ -260,7 +277,9 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--entrez_batch_size` - Change the query batch size submitted via [`Entrez`]() to retrieve protein sequences from GenBank data. Default is 150. `Entrez` recommands queries not larger than XXX objects in length.
 
-`--families` - List of CAZy (sub)families to scrape.
+`--families` - List of CAZy (sub)families to scrape.#
+
+`--kingdoms` - List of taxonomy kingdoms to retrieve UniProt data for.
 
 `--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
 
@@ -270,26 +289,83 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
 
+`--seq_update` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
+
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
 `--species` - List of species written as Genus Species) to restrict the scraping of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
 
 `--strains` - List of specific species strains to restrict the scraping of CAZymes to.
 
-`--timeout`, `-t` - Connection timout limit (seconds). Default: 45.
-
-`--update_seq` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
-
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
-## Extract protein sequences from the local CAZyme database and building a BLAST database
+## Extracting protein sequences from the local CAZyme database and building a BLAST database
 
-Protein sequences from GenBank and UniProt that are stored in the local CAZyme database can be extracted using `cazy_webscraper`, and written to:
+Protein sequences from GenBank and UniProt that are stored in the local CAZyme database can be extracted using `cazy_webscraper`, and written to any combination of:
 - 1 FASTA file per unique protein
 - A single FASTA file containing all extracted seqences
 - A BLAST database
 
-**FASTA file format:** The protein ID line in the FASTA files compiled by `cazy_webscraper`
+**FASTA file format:** Protein sequences extracted from a local CAZyme database are written out with the GenBank/UniProt accession as the protein ID, and the name of the source database ('GenBank' or 'UniProt') as the description.
+
+To extract all protein seqeunces from the local CAZyme database using the following command structure:
+```bash
+cw_extract_sequences <path_to_local_CAZyme_db> --genbank --uniprot
+```
+
+### Configuring extracting sequences from a local CAZyme db
+
+Below are listed the command-line flags for configuring the extraction of protein sequences from the local CAZyme db.
+
+`database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
+
+`-g`, `--genbank` - Extract protein sequences retrieved from GenBank
+
+`-u`, `--uniprot` - Extract protein sequences retrieved from UniProt.
+
+_Note: At least one of `--genbank` and `--uniprot` must be called, otherwise not protein sequences will be extracted._
+
+`-b`, `--blastdb` - Create BLAST database of extracted protein sequences. Provide the path to the directory to store the BLAST database in.
+
+`--fasta_dir` - Write out each extracted sequence to a separate FASTA file in the provided dir. Provide a path to a directory to write out the FASTA files.
+
+`--fasta_file` - Write out all extracted sequences to a single FASTA file. Provide a path to write out the FASTA file.
+
+_Note: at least one of `--blastdb`, `--fasta_dir`, and `--fasta_file` must be called to inform `cazy_webscraper` where to write the output to. If none are called sequences will be extracted._
+
+`--cache_dir` - Path to cache dir to be used instead of default cache dir path.
+
+`--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
+
+`--config`, `-c` - Path to a configuration YAML file. Default: None.
+
+`--classes` - List of classes from which all families are to be scrape.
+
+`--ec_filter` - Limist retrieval of protein data to proteins annotated with a provided list of EC numbers. Separate the EC numbers bu single commas without spaces. Recommend to wrap the entire str in quotation marks, for example:
+```bash
+cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
+```
+
+`--families` - List of CAZy (sub)families to scrape.#
+
+`--kingdoms` - List of taxonomy kingdoms to retrieve UniProt data for.
+
+`--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
+
+`--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+`--nodelete` - When called, content in the existing output dir will **not** be deleted. Default: False (existing content is deleted).
+
+`--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
+
+`--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
+
+`--species` - List of species written as Genus Species) to restrict the scraping of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
+
+`--strains` - List of specific species strains to restrict the scraping of CAZymes to.
+
+`--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
+
 
 ## Retrieving protein structure files from PDB
 
@@ -308,9 +384,9 @@ cw_get_pdb_structures <path_to_local_CAZyme_db> mmcif,pdb
 
 Below are listed the command-line flags for configuring the retrieval of protein structure files from PDB.
 
-The first positional argument is the path to the local CAZyme database, which is **required**.
+`database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
 
-The second positional argument (which is also **required**) is the file types to be retrieved from PDB. The following file types are supported:  
+`pdb` \[REQUIRED\] The file types to be retrieved from PDB. The following file types are supported:  
 - `mmCif`
 - `pdb`
 - `xml`
@@ -321,8 +397,6 @@ To chose multiple file types, list all desired file types, separting the files u
 cw_get_genbank_seq my_cazyme_db/cazyme_db.db mmcif,pdb,xml
 ```
 Providing the file types is **not** case sensitive, and the order the file types are listed does **not** matter.
-
-Optional flags are listed below.
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
@@ -337,13 +411,13 @@ Optional flags are listed below.
 cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 ```
 
-`--entrez_batch_size` - Change the query batch size submitted via [`Entrez`]() to retrieve protein sequences from GenBank data. Default is 150. `Entrez` recommands queries not larger than XXX objects in length.
-
 `--families` - List of CAZy (sub)families to scrape.
 
 `--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
 
 `--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+`--nodelete` - When called, content in the existing output dir will **not** be deleted. Default: False (existing content is deleted).
 
 `--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
@@ -359,11 +433,91 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--timeout`, `-t` - Connection timout limit (seconds). Default: 45.
 
-`--update_seq` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
+`--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
+
+
+## The `cazy_webscraper` API or Interrogating the local CAZyme database
+
+The SQLite3 database compiled by `cazy_webscraper` can be interrogated in the native interface (i.e. queries written in SQL can be used to interrogate the database). This can be achieved via the command-line or via an SQL database browser (such as [DB Browser for SQLite](https://sqlitebrowser.org/)).
+
+`cazy_webscraper` also provides its own API (Application Programming Interface) for interrogating the local CAZyme database: `cw_query_database`. The API faciliates the intergration of the dataset in the local CAZyme database into downstream bioinformatic pipelines, _and_ provides a method of interrograting the dataset for those who do not use SQL.
+
+`cw_query_database` is the command that can be used to interrogate the dataset in the local CAZyme database, and extract protein data of interest for the proteins matching the user's cirteria of 
+interest.
+
+By default `cw_query_database` retrieves only the GenBank accessions of proteins matching the user's criteria of interest. If not criteria of interest are provided, all GenBank accessions are retrieved. Optional flags can be applied to retrieve additional data about CAZymes that match the user's criteria of interest.
+
+`cw_query_database` currently supports writing the output in two file formats:
+- `json`, by default this is written to the current working directory and with name `<database_name>_<retrieved_data>_YYYY-MM-DD_HH-MM-SS.json`
+- `csv`, by default this is written to the current working directory and with name `<database_name>_<retrieved_data>_YYYY-MM-DD_HH-MM-SS.csv`
+
+`cw_query_database` takes two positional arguments:
+1. The path to the local CAZyme database
+2. The file formats of the output files, presented as a list with each file type separated by as single comma (e.g. `json,csv`). This is **not** case sensitive and the order does **not** matter.
+For example, to retrieve all GenBank accessions for all proteins in the local CAZyme database, and 
+write them to a `json` file, the following command could be used for a database called `cazy.db`:
+```bash
+cw_query_database cazy.db json
+```
+
+### Configuring interrogating the local CAZyme database
+
+Below are listed the command-line flags for configuring the interrogation of the local CAZyme database.
+
+`database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
+
+`file_types` - \[REQUIRED\] file types to write the interrogation output to. Accepted file types are
+`JSON` and `CSV`. These are *not* case sensitive, and the order does not matter.
+
+`--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
+
+`--config`, `-c` - Path to a configuration YAML file. Default: None.
+
+`--class` - Include a 'Class' column in the output `csv` file, listing the CAZy class of all retrieved CAZymes
+
+`--classes` - List of classes from which all families are to be retrieval.
+
+`--ec` - Included EC number annotations in the output
+
+`--ec_filter` - Limist retrieval of protein data to proteins annotated with a provided list of EC numbers. Separate the EC numbers bu single commas without spaces. Recommend to wrap the entire str in quotation marks, for example:
+```bash
+cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
+```
+
+`--family` - Include CAZy family annotations in the output.
+
+`--families` - List of CAZy (sub)families to retrieve CAZymes from. This includes families and SUBfamilies.
+
+`--genus` - Include a 'Genus' column in the output `csv` file, listing the genus for each retrieved CAZymes
+
+`--genera` - List of genera to restrict the retrieval to. Default: None, filter not applied to scrape.
+
+`--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+`--nodelete` - When called, content in the existing output dir will **not** be deleted. Default: False (existing content is deleted).
+
+`--organism` - Include the scientific (organism) name of the source organis
+
+`--output`, `-o` - Output path to write the compiled `csv` file. Default is to write out the `csv` file to the current working directory.
+
+`--seq_genbank` - Add the protein sequences retrieved from GenBank to the query output
+
+`--seq_uniprot` - Add the protein sequences retrieved from GenBank to the query output
+
+`--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
+
+`--species` - List of species written as (Genus Species) to restrict the retrieval of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
+
+`--strains` - List of specific species strains to restrict the retrieval of CAZymes to.
+
+`--subfamily` - Include the CAZy subfamily annotations for proteins matching the criteria of interest.
+
+`--uniprot` - Include the UniProt protein accession and protein name in the output.
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
-## Configuring using a YAML file
+
+## Configuring `cazy_webscraper` using a YAML file
 
 The retrieval of data from CAZy, UniProt, GenBank and PDB can be configured at the command-line **and** via a YAML file.
 
@@ -398,6 +552,50 @@ When listing EC numbers, the 'EC' prefix can be included or excluded. For exampl
 
 Example configuration files, and an empty configuraiton file template are located in the [`config_files`]() directory of this repo.
 
+
+## CAZy coverage of GenBank
+
+The number of genomes represented by the local CAZyme database per taxonomy Kingdom can be compared to the number 
+GenBank genomic assemblies in NCBI. This done using the command `cw_cazy_genbank_coverage`, which requires two 
+positional arguments:
+1. Path to the local CAZyme database
+2. The users email address
+For example:
+```bash
+cw_cazy_genbank_coverage cazymes.db my_email@domain.com
+```
+
+This produces several output files (where time stamp is the date and time the command was invoked):
+1. `cazy_genomic_accessions_<time_stamp>.json`, a JSON file contained a multi-layer dictionary: {kingdom: {genus: {species: {genomic_accession: {proteins: {protein_accessions}, count=int(# of proteins)}}}}}
+2. `genomic_accessions_<time_stamp>.csv`, containing the columns 'Kingdom','Genus','Species','Genomic_accession','#ofProteins', where the number of proteins represents the number of proteins from the genome which are catalogued in CAZy
+3. `protein_genomic_accessions_<time_stamp>.csv`, containing the 'Kingdom', 'Genus', 'Species', 'Genomic_accession', 'Protein_accession'. A unique protein accession is listed on each row, and lists which protein accesison is derived from each genomic assembly.
+4. `cazy_genbank_genome_coverage_<time_stamp>.csv`, containing the columns 'Kingdom', 'NCBI_genomes', 'CAZy_genomes', 'Coverage_percent'. The dataframe lists the number of genomes catalogued in GenBank (NCBI) and the local CAZyme database per taxonomy Kingdom.
+5. `gbk_cazy_genomes_plot_<time_stamp>.png`, a plot of a stacked bar chart with the number of genomes in GenBank (NCBI) and CAZy (the local CAZyme database) per taxonomy Kingdom.
+
+### Configure calculating CAZy coverage of GenBank
+
+Optional cmd-line arguments for `cw_cazy_genbank_coverage` are listed below:
+
+`--batch_size` - The number of accessions posted to NCBI per epost, advice to be max 200. Default=150.
+
+``--force``, ``-f`` - Force writing in existing output directory.
+
+``--force_cache`` - Force writing in existing cache directory.
+
+`--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+`--nodelete` - When called, content in the existing output dir will **not** be deleted. Default: False (existing content is deleted).
+
+`--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
+
+`--output_dir`, `-o` - Path to output directory.
+
+`--retries` - Number of times to retry connection to NCBI Entrez if connection fails.
+
+`--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
+
+`--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
+
 ## Contributions
 
 We welcome contributions and suggestions. You can raise issues at this repository, or fork the repository and submit pull requests, at the links below:
@@ -411,4 +609,4 @@ MIT License
 
 Copyright (c) 2020-2021 University of St Andrews  
 Copyright (c) 2020-2021 University of Strathclyde  
-Copyright (c) 2020-2021 UJames Hutton Institute  
+Copyright (c) 2020-2021 James Hutton Institute  

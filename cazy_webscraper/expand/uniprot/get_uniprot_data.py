@@ -54,11 +54,11 @@ from urllib.error import HTTPError
 from bioservices import UniProt
 from tqdm import tqdm
 
-from cazy_webscraper import cazy_webscraper
+from cazy_webscraper import cazy_scraper
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface import get_selected_gbks
-from cazy_webscraper.sql.sql_interface.add_uniprot_db import (
+from cazy_webscraper.sql.sql_interface.add_uniprot_data import (
     add_ec_numbers,
     add_pdb_accessions,
     add_uniprot_accessions,
@@ -87,7 +87,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         config_logger(args)
     
     # parse the configuration data (cache the uniprot data as .csv files)
-    connection, logger_name, cache_dir = cazy_webscraper.connect_existing_db(args, time_stamp)
+    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
@@ -115,7 +115,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             retrieved_annotations = f"{retrieved_annotations}, PDB accessions"
         if len(config_dict['seq']) != 0:
             retrieved_annotations = f"{retrieved_annotations}, Protein sequence"
-        if args.update_seq:
+        if args.seq_update:
             retrieved_annotations = f"{retrieved_annotations}, Updated UniProt protein sequences"
         sql_interface.log_scrape_in_db(
             time_stamp,
@@ -161,22 +161,22 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     if args.verbose:
         logger.info(
-            "Finished scraping CAZy. Terminating program.\n"
+            "Finished getting data from UniProt\n"
             f"Scrape initated at {start_time}\n"
             f"Scrape finished at {end_time}\n"
             f"Total run time: {total_time}"
-            f"Version: {cazy_webscraper.V}\n"
-            f"Citation: {cazy_webscraper.CITATION_INFO}"
+            f"Version: {cazy_scraper.VERSION_INFO}\n"
+            f"Citation: {cazy_scraper.CITATION_INFO}"
         )
     else:
         print(
             "=====================cazy_webscraper=====================\n"
-            "Finished scraping CAZy\n"
+            "Finished getting data from UniProt\n"
             f"Scrape initated at {start_time}\n"
             f"Scrape finished at {end_time}\n"
             f"Total run time: {total_time}"
-            f"Version: {cazy_webscraper.VERSION_INFO}\n"
-            f"Citation: {cazy_webscraper.CITATION_INFO}"
+            f"Version: {cazy_scraper.VERSION_INFO}\n"
+            f"Citation: {cazy_scraper.CITATION_INFO}"
         )
 
 
@@ -357,7 +357,7 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
                 for pdb in pdb_accessions:
                     uniprot_dict[uniprot_acc]["pdb"].add(pdb)
             
-            if args.sequences:
+            if args.sequence:
                 sequence = row['Sequence']
 
                 try:

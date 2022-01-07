@@ -51,33 +51,31 @@ def build_parser(argv: Optional[List] = None):
     """Return ArgumentParser parser for script."""
     # Create parser object
     parser = argparse.ArgumentParser(
-        prog="cazy_webscraper.py",
-        description="Scrapes the CAZy database",
+        prog="cw_query_database",
+        description="Interrogate a local CAZyme database",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     parser.add_argument(
-        "email",
-        type=str,
-        help="User email address. Requirement of Entrez, used to get source organsism data. Email is not stored be cazy_webscraper."
+        "database",
+        type=Path,
+        help="Path to local CAZyme database"
     )
 
-    # Add optional arguments to parser
+    parser.add_argument(
+        "file_types",
+        dest="file_types",
+        action="store",
+        nargs="+",
+        choices=["csv", "json"],
+        help="File types to write the query output in [csv,json]"
+    )
 
-    # Add option to specify path to configuration file
     parser.add_argument(
         "--cache_dir",
         type=Path,
         default=None,
         help="Target path for cache dir to be used instead of default path",
-    )
-
-    # Add option to use a pre-downloaded CAZy txt file
-    parser.add_argument(
-        "--cazy_data",
-        type=Path,
-        default=None,
-        help="Path predownloaded CAZy txt file",
     )
 
     # Add option to use own CAZy class synoymn dict
@@ -88,14 +86,23 @@ def build_parser(argv: Optional[List] = None):
         help="Path to JSON file containing CAZy class synoymn names",
     )
 
+    parser.add_argument(
+        "--cazy_class",
+        dest="class",
+        action="store_true",
+        default=False,
+        help="Include CAZy class annotations in the query output"
+    )
+
     # Add option to define complete classes to scrape
     parser.add_argument(
         "--classes",
         type=str,
         default=None,
-        help="Classes from which all families are to be scraped. Separate classes by ','"
+        help="CAZy classes to retrieve UniProt data for. Separate classes by ','"
     )
 
+    # Add option to specify path to configuration file
     parser.add_argument(
         "-c",
         "--config",
@@ -105,52 +112,46 @@ def build_parser(argv: Optional[List] = None):
         help="Path to configuration file. Default: None, scrapes entire database",
     )
 
-    # Add option to display citation
     parser.add_argument(
-        "-C",
-        "--citation",
-        dest="citation",
-        action="store_true",
-        default=False,
-        help="Print cazy_webscraper citation message",
-    )
-
-    parser.add_argument(
-        "-o",
-        "--db_output",
-        type=Path,
-        default=None,
-        help="Target output path to build new SQL database",
-    )
-
-    parser.add_argument(
-        "-d",
-        "--database",
-        type=Path,
-        default=None,
-        help="Path to an existing local CAZy SQL database",
-    )
-
-    parser.add_argument(
-        "--delete_old_relationships",
-        dest="delete_old_relationships",
+        "--delete_old_ec",
+        dest="delete_old_ec",
         action="store_true",
         default=False,
         help=(
-            "Delete old GenBank accession - CAZy family relationships (annotations)\n"
-            "that are in the local db but are not in CAZy, e.g. when CAZy has moved a\n"
-            "protein from one fam to another, delete the old family annotation."
+            "Delete EC number-GenBank relationships/annotations\n"
+            "that are not longer listed in UniProt for a given protein"
         ),
     )
 
-    # Add option to force file over writting
     parser.add_argument(
-        "-f",
-        "--force",
-        dest="force",
+        "--ec",
+        dest="ec",
         action="store_true",
         default=False,
-        help="Force file over writting",
+        help="Include EC number annotations in the query output",
+    )
+
+    parser.add_argument(
+        "--ec_filter",
+        type=str,
+        default=None,
+        help="Limit retrieval to proteins annotated with the provided EC numbers. Separate EC numbers with single commas"
+    )
+
+    parser.add_argument(
+        "--cazy_family",
+        dest="cazy_family",
+        action="store_true",
+        default=False,
+        help="Include CAZy family annotations in the query output. This is only CAZy families NOT subfamilies"
+    )
+
+    parser.add_argument(
+        "--cazy_subfamily",
+        dest="cazy_subfamily",
+        action="store_true",
+        default=False,
+        help="Include CAZy subfamily annotations in the query output."
     )
 
     # Add option to specify families to scrape
@@ -158,7 +159,15 @@ def build_parser(argv: Optional[List] = None):
         "--families",
         type=str,
         default=None,
-        help="Families to scrape. Separate families by commas 'GH1,GH2' (case sensitive)"
+        help="CAZy families to UniProt data for. Separate families by commas 'GH1,GH2' (case sensitive)"
+    )
+
+    parser.add_argument(
+        "--genus",
+        dest="genus",
+        action="store_true",
+        default=False,
+        help="Include Genus annotations in the query output"
     )
 
     # Add option to restrict scrape to specific genera
@@ -166,14 +175,22 @@ def build_parser(argv: Optional[List] = None):
         "--genera",
         type=str,
         default=None,
-        help="Genera to restrict the scrape to"
+        help="Genera to UniProt data for"
+    )
+
+    parser.add_argument(
+        "--kingdom",
+        dest="kingdom",
+        action="store_true",
+        default=False,
+        help="Include taxonomy Kingdom annotations in the query output"
     )
 
     parser.add_argument(
         "--kingdoms",
         type=str,
         default=None,
-        help="Tax Kingdoms to restrict the scrape to"
+        help="Tax Kingdoms to UniProt data for"
     )
 
     # Add log file name option
@@ -187,15 +204,6 @@ def build_parser(argv: Optional[List] = None):
         help="Defines log file name and/or path",
     )
 
-    parser.add_argument(
-        "-n",
-        "--nodelete",
-        dest="nodelete",
-        action="store_true",
-        default=False,
-        help="When called, content in the existing out dir is NOT deleted",
-    )
-
     # Add option to not delete content in the existing cache dir
     parser.add_argument(
         "--nodelete_cache",
@@ -206,20 +214,36 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--nodelete_log",
-        dest="nodelete_log",
+        "--organism",
+        dest="organism",
         action="store_true",
         default=False,
-        help="When called, content in the existing log dir is NOT deleted",
+        help="Include scientific name of the source organism in the query output"
     )
 
-    # Add option to enable number of times to retry scraping
     parser.add_argument(
-        "-r",
-        "--retries",
-        type=int,
-        default=10,
-        help="Number of times to retry scraping a family or class page if error encountered",
+        "-p",
+        "--pdb",
+        dest="pdb",
+        action="store_true",
+        default=False,
+        help="Include PDB accessions in the query output",
+    )
+
+    parser.add_argument(
+        "--seq_gebank",
+        dest="seq_genbank",
+        action="store_true",
+        default=False,
+        help="Include the protein sequences retrieve from GenBank in the query output"
+    )
+
+    parser.add_argument(
+        "--seq_uniprot",
+        dest="seq_uniprot",
+        action="store_true",
+        default=False,
+        help="Include the protein sequences retrieved from UniProt in the query output"
     )
 
     # Add option to force file over writting
@@ -231,23 +255,13 @@ def build_parser(argv: Optional[List] = None):
         help="Set SQLite engine echo to True (SQLite will print its log messages)",
     )
 
-    # Add option to enable retrieval of subfamilies
-    parser.add_argument(
-        "-s",
-        "--subfamilies",
-        dest="subfamilies",
-        action="store_true",
-        default=False,
-        help="Enable retrieval of subfamilies from CAZy",
-    )
-
-    # Add option to restrict the scrape to specific species. This will scrape CAZymes from
+    # Add option to UniProt data for specific species. This will scrape CAZymes from
     # all strains belonging to each listed species
     parser.add_argument(
         "--species",
         type=str,
         default=None,
-        help="Species (written as Genus Species) to restrict the scrape to"
+        help="Species (written as Genus Species) to UniProt data for"
     )
 
     # Add option to restrict scraping to specific strains of organisms
@@ -256,29 +270,17 @@ def build_parser(argv: Optional[List] = None):
         type=str,
         default=None,
         help=(
-            "Specific strains of organisms to restrict the scrape to "
+            "Specific strains of organisms to UniProt data for "
             "(written as Genus Species Strain)"
         ),
     )
 
-    # Add option to define time out limit for trying to connect to CAZy
     parser.add_argument(
-        "-t",
-        "--timeout",
-        type=int,
-        default=45,
-        help="Connection timeout limit (seconds)"
-    )
-
-    parser.add_argument(
-        "--validate",
-        dest="validate",
+        "--uniprot",
+        dest="uniprot",
         action="store_true",
         default=False,
-        help=(
-            "Retrieve CAZy fam population sizes from CAZy and use to check\n"
-            "the number of family members added to the local database"
-        ),
+        help="Include UniProt ID and protein name in the query output"
     )
 
     # Add option for more detail (verbose) logging
@@ -289,17 +291,7 @@ def build_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help="Set logger level to 'INFO'",
-    )
-    
-    # Add option to display version
-    parser.add_argument(
-        "-V",
-        "--version",
-        dest="version",
-        action="store_true",
-        default=False,
-        help="Print cazy_webscraper version number",
-    )    
+    ) 
 
     if argv is None:
         # parse command-line

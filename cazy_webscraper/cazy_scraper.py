@@ -77,64 +77,22 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from tqdm import tqdm
-
-from scraper import crawler
-from scraper import cazy
-from scraper.sql import sql_orm, sql_interface
-from scraper.sql.sql_interface import add_cazyme_data
-from scraper.utilities import (
+from Bio import Entrez
+from cazy_webscraper import cazy, crawler, taxonomy, closing_message, CITATION_INFO, VERSION_INFO
+from cazy_webscraper.sql import sql_orm, sql_interface
+from cazy_webscraper.sql.sql_interface import add_cazyme_data
+from cazy_webscraper.utilities import (
     build_logger,
     config_logger,
     file_io,
     parse_configuration,
     termcolour,
 )
-from scraper.utilities.parsers import cazy_webscraper_parser
-
-# Define constants
-
-__version__ = "2.0.0-beta"
-
-VERSION_INFO = [
-    termcolour(
-        f"cazy_webscraper version: {__version__}",
-        "cyan",
-    ),
-]
-
-CITATION_INFO = [
-    termcolour(
-        "If you use cazy_webscraper in your work, please cite the following publication:",
-        "green",
-    ),
-    termcolour(
-        "\tHobbs, E. E. M., Pritchard, L., Chapman, S., Gloster, T. M.,",
-        "yellow",
-    ),
-    termcolour(
-        "\t(2021) cazy_webscraper Microbiology Society Annual Conference 2021 poster. ",
-        "yellow",
-    ),
-    termcolour(
-        "\tFigShare. Poster.",
-        "yellow",
-    ),
-    termcolour(
-        "\thttps://doi.org/10.6084/m9.figshare.14370860.v7",
-        "yellow",
-    ),
-]
+from cazy_webscraper.utilities.parsers import cazy_webscraper_parser
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
-    """Set up parser, logger and coordinate overal scrapping of CAZy.
-
-    The collected data can be stored as a singel dataframe containing (not split), split into
-    separate dataframes by class or by family. Excluded classes are CAZy classes not specified in
-    the configuration file and thus, will not be scraped. User_cazy_families is the list of CAZy
-    families specified to be scraped in the configration file.
-    """
+    """Set up parser, logger and coordinate overal scrapping of CAZy."""
     cazy_home_url = "http://www.cazy.org"
 
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
@@ -163,7 +121,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         return
 
     # check correct output was provided, exit if not operable
-    if args.database and args.db_output:
+    if args.database is not None and args.db_output is not None:
         warning_message = (
             "Target path for a NEW database (--db_output, -d) and\n"
             "a path to an EXISTING database (--database, -D) were provided.\n"
@@ -171,7 +129,28 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             "Terminating program."
         )
         logger.warning(termcolour(warning_message, "red"))
+        closing_message("cazy_webscraper", start_time, args)
         return
+
+    if args.db_output is not None and args.db_output.exists():
+        if args.force:
+            logger.warning(
+                f"Local db {args.database} already exists\n"
+                "Force is True\n"
+                "Ovewriting existing database."
+            )
+            os.remove(args.db_output)
+        else:
+            logger.warning(
+                f"Local db {args.database} already exists\n"
+                "Force is False\n"
+                "Not ovewriting existing database\n"
+                "Termianting program"
+            )
+            closing_message("cazy_webscraper", start_time, args)
+            return
+
+    Entrez.email = args.email
 
     logger.info("Parsing configuration")
     (
@@ -206,10 +185,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info(termcolour(scrape_config_message, "cyan"))
 
     if args.database:  # adding data to an EXISTING database
-        connection, logger_name, cache_dir = connect_existing_db(args, time_stamp)
+        connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
     
     else:  # build a new database
-        connection, logger_name, cache_dir = connect_to_new_db(args, time_stamp)
+        connection, logger_name, cache_dir = connect_to_new_db(args, time_stamp, start_time)
 
     logger.info("Adding log of scrape to the local CAZyme database")
     with sql_orm.Session(bind=connection) as session:
@@ -247,6 +226,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.info("Starting retrieval of data from CAZy")
 
+    if args.cazy_data is not None:
+        logger.warning(f"Retrieving CAZy data from predownloaded CAZy db dump at:\n{args.cazy_data}")
+
     get_cazy_data(
         cazy_home_url,
         excluded_classes,
@@ -263,29 +245,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         args,
     )
 
-    end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    end_time = pd.to_datetime(end_time)
-    total_time = end_time - start_time
-
-    if args.verbose:
-        logger.info(
-            "Finished scraping CAZy. Terminating program.\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {VERSION_INFO}\n"
-            f"Citation: {CITATION_INFO}"
-        )
-    else:
-        print(
-            "=====================cazy_webscraper=====================\n"
-            "Finished scraping CAZy\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {VERSION_INFO}\n"
-            f"Citation: {CITATION_INFO}"
-        )
+    closing_message("cazy_webscraper", start_time, args)
 
 
 def get_cazy_data(
@@ -326,9 +286,10 @@ def get_cazy_data(
     logger = logging.getLogger(__name__)
 
     # define paths for additional logs files
+    # unless specifed they are added to the logs dir in the cache dir
     connection_failures_logger = build_logger(Path(f"{logger_name}_{time_stamp}_connection_failures.log"))
-    sql_failures_logger = build_logger(Path(f"{logger_name}_{time_stamp}_SQL_errors.log"))
-    format_failures_logger = build_logger(Path(f"{logger_name}_{time_stamp}_format_and_parsing_errors.log"))
+    multiple_taxa_logger = build_logger(Path(f"{logger_name}_{time_stamp}_multiple_taxa.log"))
+    replaced_taxa_logger = build_logger(Path(f"{logger_name}_{time_stamp}_replaced_taxa.log"))
 
     if args.validate:  # retrieve CAZy family population sizes for validating all data was retrieved
         # {fam (str): pop size (int)}
@@ -345,75 +306,65 @@ def get_cazy_data(
     else:
         cazy_fam_populations = None
 
-    # download CAZy database txt file
-    cazy_txt_path = cache_dir / f"cazy_db_{time_stamp}.zip"
-
-    tries, retries, success = 0, (args.retries + 1), False
-
-    err_message = None
-    while (tries <= retries) and (not success):
-        err_message = crawler.get_cazy_file(cazy_txt_path, args, max_tries=(args.retries + 1))
-
-        if err_message is None:
-            break
-
-        else:
-            tries += 1
+    cazy_txt_lines = cazy.get_cazy_txt_file_data(cache_dir, time_stamp, args)
     
-    if err_message is not None:
-        logger.error(
-            "Could not connect to CAZy to download the CAZy db txt file after "
-            f"{(args.retries + 1)*(args.retries + 1)}\n"
-            f"The following error was raised:\n{err_message}"
-            f"File would have been written to {cazy_txt_path}"
-            "Terminating program"
-        )
-        sys.exit(1)
-    
-    # extract the CAZy family data and add to the local CAZyme database
-    cazy_txt_lines = cazy.extract_cazy_file_data(cazy_txt_path)
     logger.info(f"Retrieved {len(cazy_txt_lines)} lines from the CAZy db txt file")
 
-    cazy_data, taxa_data = cazy.parse_cazy_data(
-        cazy_txt_lines,
-        class_filters,
-        fam_filters,
-        kingdom_filters,
-        taxonomy_filters,
-        cazy_fam_populations,
-    )
+    if (len(class_filters) == 0) and \
+        (len(fam_filters) == 0) and \
+            (len(kingdom_filters) == 0) and \
+                (len(taxonomy_filters) == 0):
+        cazy_data = cazy.parse_all_cazy_data(cazy_txt_lines, cazy_fam_populations)
+
+    else:
+        cazy_data = cazy.parse_cazy_data_with_filters(
+            cazy_txt_lines,
+            class_filters,
+            fam_filters,
+            kingdom_filters,
+            taxonomy_filters,
+            cazy_fam_populations,
+        )
+
     logger.info(
         f"Retrieved {len((list(cazy_data.keys())))} proteins from the CAZy txt file "
         "matching the scraping criteria"
     )
 
-    cazy_data = cazy.replace_multiple_tax(cazy_data, args)
+    # check for GenBank accessions with multiple source organisms in the CAZy data
+    multiple_taxa_gbks = taxonomy.identify_multiple_taxa(cazy_data, multiple_taxa_logger)
 
-    # add kingdoms to the db
-    # create dict of taxa data {kingdom: set(organism)}
-    taxa_data = add_cazyme_data.add_kingdoms(cazy_data, connection)
+    if len(multiple_taxa_gbks) != 0:
+        # remove the multiple taxa, and retrieve the latest taxa from NCBI
+        cazy_data, successful_replacement = taxonomy.replace_multiple_tax(
+            cazy_data,
+            multiple_taxa_gbks,
+            replaced_taxa_logger,
+            args,
+            invalid_ids=False,
+        )
 
-    # add taxonomy source organisms to the db
-    add_cazyme_data.add_source_organisms(taxa_data, connection)
+    taxa_dict = cazy.build_taxa_dict(cazy_data)  # {kingdom: {organisms}}
+
+    add_cazyme_data.add_kingdoms(taxa_dict, connection)
+
+    add_cazyme_data.add_source_organisms(taxa_dict, connection)
 
     add_cazyme_data.add_cazy_families(cazy_data, connection)
 
-    # load taxonomy and cazy families from the db into memory for adding
-    # relationships between GenBank accessions, CAZy (sub)fams and taxa
-    db_tax_dict, db_fam_dict = add_cazyme_data.load_taxa_fam_data(connection)
+    add_cazyme_data.add_genbanks(cazy_data, connection)
 
-    gbk_fam_values = add_cazyme_data.add_genbanks(cazy_data, db_tax_dict, db_fam_dict, connection)
-
-    add_cazyme_data.add_genbank_fam_relationships(gbk_fam_values, connection)
+    add_cazyme_data.add_genbank_fam_relationships(cazy_data, connection, args)
     
     return
 
 
-def connect_existing_db(args, time_stamp):
+def connect_existing_db(args, time_stamp, start_time):
     """Coordinate connecting to an existing local CAZyme database, define logger name and cache dir
     
     :param args: cmd-line args parser
     :param time_stamp: str, time cazy_webscraper was invoked
+    :param start_time: pd date-time obj, time cazy_webscraper was invoked
 
     Return connection to local CAZyme database, logger file name, and path to cache dir
     """
@@ -427,6 +378,7 @@ def connect_existing_db(args, time_stamp):
             "Check path is correct.\n"
             "Terminating programme."
         )
+        closing_message("cazy_webscraper", start_time, args)
         sys.exit(1)
 
     try:
@@ -438,6 +390,7 @@ def connect_existing_db(args, time_stamp):
             "Terminating program\n",
             exc_info=True,
         )
+        closing_message("cazy_webscraper", start_time, args)
         sys.exit(1)
     
     # used for naming additional log files
@@ -449,11 +402,12 @@ def connect_existing_db(args, time_stamp):
     return connection, logger_name, cache_dir
     
 
-def connect_to_new_db(args, time_stamp):
+def connect_to_new_db(args, time_stamp, start_time):
     """Build and connect to a new local CAZyme database.
     
     :param args: cmd-line args parser
-    :param time_stamp: str, time cazy_Webscraper was invoked
+    :param time_stamp: str, time cazy_webscraper was invoked
+    :param start_time: pd date-time obj, time cazy_webscraper was invoked
     
     Return connection to the database, name of the logger, and path to the cache dir
     """
@@ -474,6 +428,7 @@ def connect_to_new_db(args, time_stamp):
                     "Either enable forced overwriting (-f) or add data this data (-D).\n"
                     "Terminating program."
                 )
+                closing_message("cazy_webscraper", start_time, args)
                 sys.exit(1)
         
         else:  # may need to build dirs
@@ -484,7 +439,7 @@ def connect_to_new_db(args, time_stamp):
             )
 
         if str((args.db_output).parent) != '.':  # dirs defined in output put
-            file_io.make_target_directory(args.db_output, args.force)
+            file_io.make_output_directory(args.db_output, args.force, args.nodelete)
             cache_dir = Path(f"{str(args.db_output.parent)}/.cazy_webscraper_{time_stamp}/cache")
             
         else:  # writing to cwd
@@ -495,7 +450,7 @@ def connect_to_new_db(args, time_stamp):
     
     else:
         logger.info("Using default database name and writing to cwd")
-        db_path = Path(f"cazy_webscraper_{time_stamp}")
+        db_path = Path(f"cazy_webscraper_{time_stamp}.db")
         cache_dir = Path(f".cazy_webscraper_{time_stamp}/cache")
         logger_name = f'cazy_webscraper_{time_stamp}'
     
@@ -508,6 +463,7 @@ def connect_to_new_db(args, time_stamp):
             "Terminating program",
             exc_info=True,
         )
+        closing_message("cazy_webscraper", start_time, args)
         sys.exit(1)
 
     return connection, logger_name, cache_dir

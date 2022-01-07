@@ -42,13 +42,12 @@
 
 
 import argparse
-import sys
 
 from pathlib import Path
 from typing import List, Optional
 
 
-def build_genbank_sequences_parser(argv: Optional[List] = None):
+def build_parser(argv: Optional[List] = None):
     """Return ArgumentParser parser for the script 'expand.genbank_sequences.py'."""
     # Create parser object
     parser = argparse.ArgumentParser(
@@ -74,18 +73,6 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
 
     # Add optional arguments to parser
 
-    # Add option for building a BLAST database of retrieved protein sequences
-    parser.add_argument(
-        "-b",
-        "--blastdb",
-        type=Path,
-        default=None,
-        help=(
-            "Create BLAST database of retrieved GenBank protein sequences.\n"
-            "Give the path to the directory to store the database"
-        ),
-    )
-
     # Add option to specify path to configuration file
     parser.add_argument(
         "-c",
@@ -96,6 +83,14 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
         help="Path to configuration file. Default: None, scrapes entire database",
     )
 
+    # Add option to use own CAZy class synoymn dict
+    parser.add_argument(
+        "--cazy_synonyms",
+        type=Path,
+        default=None,
+        help="Path to JSON file containing CAZy class synoymn names",
+    )
+
     # Add option to define classes to retrieve protein sequences for
     parser.add_argument(
         "--classes",
@@ -104,10 +99,16 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
         help="Classes from which all families are to be scraped. Separate classes by ','"
     )
 
+    parser.add_argument(
+        "--ec_filter",
+        type=str,
+        default=None,
+        help="Limit retrieval to proteins annotated with the provided EC numbers. Separate EC numbers with single commas"
+    )
+
     # specify the number of accessions posted in single ePost to NCBI
     parser.add_argument(
-        "-e",
-        "--epost",
+        "--entrez_batch_size",
         type=int,
         default=150,
         help="Number of accessions posted to NCBI per epost, advice to be max 200. Default=150"
@@ -129,19 +130,6 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
         type=str,
         default=None,
         help="Families to scrape. Separate families by commas 'GH1,GH2'",
-    )
-
-    # Add option to enable writing sequences to FASTA file or files, or not at all
-    parser.add_argument(
-        "--fasta",
-        type=str,
-        default=None,
-        help=(
-            "Enable writing out retrieved sequences to FASTA file(s).\n"
-            "Writing 'separate' produces a single FASTA file per retrieved protein sequence,\n"
-            "else, write the path to the FASTA to add retrieved protein sequences to\n"
-            "(this can be a pre-existing or non-existing FASTA file."
-        ),
     )
 
     # Add option to restrict the scrape to specific kingdoms
@@ -174,15 +162,34 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
         help="Defines log file name and/or path",
     )
 
-    # enable retrieving protein sequences for only primary GenBank accessions
     parser.add_argument(
-        "-p",
-        "--primary",
-        dest="primary",
+        "--nodelete_cache",
+        dest="nodelete_cache",
         action="store_true",
         default=False,
-        help="Enable retrieveing protein sequences for only primary GenBank accessions",
+        help="Do not delete content in existing cache dir",
     )
+
+    # Add option to update sequences if the retrieved sequence is different
+    # If not enabled then sequences will only be retrieved and added for proteins that do not
+    # already have a protein sequence
+    parser.add_argument(
+        "--seq_update",
+        dest="seq_update",
+        action="store_true",
+        default=False,
+        help="Enable overwriting sequences in the database if the retrieved sequence is different",
+    )
+
+    # Add option to force file over writting
+    parser.add_argument(
+        "--sql_echo",
+        dest="sql_echo",
+        action="store_true",
+        default=False,
+        help="Set SQLite engine echo to True (SQLite will print its log messages)",
+    )
+
 
     # Add option to restrict the scrape to specific species. This will scrape CAZymes from
     # all strains belonging to each listed species
@@ -202,18 +209,6 @@ def build_genbank_sequences_parser(argv: Optional[List] = None):
             "Specific strains of organisms to restrict the scrape to "
             "(written as Genus Species Strain)"
         ),
-    )
-
-    # Add option to update sequences if the retrieved sequence is different
-    # If not enabled then sequences will only be retrieved and added for proteins that do not
-    # already have a protein sequence
-    parser.add_argument(
-        "-u",
-        "--update",
-        dest="update",
-        action="store_true",
-        default=False,
-        help="Enable overwriting sequences in the database if the retrieved sequence is different",
     )
 
     # Add option for more detail (verbose) logging

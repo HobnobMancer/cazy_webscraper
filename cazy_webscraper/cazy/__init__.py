@@ -42,6 +42,7 @@
 
 import logging
 import re
+import sys
 
 from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
@@ -49,24 +50,126 @@ from zipfile import ZipFile
 
 from Bio import Entrez
 
+from cazy_webscraper import crawler
 
-def extract_cazy_file_data(cazy_txt_path):
-    """Retrieve data from the text file downloaded from CAZy.
+
+def get_cazy_txt_file_data(cache_dir, time_stamp, args):
+    """Retrieve txt file of CAZy db dump from CAZy or the local disk.
     
-    :param cazy_txt_path: Path, location where CAZy text file was downloaded
+    :param cache_dir: Path(), path to directory where cache is written to
+    :param time_stamp: str, date and time cazy_webscraper was intiated
+    :param args: cmd-line args parser
     
-    Return list of lines from the CAZy text file.
+    Return list of lines from CAZy txt file, one line is one item in the list"""
+    logger = logging.getLogger(__name__)
+
+    if args.cazy_data is not None:   # retrieve lines from predownloaded CAZy txt file
+        with open(args.cazy_data, 'r') as fh:
+            cazy_txt_lines = fh.read().splitlines()
+    
+    else:
+        # download CAZy database txt file
+        cazy_txt_path = cache_dir / f"cazy_db_{time_stamp}.zip"
+
+        tries, retries, success = 0, (args.retries + 1), False
+
+        err_message = None
+        while (tries <= retries) and (not success):
+            err_message = crawler.get_cazy_file(cazy_txt_path, args, max_tries=(args.retries + 1))
+
+            if err_message is None:
+                break
+
+            else:
+                tries += 1
+        
+        if err_message is not None:
+            logger.error(
+                "Could not connect to CAZy to download the CAZy db txt file after "
+                f"{(args.retries + 1)*(args.retries + 1)}\n"
+                f"The following error was raised:\n{err_message}"
+                f"File would have been written to {cazy_txt_path}"
+                "Terminating program"
+            )
+            sys.exit(1)
+        
+        with ZipFile(cazy_txt_path) as zip_handle:
+            cazy_filepath = zip_handle.namelist()[0]
+        
+            with zip_handle.open(cazy_filepath) as fh:
+                cazy_txt_lines = fh.read().splitlines()
+
+    return cazy_txt_lines
+
+
+def parse_all_cazy_data(lines, cazy_fam_populations):
+    """Extract ALL GenBank accession, taxonomy data and CAZy (sub)family annotations from CAZy txt file.
+    
+    This is when no filters are applied.
+    
+    :param lines: list of str, lines from CAZy txt file, one unqiue line is one item in the list
+    :param cazy_fam_populations: None if args.validate is False, or dict of CAZy listed CAZy 
+        (sub)fam population sizes if args.validate is True
+    
+    Return cazy_data: dict, {gbk: {"organism": set(str), "families": {'fam': set (subfam)}}}
     """
-    with ZipFile(cazy_txt_path) as zip_handle:
-        cazy_filepath = zip_handle.namelist()[0]
+
+    logger = logging.getLogger(__name__)
+
+    # define dicts CAZy data will be stored in
+    cazy_data = {} # {genbank_accession: {organism,}, families: {(fam, subfam,),} }
     
-        with zip_handle.open(cazy_filepath) as fh:
-            lines = fh.read().splitlines()
-    
-    return lines
+    # used for verbose logging
+    gbk_accessions = set()
+    fam_annotations = set()
+    organisms = set()
+    kingdoms = set()
+
+    for line in tqdm(lines, 'Parsing CAZy txt file'):
+        try:
+            line_str = line.decode()  # used when parsing zipped CAZy file
+        except AttributeError:
+            line_str = line   # used when parsing local CAZy file
+        line_data = line_str.split('\t')
+        
+        gbk_accession = line_data[3]
+
+        # retrieve CAZyme data
+        cazy_fam = line_data[0]
+        if cazy_fam.find("_") != -1:
+            cazy_subfam = cazy_fam
+            cazy_fam = cazy_fam[:cazy_fam.find("_")]
+        else:
+            cazy_subfam = None
+        
+        fam_annotations.add( (cazy_fam, cazy_subfam) )
+       
+        kingdom = line_data[1]
+        kingdoms.add(kingdom)
+        
+        organism = line_data[2]
+        organisms.add(organism)
+        
+        gbk_accession = line_data[3]
+        gbk_accessions.add(gbk_accession)
+        
+        add_protein_to_dict(cazy_data, gbk_accession, cazy_fam, cazy_subfam, organism, kingdom)
+
+    if cazy_fam_populations is not None:
+        validate_data_retrieval(cazy_data, cazy_fam_populations)
+        
+    logger.info(
+        "CAZy txt file contained:\n"
+        f"{len(list(gbk_accessions))} unique GenBank accessions\n"
+        f"{len(list(fam_annotations))} unique Fam-Subfam annotations\n"
+        f"{len(list(organisms))} unique source organisms\n"
+        f"{len(list(kingdoms))} unique tax kingdoms\n"
+    )
+
+    return cazy_data
 
 
-def parse_cazy_data(
+def parse_cazy_data_with_filters(
     lines,
     class_filter,
     fam_filter,
@@ -86,10 +189,11 @@ def parse_cazy_data(
     
     Return cazy_data: dict, {gbk: {"organism": set(str), "families": {'fam': set (subfam)}}}
     """
+
     logger = logging.getLogger(__name__)
 
     # define dicts CAZy data will be stored in
-    cazy_data = {} # {genbank_accession: {organism,}, families: {(fam, subfam,),} }
+    cazy_data = {} # {genbank_accession: {organism,}, families: {fam: {subfams}} }
     taxa_data = {} # {kingdom: organism}
     
     # used for verbose logging
@@ -97,10 +201,20 @@ def parse_cazy_data(
     fam_annotations = set()
     organisms = set()
     kingdoms = set()
+    
+    gbks_to_scrape = set()  # gbks matching filter criteria are added to enable retrieving ALL
+    # family annotations for each protein
 
     for line in tqdm(lines, 'Parsing CAZy txt file'):
-        line_str = line.decode()
+        try:  # decode line if retrieved from downloaded and zipped CAZy txt file
+            line_str = line.decode()
+        except AttributeError:
+            line_str = line
         line_data = line_str.split('\t')
+        
+        kingdom = line_data[1]
+        organism = line_data[2]
+        gbk_accession = line_data[3]
 
         # retrieve CAZyme data
         cazy_fam = line_data[0]
@@ -109,20 +223,11 @@ def parse_cazy_data(
             cazy_fam = cazy_fam[:cazy_fam.find("_")]
         else:
             cazy_subfam = None
-        fam_annotations.add( (cazy_fam, cazy_subfam) )
-       
-        kingdom = line_data[1]
-        kingdoms.add(kingdom)
-        
-        organism = line_data[2]
-        organisms.add(organism)
-        
-        gbk_accession = line_data[3]
-        gbk_accessions.add(gbk_accession)
-
-        # Apply filters
-        if (len(class_filter) == 0) and (len(fam_filter) == 0):
-            cazy_data = apply_kingdom_tax_filters(
+            
+        # check if protein previously matched filter criteria, and additional CAZy (sub)fam annotations
+        # are to be added to the db
+        if gbk_accession in gbks_to_scrape:
+            cazy_data, stored_gbk_accession = apply_kingdom_tax_filters(
                 cazy_data,
                 kingdom_filter,
                 tax_filter,
@@ -132,13 +237,12 @@ def parse_cazy_data(
                 organism,
                 kingdom,
             )
-
-        # check if scraping the class the family belongs to
-        if len(class_filter) != 0:
-            fam_class = re.match(r"\D{2,3}", cazy_fam).group()
+        
+        else:  # check if protein matches the filter criteria
             
-            if fam_class in class_filter:
-                cazy_data = apply_kingdom_tax_filters(
+            # only apply tax filters
+            if (len(class_filter) == 0) and (len(fam_filter) == 0):
+                cazy_data, stored_gbk_accession = apply_kingdom_tax_filters(
                     cazy_data,
                     kingdom_filter,
                     tax_filter,
@@ -149,24 +253,57 @@ def parse_cazy_data(
                     kingdom,
                 )
 
-                continue
-            
-        if (cazy_fam in fam_filter) or (cazy_subfam in fam_filter):
-            cazy_data = apply_kingdom_tax_filters(
-                cazy_data,
-                kingdom_filter,
-                tax_filter,
-                gbk_accession,
-                cazy_fam,
-                cazy_subfam,
-                organism,
-                kingdom,
-            )
+                if stored_gbk_accession:  # protein matched tax criteria and added to db
+                    gbks_to_scrape.add(gbk_accession)
 
-            continue
+                    fam_annotations.add( (cazy_fam, cazy_subfam) )
+                    kingdoms.add(kingdom)
+                    organisms.add(organism)
+                    gbk_accessions.add(gbk_accession)
+
+                
+            else:
+                # check against CAZy class and family filters
+                cazy_class = re.match(r'\D{2,3}\d', cazy_fam).group()[:-1]
+
+                scrape = False  # mark whether to scrape the protein or not
+
+                # check if another propety of the protein matches the filter criteria previously
+                if gbk_accession in gbks_to_scrape:
+                    scrape = True
+
+                # apply class filter
+                if cazy_class in class_filter:
+                    scrape = True
+
+                if cazy_fam in fam_filter:
+                    scrape = True
+
+                if cazy_subfam in fam_filter:
+                    scrape = True
+
+                if scrape:
+                    cazy_data, stored_gbk_accession = apply_kingdom_tax_filters(
+                        cazy_data,
+                        kingdom_filter,
+                        tax_filter,
+                        gbk_accession,
+                        cazy_fam,
+                        cazy_subfam,
+                        organism,
+                        kingdom,
+                    )
+
+                    if stored_gbk_accession:  # protein matched tax criteria and added to db
+                        gbks_to_scrape.add(gbk_accession)
+
+                        fam_annotations.add( (cazy_fam, cazy_subfam) )
+                        kingdoms.add(kingdom)
+                        organisms.add(organism)
+                        gbk_accessions.add(gbk_accession)
 
     if cazy_fam_populations is not None:
-        validate_data_retrieval(cazy_data, cazy_fam_populations)
+       validate_data_retrieval(cazy_data, cazy_fam_populations)
         
     logger.info(
         "CAZy txt file contained:\n"
@@ -176,7 +313,7 @@ def parse_cazy_data(
         f"{len(list(kingdoms))} unique tax kingdoms\n"
     )
 
-    return cazy_data, taxa_data
+    return cazy_data
 
 
 def apply_kingdom_tax_filters(
@@ -200,8 +337,12 @@ def apply_kingdom_tax_filters(
     :param cazy_subfam: str, CAZy subfamily annotation, or None if protein is not a CAZy subfamily
     :param kingdom: str, taxonomy kingdom of the source organism of the protein
 
-    Return nothing.
+    Return
+    - cazy_data ({gbk_acc: {kingdom: str, organism: str, families: {(fam, subfam, )}}})
+    - boolean if data for the given protein was (True) or was not (False) added to the db
     """
+    stored_gbk_accession = False
+    
     if (len(kingdom_filter) == 0) and (len(tax_filter) == 0):  # kingdom and tax filters NOT enabled
         cazy_data = add_protein_to_dict(
             cazy_data,
@@ -211,30 +352,31 @@ def apply_kingdom_tax_filters(
             organism,
             kingdom,
         )
+        stored_gbk_accession = True
 
-    if len(kingdom_filter) != 0:  # user enabled kingdom filter
-        if kingdom in kingdom_filter:
-            cazy_data = add_protein_to_dict(
-                cazy_data,
-                gbk_accession,
-                cazy_fam,
-                cazy_subfam,
-                organism,
-                kingdom,
-            )
+    elif kingdom in kingdom_filter:
+        cazy_data = add_protein_to_dict(
+            cazy_data,
+            gbk_accession,
+            cazy_fam,
+            cazy_subfam,
+            organism,
+            kingdom,
+        )
+        stored_gbk_accession = True
 
-    if len(tax_filter) != 0:  # user enabled tax filter
-        if any(filter in organism for filter in tax_filter):
-            cazy_data = add_protein_to_dict(
-                cazy_data,
-                gbk_accession,
-                cazy_fam,
-                cazy_subfam,
-                organism,
-                kingdom,
-            )
+    elif any(filter in organism for filter in tax_filter):
+        cazy_data = add_protein_to_dict(
+            cazy_data,
+            gbk_accession,
+            cazy_fam,
+            cazy_subfam,
+            organism,
+            kingdom,
+        )
+        stored_gbk_accession = True
     
-    return cazy_data
+    return cazy_data, stored_gbk_accession
 
 
 def add_protein_to_dict(cazy_data, gbk_accession, cazy_fam, cazy_subfam, organism, kingdom):
@@ -353,94 +495,6 @@ def validate_data_retrieval(cazy_data, cazy_fam_populations):
             )
 
     return
-
-
-def replace_multiple_tax(cazy_data, args):
-    """
-    Identify GenBank accessions which have multiple source organisms listedi in CAZy. Replace with
-    the latest source organism from NCBI.
-
-    :param cazy_data: dict of CAZy data
-    :param args: cmd-line args parser
-
-    Return dict of proteins with multiple source organisms listed in CAZy
-    {genbank_accession: {"families": {fam: set(subfam)} }}
-    """
-    logger = logging.getLogger(__name__)
-
-    Entrez.email = args.email
-
-    multi_taxa_gbk = {}
-
-    for genbank_accession in tqdm(cazy_data, total=len(list(cazy_data.keys())), desc='Searching for multiple taxa annotations'):
-        gbk_organisms = cazy_data[genbank_accession]["organism"]
-        if len(gbk_organisms) > 1:
-            multi_taxa_gbk[genbank_accession] = {"families": cazy_data[genbank_accession]["families"]}
-            logger.warning(
-                f"{genbank_accession} annotated with multiple taxa:\n"
-                f"{cazy_data[genbank_accession]['organism']}"
-            )
-    
-    logger.warning(
-        f"{len(list(multi_taxa_gbk.keys()))} proteins found with multiple source organisms in CAZy\n"
-        "Querying NCBI to retrieve the latest source organisms"
-    )
-
-    if len(list(multi_taxa_gbk.keys())) == 0:
-        return cazy_data
-
-    id_post_list = str(",".join(list(multi_taxa_gbk.keys())))
-    try:
-        epost_results = Entrez.read(
-            entrez_retry(
-                args.retries, Entrez.epost, "Protein", id=id_post_list
-            )
-        )
-    # if no record is returned from call to Entrez
-    except (TypeError, AttributeError):
-        logger.error(
-                f"Entrez failed to post assembly IDs.\n"
-                "Exiting retrieval of accession numbers, and returning null value 'NA'"
-        )
-
-    # Retrieve web environment and query key from Entrez epost
-    epost_webenv = epost_results["WebEnv"]
-    epost_query_key = epost_results["QueryKey"]
-
-    try:
-        with entrez_retry(
-            args.retries,
-            Entrez.efetch,
-            db="Protein",
-            query_key=epost_query_key,
-            WebEnv=epost_webenv,
-            retmode="xml",
-        ) as record_handle:
-            protein_records = Entrez.read(record_handle, validate=False)
-    # if no record is returned from call to Entrez
-    except (TypeError, AttributeError) as error:
-        logger.error(
-            f"Entrez failed to retireve accession numbers."
-            "Exiting retrieval of accession numbers, and returning null value 'NA'"
-        )
-    
-    for protein in tqdm(protein_records, desc="Retrieving organism from NCBI"):
-        accession = protein['GBSeq_accession-version']
-        organism = protein['GBSeq_organism']
-        kingdom = protein['GBSeq_taxonomy'].split(';')[0]
-        
-        try:
-            cazy_data[accession] = {
-                "kingdom": (kingdom,),
-                "organism": (organism,),
-                "families": multi_taxa_gbk[accession]["families"],
-            }
-        except KeyError:
-            logger.error(
-                f'GenBank accession {accession} retrieved from NCBI, but it is not present in CAZy'
-            )
-
-    return cazy_data
 
 
 def build_taxa_dict(cazy_data):

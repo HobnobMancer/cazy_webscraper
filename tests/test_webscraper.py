@@ -45,15 +45,61 @@ pytest -v
 """
 
 import os
+from cazy_webscraper.utilities.parse_configuration.cazy_class_synonym_dict import cazy_synonym_dict
 import pytest
 import sys
 
 from argparse import Namespace, ArgumentParser
 
-from scraper import cazy_webscraper, crawler, sql, utilities
-from scraper.crawler.cazy_html_pages import get_cazy_pages, parse_local_pages
-from scraper.crawler.parse_cazy_families import scrape_all, scrape_by_kingdom
-from scraper.utilities import file_io, parse_configuration, parsers
+from cazy_webscraper import cazy_scraper, crawler, sql, utilities
+from cazy_webscraper.crawler.cazy_html_pages import get_cazy_pages, parse_local_pages
+from cazy_webscraper.crawler.parse_cazy_families import scrape_all, scrape_by_kingdom
+from cazy_webscraper.sql import sql_interface, sql_orm
+from cazy_webscraper.utilities import file_io, parse_configuration, parsers
+
+
+@pytest.fixture
+def mock_building_parser(*args, **kwargs):
+    parser_args = ArgumentParser(
+        prog="cazy_webscraper.py",
+        usage=None,
+        description="Scrape the CAZy database",
+        conflict_handler="error",
+        add_help=True,
+    )
+    return parser_args
+
+
+@pytest.fixture
+def mock_parser(*args, **kwargs):
+    parser = Namespace(
+        config=None,
+        classes=None,
+        database="fake_database_path",
+        ec=None,
+        force=False,
+        families=None,
+        genera=None,
+        get_pages=True,
+        kingdoms=None,
+        log=None,
+        nodelete=False,
+        output=output_dir,
+        retries=10,
+        scrape_files=None,
+        subfamilies=True,
+        species=None,
+        strains=None,
+        streamline=None,
+        timeout=45,
+        verbose=False,
+    )
+    return parser
+
+
+@pytest.fixture
+def mock_config_logger(*args, **kwargs):
+    return
 
 
 @pytest.fixture
@@ -125,445 +171,435 @@ def config_dict():
 # test main()
 
 
-def test_main_get_pages(output_dir, cazy_dictionary, taxonomic_filter_dict, monkeypatch):
-    """Test function main() when retrieval of CAZy HTML pages is enabled.
-
-    Argv is None, logger is None, args.output is not sys.stdout, args.subfamilies is True.
-    """
-
-    def mock_building_parser(*args, **kwargs):
-        parser_args = ArgumentParser(
-            prog="cazy_webscraper.py",
-            usage=None,
-            description="Scrape the CAZy database",
-            conflict_handler="error",
-            add_help=True,
-        )
-        return parser_args
+def test_main_citation(mock_building_parser, mock_config_logger, monkeypatch):
+    """Test main() with args.citation"""
 
     def mock_parser(*args, **kwargs):
         parser = Namespace(
-            config=None,
+            email="dummy@domain.com",
+            cache_dir=None,
+            cazy_data=None,
+            cazy_synonyms=None,
             classes=None,
-            database="fake_database_path",
-            ec=None,
-            force=False,
-            families=None,
-            genera=None,
-            get_pages=True,
-            kingdoms=None,
-            log=None,
-            nodelete=False,
-            output=output_dir,
-            retries=10,
-            scrape_files=None,
-            subfamilies=True,
-            species=None,
-            strains=None,
-            streamline=None,
-            timeout=45,
-            verbose=False,
-        )
-        return parser
-
-    def mock_config_logger(*args, **kwargs):
-        return
-
-    def mock_making_output_dir(*args, **kwargs):
-        return
-
-    def mock_retrieving_configuration(*args, **kwargs):
-        # excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter
-        return None, None, cazy_dictionary, taxonomic_filter_dict, [], []
-
-    def mock_filter_set(*args, **kwargs):
-        return set()
-
-    def mock_get_pages(*args, **kwargs):
-        return
-
-    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
-    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
-    monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
-    monkeypatch.setattr(parse_configuration, "parse_configuration", mock_retrieving_configuration)
-    monkeypatch.setattr(cazy_webscraper, "get_filter_set", mock_filter_set)
-    monkeypatch.setattr(get_cazy_pages, "get_cazy_pages", mock_get_pages)
-
-    cazy_webscraper.main()
-
-
-def test_main_invalid_db_path(output_dir, cazy_dictionary, taxonomic_filter_dict, monkeypatch):
-    """Test function main() when an invalid db path is given.
-
-    Argv is None, logger is None, args.output is not sys.stdout, args.subfamilies is True.
-    """
-
-    def mock_building_parser(*args, **kwargs):
-        parser_args = ArgumentParser(
-            prog="cazy_webscraper.py",
-            usage=None,
-            description="Scrape the CAZy database",
-            conflict_handler="error",
-            add_help=True,
-        )
-        return parser_args
-
-    def mock_parser(*args, **kwargs):
-        parser = Namespace(
             config=None,
-            classes=None,
-            database="fake_database_path",
-            ec=None,
-            force=False,
-            families=None,
-            genera=None,
-            get_pages=False,
-            kingdoms=None,
-            log=None,
-            nodelete=False,
-            output=output_dir,
-            retries=10,
-            scrape_files=None,
-            subfamilies=True,
-            species=None,
-            strains=None,
-            streamline=None,
-            timeout=45,
-            verbose=False,
-        )
-        return parser
-
-    def mock_config_logger(*args, **kwargs):
-        return
-
-    def mock_making_output_dir(*args, **kwargs):
-        return
-
-    def mock_retrieving_configuration(*args, **kwargs):
-        # excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter
-        return None, None, cazy_dictionary, taxonomic_filter_dict, [], []
-
-    def mock_filter_set(*args, **kwargs):
-        return set()
-
-    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
-    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
-    monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
-    monkeypatch.setattr(parse_configuration, "parse_configuration", mock_retrieving_configuration)
-    monkeypatch.setattr(cazy_webscraper, "get_filter_set", mock_filter_set)
-
-    with pytest.raises(SystemExit) as pytest_wrapped_e:
-        cazy_webscraper.main()
-    assert pytest_wrapped_e.type == SystemExit
-
-
-def test_main_db_raises_error(output_dir, cazy_dictionary, taxonomic_filter_dict, monkeypatch):
-    """Test function main() when aan error is raised when building the local db."""
-
-    def mock_building_parser(*args, **kwargs):
-        parser_args = ArgumentParser(
-            prog="cazy_webscraper.py",
-            usage=None,
-            description="Scrape the CAZy database",
-            conflict_handler="error",
-            add_help=True,
-        )
-        return parser_args
-
-    def mock_parser(*args, **kwargs):
-        parser = Namespace(
-            config=None,
-            classes=None,
+            citation=True,
+            db_output=None,
             database=None,
-            ec=None,
+            delete_old_relationships=False,
             force=False,
             families=None,
             genera=None,
-            get_pages=False,
             kingdoms=None,
             log=None,
             nodelete=False,
-            output=output_dir,
+            nodelete_cache=False,
+            nodelete_log=False,
             retries=10,
-            scrape_files=None,
-            subfamilies=True,
+            sql_echo=False,
+            subfamilies=False,
             species=None,
             strains=None,
-            streamline=None,
             timeout=45,
-            verbose=False,
+            validate=False,
+            verbse=False,
+            version=False,
         )
         return parser
-
-    def mock_config_logger(*args, **kwargs):
-        return
-
-    def mock_making_output_dir(*args, **kwargs):
-        return
-
-    def mock_retrieving_configuration(*args, **kwargs):
-        # excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter
-        return None, None, cazy_dictionary, taxonomic_filter_dict, [], []
-
-    def mock_filter_set(*args, **kwargs):
-        return set()
-
-    def mock_db_build(*args, **kwargs):
-        raise TypeError
 
     monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
-    monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
-    monkeypatch.setattr(parse_configuration, "parse_configuration", mock_retrieving_configuration)
-    monkeypatch.setattr(cazy_webscraper, "get_filter_set", mock_filter_set)
-    monkeypatch.setattr(sql.sql_orm, "build_db", mock_db_build)
 
-    with pytest.raises(SystemExit) as pytest_wrapped_e:
-        cazy_webscraper.main()
-    assert pytest_wrapped_e.type == SystemExit
+    cazy_scraper.main()
 
 
-def test_main_existing_db_scrape_local_pages(
-    output_dir,
-    null_logger,
-    cazy_dictionary,
+def test_main_version(mock_building_parser, mock_config_logger, monkeypatch):
+    """Test main() with args.version"""
+
+    def mock_parser(*args, **kwargs):
+        parser = Namespace(
+            email="dummy@domain.com",
+            cache_dir=None,
+            cazy_data=None,
+            cazy_synonyms=None,
+            classes=None,
+            config=None,
+            citation=False,
+            db_output=None,
+            database=None,
+            delete_old_relationships=False,
+            force=False,
+            families=None,
+            genera=None,
+            kingdoms=None,
+            log=None,
+            nodelete=False,
+            nodelete_cache=False,
+            nodelete_log=False,
+            retries=10,
+            sql_echo=False,
+            subfamilies=False,
+            species=None,
+            strains=None,
+            timeout=45,
+            validate=False,
+            verbse=False,
+            version=True,
+        )
+        return parser
+
+    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
+    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
+    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+
+    cazy_scraper.main()
+
+
+def test_main_version_argv(mock_building_parser, mock_config_logger, monkeypatch):
+    """Test main() with args.version"""
+
+    def mock_parser(*args, **kwargs):
+        parser = Namespace(
+            email="dummy@domain.com",
+            cache_dir=None,
+            cazy_data=None,
+            cazy_synonyms=None,
+            classes=None,
+            config=None,
+            citation=False,
+            db_output=None,
+            database=None,
+            delete_old_relationships=False,
+            force=False,
+            families=None,
+            genera=None,
+            kingdoms=None,
+            log=None,
+            nodelete=False,
+            nodelete_cache=False,
+            nodelete_log=False,
+            retries=10,
+            sql_echo=False,
+            subfamilies=False,
+            species=None,
+            strains=None,
+            timeout=45,
+            validate=False,
+            verbse=False,
+            version=True,
+        )
+        return parser
+
+    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
+    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
+    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+
+    cazy_scraper.main()
+
+
+def test_main_double_db(mock_building_parser, mock_config_logger, monkeypatch):
+    """Test main() with args.database and args.db_output"""
+
+    argv = [
+        "dummy@domain.com",
+        None,
+        None,
+        None,
+        None,
+        None,
+        False,
+        'database',
+        'database',
+        False,
+        False,
+        None,
+        None,
+        None,
+        None,
+        False,
+        False,
+        False,
+        10,
+        False,
+        False,
+        None,
+        None,
+        45,
+        False,
+        False,
+        True,
+    ]
+    def mock_parser(*args, **kwargs):
+        parser = Namespace(
+            email="dummy@domain.com",
+            cache_dir=None,
+            cazy_data=None,
+            cazy_synonyms=None,
+            classes=None,
+            config=None,
+            citation=False,
+            db_output='database',
+            database='database',
+            delete_old_relationships=False,
+            force=False,
+            families=None,
+            genera=None,
+            kingdoms=None,
+            log=None,
+            nodelete=False,
+            nodelete_cache=False,
+            nodelete_log=False,
+            retries=10,
+            sql_echo=False,
+            subfamilies=False,
+            species=None,
+            strains=None,
+            timeout=45,
+            validate=False,
+            verbse=False,
+            version=True,
+        )
+        return parser
+
+    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
+    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
+    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+
+    cazy_scraper.main(argv=argv)
+
+
+def test_main_new_db_exists_force(db_path, mock_building_parser, mock_config_logger, monkeypatch):
+    """Test main() with args.db_output and the database already exists"""
+
+    def mock_parser(*args, **kwargs):
+        parser = Namespace(
+            email="dummy@domain.com",
+            cache_dir=None,
+            cazy_data=None,
+            cazy_synonyms=None,
+            classes=None,
+            config=None,
+            citation=False,
+            db_output=db_path,  ###
+            database=None,
+            delete_old_relationships=False,
+            force=True,   ###
+            families=None,
+            genera=None,
+            kingdoms=None,
+            log=None,
+            nodelete=False,
+            nodelete_cache=False,
+            nodelete_log=False,
+            retries=10,
+            sql_echo=False,
+            subfamilies=False,
+            species=None,
+            strains=None,
+            timeout=45,
+            validate=False,
+            verbse=False,
+            version=True,
+        )
+        return parser
+
+    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
+    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
+    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+
+    cazy_scraper.main()
+
+
+def test_main_new_db_exists(db_path, mock_building_parser, mock_config_logger, monkeypatch):
+    """Test main() with args.db_output and the database already exists"""
+
+    def mock_parser(*args, **kwargs):
+        parser = Namespace(
+            email="dummy@domain.com",
+            cache_dir=None,
+            cazy_data=None,
+            cazy_synonyms=None,
+            classes=None,
+            config=None,
+            citation=False,
+            db_output=db_path,  ###
+            database=None,
+            delete_old_relationships=False,
+            force=False,   ###
+            families=None,
+            genera=None,
+            kingdoms=None,
+            log=None,
+            nodelete=False,
+            nodelete_cache=False,
+            nodelete_log=False,
+            retries=10,
+            sql_echo=False,
+            subfamilies=False,
+            species=None,
+            strains=None,
+            timeout=45,
+            validate=False,
+            verbse=False,
+            version=True,
+        )
+        return parser
+
+    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
+    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
+    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+
+    cazy_scraper.main()
+
+
+def test_main_database(
     db_path,
-    input_dir,
+    mock_building_parser,
+    mock_config_logger,
+    config_dict,
     monkeypatch,
 ):
-    """Test function main() when passed an existing database scraping data from local HTML pages.
-
-    Argv is not None, logger is not None, args.output is output_dir, args.subfamilies is True,
-    and valid db path is given by db_path.
-    """
-
-    def mock_building_parser(*args, **kwargs):
-        parser_args = ArgumentParser(
-            prog="cazy_webscraper.py",
-            usage=None,
-            description="Scrape the CAZy database",
-            conflict_handler="error",
-            add_help=True,
-        )
-        return parser_args
+    """Test main() with args.db_output and the database already exists"""
 
     def mock_parser(*args, **kwargs):
         parser = Namespace(
-            config=None,
+            email="dummy@domain.com",
+            cache_dir='cache',
+            cazy_data=None,
+            cazy_synonyms=None,
             classes=None,
-            database=db_path,
-            ec=None,
+            config=None,
+            citation=False,
+            db_output=None,
+            database=db_path,  ###
+            delete_old_relationships=False,
             force=False,
             families=None,
             genera=None,
-            get_pages=False,
             kingdoms=None,
-            log=None,
+            log='log_dir',
             nodelete=False,
-            output=output_dir,
+            nodelete_cache=False,
+            nodelete_log=False,
             retries=10,
-            scrape_files=input_dir,
-            subfamilies=True,
+            sql_echo=False,
+            subfamilies=False,
             species=None,
             strains=None,
-            streamline="streamline_args",
             timeout=45,
-            verbose=False,
+            validate=False,
+            verbse=False,
+            version=True,
         )
         return parser
 
-    def mock_config_logger(*args, **kwargs):
-        return
+    def mock_parse_config(*args, **kwards):
+        return (
+            None,
+            config_dict,
+            {},
+            {'GH'},
+            {'CE1'},
+            {'Bacteria'},
+            {'genus': 'a genus'},
+            {'a genus', 'a species'}
+        )
 
-    def mock_making_output_dir(*args, **kwargs):
-        return
+    def mock_connect_existing_db(*args, **kwards):
+        return (
+            'connection',
+            'logger_name',
+            'cache_dir',
+        )
 
-    def mock_retrieving_configuration(*args, **kwargs):
-        # excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter
-        return None, None, cazy_dictionary, taxonomic_filter_dict, [], []
-
-    def mock_filter_set(*args, **kwargs):
-        return set()
-
-    def mock_none(*args, **kwargs):
+    def mock_log_scrape_in_db(*args, **kwargs):
         return
 
     monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
-    monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
-    monkeypatch.setattr(parse_configuration, "parse_configuration", mock_retrieving_configuration)
-    monkeypatch.setattr(cazy_webscraper, "get_filter_set", mock_filter_set)
-    monkeypatch.setattr(parse_configuration, "create_streamline_scraping_warning", mock_none)
-    monkeypatch.setattr(sql.sql_interface, "log_scrape_in_db", mock_none)
-    monkeypatch.setattr(parse_local_pages, "parse_local_pages", mock_none)
+    monkeypatch.setattr(parse_configuration, "parse_configuration", mock_parse_config)
+    monkeypatch.setattr(cazy_scraper, "connect_existing_db", mock_connect_existing_db)
+    monkeypatch.setattr(sql.sql_interface, "log_scrape_in_db", mock_log_scrape_in_db)
 
-    cazy_webscraper.main(["argv"])
+    cazy_scraper.main()
 
 
-def test_main_existing_db_scrape_direct(
-    output_dir,
-    null_logger,
-    cazy_dictionary,
+def test_main_db_output(
     db_path,
-    input_dir,
+    mock_building_parser,
+    mock_config_logger,
+    config_dict,
     monkeypatch,
 ):
-    """Test function main() when passed an existing database scraping CAZy directly.
-
-    Argv is not None, logger is not None, args.output is output_dir, args.subfamilies is True,
-    and valid db path is given by db_path.
-    """
-
-    def mock_building_parser(*args, **kwargs):
-        parser_args = ArgumentParser(
-            prog="cazy_webscraper.py",
-            usage=None,
-            description="Scrape the CAZy database",
-            conflict_handler="error",
-            add_help=True,
-        )
-        return parser_args
+    """Test main() with args.db_output and the database already exists"""
 
     def mock_parser(*args, **kwargs):
         parser = Namespace(
-            config=None,
+            email="dummy@domain.com",
+            cache_dir=None,
+            cazy_data=None,
+            cazy_synonyms=None,
             classes=None,
-            database=db_path,
-            ec=None,
+            config=None,
+            citation=False,
+            db_output=db_path,  ###
+            database=None,
+            delete_old_relationships=False,
             force=False,
             families=None,
             genera=None,
-            get_pages=False,
             kingdoms=None,
             log=None,
             nodelete=False,
-            output=output_dir,
+            nodelete_cache=False,
+            nodelete_log=False,
             retries=10,
-            scrape_files=None,
-            subfamilies=True,
+            sql_echo=False,
+            subfamilies=False,
             species=None,
             strains=None,
-            streamline="streamline_args",
             timeout=45,
-            verbose=False,
+            validate=False,
+            verbse=False,
+            version=True,
         )
         return parser
 
-    def mock_config_logger(*args, **kwargs):
-        return
+    def mock_parse_config(*args, **kwards):
+        return (
+            None,
+            config_dict,
+            {},
+            {'GH'},
+            {'CE1'},
+            {'Bacteria'},
+            {'genus': 'a genus'},
+            {'a genus', 'a species'}
+        )
 
-    def mock_making_output_dir(*args, **kwargs):
-        return
+    def mock_connect_existing_db(*args, **kwards):
+        return (
+            'connection',
+            'logger_name',
+            'cache_dir',
+        )
 
-    def mock_retrieving_configuration(*args, **kwargs):
-        # excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter
-        return None, None, cazy_dictionary, taxonomic_filter_dict, [], []
-
-    def mock_filter_set(*args, **kwargs):
-        return set()
-
-    def mock_none(*args, **kwargs):
+    def mock_log_scrape_in_db(*args, **kwargs):
         return
 
     monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
-    monkeypatch.setattr(file_io, "make_output_directory", mock_making_output_dir)
-    monkeypatch.setattr(parse_configuration, "parse_configuration", mock_retrieving_configuration)
-    monkeypatch.setattr(cazy_webscraper, "get_filter_set", mock_filter_set)
-    monkeypatch.setattr(parse_configuration, "create_streamline_scraping_warning", mock_none)
-    monkeypatch.setattr(sql.sql_interface, "log_scrape_in_db", mock_none)
-    monkeypatch.setattr(cazy_webscraper, "get_cazy_data", mock_none)
+    monkeypatch.setattr(parse_configuration, "parse_configuration", mock_parse_config)
+    monkeypatch.setattr(cazy_scraper, "connect_to_new_db", mock_connect_existing_db)
+    monkeypatch.setattr(sql.sql_interface, "log_scrape_in_db", mock_log_scrape_in_db)
 
-    cazy_webscraper.main(["argv"])
+    cazy_scraper.main()
 
 
-def test_main_new_database(output_dir, cazy_dictionary, monkeypatch):
-    """Test main() when a new database_file is created"""
-
-    def mock_building_parser(*args, **kwargs):
-        parser_args = ArgumentParser(
-            prog="cazy_webscraper.py",
-            usage=None,
-            description="Scrape the CAZy database",
-            conflict_handler="error",
-            add_help=True,
-        )
-        return parser_args
-
-    output_path = output_dir / "test_webscraper" / "temp_dir_for_db"
-    os.makedirs(output_path, exist_ok=True)
-
-    def mock_parser(*args, **kwargs):
-        parser = Namespace(
-            config=None,
-            classes=None,
-            database=None,
-            ec=None,
-            force=True,
-            families=None,
-            genera=None,
-            get_pages=False,
-            kingdoms=None,
-            log=None,
-            nodelete=False,
-            output=output_path,
-            retries=10,
-            scrape_files=None,
-            subfamilies=True,
-            species=None,
-            strains=None,
-            streamline="streamline_args",
-            timeout=45,
-            verbose=False,
-        )
-        return parser
-
-    def mock_config_logger(*args, **kwargs):
-        return
-
-    def mock_retrieving_configuration(*args, **kwargs):
-        # excluded_classes, config_dict, cazy_dict, taxonomy_filter, kingdoms, ec_filter
-        return None, None, cazy_dictionary, taxonomic_filter_dict, [], []
-
-    def mock_filter_set(*args, **kwargs):
-        return set()
-
-    def mock_none(*args, **kwargs):
-        return
-
-    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
-    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
-    monkeypatch.setattr(parse_configuration, "parse_configuration", mock_retrieving_configuration)
-    monkeypatch.setattr(cazy_webscraper, "get_filter_set", mock_filter_set)
-    monkeypatch.setattr(parse_configuration, "create_streamline_scraping_warning", mock_none)
-    monkeypatch.setattr(sql.sql_interface, "log_scrape_in_db", mock_none)
-    monkeypatch.setattr(cazy_webscraper, "get_cazy_data", mock_none)
-
-    cazy_webscraper.main(["argv"])
-
-    # delete newly build db
-    file_io.make_output_directory(output_dir, True, False)
 
 
-# test get_filter_set
-
-
-def test_get_filter_set():
-    """Test get_filter_set."""
-    taxonomy_filter = {"genera": ["Aspergillus", "Trichoderma"], "strains": []}
-    cazy_webscraper.get_filter_set(taxonomy_filter)
-
-
-def test_get_filter_set_none():
-    """Test get_filter_set when no filters are provided."""
-    taxonomy_filter = {}
-    assert cazy_webscraper.get_filter_set(taxonomy_filter) is None
 
 
 # test get_cazy_data()

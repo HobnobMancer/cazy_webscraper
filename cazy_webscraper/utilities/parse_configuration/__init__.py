@@ -47,7 +47,7 @@ import re
 import sys
 import yaml
 
-from scraper.utilities.parse_configuration.cazy_class_synonym_dict import cazy_synonym_dict
+from cazy_webscraper.utilities.parse_configuration.cazy_class_synonym_dict import cazy_synonym_dict
 
 
 def parse_configuration(args):
@@ -113,10 +113,6 @@ def parse_configuration(args):
             if user_kingdom in correct_kingdoms:
                 kingdoms.add(f"{kingdom[0].upper()}{kingdom[1:].lower()}")
         kingdom_filters = kingdoms
-    
-    # When no classes or families are defined scrape every class and family
-    if args.classes is None and args.families is None and args.config is None:
-        config_dict["classes"] = set(cazy_class_synonym_dict.keys())
 
     # get list of CAZy classes not to scrape
     excluded_classes = get_excluded_classes(config_dict, cazy_class_synonym_dict)
@@ -124,12 +120,9 @@ def parse_configuration(args):
     # convert dict into a single set of filters
     taxonomy_filter_set = get_filter_set(taxonomy_filter_dict)
 
-    user_class_filters = set(config_dict['classes'])
-    class_filters = set()
-    for class_filter in user_class_filters:
-        new_filter = class_filter[class_filter.find('(')+1:class_filter.find(')')-1]
-        class_filters.add(new_filter)
-    
+    # retrieve class abbreivations
+    class_filters = set([cazy_class.split(" (")[0] for cazy_class in set(config_dict['classes'])])
+
     family_filters = set()
     for key in config_dict:
         if key != 'classes':
@@ -212,12 +205,6 @@ def get_yaml_configuration(
         )
         sys.exit(1)
 
-    # retrieve CAZy classes defined in the YAML configuration file
-    config_dict["classes"] = get_yaml_cazy_classes(
-        yaml_config_dict,
-        cazy_class_synonym_dict,
-    )
-
     for key in yaml_config_dict:
         if key == "classes":
             yaml_cazy_classes = get_yaml_cazy_classes(yaml_config_dict, cazy_class_synonym_dict)
@@ -242,7 +229,11 @@ def get_yaml_configuration(
         elif key == "kingdoms":
             if yaml_config_dict["kingdoms"] is not None:
                 for kingdom in yaml_config_dict["kingdoms"]:
-                    kingdom_filters["kingdoms"].add(kingdom)
+                    if kingdom.lower() == 'unclassified':
+                        kingdom_filters["kingdoms"].add(kingdom.lower())
+                    else:
+                        new_kingdom = kingdom[0].upper() + kingdom[1:].lower()
+                        kingdom_filters["kingdoms"].add(new_kingdom)
 
         else:  # key is a CAZy class and underneath are CAZy families to scrape
             if yaml_config_dict[key] is not None:  # CAZy families were listed
@@ -367,7 +358,11 @@ def get_cmd_scrape_config(
     if args.kingdoms is not None:
         cmd_kingdoms = (args.kingdoms).split(",")
         for kingdom in cmd_kingdoms:
-            kingdom_filters.add(kingdom)
+            if kingdom.lower() == 'unclassified':
+                kingdom_filters.add(kingdom.lower())
+            else:
+                new_kingdom = kingdom[0].upper() + kingdom[1:].lower()
+                kingdom_filters.add(new_kingdom)
     
     return config_dict, taxonomy_filter, kingdom_filters
 
@@ -435,13 +430,15 @@ def get_excluded_classes(config_dict, cazy_class_synonym_dict):
 
     Return list of CAZy classes not to be scraped.
     """
-    cazy_classes_to_scrape = config_dict["classes"]
 
+    cazy_classes_to_scrape = set()
+    
     # retrieve the names of classes for which specific families to be scraped HAVE BEEN named
     for key in config_dict:
         if (key != "classes") and (len(config_dict[key]) != 0):
             # add the class of families to be scraped to the list of CAZy classes to be scraped
             cazy_classes_to_scrape.add(key)
+    cazy_classes_to_scrape.union(config_dict["classes"])
 
     # create list of CAZy classes not to be scraped
     excluded_classes = list(cazy_class_synonym_dict.keys())
@@ -480,7 +477,7 @@ def get_filter_set(taxonomy_filters_dict):
 
     Return a set.
     """
-    taxonomy_filters = {}
+    taxonomy_filters = set()
 
     for key in taxonomy_filters_dict:
         try:
@@ -537,13 +534,9 @@ def get_expansion_configuration(args):
     )
 
     ec_filters = get_ec_config(ec_filters, args)
-
-    user_class_filters = set(config_dict['classes'])
-    class_filters = set()
-    for class_filter in user_class_filters:
-        new_filter = class_filter[class_filter.find('(')+1:class_filter.find(')')-1]
-        class_filters.add(new_filter)
     
+    class_filters = set(config_dict['classes'])
+
     family_filters = set()
     for key in config_dict:
         if key != 'classes':

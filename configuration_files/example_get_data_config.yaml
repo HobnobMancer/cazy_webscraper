@@ -24,3 +24,5 @@ species:  # list species, this will scrape all strains under the species
 - "Pythium ultimum"
 strains:  # list specific strains to be scraped
 kingdoms:  # Archaea, Bacteria, Eukaryota, Viruses, Unclassified
+ec:
+- "EC1.2.3.4"

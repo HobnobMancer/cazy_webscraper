@@ -46,7 +46,7 @@ import sys
 
 from tqdm import tqdm
 
-from scraper.sql.sql_orm import (
+from cazy_webscraper.sql.sql_orm import (
     CazyFamily,
     Ec,
     Genbank,
@@ -73,7 +73,7 @@ def get_genbank_accessions(
     :param ec_filters: set of EC numbers to limit the retrieval of data to
     :param connection: open sqlaclchemy connection for an SQLite db
     
-    Return set of GenBank accessions
+    Return dict {gbk_acc: gbk_id}
     """
     logger = logging.getLogger(__name__)
     
@@ -285,13 +285,13 @@ def apply_tax_filters(
 
 
 def apply_ec_filters(
-    current_gbk_obks,
+    current_gbk_objs,
     ec_filters,
     connection,
 ):
     """Apply EC number filter to the retrieved Genbank records.
     
-    :param current_gbk_obks: list of db Genbank objs retrieved from the db
+    :param current_gbk_objs: list of db Genbank objs retrieved from the db
     :param ec_filters: set of EC numbers to limit the retrieval of data to
     :param connection: open sqlaclchemy connection for an SQLite db
     
@@ -308,8 +308,8 @@ def apply_ec_filters(
                 join(Ec, Genbank.ecs).\
                 filter(Ec.ec_number == ec).\
                 all()
-            for gbk_id in gbk_query:
-                gbk_ids.add(gbk_id)
+        for gbk_id in gbk_query:
+            gbk_ids.add(gbk_id)
 
     if len(gbk_ids) == 0:
         logger.error(
@@ -321,7 +321,7 @@ def apply_ec_filters(
         sys.exit(1)
     
     filtered_gbks = set()
-    for gbk in current_gbk_obks:
+    for gbk in current_gbk_objs:
         if gbk.genbank_id in gbk_ids:
             filtered_gbks.add(gbk)
     

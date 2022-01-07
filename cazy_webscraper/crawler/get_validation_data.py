@@ -43,13 +43,13 @@ were added to the local CAZyme database while scraping CAZy."""
 
 import logging
 import re
-from scraper.utilities import file_io
 import time
 
 from urllib.error import HTTPError
 
 from tqdm import tqdm
 from requests.exceptions import ConnectionError, MissingSchema
+from saintBioutils.utilities import file_io
 from urllib3.exceptions import HTTPError, RequestError
 
 import mechanicalsoup
