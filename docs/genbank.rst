@@ -21,12 +21,15 @@ Quick Start
 To download protein sequences for all CAZymes in the local CAZyme database, and write them to the local CAZyme database, 
 use the following command structure:
 
-.. code-block:: bash
-    cw_get_genbank_seqs <path to local CAZyme db> <user email address>
+.. code-block:: console
+
+    cw_get_genbank_seqs 'path to local CAZyme db' 'user email address'
 
 For example:
 
-.. code-block:: bash
+
+.. code-block:: console
+    
     cw_get_genbank_seqs cazy/cazyme.db myemail@domain.com
 
 .. NOTE::
@@ -106,7 +109,7 @@ already has a sequence in the local database, this sequence is **not** overwritt
 You may wish to update the protein sequences in your local CAZyme database. To do this use the ``--sequence``/``-s`` 
 flag to tell ``cazy_webscraper`` to retrieve protein sequences, **and** use the ``--seq_update`` flag.
 
-.. code-block:: bash
+.. code-block:: console
 
     cw_get_genbank_seqs cazy_db.db -s --seq_update
 

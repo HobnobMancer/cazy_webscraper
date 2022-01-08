@@ -11,18 +11,20 @@ This page runs through examples of how to combine the various 'filters' that can
 the scraping of CAZy. These tutorials are designed for those with less experience using command-line tools.
 
 .. NOTE::
-  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` call it using ``cazy_webscraper`` - this is the method used in this tutorial.  
-  If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` using the command ``python3 <path to cazy_webscraper.py>``. For example, if you were located in the root of the repository, you would use: ``python3 cazy_webscraper/cazy_scraper.py``.
+  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` call the application using the command ``cazy_webscraper`` - this is the method used in this tutorial.  
+
+  If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` using the command ``python3 <path to cazy_scraper.py>``. For example, if you were located in the root of the repository, you would use: ``python3 cazy_webscraper/cazy_scraper.py``.
 
 
 ----------------------------------
 Configuration via the command line
 ----------------------------------
 
-``cazy_webscraper`` has only one required argument: the user email address. Therefore, 
- the scraper can be enabled by simply calling the scraper at the command line in the terminal: 
+``cazy_webscraper`` has only one required argument, the user email address. Therefore, 
+ the scraper can be enabled by simply calling the scraper at the command line. For example, using: 
 
 .. code-block:: bash
+
   cazy_webscraper myemail@domain.com
 
 When no optional arguments are provided the default behaviour of the scraper will be performed. 
@@ -33,7 +35,7 @@ The default behaviour is to:
 * Not to retrieve subfamilies (members of subfamilies will be retrieved but only their parent family will be listed)
 
 .. note::
-   **For those new to using command-line tools: arguments**  
+   **For those new to using command-line tools:**  
    Arguments are additional pieces of information we add onto the end of the command. They are used to configure the specific behaviour 
    performed by computer when we tell it to perform a specific command. In the examples above the command is ``cazy_webscraper myemail@domain.com``, 
    where we have told to computer to run the Python program ``cazy_webscraper`` and submit the user email 
@@ -68,7 +70,8 @@ only CAZymes from the specified families **and** belonging to source organisms w
 
 We will now walk through some examples of how to use ``cazy_webscraper``. All example code provided in this section will presume that the terminal is pointed at the ``cazy_webscraper`` directory, which contains the ``cazy_webscraper.py`` file.
 
-.. note::
+.. NOTE::
+   
    **For those new to using command-line tools: flags**
    Command-line flags are used to tell the computer specifically which option(s) to change. Flags **always** come after the command. The abbreivated 
    version of a flag with with prefixed with a single dash, followed by a single letter. For example, ``-s``,``-o`` and ``-l`` are all examples of short 
@@ -262,8 +265,8 @@ CAZy classifies source organisms under one of 5 kingdoms:
 * Viruses
 * Unclassified
 
-To restrict the scraping of CAZy to retrieve CAZymes only derived from species from specific taxonomic kingdoms
- add the ``--kingdoms`` flag to the ``cazy_webscraper`` command followed by the kingdoms to limit the retrieval 
+To restrict the scraping of CAZy to retrieve CAZymes only derived from species from specific taxonomic kingdoms 
+add the ``--kingdoms`` flag to the ``cazy_webscraper`` command followed by the kingdoms to limit the retrieval 
 of CAZymes to. To list multiple kingdoms you need only add the ``--kingdoms`` flag *once*, then list all the kingdoms 
 you are interested in, separated by a single comma.
 
@@ -406,6 +409,7 @@ we would use would be:
 When combining taxonomy filters, the higher taxonomy levels take president. For example, the :command:
    
 .. code-block:: bash
+
    cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015
 
 will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well. 
@@ -423,6 +427,7 @@ To retrieve the CAZy family **and** CAZy subfamily annotations, add the ``-subfa
 ``cazy_webscraper`` command. For example:
 
 .. code-block:: bash
+
    cazy_webscraper --families GH3 --subfamilies
 
 This command will retrieve all CAZymes from GH3, and will retrieve the CAZy family **and** CAZy subfamily 
@@ -583,6 +588,7 @@ allow you to add notes to your configuration file. For example:
 
 
 .. code-block:: yaml
+
    # This is a comment, text following a hashtag '#' on the same line is not read by cazy_webscraper
    # https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html 
    classes:  # classes from which all proteins will be retrieved
@@ -694,6 +700,7 @@ To direct ``cazy_webscraper`` to retrieve CAZyme data from a previously download
 ``--cazy_data`` flag, followed by the path to the text file. For example:
 
 .. code-block:: bash
+   
    cazy_webscraper --cazy_data cazy_db/cazy_data.txt
 
 .. WARNING::

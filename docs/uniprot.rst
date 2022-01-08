@@ -13,15 +13,22 @@ To download UniProt protein accessions and names from UniProt for all protein in
 the local CAZyme database, use the following command structure:  
 
 .. code-block:: bash
+    
    cw_get_uniprot_data <path to local CAZyme db>
 
 .. NOTE::
    The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
 
+.. WARNING::
+    Please do not download data from UniProt for the entire CAZy database unless absolute necessary. 
+    Retrieving the data from any of these exteranl databases for the entire CAZy 
+    dataset will take several hours and may unintentionally deny the service to others.
 
 --------------------
 Command line options
 --------------------
+
+Below are listed the required and optional command-line options for configuring the retrieval of data from UniProt.
 
 ``database`` - **REQUIRED** Path to a local CAZyme database to add UniProt data to.
 

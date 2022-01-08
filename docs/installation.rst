@@ -14,9 +14,9 @@ We support three ways to install ``cazy_webscraper``.
 Requirements
 ------------
 
-* a POSIX-compliant operating system, e.g. macOS or Linux.
+* A POSIX-compliant operating system, e.g. Linux or MacOS.
 * Python 3.8 or later
-* an internet connection (to access CAZy and download data)
+* An internet connection (to access CAZy and download data)
 
 ----------------------------
 Installing with ``Bioconda``
@@ -57,7 +57,7 @@ Installing from source
    The ``cazy_webscraper`` repository provides the development version of ``cazy_webscraper``. This is the version that is most recently updated, but it may not be the latest stable version. In particular, the development version may contain features that are not yet in a stable version, and it may contain bugs.
 
 .. TIP::
-   To obtain the most recent _stable_ source code from the ``cazy_webscraper`` repository, download a release from the `releases page <https://github.com/cazy-project/cazy_webscraper/releases>`_ and extract the archive.
+   To obtain the most recent *stable* source code from the ``cazy_webscraper`` repository, download a release from the `releases page <https://github.com/cazy-project/cazy_webscraper/releases>`_ and extract the archive.
 
 .. ATTENTION::
    If you are using `conda`, you can use the ``Makefile`` in the ``cazy_webscraper`` repository to install ``cazy_webscraper`` from source, with the command ``make setup_env``.

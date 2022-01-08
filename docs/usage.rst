@@ -1,8 +1,8 @@
 =========================
-Using ``cazy_webscraper``
+Usage: Scraping CAZy
 =========================
 
-``cazy_webscraper`` can be used to retrieve user-specified data sets from the CAZy database. The ``cazy_webscraper`` application can be invoked *via* the command line
+``cazy_webscraper`` can be used to retrieve user-specified data sets from the CAZy database. The ``cazy_webscraper`` application can be invoked via the command line
 
 ----------------------
 Quick Start
@@ -12,22 +12,29 @@ To download the entire CAZy dataset, and save the data set to the current workin
 ``cazy_webscraper_<date>_<time>.db``, use the following command structure:  
 
 .. code-block:: bash
+  
    cazy_webscraper <user_email>
 
 .. NOTE::
    The user email address is a requirement of NCBI. NCBI is queried to identify the currect source organism 
-   for a given protein, when multiple source organisms are retrieved from CAZy for a single protein.
+   for a given protein, when multiple source organisms are retrieved from CAZy for a single protein. 
+   For more information please see the `NCBI Entrez <https://www.ncbi.nlm.nih.gov/books/NBK25497/>`_ documentation.
+
+.. NOTE::
+  Typically, downloading the entire CAZy dataset takes 10-15 minutes, although this is dependent on the amount of avaible memory.
 
 --------------------
 Command line options
 --------------------
 
+Listed below are the required and optional command-line options when using ``cazy_webscraper`` 
+to download data from CAZy.
 
 ``email`` - **REQUIRED** User email address. This is required by NCBI Entrez for querying the Entrez server.
 
 ``--cache_dir`` - Path to cache dir to be used instead of default cache dir path.
 
-``--cazy_data`` - Path to a txt file downloaded from CAZy containing a CAZy database dump
+``--cazy_data`` - Path to a text file downloaded from CAZy containing a CAZy database dump
 
 ``--cazy_synonyms`` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
 
@@ -118,8 +125,8 @@ and members of distinct families and classes can be selected simultaneously, e.g
 
 .. NOTE::
   CAZy families should be named using the standard CAZy syntax.
-  GH1 is **accepted**.
-  gh1 and Glycoside hydrolase 1 are **note** accepted.
+  GH1 is **accepted**.  
+  "gh1" and "Glycoside hydrolase 1" are **not** accepted.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Specifying output data location

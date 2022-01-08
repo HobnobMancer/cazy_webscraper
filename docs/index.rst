@@ -58,27 +58,22 @@ Build Information
 
    Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
 
-``cazy_webscraper`` retrieves data from CAZy, writing it to a local SQLite3 file. 
+``cazy_webscraper`` retrieves data from CAZy, writing it to a local SQLite3 file (typically taking 10-15 minutes to scrape the entirety of CAZy). 
 
-``cazy_webscraper`` can also retrieve the protein data from `UniProt <https://www.uniprot.org/>`_ for CAZymes in the local database. 
-This data includes:  
-- UniProt accession
-- Protien name
-- Protein amino acid sequence
-- EC numbers
-- PDB accessions
+**Additionally, ``cazy_webscraper`` can:**
 
-``cazy_webscraper`` can retrieve the protein sequences from NCBI for CAZymes in the local database.
+* Retrieve the protein data from `UniProt <https://www.uniprot.org/>`_ for CAZymes in the local database. This data includes:
 
-``cazy_webscraper`` can write out protein sequences retrieved from UniPtot and NCBI in FASTA format, 
-and build a local BLAST database.
+   * UniProt accession
+   * Protien name
+   * Protein amino acid sequence
+   * EC numbers
+   * PDB accessions
 
-Additionally, ``cazy_webscraper`` can retrieve protein structures from the Research Collaboratory 
-for Structural Bioinformatics (RCSB) Protein Data Bank, `PDB <https://www.rcsb.org/>`_, 
-for CAZymes in the local database.
-
-``cazy_webscraper`` can be configured to scrape the entire CAZy database, to recover only CAZymes 
-filtered by user-supplied criteria, such as CAZy classes, CAZy (sub)family, or taxonomy. 
+* Retrieve protein sequences from NCBI GenBank for CAZymes in the local database.
+* Write out protein sequences retrieved from UniProt and NCBI in FASTA format, and build a local BLAST database.
+* Retrieve protein structures from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank, `PDB <https://www.rcsb.org/>`_, for CAZymes in the local database.
+* Be configured to scrape the entire CAZy database, or recover only CAZymes filtered by user-supplied criteria, such as CAZy classes, CAZy (sub)family, or taxonomy. 
 
 ----------
 Quickstart
@@ -86,15 +81,17 @@ Quickstart
 
 We have produced a "Getting Started With ``cazy_webscraper``" `poster <https://hobnobmancer.github.io/cazy_webscraper/getting_started_poster.pdf>`_.
 
-To download the entire CAZy dataset, and save the data set to the current working directory with the final name 
+To download the entire CAZy dataset, and save the data set to the current working directory with the file name 
 ``cazy_webscraper_<date>_<time>.db``, use the following command structure:  
 
 .. code-block:: bash
+
    cazy_webscraper <user_email>
 
 .. NOTE::
    The user email address is a requirement of NCBI. NCBI is queried to identify the currect source organism 
-   for a given protein, when multiple source organisms are retrieved from CAZy for a single protein.
+   for a given protein, when multiple source organisms are retrieved from CAZy for a single protein. 
+   For more information please see the `NCBI Entrez <https://www.ncbi.nlm.nih.gov/books/NBK25497/>`_ documentation.
 
 -------------
 Best practice
@@ -102,12 +99,14 @@ Best practice
 
 When performing a series of many automated, repeated calls to a server it is polite to do this when internet traffic is lowest *at the server*. This is typically at the weekend and overnight.
 
-The webscraper can appear to run slowly but this may be due to the bandwidth at the CAZy server, or server speed. ``cazy_webscraper`` provides a progress bar to reassure the user that the webscraper is working. 
+When using ``cazy_webscraper`` to retrieve data from UniProt, NCBI or PDB, the webscraper can appear 
+to run slowly but this may be due to bandwidth at the database server, or server speed. 
+``cazy_webscraper`` provides a progress bar to reassure the user that the webscraper is working.
 
 .. WARNING::
-   **Please do not perform a retrieval of UniProt, NCBI and/or PDB data for the entire CAZy dataset, unless 
+   Please **do not** perform a retrieval of UniProt, NCBI and/or PDB data for the entire CAZy dataset, unless 
    absolutely unavoidable. Retrieving the data from any of these exteranl databases for the entire CAZy 
-   dataset will take several hours and may unintentionally deny the service to others.**
+   dataset will take several hours and may unintentionally deny the service to others.
 
 -------------
 Documentation
@@ -119,6 +118,7 @@ For details and updates on development, please consult the `GitHub repository <h
    :maxdepth: 2
    
    installation
+   quickstart
    usage
    tutorial
    database

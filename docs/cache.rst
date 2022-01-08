@@ -1,8 +1,8 @@
-=========================
-``cazy_webscraper`` cache
-=========================
+===========================
+Caching and Using the Cache
+===========================
 
-To facilitate reproducibility of scrapping CAZy, ``cazy_webscraper`` logs each scrape within the compiled 
+To facilitate the reproducibility of scrapping CAZy, ``cazy_webscraper`` logs each scrape within the compiled 
 CAZyme datbase and writes out cache files.
 
 This pages walks through the data logged in the CAZyme database and the different cache files written by 
@@ -44,16 +44,13 @@ Cache files when retrieving data from CAZy
 ``cazy_webscraper`` writes out 2 cache files. These are:
 
 * ``cazy_db_<date-time>.zip`` which is the txt file downloaded from CAZy containing all CAZy Data
-* ``<db_name>_<date-time>_connection_failures.log`` which contains :
+* ``<db_name>_<date-time>_connection_failures.log`` which contains a list of proteins for which data was unsuccessfully parsed, and CAZy families for which the family member population could not be retrieved (if the 'validation' option is used).
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Cache files when retrieving data from UniProt
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When retreiving data from UniProt several cache files are produced, and the number depends on the size of the 
-dataset retrieval:
-
-
+The dataframes retrieved with each query to UniProt are cached.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Cache files when retrieving data from GenBank
@@ -68,8 +65,7 @@ When retrieving protein sequences from GenBank two cache file are produced:
 Cache files when retrieving data from PDB
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-
+Too be added...
 
 ---------------
 Cache directory
