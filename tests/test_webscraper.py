@@ -51,6 +51,7 @@ import sys
 
 from argparse import Namespace, ArgumentParser
 
+
 from cazy_webscraper import cazy_scraper, crawler, sql, utilities
 from cazy_webscraper.cazy import parse_all_cazy_data, parse_cazy_data_with_filters
 from cazy_webscraper.sql import sql_interface, sql_orm
@@ -631,7 +632,7 @@ def test_get_cazy_data_no_fam_urls(
     monkeypatch.setattr(crawler, "get_cazy_family_urls", mock_get_families)
     monkeypatch.setattr(utilities, "build_logger", mock_logger)
 
-    cazy_webscraper.get_cazy_data(
+    cazy_scraper.get_cazy_data(
         cazy_home=cazy_home_url,
         excluded_classes=None,
         config_dict=config_dict,
@@ -678,7 +679,7 @@ def test_get_cazy_data_no_all(
     monkeypatch.setattr(crawler, "get_cazy_family_urls", mock_get_fam_urls)
     monkeypatch.setattr(scrape_all, "parse_family_via_all_pages", mock_parse_family)
 
-    cazy_webscraper.get_cazy_data(
+    cazy_scraper.get_cazy_data(
         cazy_home=cazy_home_url,
         excluded_classes=None,
         config_dict=None,
@@ -722,7 +723,7 @@ def test_get_cazy_data_no_config_dict_kingdom(
     monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
     monkeypatch.setattr(scrape_by_kingdom, "parse_family_by_kingdom", mock_parse_family)
 
-    cazy_webscraper.get_cazy_data(
+    cazy_scraper.get_cazy_data(
         cazy_home=cazy_home_url,
         excluded_classes=None,
         config_dict=None,
@@ -768,7 +769,7 @@ def test_get_cazy_data_config_data_all(
     monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
     monkeypatch.setattr(scrape_all, "parse_family_via_all_pages", mock_parse_family)
 
-    cazy_webscraper.get_cazy_data(
+    cazy_scraper.get_cazy_data(
         cazy_home=cazy_home_url,
         excluded_classes=None,
         config_dict=config_dict,
@@ -814,7 +815,7 @@ def test_get_cazy_data_config_data_kingdom(
     monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
     monkeypatch.setattr(scrape_by_kingdom, "parse_family_by_kingdom", mock_parse_family)
 
-    cazy_webscraper.get_cazy_data(
+    cazy_scraper.get_cazy_data(
         cazy_home=cazy_home_url,
         excluded_classes=None,
         config_dict=config_dict,
@@ -860,7 +861,7 @@ def test_get_cazy_data_config_data_kingdom_stdout(
     monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
     monkeypatch.setattr(scrape_by_kingdom, "parse_family_by_kingdom", mock_parse_family)
 
-    cazy_webscraper.get_cazy_data(
+    cazy_scraper.get_cazy_data(
         cazy_home=cazy_home_url,
         excluded_classes=None,
         config_dict=config_dict,
