@@ -56,6 +56,7 @@ from cazy_webscraper import cazy_scraper, crawler, sql, utilities
 from cazy_webscraper.cazy import parse_all_cazy_data, parse_cazy_data_with_filters
 from cazy_webscraper.sql import sql_interface, sql_orm
 from cazy_webscraper.utilities import file_io, parse_configuration, parsers
+from cazy_webscraper.utilities.parsers import cazy_webscraper_parser
 
 
 @pytest.fixture
@@ -206,7 +207,7 @@ def test_main_citation(mock_building_parser, mock_config_logger, monkeypatch):
         )
         return parser
 
-    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
+    monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
 
@@ -248,7 +249,7 @@ def test_main_version(mock_building_parser, mock_config_logger, monkeypatch):
         )
         return parser
 
-    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
+    monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
 
@@ -290,7 +291,7 @@ def test_main_version_argv(mock_building_parser, mock_config_logger, monkeypatch
         )
         return parser
 
-    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
+    monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
 
@@ -361,7 +362,7 @@ def test_main_double_db(mock_building_parser, mock_config_logger, monkeypatch):
         )
         return parser
 
-    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
+    monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
 
@@ -403,7 +404,7 @@ def test_main_new_db_exists_force(db_path, mock_building_parser, mock_config_log
         )
         return parser
 
-    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
+    monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
 
@@ -445,7 +446,7 @@ def test_main_new_db_exists(db_path, mock_building_parser, mock_config_logger, m
         )
         return parser
 
-    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
+    monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
 
@@ -515,7 +516,7 @@ def test_main_database(
     def mock_log_scrape_in_db(*args, **kwargs):
         return
 
-    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
+    monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
     monkeypatch.setattr(parse_configuration, "parse_configuration", mock_parse_config)
@@ -588,7 +589,7 @@ def test_main_db_output(
     def mock_log_scrape_in_db(*args, **kwargs):
         return
 
-    monkeypatch.setattr(parsers, "build_parser", mock_building_parser)
+    monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
     monkeypatch.setattr(parse_configuration, "parse_configuration", mock_parse_config)
