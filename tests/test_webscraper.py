@@ -52,8 +52,7 @@ import sys
 from argparse import Namespace, ArgumentParser
 
 from cazy_webscraper import cazy_scraper, crawler, sql, utilities
-from cazy_webscraper.crawler.cazy_html_pages import get_cazy_pages, parse_local_pages
-from cazy_webscraper.crawler.parse_cazy_families import scrape_all, scrape_by_kingdom
+from cazy_webscraper.cazy import parse_all_cazy_data, parse_cazy_data_with_filters
 from cazy_webscraper.sql import sql_interface, sql_orm
 from cazy_webscraper.utilities import file_io, parse_configuration, parsers
 
