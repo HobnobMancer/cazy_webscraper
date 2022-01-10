@@ -104,7 +104,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         parser = build_parser()
         args = parser.parse_args()
     else:
-        parser = cazy_webscraper_parser.build_parser(argv)
+        parser = build_parser(argv)
         args = parser.parse_args()
 
     if logger is None:
