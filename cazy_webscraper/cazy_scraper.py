@@ -88,7 +88,7 @@ from cazy_webscraper.utilities import (
     parse_configuration,
     termcolour,
 )
-from cazy_webscraper.utilities.parsers import cazy_webscraper_parser
+from cazy_webscraper.utilities.parsers.cazy_webscraper_parser import build_parser
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -101,10 +101,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # Program preparation
     if argv is None:
-        parser = cazy_webscraper_parser.build_parser()
+        parser = build_parser()
         args = parser.parse_args()
     else:
-        parser = cazy_webscraper_parser.build_parser(argv)
+        parser = build_parser(argv)
         args = parser.parse_args()
 
     if logger is None:

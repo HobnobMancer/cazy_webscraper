@@ -49,7 +49,16 @@ import pytest
 
 from argparse import Namespace
 
-from scraper.utilities import config_logger, parsers
+from cazy_webscraper.utilities import config_logger, parsers
+from cazy_webscraper.utilities.parsers import (
+    api_parser,
+    cazy_webscraper_parser,
+    extract_seq_parser,
+    gbk_seq_parser,
+    genbank_cov_parser,
+    pdb_strctre_parser,
+    uniprot_parser,
+)
 
 
 @pytest.fixture
@@ -77,16 +86,6 @@ def args_v_true():
 # test building the parser
 
 
-def test_parser():
-    """Test building the parser when argsv is None"""
-    parsers.build_parser()
-
-
-def test_parser_arsv():
-    """Test building the parser when argsv is not None"""
-    parsers.build_parser(["-f"])
-
-
 # test building the logger
 
 
@@ -100,27 +99,73 @@ def test_verbose_true(args_v_true):
     config_logger(args_v_true["args"])
 
 
-# test building genbank_sequencases parser
+# test cazy_webscraper parser
 
-
-def test_genbank_seq_parser():
+def test_parser_cw():
     """Test building the parser when argsv is None"""
-    parsers.build_genbank_sequences_parser()
+    cazy_webscraper_parser.build_parser()
 
 
-def test_genbank_seq_parser_arsv():
+def test_parser_cw_arsv():
     """Test building the parser when argsv is not None"""
-    parsers.build_genbank_sequences_parser(["database", "email"])
+    cazy_webscraper_parser.build_parser(["dummy_email"])
 
 
-# test building genbank_sequencases parser
-
-
-def test_pdb_struc_parser():
+def test_parser_extract():
     """Test building the parser when argsv is None"""
-    parsers.build_pdb_structures_parser()
+    extract_seq_parser.build_parser()
 
 
-def test_pdb_struc_parser_arsv():
+def test_parser_arsv_extract():
     """Test building the parser when argsv is not None"""
-    parsers.build_pdb_structures_parser(["database", "pdb"])
+    extract_seq_parser.build_parser(["dummy_email"])
+
+
+def test_parser_api():
+    """Test building the parser when argsv is None"""
+    api_parser.build_parser()
+
+
+def test_parser_arsv_api():
+    """Test building the parser when argsv is not None"""
+    api_parser.build_parser(["db", "csv"])
+
+
+def test_parser_gbk():
+    """Test building the parser when argsv is None"""
+    gbk_seq_parser.build_parser()
+
+
+def test_parser_arsv_gbk():
+    """Test building the parser when argsv is not None"""
+    gbk_seq_parser.build_parser(["db", "dummy_email"])
+
+
+def test_parser_pdb():
+    """Test building the parser when argsv is None"""
+    pdb_strctre_parser.build_parser()
+
+
+def test_parser_arsv_pdb():
+    """Test building the parser when argsv is not None"""
+    pdb_strctre_parser.build_parser(["dummy_email", "pdb"])
+
+
+def test_parser_uniprot():
+    """Test building the parser when argsv is None"""
+    uniprot_parser.build_parser()
+
+
+def test_parser_arsv_uniprot():
+    """Test building the parser when argsv is not None"""
+    uniprot_parser.build_parser(["dummy_email"])
+
+
+def test_parser_cov():
+    """Test building the parser when argsv is None"""
+    genbank_cov_parser.build_parser()
+
+
+def test_parser_arsv_cov():
+    """Test building the parser when argsv is not None"""
+    genbank_cov_parser.build_parser(["db", "dummy_email"])
