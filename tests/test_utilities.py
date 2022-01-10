@@ -128,7 +128,7 @@ def test_parser_api():
 
 def test_parser_arsv_api():
     """Test building the parser when argsv is not None"""
-    api_parser.build_parser(["dummy_email"])
+    api_parser.build_parser(["db", "csv"])
 
 
 def test_parser_gbk():
@@ -138,7 +138,7 @@ def test_parser_gbk():
 
 def test_parser_arsv_gbk():
     """Test building the parser when argsv is not None"""
-    gbk_seq_parser.build_parser(["dummy_email"])
+    gbk_seq_parser.build_parser(["db", "dummy_email"])
 
 
 def test_parser_pdb():
@@ -148,7 +148,7 @@ def test_parser_pdb():
 
 def test_parser_arsv_pdb():
     """Test building the parser when argsv is not None"""
-    pdb_strctre_parser.build_parser(["dummy_email"])
+    pdb_strctre_parser.build_parser(["dummy_email", "pdb"])
 
 
 def test_parser_uniprot():
@@ -168,4 +168,4 @@ def test_parser_cov():
 
 def test_parser_arsv_cov():
     """Test building the parser when argsv is not None"""
-    genbank_cov_parser.build_parser(["dummy_email"])
+    genbank_cov_parser.build_parser(["db", "dummy_email"])
