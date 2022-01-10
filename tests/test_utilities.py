@@ -50,6 +50,15 @@ import pytest
 from argparse import Namespace
 
 from cazy_webscraper.utilities import config_logger, parsers
+from cazy_webscraper.utilities.parsers import (
+    api_parser,
+    cazy_webscraper_parser,
+    extract_seq_parser,
+    gbk_seq_parser,
+    genbank_cov_parser,
+    pdb_strctre_parser,
+    uniprot_parser,
+)
 
 
 @pytest.fixture
@@ -94,69 +103,69 @@ def test_verbose_true(args_v_true):
 
 def test_parser_cw():
     """Test building the parser when argsv is None"""
-    parsers.cazy_webscraper_parser.build_parser()
+    cazy_webscraper_parser.build_parser()
 
 
 def test_parser_cw_arsv():
     """Test building the parser when argsv is not None"""
-    parsers.cazy_webscraper_parser.build_parser(["-f"])
+    cazy_webscraper_parser.build_parser(["-f"])
 
 
 def test_parser_extract():
     """Test building the parser when argsv is None"""
-    parsers.extract_seq_parser.build_parser()
+    extract_seq_parser.build_parser()
 
 
 def test_parser_arsv_extract():
     """Test building the parser when argsv is not None"""
-    parsers.extract_seq_parser.build_parser(["-f"])
+    extract_seq_parser.build_parser(["-f"])
 
 
 def test_parser_api():
     """Test building the parser when argsv is None"""
-    parsers.api_parser.build_parser()
+    api_parser.build_parser()
 
 
 def test_parser_arsv_api():
     """Test building the parser when argsv is not None"""
-    parsers.api_parser.build_parser(["-f"])
+    api_parser.build_parser(["-f"])
 
 
 def test_parser_gbk():
     """Test building the parser when argsv is None"""
-    parsers.gbk_seq_parser.build_parser()
+    gbk_seq_parser.build_parser()
 
 
 def test_parser_arsv_gbk():
     """Test building the parser when argsv is not None"""
-    parsers.gbk_seq_parser.build_parser(["-f"])
+    gbk_seq_parser.build_parser(["-f"])
 
 
 def test_parser_pdb():
     """Test building the parser when argsv is None"""
-    parsers.pdb_strctre_parser.build_parser()
+    pdb_strctre_parser.build_parser()
 
 
 def test_parser_arsv_pdb():
     """Test building the parser when argsv is not None"""
-    parsers.pdb_strctre_parser.build_parser(["-f"])
+    pdb_strctre_parser.build_parser(["-f"])
 
 
 def test_parser_uniprot():
     """Test building the parser when argsv is None"""
-    parsers.uniprot_parser.build_parser()
+    uniprot_parser.build_parser()
 
 
 def test_parser_arsv_uniprot():
     """Test building the parser when argsv is not None"""
-    parsers.uniprot_parser.build_parser(["-f"])
+    uniprot_parser.build_parser(["-f"])
 
 
 def test_parser_cov():
     """Test building the parser when argsv is None"""
-    parsers.genbank_cov_parser.parser.build_parser()
+    genbank_cov_parser.parser.build_parser()
 
 
 def test_parser_arsv_cov():
     """Test building the parser when argsv is not None"""
-    parsers.genbank_cov_parser.build_parser(["-f"])
+    genbank_cov_parser.build_parser(["-f"])
