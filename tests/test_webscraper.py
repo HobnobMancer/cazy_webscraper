@@ -301,35 +301,6 @@ def test_main_version_argv(mock_building_parser, mock_config_logger, monkeypatch
 def test_main_double_db(mock_building_parser, mock_config_logger, monkeypatch):
     """Test main() with args.database and args.db_output"""
 
-    argv = [
-        "dummy@domain.com",
-        None,
-        None,
-        None,
-        None,
-        None,
-        False,
-        'database',
-        'database',
-        False,
-        False,
-        None,
-        None,
-        None,
-        None,
-        False,
-        False,
-        False,
-        10,
-        False,
-        False,
-        None,
-        None,
-        45,
-        False,
-        False,
-        True,
-    ]
     def mock_parser(*args, **kwargs):
         parser = Namespace(
             email="dummy@domain.com",
@@ -366,7 +337,7 @@ def test_main_double_db(mock_building_parser, mock_config_logger, monkeypatch):
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
 
-    cazy_scraper.main(argv=argv)
+    cazy_scraper.main()
 
 
 def test_main_new_db_exists_force(db_path, mock_building_parser, mock_config_logger, monkeypatch):
