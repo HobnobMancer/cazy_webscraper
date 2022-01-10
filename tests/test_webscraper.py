@@ -202,7 +202,7 @@ def test_main_citation(mock_building_parser, mock_config_logger, monkeypatch):
             strains=None,
             timeout=45,
             validate=False,
-            verbse=False,
+            verbose=False,
             version=False,
         )
         return parser
@@ -244,7 +244,7 @@ def test_main_version(mock_building_parser, mock_config_logger, monkeypatch):
             strains=None,
             timeout=45,
             validate=False,
-            verbse=False,
+            verbose=False,
             version=True,
         )
         return parser
@@ -286,7 +286,7 @@ def test_main_version_argv(mock_building_parser, mock_config_logger, monkeypatch
             strains=None,
             timeout=45,
             validate=False,
-            verbse=False,
+            verbose=False,
             version=True,
         )
         return parser
@@ -357,7 +357,7 @@ def test_main_double_db(mock_building_parser, mock_config_logger, monkeypatch):
             strains=None,
             timeout=45,
             validate=False,
-            verbse=False,
+            verbose=False,
             version=True,
         )
         return parser
@@ -399,7 +399,7 @@ def test_main_new_db_exists_force(db_path, mock_building_parser, mock_config_log
             strains=None,
             timeout=45,
             validate=False,
-            verbse=False,
+            verbose=False,
             version=True,
         )
         return parser
@@ -441,7 +441,7 @@ def test_main_new_db_exists(db_path, mock_building_parser, mock_config_logger, m
             strains=None,
             timeout=45,
             validate=False,
-            verbse=False,
+            verbose=False,
             version=True,
         )
         return parser
@@ -489,7 +489,7 @@ def test_main_database(
             strains=None,
             timeout=45,
             validate=False,
-            verbse=False,
+            verbose=False,
             version=True,
         )
         return parser
@@ -562,7 +562,7 @@ def test_main_db_output(
             strains=None,
             timeout=45,
             validate=False,
-            verbse=False,
+            verbose=False,
             version=True,
         )
         return parser
