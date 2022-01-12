@@ -416,7 +416,7 @@ def test_main_new_db_exists(db_path, mock_building_parser, mock_config_logger, m
         parser = Namespace(
             email="dummy@domain.com",
             cache_dir=None,
-            cazy_data=None,
+            cazy_data=Path('cazy_data.json'),
             cazy_synonyms=None,
             classes=None,
             config=None,
