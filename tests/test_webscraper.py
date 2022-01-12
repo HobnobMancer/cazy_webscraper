@@ -44,6 +44,8 @@ These test are intened to be run from the root of the repository using:
 pytest -v
 """
 
+from logging import getLogger
+import logging
 import os
 
 from numpy.core.numeric import True_
@@ -58,11 +60,12 @@ from argparse import Namespace, ArgumentParser
 from datetime import datetime
 from pathlib import Path
 
-from cazy_webscraper import cazy_scraper, crawler, sql, utilities, closing_message
-from cazy_webscraper.cazy import parse_all_cazy_data, parse_cazy_data_with_filters
+from cazy_webscraper import cazy_scraper, sql, utilities, closing_message
+from cazy_webscraper.sql.sql_interface import add_cazyme_data
 from cazy_webscraper.sql import sql_interface, sql_orm
 from cazy_webscraper.utilities import parse_configuration, parsers
 from cazy_webscraper.utilities.parsers import cazy_webscraper_parser
+from cazy_webscraper.utilities.parse_configuration import cazy_synonym_dict
 
 
 @pytest.fixture
@@ -173,6 +176,20 @@ def config_dict():
         "Glycoside Hydrolases (GHs)": ["GH3"],
         'GlycosylTransferases (GTs)': [],
         "Polysaccharide Lyases (PLs)": None,
+        'Carbohydrate Esterases (CEs)': [],
+        'Auxiliary Activities (AAs)': [],
+        'Carbohydrate-Binding Modules (CBMs)': [],
+    }
+    return configuration_dict
+
+
+@pytest.fixture
+def empty_config_dict():
+    configuration_dict = {
+        'classes': [],
+        "Glycoside Hydrolases (GHs)": [],
+        'GlycosylTransferases (GTs)': [],
+        "Polysaccharide Lyases (PLs)": [],
         'Carbohydrate Esterases (CEs)': [],
         'Auxiliary Activities (AAs)': [],
         'Carbohydrate-Binding Modules (CBMs)': [],
@@ -650,6 +667,85 @@ def test_closing_message_verbose():
 
 # # # test get_cazy_data()
 
+
+def test_get_cazy_data_no_filters(db_path, empty_config_dict, monkeypatch):
+    """Test get_cazy_data() when no user defined features are provided"""
+
+    argsdict = {
+        "args": Namespace(
+            email="dummy@domain.com",
+            cache_dir=None,
+            cazy_data=None,
+            cazy_synonyms=None,
+            classes=None,
+            config=None,
+            citation=False,
+            db_output=Path(db_path),  ###
+            database=None,
+            delete_old_relationships=False,
+            force=False,
+            families=None,
+            genera=None,
+            kingdoms=None,
+            log=None,
+            nodelete=False,
+            nodelete_cache=False,
+            nodelete_log=False,
+            retries=10,
+            sql_echo=False,
+            subfamilies=False,
+            species=None,
+            strains=None,
+            timeout=45,
+            validate=True,
+            verbose=False,
+            version=False,
+        )
+    }
+
+    def mock_return_logger(*args, **kwards):
+        return logging.getLogger('mock_logger')
+
+    def mock_return_none(*args, **kwards):
+        return
+
+    def mock_multiple_taxa(*args, **kwards):
+        return [1,2,3,4]
+
+    def mock_replace_taxa(*args, **kwards):
+        return [], True
+
+    def mock_cazy_data(*args, **kwargs):
+        return {'protein_1': 1, 'protein_2': 2}
+
+    monkeypatch.setattr(cazy_scraper, "build_logger", mock_return_logger)
+    monkeypatch.setattr(cazy_scraper, "get_validation_data", mock_return_none)
+    monkeypatch.setattr(cazy_scraper, "get_cazy_txt_file_data", mock_multiple_taxa)
+    monkeypatch.setattr(cazy_scraper, "parse_all_cazy_data", mock_cazy_data)
+    monkeypatch.setattr(cazy_scraper, "identify_multiple_taxa", mock_multiple_taxa)
+    monkeypatch.setattr(cazy_scraper, "replace_multiple_tax", mock_replace_taxa)
+    monkeypatch.setattr(cazy_scraper, "build_taxa_dict", mock_return_none)
+    monkeypatch.setattr(add_cazyme_data, "add_kingdoms", mock_return_none)
+    monkeypatch.setattr(add_cazyme_data, "add_source_organisms", mock_return_none)
+    monkeypatch.setattr(add_cazyme_data, "add_cazy_families", mock_return_none)
+    monkeypatch.setattr(add_cazyme_data, "add_genbanks", mock_return_none)
+    monkeypatch.setattr(add_cazyme_data, "add_genbank_fam_relationships", mock_return_none)
+
+    cazy_scraper.get_cazy_data(
+        "cazy_home_page",
+        None,
+        cazy_synonym_dict,
+        empty_config_dict,
+        set(),
+        set(),
+        set(),
+        set(),
+        'connection',
+        Path('cache_dir'),
+        'logger_name',
+        'time_stamp',
+        argsdict['args'],
+    )
 
 # # def test_get_cazy_data_no_fam_urls(
 # #     cazy_home_url,
