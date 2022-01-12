@@ -76,15 +76,26 @@ import pandas as pd
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
+from saintBioutils.utilities.file_io import make_output_directory
 
 from Bio import Entrez
 from cazy_webscraper import cazy, crawler, taxonomy, closing_message, CITATION_INFO, VERSION_INFO
+from cazy_webscraper.crawler.get_validation_data import get_validation_data
+from cazy_webscraper.cazy import (
+    build_taxa_dict,
+    get_cazy_txt_file_data,
+    parse_all_cazy_data,
+    parse_cazy_data_with_filters,
+)
+from cazy_webscraper.taxonomy import (
+    identify_multiple_taxa,
+    replace_multiple_tax,
+)
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface import add_cazyme_data
 from cazy_webscraper.utilities import (
     build_logger,
     config_logger,
-    file_io,
     parse_configuration,
     termcolour,
 )
@@ -206,21 +217,21 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     if args.log is not None:  # write additional log files to user specified dir
         logger_name = args.log.split(".")[0]
     else:
         # write the additional log files to the .cazy_webscraper/log dir
         logger_dir = Path(f"{str(cache_dir.parent)}/logs")
-        file_io.make_output_directory(logger_dir, args.force, args.nodelete_log)
+        make_output_directory(logger_dir, args.force, args.nodelete_log)
         # add logger dir path to the logger name
         logger_name = f"{logger_dir}/{str(Path(logger_name).name)}"
 
     # create dir to cache downloaded text files and logs of failed scrapes, connections and data errs
-    file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+    make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     logger.info(f"Created cache dir: {cache_dir}")
 
@@ -293,7 +304,7 @@ def get_cazy_data(
 
     if args.validate:  # retrieve CAZy family population sizes for validating all data was retrieved
         # {fam (str): pop size (int)}
-        cazy_fam_populations = crawler.get_validation_data.get_validation_data(
+        cazy_fam_populations = get_validation_data(
             cazy_home_url,
             excluded_classes,
             cazy_class_synonym_dict,
@@ -306,7 +317,7 @@ def get_cazy_data(
     else:
         cazy_fam_populations = None
 
-    cazy_txt_lines = cazy.get_cazy_txt_file_data(cache_dir, time_stamp, args)
+    cazy_txt_lines = get_cazy_txt_file_data(cache_dir, time_stamp, args)
     
     logger.info(f"Retrieved {len(cazy_txt_lines)} lines from the CAZy db txt file")
 
@@ -314,10 +325,10 @@ def get_cazy_data(
         (len(fam_filters) == 0) and \
             (len(kingdom_filters) == 0) and \
                 (len(taxonomy_filters) == 0):
-        cazy_data = cazy.parse_all_cazy_data(cazy_txt_lines, cazy_fam_populations)
+        cazy_data = parse_all_cazy_data(cazy_txt_lines, cazy_fam_populations)
 
     else:
-        cazy_data = cazy.parse_cazy_data_with_filters(
+        cazy_data = parse_cazy_data_with_filters(
             cazy_txt_lines,
             class_filters,
             fam_filters,
@@ -332,11 +343,11 @@ def get_cazy_data(
     )
 
     # check for GenBank accessions with multiple source organisms in the CAZy data
-    multiple_taxa_gbks = taxonomy.identify_multiple_taxa(cazy_data, multiple_taxa_logger)
+    multiple_taxa_gbks = identify_multiple_taxa(cazy_data, multiple_taxa_logger)
 
     if len(multiple_taxa_gbks) != 0:
         # remove the multiple taxa, and retrieve the latest taxa from NCBI
-        cazy_data, successful_replacement = taxonomy.replace_multiple_tax(
+        cazy_data, successful_replacement = replace_multiple_tax(
             cazy_data,
             multiple_taxa_gbks,
             replaced_taxa_logger,
@@ -344,7 +355,7 @@ def get_cazy_data(
             invalid_ids=False,
         )
 
-    taxa_dict = cazy.build_taxa_dict(cazy_data)  # {kingdom: {organisms}}
+    taxa_dict = build_taxa_dict(cazy_data)  # {kingdom: {organisms}}
 
     add_cazyme_data.add_kingdoms(taxa_dict, connection)
 
@@ -439,7 +450,7 @@ def connect_to_new_db(args, time_stamp, start_time):
             )
 
         if str((args.db_output).parent) != '.':  # dirs defined in output put
-            file_io.make_output_directory(args.db_output, args.force, args.nodelete)
+            make_output_directory(args.db_output, args.force, args.nodelete)
             cache_dir = Path(f"{str(args.db_output.parent)}/.cazy_webscraper_{time_stamp}/cache")
             
         else:  # writing to cwd

@@ -52,7 +52,7 @@ with Path("README.md").open("r") as long_description_handle:
 
 setuptools.setup(
     name="cazy_webscraper",
-    version="2.0.0",
+    version="2.0.1",
     # Metadata
     author="Emma E. M. Hobbs",
     author_email="eemh1@st-andrews.ac.uk",
@@ -74,7 +74,7 @@ setuptools.setup(
     url="https://github.com/HobnobMancer/cazy_webscraper",
     entry_points={
         "console_scripts": [
-            "cazy_webscraper = cazy_webscraper.cazy_webscraper:main",
+            "cazy_webscraper = cazy_webscraper.cazy_scraper:main",
             "cw_get_genbank_seqs = cazy_webscraper.expand.genbank.get_genbank_sequences:main",
             "cw_get_uniprot_data = cazy_webscraper.expand.uniprot.get_uniprot_data:main",
             "cw_extract_sequences = cazy_webscraper.expand.extract.extract_sequences:main",

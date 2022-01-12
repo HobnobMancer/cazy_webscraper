@@ -44,19 +44,28 @@ These test are intened to be run from the root of the repository using:
 pytest -v
 """
 
+from logging import getLogger
+import logging
 import os
+
+from numpy.core.numeric import True_
+from cazy_webscraper import cazy
 from cazy_webscraper.utilities.parse_configuration.cazy_class_synonym_dict import cazy_synonym_dict
 import pytest
 import sys
 
+import pandas as pd
+
 from argparse import Namespace, ArgumentParser
+from datetime import datetime
+from pathlib import Path
 
-
-from cazy_webscraper import cazy_scraper, crawler, sql, utilities
-from cazy_webscraper.cazy import parse_all_cazy_data, parse_cazy_data_with_filters
+from cazy_webscraper import cazy_scraper, sql, utilities, closing_message
+from cazy_webscraper.sql.sql_interface import add_cazyme_data
 from cazy_webscraper.sql import sql_interface, sql_orm
-from cazy_webscraper.utilities import file_io, parse_configuration, parsers
+from cazy_webscraper.utilities import parse_configuration, parsers
 from cazy_webscraper.utilities.parsers import cazy_webscraper_parser
+from cazy_webscraper.utilities.parse_configuration import cazy_synonym_dict
 
 
 @pytest.fixture
@@ -163,8 +172,27 @@ def args_get_cazy_data_stdout(logs_dir):
 @pytest.fixture
 def config_dict():
     configuration_dict = {
+        'classes': [],
         "Glycoside Hydrolases (GHs)": ["GH3"],
+        'GlycosylTransferases (GTs)': [],
         "Polysaccharide Lyases (PLs)": None,
+        'Carbohydrate Esterases (CEs)': [],
+        'Auxiliary Activities (AAs)': [],
+        'Carbohydrate-Binding Modules (CBMs)': [],
+    }
+    return configuration_dict
+
+
+@pytest.fixture
+def empty_config_dict():
+    configuration_dict = {
+        'classes': [],
+        "Glycoside Hydrolases (GHs)": [],
+        'GlycosylTransferases (GTs)': [],
+        "Polysaccharide Lyases (PLs)": [],
+        'Carbohydrate Esterases (CEs)': [],
+        'Auxiliary Activities (AAs)': [],
+        'Carbohydrate-Binding Modules (CBMs)': [],
     }
     return configuration_dict
 
@@ -310,8 +338,8 @@ def test_main_double_db(mock_building_parser, mock_config_logger, monkeypatch):
             classes=None,
             config=None,
             citation=False,
-            db_output='database',
-            database='database',
+            db_output=Path('database.db'),
+            database=Path('database.db'),
             delete_old_relationships=False,
             force=False,
             families=None,
@@ -329,7 +357,7 @@ def test_main_double_db(mock_building_parser, mock_config_logger, monkeypatch):
             timeout=45,
             validate=False,
             verbose=False,
-            version=True,
+            version=False,
         )
         return parser
 
@@ -352,7 +380,7 @@ def test_main_new_db_exists_force(db_path, mock_building_parser, mock_config_log
             classes=None,
             config=None,
             citation=False,
-            db_output=db_path,  ###
+            db_output=Path(db_path),  ###
             database=None,
             delete_old_relationships=False,
             force=True,   ###
@@ -371,13 +399,29 @@ def test_main_new_db_exists_force(db_path, mock_building_parser, mock_config_log
             timeout=45,
             validate=False,
             verbose=False,
-            version=True,
+            version=False,
         )
         return parser
 
+    def mock_return_none(*args, **kwargs):
+        return
+    
+    def mock_connect_db(*args, **kwargs):
+        return (
+            'connection',
+            Path('logger_name'),
+            Path('cache_dir'),
+        )
+    
     monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+    monkeypatch.setattr(cazy_scraper, "connect_to_new_db", mock_connect_db)
+    monkeypatch.setattr(cazy_scraper, "connect_existing_db", mock_connect_db)
+    monkeypatch.setattr(cazy_scraper, "make_output_directory", mock_return_none)
+    monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
+    monkeypatch.setattr("cazy_webscraper.cazy_scraper.make_output_directory", mock_return_none)
+    monkeypatch.setattr(cazy_scraper, "get_cazy_data", mock_return_none)
 
     cazy_scraper.main()
 
@@ -389,12 +433,12 @@ def test_main_new_db_exists(db_path, mock_building_parser, mock_config_logger, m
         parser = Namespace(
             email="dummy@domain.com",
             cache_dir=None,
-            cazy_data=None,
+            cazy_data=Path('cazy_data.json'),
             cazy_synonyms=None,
             classes=None,
             config=None,
             citation=False,
-            db_output=db_path,  ###
+            db_output=Path(db_path),  ###
             database=None,
             delete_old_relationships=False,
             force=False,   ###
@@ -413,13 +457,29 @@ def test_main_new_db_exists(db_path, mock_building_parser, mock_config_logger, m
             timeout=45,
             validate=False,
             verbose=False,
-            version=True,
+            version=False,
         )
         return parser
+
+    def mock_return_none(*args, **kwargs):
+        return
+
+    def mock_connect_db(*args, **kwargs):
+        return (
+            'connection',
+            Path('logger_name'),
+            Path('cache_dir'),
+        )
 
     monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+    monkeypatch.setattr(cazy_scraper, "connect_to_new_db", mock_connect_db)
+    monkeypatch.setattr(cazy_scraper, "connect_existing_db", mock_connect_db)
+    monkeypatch.setattr(cazy_scraper, "make_output_directory", mock_return_none)
+    monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
+    monkeypatch.setattr("cazy_webscraper.cazy_scraper.make_output_directory", mock_return_none)
+    monkeypatch.setattr(cazy_scraper, "get_cazy_data", mock_return_none)
 
     cazy_scraper.main()
 
@@ -443,7 +503,7 @@ def test_main_database(
             config=None,
             citation=False,
             db_output=None,
-            database=db_path,  ###
+            database=Path(db_path),  ###
             delete_old_relationships=False,
             force=False,
             families=None,
@@ -461,7 +521,7 @@ def test_main_database(
             timeout=45,
             validate=False,
             verbose=False,
-            version=True,
+            version=False,
         )
         return parser
 
@@ -484,7 +544,7 @@ def test_main_database(
             'cache_dir',
         )
 
-    def mock_log_scrape_in_db(*args, **kwargs):
+    def mock_return_none(*args, **kwargs):
         return
 
     monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
@@ -492,7 +552,9 @@ def test_main_database(
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
     monkeypatch.setattr(parse_configuration, "parse_configuration", mock_parse_config)
     monkeypatch.setattr(cazy_scraper, "connect_existing_db", mock_connect_existing_db)
-    monkeypatch.setattr(sql.sql_interface, "log_scrape_in_db", mock_log_scrape_in_db)
+    monkeypatch.setattr(sql.sql_interface, "log_scrape_in_db", mock_return_none)
+    monkeypatch.setattr("cazy_webscraper.cazy_scraper.make_output_directory", mock_return_none)
+    monkeypatch.setattr(cazy_scraper, "get_cazy_data", mock_return_none)
 
     cazy_scraper.main()
 
@@ -515,7 +577,7 @@ def test_main_db_output(
             classes=None,
             config=None,
             citation=False,
-            db_output=db_path,  ###
+            db_output=Path(db_path),  ###
             database=None,
             delete_old_relationships=False,
             force=False,
@@ -534,7 +596,7 @@ def test_main_db_output(
             timeout=45,
             validate=False,
             verbose=False,
-            version=True,
+            version=False,
         )
         return parser
 
@@ -550,32 +612,140 @@ def test_main_db_output(
             {'a genus', 'a species'}
         )
 
-    def mock_connect_existing_db(*args, **kwards):
+    def mock_return_none(*args, **kwargs):
+        return
+
+    def mock_connect_db(*args, **kwargs):
         return (
             'connection',
-            'logger_name',
-            'cache_dir',
+            Path('logger_name'),
+            Path('cache_dir'),
         )
-
-    def mock_log_scrape_in_db(*args, **kwargs):
-        return
 
     monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
     monkeypatch.setattr(parse_configuration, "parse_configuration", mock_parse_config)
-    monkeypatch.setattr(cazy_scraper, "connect_to_new_db", mock_connect_existing_db)
-    monkeypatch.setattr(sql.sql_interface, "log_scrape_in_db", mock_log_scrape_in_db)
+    monkeypatch.setattr(cazy_scraper, "connect_to_new_db", mock_connect_db)
+    monkeypatch.setattr(cazy_scraper, "connect_existing_db", mock_connect_db)
+    monkeypatch.setattr(cazy_scraper, "make_output_directory", mock_return_none)
+    monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
+    monkeypatch.setattr("cazy_webscraper.cazy_scraper.make_output_directory", mock_return_none)
+    monkeypatch.setattr(cazy_scraper, "get_cazy_data", mock_return_none)
+
 
     cazy_scraper.main()
 
 
+def test_closing_message():
+    """Test closing_message() from CW __init__"""
+    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
+    start_time = pd.to_datetime(start_time)
+
+    argsdict = {
+        "args": Namespace(
+            verbose=False,
+        )
+    }
+
+    closing_message('cazy_webscraper', start_time, argsdict['args'])
 
 
+def test_closing_message_verbose():
+    """Test closing_message() from CW __init__"""
+    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
+    start_time = pd.to_datetime(start_time)
+
+    argsdict = {
+        "args": Namespace(
+            verbose=True,
+        )
+    }
+
+    closing_message('cazy_webscraper', start_time, argsdict['args'])
 
 
 # # # test get_cazy_data()
 
+
+def test_get_cazy_data_no_filters(db_path, empty_config_dict, monkeypatch):
+    """Test get_cazy_data() when no user defined features are provided"""
+
+    argsdict = {
+        "args": Namespace(
+            email="dummy@domain.com",
+            cache_dir=None,
+            cazy_data=None,
+            cazy_synonyms=None,
+            classes=None,
+            config=None,
+            citation=False,
+            db_output=Path(db_path),  ###
+            database=None,
+            delete_old_relationships=False,
+            force=False,
+            families=None,
+            genera=None,
+            kingdoms=None,
+            log=None,
+            nodelete=False,
+            nodelete_cache=False,
+            nodelete_log=False,
+            retries=10,
+            sql_echo=False,
+            subfamilies=False,
+            species=None,
+            strains=None,
+            timeout=45,
+            validate=True,
+            verbose=False,
+            version=False,
+        )
+    }
+
+    def mock_return_logger(*args, **kwards):
+        return logging.getLogger('mock_logger')
+
+    def mock_return_none(*args, **kwards):
+        return
+
+    def mock_multiple_taxa(*args, **kwards):
+        return [1,2,3,4]
+
+    def mock_replace_taxa(*args, **kwards):
+        return [], True
+
+    def mock_cazy_data(*args, **kwargs):
+        return {'protein_1': 1, 'protein_2': 2}
+
+    monkeypatch.setattr(cazy_scraper, "build_logger", mock_return_logger)
+    monkeypatch.setattr(cazy_scraper, "get_validation_data", mock_return_none)
+    monkeypatch.setattr(cazy_scraper, "get_cazy_txt_file_data", mock_multiple_taxa)
+    monkeypatch.setattr(cazy_scraper, "parse_all_cazy_data", mock_cazy_data)
+    monkeypatch.setattr(cazy_scraper, "identify_multiple_taxa", mock_multiple_taxa)
+    monkeypatch.setattr(cazy_scraper, "replace_multiple_tax", mock_replace_taxa)
+    monkeypatch.setattr(cazy_scraper, "build_taxa_dict", mock_return_none)
+    monkeypatch.setattr(add_cazyme_data, "add_kingdoms", mock_return_none)
+    monkeypatch.setattr(add_cazyme_data, "add_source_organisms", mock_return_none)
+    monkeypatch.setattr(add_cazyme_data, "add_cazy_families", mock_return_none)
+    monkeypatch.setattr(add_cazyme_data, "add_genbanks", mock_return_none)
+    monkeypatch.setattr(add_cazyme_data, "add_genbank_fam_relationships", mock_return_none)
+
+    cazy_scraper.get_cazy_data(
+        "cazy_home_page",
+        None,
+        cazy_synonym_dict,
+        empty_config_dict,
+        set(),
+        set(),
+        set(),
+        set(),
+        'connection',
+        Path('cache_dir'),
+        'logger_name',
+        'time_stamp',
+        argsdict['args'],
+    )
 
 # # def test_get_cazy_data_no_fam_urls(
 # #     cazy_home_url,

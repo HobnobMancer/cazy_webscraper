@@ -20,6 +20,8 @@ This release of `cazy_webscraper` is a beta release. The main component of `cazy
 
 The documentation is being actively updated to match the new `cazy_webscraper` version 2.
 
+**The `bioconda` installation method is not currently support, but we aim to get this fixed soon**. For now please install via pypi or from source.
+
 ## New features in version 2:
 - **Faster scraping:** The entirtity of CAZy can be scraped in 15 minutes
 - **Retrieval of UniProt data:** UniProt accessions, EC numbers, protein sequences, and PDB accessions can be retrieved from UniProt and added to the local CAZyme database
