@@ -45,14 +45,18 @@ pytest -v
 """
 
 import os
+
+from numpy.core.numeric import True_
 from cazy_webscraper.utilities.parse_configuration.cazy_class_synonym_dict import cazy_synonym_dict
 import pytest
 import sys
 
+import pandas as pd
+
 from argparse import Namespace, ArgumentParser
+from datetime import datetime
 
-
-from cazy_webscraper import cazy_scraper, crawler, sql, utilities
+from cazy_webscraper import cazy_scraper, crawler, sql, utilities, closing_message
 from cazy_webscraper.cazy import parse_all_cazy_data, parse_cazy_data_with_filters
 from cazy_webscraper.sql import sql_interface, sql_orm
 from cazy_webscraper.utilities import file_io, parse_configuration, parsers
@@ -570,8 +574,32 @@ def test_main_db_output(
     cazy_scraper.main()
 
 
+def test_closing_message():
+    """Test closing_message() from CW __init__"""
+    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
+    start_time = pd.to_datetime(start_time)
+
+    argsdict = {
+        "args": Namespace(
+            verbose=False,
+        )
+    }
+
+    closing_message('cazy_webscraper', start_time, argsdict['args'])
 
 
+def test_closing_message_verbose():
+    """Test closing_message() from CW __init__"""
+    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
+    start_time = pd.to_datetime(start_time)
+
+    argsdict = {
+        "args": Namespace(
+            verbose=True,
+        )
+    }
+
+    closing_message('cazy_webscraper', start_time, argsdict['args'])
 
 
 # # # test get_cazy_data()
