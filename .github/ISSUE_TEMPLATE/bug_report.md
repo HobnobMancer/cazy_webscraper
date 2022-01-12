@@ -7,6 +7,8 @@ assignees: ''
 
 ---
 
+Please complete this report in full and as much detail as possible. It will help with getting the bug fixed far sooner!
+
 ## Describe the bug
 A clear and concise description of what the bug is.
 Please include what you are trying to get the tool to do?
