@@ -450,8 +450,9 @@ def connect_to_new_db(args, time_stamp, start_time):
             )
 
         if str((args.db_output).parent) != '.':  # dirs defined in output put
-            make_output_directory((args.db_output).parent, args.force, args.nodelete)
-            cache_dir = Path(f"{str(args.db_output.parent)}/.cazy_webscraper_{time_stamp}/cache")
+            output_dir = (args.db_output).parent
+            make_output_directory(output_dir, args.force, args.nodelete)
+            cache_dir = Path(f"{str(output_dir)}/.cazy_webscraper_{time_stamp}/cache")
             
         else:  # writing to cwd
             cache_dir = Path(f".cazy_webscraper_{time_stamp}/cache")
@@ -467,7 +468,7 @@ def connect_to_new_db(args, time_stamp, start_time):
     
     try:
         connection = sql_orm.get_db_connection(db_path, args, new=True)
-        logger.info(f"Built new local CAZyme database at\n{db_path}")
+        logger.warning(f"Built new local CAZyme database at\n{db_path}")
     except Exception:
         logger.error(
             "Failed to build new SQL database\n."
