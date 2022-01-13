@@ -27,9 +27,11 @@ The documentation is being actively updated to match the new `cazy_webscraper` v
 - **Retrieval of UniProt data:** UniProt accessions, EC numbers, protein sequences, and PDB accessions can be retrieved from UniProt and added to the local CAZyme database
 - **Addition of an API:** As well as retrieving data from the local CAZyme database via an SQL interface, `cazy_webscraper` can retrieved user-specfied data (e.g. the GenBank protein accession and EC number annotations) for proteins matching user-specified critieria. The extracted data can be written to a `JSON` and/or `CSV` file, to facilitate inclusion in downstream analyses.
 - **Caching:** Data downloaded from CAZy is not only parsed and written to a local CAZyme database. The raw data files are written to cache. Data can be scraped directly from a cache (ideal if CAZy updates during the retrieval of multiple datasets from the CAZy database).
+- **Handling multiple taxa:** It is possible for a single protein (identified by its unique GenBank accession) to be associated with multiple taxa in the CAZy data. For these instances, `cazy_webscraper` queries NCBI to retrieve the latest taxonomic source of the protein.
 
 ## Future work for version 2:
-- Fix any remaining bugs we can find (if you find a bug, please report it!)
+- Calculate the coverage of the NCBI GenBank assembly database by CAZy (i.e. how many genomic assemblies from the Assembly database are included in the CAZy dataset)
+- Fix any remaining bugs we can find (if you find a bug, please report it and provide as detailed bug report as possible!)
 - Update the unit tests to work with the new `cazy_webscraper` architecture
 - Update the documentation
 - Create video tutorials
@@ -43,7 +45,7 @@ The documentation is being actively updated to match the new `cazy_webscraper` v
 Using the `expand` subcommand, a user can retrieve:
 - CAZyme protein sequence data from [GenBank](https://www.ncbi.nlm.nih.gov/genbank/)
 - Protein structure files from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank [(PDB)](https://www.rcsb.org/)
-- EC number and Uniprot protein IDs from the [UniProtKB database](https://www.uniprot.org/)
+- EC number, PDB accessions and Uniprot protein IDs from the [UniProtKB database](https://www.uniprot.org/)
 
 `cazy_webscraper` can recover specified CAZy Classes and/or CAZy families. These queries can be filtered by taxonomy at Kingdoms, genus, species or strain level. Successive CAZy queries can be collated into a single local database. A log of each query is recorded in the database for transparency, reproducibility and shareablity.
 
