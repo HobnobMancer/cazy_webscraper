@@ -148,9 +148,21 @@ def get_class_fam_genbank_accessions(
     
     Return list of db objects containing a Genbank obj, Taxonomy obj and Kingdom obj.
     """
+    logger = logging.getLogger(__name__)
+
+    class_abbrevs = {
+        'Glycoside Hydrolases (GHs)': 'GH',
+        'GlycosylTransferases (GTs)': 'GT',
+        'Polysaccharide Lyases (PLs)': 'PL',
+        'Carbohydrate Esterases (CEs)': 'CE',
+        'Auxiliary Activities (AAs)': 'AA',
+        'Carbohydrate-Binding Modules (CBMs)': 'CBM',
+    }
+
     initially_selected_gbk = []
 
     if len(class_filters) == 0 and len(family_filters) == 0:
+        logger.warning("No class or family filters applied")
         # could retrieve all GenBank accessions
         with Session(bind=connection) as session:
             gbk_query = session.query(Genbank, Taxonomy, Kingdom).\
@@ -162,11 +174,15 @@ def get_class_fam_genbank_accessions(
             initially_selected_gbk = gbk_query
 
     else:
+        if len(class_filters) != 0:
+            logger.warning("Applying CAZy class filter(s)")
         for cazy_class in tqdm(class_filters, desc="Retrieving GenBank accessions for selected CAZy classes"):
+            class_abbrev = class_abbrevs[cazy_class]
+
             with Session(bind=connection) as session:
                 class_subquery = session.query(Genbank.genbank_id).\
                 join(CazyFamily, Genbank.families).\
-                filter(CazyFamily.family.like(f'{cazy_class}%')).\
+                filter(CazyFamily.family.like(f'{class_abbrev}%')).\
                 subquery()
 
             with Session(bind=connection) as session:
@@ -178,7 +194,9 @@ def get_class_fam_genbank_accessions(
                     all()
 
             initially_selected_gbk += gbk_query
-    
+
+        if len(family_filters) != 0:
+            logger.warning("Applying CAZy family filter(s)")
         for cazy_fam in tqdm(family_filters, desc="Retrieving GenBank accessions for selected CAZy families"):
             if cazy_fam.find('_') != -1:  # subfamily
                 with Session(bind=connection) as session:
@@ -224,11 +242,16 @@ def apply_tax_filters(
     """
     logger = logging.getLogger(__name__)
     
-    if len(taxonomy_filters) == 0 and len(kingdom_filters) == 0:
+    if len(taxonomy_filters['genera']) == 0 and len(taxonomy_filters['species']) == 0 and len(taxonomy_filters['strains']) == 0 and len(kingdom_filters) == 0:
+        logger.warning("Applying no taxonomic filters")
         gbks = [obj[0] for obj in initially_selected_gbk]
         return set(gbks)
     
     tax_ids = set()
+    kingdom_applied = False
+    genus_applied = False
+    species_applied = False
+    strains_applied = False
     
     for kingdom in tqdm(kingdom_filters, desc="Retrieving IDs of species from selected kingdoms"):
         with Session(bind=connection) as session:
@@ -238,36 +261,58 @@ def apply_tax_filters(
                 all()
             for taxa in kingdom_query:
                 tax_ids.add(taxa[0])
+        
+        kingdom_applied = True
 
-    genera = taxonomy_filters['genus']
-    species = taxonomy_filters['species']
-    strains = taxonomy_filters['strains']
+    try:
+        genera = taxonomy_filters['genus']
 
-    for genus in tqdm(genera, desc="Retrieving IDs of species from selected genera"):
-        with Session(bind=connection) as session:
-            tax_query = session.query(Taxonomy.taxonomy_id).\
-                filter(Taxonomy.genus == genus).\
-                all()
-            for taxa in tax_query:
-                tax_ids.add(taxa[0])
+        for genus in tqdm(genera, desc="Retrieving IDs of species from selected genera"):
+            with Session(bind=connection) as session:
+                tax_query = session.query(Taxonomy.taxonomy_id).\
+                    filter(Taxonomy.genus == genus).\
+                    all()
+                for taxa in tax_query:
+                    tax_ids.add(taxa[0])
 
-    for species in tqdm(genera, desc="Retrieving IDs of species from selected species"):
-        with Session(bind=connection) as session:
-            tax_query = session.query(Taxonomy.taxonomy_id).\
-                filter(Taxonomy.species.like(f'{species}%')).\
-                all()
-            for taxa in tax_query:
-                tax_ids.add(taxa[0])
+        genus_applied = True
+    
+    except KeyError:
+        pass
 
-    for strain in tqdm(strains, desc="Retrieving IDs of species from selected strains"):
-        with Session(bind=connection) as session:
-            tax_query = session.query(Taxonomy.taxonomy_id).\
-                filter(Taxonomy.species == strain).\
-                all()
-            for taxa in tax_query:
-                tax_ids.add(taxa[0])
+    try:
+        species = taxonomy_filters['species']
+
+        for sp in tqdm(species, desc="Retrieving IDs of species from selected species"):
+            with Session(bind=connection) as session:
+                tax_query = session.query(Taxonomy.taxonomy_id).\
+                    filter(Taxonomy.species.like(f'{sp}%')).\
+                    all()
+                for taxa in tax_query:
+                    tax_ids.add(taxa[0])
+        
+        species_applied = True
+
+    except KeyError:
+        pass
+
+    try:
+        strains = taxonomy_filters['strains']
+
+        for strain in tqdm(strains, desc="Retrieving IDs of species from selected strains"):
+            with Session(bind=connection) as session:
+                tax_query = session.query(Taxonomy.taxonomy_id).\
+                    filter(Taxonomy.species == strain).\
+                    all()
+                for taxa in tax_query:
+                    tax_ids.add(taxa[0])
+
+        strains_applied = True
+    
+    except KeyError:
+        pass
                 
-    if len(tax_ids) == 0:
+    if len(tax_ids) == 0 and True in [kingdom_applied, genus_applied, species_applied, strains_applied]:
         logger.error(
             "Retrieve NO taxonomy objects matching the provided kingdom and tax filters\n"
             "Therefore, retrieved NO proteins matching the provided criteria.\n"
@@ -276,12 +321,16 @@ def apply_tax_filters(
         )
         sys.exit(1)
     
-    filtered_gbk = set()
-    for gbk in initially_selected_gbk:
-        if gbk[1].taxonomy_id in tax_ids:
-            filtered_gbk.add(gbk[0])
-            
-    return filtered_gbk
+    if True in [kingdom_applied, genus_applied, species_applied, strains_applied]:
+        filtered_gbk = set()
+        for gbk in initially_selected_gbk:
+            if gbk[1].taxonomy_id in tax_ids:
+                filtered_gbk.add(gbk[0])
+                
+        return filtered_gbk
+    
+    else:
+        return initially_selected_gbk
 
 
 def apply_ec_filters(
