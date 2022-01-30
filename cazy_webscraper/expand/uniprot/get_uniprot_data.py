@@ -53,6 +53,7 @@ from urllib.error import HTTPError
 
 from bioservices import UniProt
 from saintBioutils.uniprot import get_uniprot_accessions
+from saintBioutils.utilities.file_io import make_output_directory
 from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper, closing_message
@@ -65,7 +66,7 @@ from cazy_webscraper.sql.sql_interface.add_uniprot_data import (
     add_uniprot_accessions,
 )
 from cazy_webscraper.sql import sql_orm
-from cazy_webscraper.utilities import config_logger, file_io
+from cazy_webscraper.utilities import config_logger
 from cazy_webscraper.utilities.parsers import uniprot_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
@@ -93,10 +94,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # build cache directory
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
         cache_dir = cache_dir / "uniprot_data_retrieval"
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     (
         config_dict,
@@ -142,10 +143,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         ec_filters,
         connection,
     )
-    genbank_accessions = list(gbk_dict.keys())
+
+    logger.warning(f"Retrieving UniProt data for {len(gbk_dict.keys())}")
 
     # retrieve the uniprot accessions for the genbank accessions
-    uniprot_gkb_dict = get_uniprot_accessions(genbank_accessions)  # {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
+    uniprot_gkb_dict = get_uniprot_accessions(gbk_dict, args)  # {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
 
     uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir)
 
