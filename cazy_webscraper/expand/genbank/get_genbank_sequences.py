@@ -41,6 +41,7 @@
 
 import logging
 import re
+import time
 
 import pandas as pd
 
@@ -48,14 +49,51 @@ from datetime import datetime
 from typing import List, Optional
 
 from Bio import Entrez, SeqIO
-from saintBioutils.genbank import entrez_retry
-from saintBioutils.utilities.logger import config_logger, file_io
+# from saintBioutils.genbank import entrez_retry
+from saintBioutils.utilities import file_io
+from saintBioutils.utilities.logger import config_logger
 
-from cazy_webscraper import cazy_webscraper
+from cazy_webscraper import cazy_scraper, CITATION_INFO, VERSION_INFO
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, add_genbank_data
-from cazy_webscraper.utilities.parsers import gbk_seq_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
+from cazy_webscraper.utilities.parsers.gbk_seq_parser import build_parser
+
+
+def entrez_retry(entrez_func, retries, *func_args, **func_kwargs):
+    """Call to NCBI using Entrez.
+
+    :param retries: int, maximum number of retries excepted if network error encountered
+    :param entrez_func: function, call method to NCBI
+    :param *func_args: tuple, arguments passed to Entrez function
+    :param ** func_kwargs: dictionary, keyword arguments passed to Entrez function
+
+    Returns record.
+    """
+    logger = logging.getLogger(__name__)
+    record, retries, tries = None, retries, 0
+
+    while (record is None) and (tries < retries):
+        try:
+            record = entrez_func(*func_args, **func_kwargs)
+
+        except IOError:
+            # log retry attempt
+            if tries < retries:
+                logger.warning(
+                    f"Network error encountered during try no.{tries}.\nRetrying in 10s",
+                    exc_info=1,
+                )
+                time.sleep(10)
+            tries += 1
+
+    if record is None:
+        logger.error(
+            "Network error encountered too many times. Exiting attempt to call to NCBI"
+        )
+        return
+
+    return record
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -67,10 +105,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # parse cmd-line arguments
     if argv is None:
-        parser = gbk_seq_parser.build_parser()
+        parser = build_parser()
         args = parser.parse_args()
     else:
-        args = gbk_seq_parser.build_parser(argv).parse_args()
+        args = build_parser(argv).parse_args()
 
     if logger is None:
         logger = logging.getLogger(__package__)
@@ -79,10 +117,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info("Providing user email address to NCBI.Entrez")
     Entrez.email = args.email
 
-    if args.update_seq:
+    if args.seq_update:
         logger.warning("Enabled updating sequences")
 
-    connection, logger_name, cache_dir = cazy_webscraper.connect_existing_db(args, time_stamp)
+    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp, start_time)
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
@@ -103,23 +141,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # add log to the local CAZyme database
     logger.info("Adding log of scrape to the local CAZyme database")
     with sql_orm.Session(bind=connection) as session:
-        retrieved_annotations = "UniProt accessions"
-        if len(config_dict['ec']) != 0:
-            retrieved_annotations = f"{retrieved_annotations}, EC numbers"
-        if len(config_dict['pdb']) != 0:
-            retrieved_annotations = f"{retrieved_annotations}, PDB accessions"
-        if len(config_dict['seq']) != 0:
-            retrieved_annotations = f"{retrieved_annotations}, Protein sequence"
-        if args.update_seq_seq:
-            retrieved_annotations = f"{retrieved_annotations}, Updated UniProt protein sequences"
+        retrieved_data = "GenBank protein sequences"
         sql_interface.log_scrape_in_db(
             time_stamp,
             config_dict,
             kingdom_filters,
             taxonomy_filter_dict,
             ec_filters,
-            'UniProt',
-            retrieved_annotations,
+            'GenBank',
+            retrieved_data,
             session,
             args,
         )
@@ -149,8 +179,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             f"Scrape initated at {start_time}\n"
             f"Scrape finished at {end_time}\n"
             f"Total run time: {total_time}"
-            f"Version: {cazy_webscraper.VERSION_INFO}\n"
-            f"Citation: {cazy_webscraper.CITATION_INFO}"
+            f"Version: {VERSION_INFO}\n"
+            f"Citation: {CITATION_INFO}"
         )
     else:
         print(
@@ -159,8 +189,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             f"Scrape initated at {start_time}\n"
             f"Scrape finished at {end_time}\n"
             f"Total run time: {total_time}"
-            f"Version: {cazy_webscraper.VERSION_INFO}\n"
-            f"Citation: {cazy_webscraper.CITATION_INFO}"
+            f"Version: {VERSION_INFO}\n"
+            f"Citation: {CITATION_INFO}"
         )
 
 
@@ -176,6 +206,7 @@ def get_sequences(genbank_accessions, cache_dir, args):
     logger = logging.getLogger(__name__)
 
     seq_dict = {}  # {gbk_accession: seq}
+    protein_records = set()
 
     epost_webenv, epost_query_key = bulk_query_ncbi(genbank_accessions, args)
 
@@ -184,7 +215,7 @@ def get_sequences(genbank_accessions, cache_dir, args):
     # retrieve the protein sequences
     with entrez_retry(
         Entrez.efetch,
-        args,
+        10,
         db="Protein",
         query_key=epost_query_key,
         WebEnv=epost_webenv,
@@ -234,36 +265,40 @@ def get_sequences(genbank_accessions, cache_dir, args):
                 )
                 continue
                 
-            seq_dict[seq_accession] = record.sequence
+            seq_dict[seq_accession] = record.seq
 
             success_accessions.add(seq_accession)
 
-            # remove the accession from the list
-            try:
-                genbank_accessions.remove(temp_accession)
-            except ValueError:
-                logger.warning(
-                    f"Tried to remove {temp_accession} from list of accessions, "
-                    "but it was not in the list of accessions.\n"
-                    "The returned accession and the one present in CAZy do not match."
-                )
-    
-    if len(genbank_accessions) != 0:
-        logger.warning("Protein sequences for the following CAZymes were not retrieved:")
-        for acc in genbank_accessions:
-            logger.warning(f"GenBank accession: {acc}")
+            protein_records.add(record)
 
-        cache_path = cache_dir / "no_seq_retrieved.txt"
-        with open(cache_path, "a") as fh:
-            for acc in genbank_accessions:
-                fh.write(f"{acc}\n")
+    SeqIO.write(protein_records, 'pl_seq.fasta', "fasta")
+
+    #         # remove the accession from the list
+    #         try:
+    #             genbank_accessions.remove(temp_accession)
+    #         except ValueError:
+    #             logger.warning(
+    #                 f"Tried to remove {temp_accession} from list of accessions, "
+    #                 "but it was not in the list of accessions.\n"
+    #                 "The returned accession and the one present in CAZy do not match."
+    #             )
+    
+    # if len(genbank_accessions) != 0:
+    #     # logger.warning("Protein sequences for the following CAZymes were not retrieved:")
+    #     # for acc in genbank_accessions:
+    #     #     logger.warning(f"GenBank accession: {acc}")
+
+    #     cache_path = cache_dir / "no_seq_retrieved.txt"
+    #     with open(cache_path, "a") as fh:
+    #         for acc in genbank_accessions:
+    #             fh.write(f"{acc}\n")
     
     cache_path = cache_dir / "seq_retrieved.txt"
     with open(cache_path, "a") as fh:
         for acc in success_accessions:
             fh.write(f"{acc}\n")
 
-    return
+    return seq_dict
 
 
 def bulk_query_ncbi(accessions, args):
@@ -279,7 +314,7 @@ def bulk_query_ncbi(accessions, args):
     epost_result = Entrez.read(
         entrez_retry(
             Entrez.epost,
-            args,
+            10,
             db="Protein",
             id=accessions_string,
         )
