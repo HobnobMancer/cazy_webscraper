@@ -208,8 +208,8 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
 
         for index in tqdm(range(len(uniprot_df['Entry'])), desc="Parsing UniProt response"):
             row = uniprot_df.iloc[index]
-            uniprot_acc = row['Entry']
-            uniprot_name = row['Protein names']
+            uniprot_acc = row['Entry'].strip()
+            uniprot_name = row['Protein names'].strip()
 
             # remove quotation marks from the protein name, else an SQL error will be raised on insert
             uniprot_name = uniprot_name.replace("'", "")
@@ -263,7 +263,7 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
                 # add EC numbers to dict
                 for ec in ec_numbers:
                     all_ecs.add( (ec,) )
-                    uniprot_dict[uniprot_acc]["ec"].add(ec)
+                    uniprot_dict[uniprot_acc]["ec"].add(ec.strip())
 
             if args.pdb:
                 # retrieve PDB accessions
@@ -281,7 +281,7 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
 
                 # add PDB accessions to dict
                 for pdb in pdb_accessions:
-                    uniprot_dict[uniprot_acc]["pdb"].add(pdb)
+                    uniprot_dict[uniprot_acc]["pdb"].add(pdb.strip())
             
             if args.sequence:
                 sequence = row['Sequence']
