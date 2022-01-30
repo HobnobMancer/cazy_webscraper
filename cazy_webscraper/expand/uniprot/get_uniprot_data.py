@@ -144,6 +144,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # retrieve the uniprot accessions for the genbank accessions
     uniprot_gkb_dict = get_uniprot_accessions(genbank_accessions)  # {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
+
     uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir)
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
@@ -165,7 +166,8 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
     
     Bioservices requests batch queries no larger than 200.
 
-    :param uniprot_gbk_dict: dict, keyed by GenBank accession and valued by UniProt accession
+    :param uniprot_gbk_dict: dict, keyed by UniProt accession and valued by dict of a GenBank accession
+        and the local CAZyme db record ID {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
     :param cache_dir: path to directory to write out cache
     :param args: cmd-line args parser
     
@@ -188,7 +190,7 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
     )
 
     for query in tqdm(bioservices_queries, "Batch retrieving protein data from UniProt"):
-        uniprot_df = UniProt().get_df(entries=query)
+        uniprot_df = UniProt().get_df(entries=query, limit=None)
 
         # cache UniProt response
         _time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -211,6 +213,15 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
 
             # checked if parsed before incase bioservices returned duplicate proteins
             try:
+                uniprot_gbk_dict[uniprot_acc]
+            except KeyError:
+                logger.warning(
+                    f"UniProt ID {uniprot_acc} was retrieved from UniProt\n"
+                    "But no corresponding record was found in the local CAZyme database\n"
+                    "Skipping this UniProt ID"
+                )
+
+            try:
                 uniprot_dict[uniprot_acc]
                 logger.warning(
                     f'Multiple entries for UniProt:{uniprot_acc}, '
@@ -222,7 +233,7 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
                     uniprot_dict[uniprot_acc] = {
                         "genbank_accession": uniprot_gbk_dict[uniprot_acc],
                         "name": uniprot_name,
-                        }
+                    }
                 except KeyError:
                     logger.warning(
                         f"Retrieved record with UniProt accession {uniprot_acc} but this "
