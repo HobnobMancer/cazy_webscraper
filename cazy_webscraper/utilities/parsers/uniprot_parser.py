@@ -146,6 +146,16 @@ def build_parser(argv: Optional[List] = None):
         help="CAZy families to UniProt data for. Separate families by commas 'GH1,GH2' (case sensitive)"
     )
 
+    # Add option to force file over writting
+    parser.add_argument(
+        "-f",
+        "--force",
+        dest="force",
+        action="store_true",
+        default=False,
+        help="Force writing in existing cache dir",
+    )
+
     # Add option to restrict scrape to specific genera
     parser.add_argument(
         "--genera",

@@ -57,6 +57,8 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 
 ``--families`` - List of CAZy (sub)families to retrieve UniProt protein data for.
 
+``--force`` - Force writing in existing cache directory.
+
 ``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
 
 ``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
