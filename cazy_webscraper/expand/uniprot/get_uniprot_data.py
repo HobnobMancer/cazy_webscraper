@@ -41,6 +41,7 @@
 """Retrieve data from UniProtKB and adding it to a local CAZyme db"""
 
 
+import json
 import logging
 import urllib.parse
 import urllib.request
@@ -148,6 +149,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # retrieve the uniprot accessions for the genbank accessions
     uniprot_gkb_dict = get_uniprot_accessions(gbk_dict, args)  # {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
+
+    uniprot_acc_cache = cache_dir / f"uniprot_accessions_{time_stamp}.json"
+    with open(uniprot_acc_cache, "w") as fh:
+        json.dump(uniprot_gkb_dict, fh)
 
     uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir)
 
