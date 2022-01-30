@@ -109,16 +109,18 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # add log to the local CAZyme database
     logger.info("Adding log of scrape to the local CAZyme database")
+
+    retrieved_annotations = "UniProt accessions"
+    if args.ec:
+        retrieved_annotations += ", EC numbers"
+    if args.pdb:
+        retrieved_annotations = ", PDB accessions"
+    if args.sequence:
+        retrieved_annotations = ", Protein sequence"
+    if args.seq_update:
+        retrieved_annotations = ", Updated UniProt protein sequences"
+
     with sql_orm.Session(bind=connection) as session:
-        retrieved_annotations = "UniProt accessions"
-        if len(config_dict['ec']) != 0:
-            retrieved_annotations = f"{retrieved_annotations}, EC numbers"
-        if len(config_dict['pdb']) != 0:
-            retrieved_annotations = f"{retrieved_annotations}, PDB accessions"
-        if len(config_dict['seq']) != 0:
-            retrieved_annotations = f"{retrieved_annotations}, Protein sequence"
-        if args.seq_update:
-            retrieved_annotations = f"{retrieved_annotations}, Updated UniProt protein sequences"
         sql_interface.log_scrape_in_db(
             time_stamp,
             config_dict,
