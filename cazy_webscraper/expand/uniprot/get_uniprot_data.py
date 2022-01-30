@@ -52,6 +52,7 @@ from typing import List, Optional
 from urllib.error import HTTPError
 
 from bioservices import UniProt
+from saintBioutils.uniprot import get_uniprot_accessions
 from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper, closing_message
@@ -142,7 +143,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     genbank_accessions = list(gbk_dict.keys())
 
     # retrieve the uniprot accessions for the genbank accessions
-    uniprot_gkb_dict = get_uniprot_accessions(genbank_accessions)  # {uniprot_acc: (gbk_acc, db_id)}
+    uniprot_gkb_dict = get_uniprot_accessions(genbank_accessions)  # {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
     uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir)
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
@@ -156,81 +157,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.pdb:
         add_pdb_accessions(uniprot_dict, gbk_dict, connection, args)
 
-    end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    end_time = pd.to_datetime(end_time)
-    total_time = end_time - start_time
-
     closing_message("get_uniprot_data", start_time, args)
-    
-
-def get_uniprot_accessions(genbank_accessions, args):
-    """Retrieve UniProt accessions for the GenBank accessions from UniProt REST API.
-    
-    UniProt requests batch queries of no larger than 20,000, athough queries longer than 500
-    often raise HTTP 400 Error codes, especially in busy server times.
-
-    :param genbank_accessions: set, GenBank accessions to retrieve UniProt accessions for
-    :param args: cmd-line args parser
-
-    Return dict of {uniprot_accession: genbank_accession}
-    """
-    logger = logging.getLogger(__name__)
-    uniprot_url = 'https://www.uniprot.org/uploadlists/'
-
-    uniprot_rest_queries = get_chunks_list(genbank_accessions, args.uniprot_batch_size)
-
-    uniprot_gbk_dict = {}  # {uniprot_accession: gbk_accession}
-    failed_queries = {}  # {query: tries}
-
-    for query_chunk in tqdm(
-        uniprot_rest_queries,
-        desc='Batch retrieving UniProt accessions',
-    ):
-        if type(query) != str:
-            # convert the set of gbk accessions into str format
-            query = ' '.join(query_chunk)
-
-        params = {
-            'from': 'EMBL',
-            'to': 'ACC',
-            'format': 'tab',
-            'query': query
-        }
-
-        # submit query data
-        data = urllib.parse.urlencode(params)
-        data = data.encode('utf-8')
-        req = urllib.request.Request(uniprot_url, data)
-
-        # retrieve UniProt response
-        try:
-            with urllib.request.urlopen(req) as f:
-                response = f.read()
-        except HTTPError:
-            try:
-                failed_queries[query] += 1
-            except KeyError:
-                failed_queries[query] = 1
-            if failed_queries[query] > args.retries:
-                del failed_queries[query]
-            else:
-                uniprot_rest_queries.append(query)
-
-        uniprot_batch_response = response.decode('utf-8')
-
-        uniprot_batch_response = uniprot_batch_response.split('\n')
-
-        for line in uniprot_batch_response[1:]:  # the first line includes the titles, last line is an empty str
-            if line == '':  # add check incase last line is not an empty str 
-                continue
-            uniprot_gbk_dict[line.split('\t')[1]] = line.split('\t')[0]
-
-    logger.info(
-        f"Retrieved {len(genbank_accessions)} gbk accessions from the local db\n"
-        f"{len(list(uniprot_gbk_dict.keys()))} were assoicated with records in UniProt"
-    )
-
-    return uniprot_gbk_dict
 
 
 def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
