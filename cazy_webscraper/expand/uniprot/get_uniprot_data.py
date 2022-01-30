@@ -54,7 +54,7 @@ from urllib.error import HTTPError
 from bioservices import UniProt
 from tqdm import tqdm
 
-from cazy_webscraper import cazy_scraper
+from cazy_webscraper import cazy_scraper, closing_message
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface import get_selected_gbks
@@ -89,6 +89,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # parse the configuration data (cache the uniprot data as .csv files)
     connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
 
+    # build cache directory
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
@@ -129,7 +130,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             args,
         )
 
-    # retrieve dict of genbank accession and genbank accession ids from the local CAZyme db
+    # retrieve dict of genbank accession and genbank db ids from the local CAZyme db
     gbk_dict = get_selected_gbks.get_genbank_accessions(
         class_filters,
         family_filters,
@@ -141,7 +142,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     genbank_accessions = list(gbk_dict.keys())
 
     # retrieve the uniprot accessions for the genbank accessions
-    uniprot_gkb_dict = get_uniprot_accessions(genbank_accessions)  # {uniprot_acc: gbk_acc}
+    uniprot_gkb_dict = get_uniprot_accessions(genbank_accessions)  # {uniprot_acc: (gbk_acc, db_id)}
     uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir)
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
@@ -159,26 +160,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     end_time = pd.to_datetime(end_time)
     total_time = end_time - start_time
 
-    if args.verbose:
-        logger.info(
-            "Finished getting data from UniProt\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {cazy_scraper.VERSION_INFO}\n"
-            f"Citation: {cazy_scraper.CITATION_INFO}"
-        )
-    else:
-        print(
-            "=====================cazy_webscraper=====================\n"
-            "Finished getting data from UniProt\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {cazy_scraper.VERSION_INFO}\n"
-            f"Citation: {cazy_scraper.CITATION_INFO}"
-        )
-
+    closing_message("get_uniprot_data", start_time, args)
+    
 
 def get_uniprot_accessions(genbank_accessions, args):
     """Retrieve UniProt accessions for the GenBank accessions from UniProt REST API.
