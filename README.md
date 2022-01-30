@@ -208,7 +208,7 @@ Data can be retrieived for all proteins in the local CAZyme database, or a speci
 
 To retrieve all UniProt data for all proteins in a local CAZyme datbase, using the following command:
 ```bash
-cw_get_uniprot_data <path_to_local_CAZyme_db> --ec --pdb --seq
+cw_get_uniprot_data <path_to_local_CAZyme_db> --ec --pdb --sequence
 ```
 
 ### Configuring UniProt data retrieval

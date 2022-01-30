@@ -24,6 +24,14 @@ the local CAZyme database, use the following command structure:
     Retrieving the data from any of these exteranl databases for the entire CAZy 
     dataset will take several hours and may unintentionally deny the service to others.
 
+To download UniProt protein accessions and names from UniProt for all protein in the local CAZyme database, including 
+EC number annotations, PDB accessions and protein sequences, and save the data to
+the local CAZyme database, use the following command structure:  
+
+.. code-block:: bash
+    
+   cw_get_uniprot_data <path to local CAZyme db> --ec --pdb --sequence
+
 --------------------
 Command line options
 --------------------
