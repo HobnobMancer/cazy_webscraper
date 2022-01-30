@@ -88,7 +88,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         config_logger(args)
     
     # parse the configuration data (cache the uniprot data as .csv files)
-    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
+    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp, start_time)
 
     # build cache directory
     if args.cache_dir is not None:  # use user defined cache dir
