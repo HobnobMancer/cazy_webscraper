@@ -74,6 +74,30 @@ def time_stamp():
     return time_stamp
 
 
+@pytest.fixture
+def mock_return_logger(*args, **kwards):
+    return logging.getLogger('mock_logger')
+
+
+@pytest.fixture
+def config_dict():
+    configuration_dict = {
+        'classes': [],
+        "Glycoside Hydrolases (GHs)": ["GH3"],
+        'GlycosylTransferases (GTs)': [],
+        "Polysaccharide Lyases (PLs)": None,
+        'Carbohydrate Esterases (CEs)': [],
+        'Auxiliary Activities (AAs)': [],
+        'Carbohydrate-Binding Modules (CBMs)': [],
+    }
+    return configuration_dict
+
+
+@pytest.fixture()
+def mock_return_none(*args, **kwargs):
+    return
+
+
 # Define fixtures for testing SQL ORM and interface
 
 
@@ -95,17 +119,14 @@ def tables(engine):
 
 
 @pytest.fixture
-def db_session(engine, tables):
+def db_connection(engine, tables):
     """Returns an sqlalchemy session, and after the test tears down everything properly."""
     connection = engine.connect()
     # begin the nested transaction
     transaction = connection.begin()
-    # use the connection with the already started transaction
-    session = Session(bind=connection)
 
-    yield session
+    yield transaction
 
-    session.close()
     # roll back the broader transaction
     transaction.rollback()
     # put back the connection to the connection pool
