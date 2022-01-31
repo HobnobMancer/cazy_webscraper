@@ -90,11 +90,11 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
                 if existing_name != retrieved_name:
                     update_record_name.add( (uniprot_acc, retrieved_name) )
             
-            if args.sequence_new:  # only add seq if sequence is not there
+            if args.sequence:  # only add seq if sequence is not there
                 if uniprot_table_dict[uniprot_acc]['seq'] is None:
                     update_record_seq.add( (uniprot_acc, uniprot_dict[uniprot_acc]["sequence"]) )
                 
-            if args.sequence_update:  # update seq if a newer version is available or no seq present
+            if args.seq_update:  # update seq if a newer version is available or no seq present
                 if uniprot_table_dict[uniprot_acc]['seq'] is None:
                         update_record_seq.add( (
                             uniprot_acc,
@@ -114,7 +114,7 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
         
         except KeyError:  # new record to add to local CAZyme db
             
-            if args.sequence_new or args.sequence_update:
+            if args.sequence or args.seq_update:
                 genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
                 gbk_id = gbk_dict[genbank_acc]
                 uniprot_name = uniprot_dict[uniprot_acc]["name"]
@@ -131,7 +131,7 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
                 uniprot_insert_values.add( (gbk_id, uniprot_acc, uniprot_name) )
     
     if len(uniprot_insert_values) != 0:
-        if args.sequence_new or args.sequence_update:
+        if args.sequence or args.seq_update:
             columns = ['genbank_id', 'uniprot_accession', 'uniprot_name', 'sequence', 'seq_update_date']
         else:
             columns = ['genbakn_id', 'uniprot_accession', 'uniprot_name']
