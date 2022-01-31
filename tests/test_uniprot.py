@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# (c) University of St Andrews 2020-2021
+# (c) University of Strathclyde 2020-2021
+# (c) James Hutton Institute 2020-2021
+#
+# Author:
+# Emma E. M. Hobbs
+#
+# Contact
+# eemh1@st-andrews.ac.uk
+#
+# Emma E. M. Hobbs,
+# Biomolecular Sciences Building,
+# University of St Andrews,
+# North Haugh Campus,
+# St Andrews,
+# KY16 9ST
+# Scotland,
+# UK
+#
+# The MIT License
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+"""Tests the script expand/uniprot/get_uniprot_data.py.
+
+These test are intened to be run from the root of the repository using:
+pytest -v
+"""
+
+import logging
+from operator import ge
+from cazy_webscraper import cazy_scraper
+import pytest
+
+from argparse import Namespace, ArgumentParser
+
+from saintBioutils import uniprot
+
+import cazy_webscraper
+
+from cazy_webscraper import utilities
+from cazy_webscraper.cazy_scraper import connect_existing_db
+from cazy_webscraper.expand.uniprot import get_uniprot_data
+from cazy_webscraper.sql import sql_interface
+from cazy_webscraper.sql.sql_interface import add_uniprot_data
+from cazy_webscraper.utilities.parsers import uniprot_parser
+
+
+
+@pytest.fixture
+def mock_building_parser(*args, **kwargs):
+    parser_args = ArgumentParser(
+        prog="cazy_webscraper.py",
+        usage=None,
+        description="Scrape the CAZy database",
+        conflict_handler="error",
+        add_help=True,
+    )
+    return parser_args
+
+
+@pytest.fixture
+def mock_parser(*args, **kwargs):
+    parser = Namespace(
+        config=None,
+        classes=None,
+        database="fake_database_path",
+        ec=True,
+        force=False,
+        families=None,
+        genera=None,
+        get_pages=True,
+        kingdoms=None,
+        log=None,
+        nodelete=False,
+        output=None,
+        retries=10,
+        sequence=True,
+        subfamilies=True,
+        species=None,
+        strains=None,
+        streamline=None,
+        timeout=45,
+        verbose=False,
+    )
+    return parser
+
+
+def test_main(
+    mock_parser,
+    mock_building_parser,
+    mock_return_logger,
+    config_dict,
+    db_connection,
+    mock_return_none,
+    monkeypatch,
+):
+    """Test main()"""
+
+    def mock_connect_existing_db(*args, **kwards):
+        return db_connection, None, "cache_dir"
+
+    def mock_get_expansion_configuration(*args, **kwards):
+        return config_dict, set(), set(), set(), dict(), set()
+
+    def mock_get_genbank_accessions(*args, **kwards):
+        return dict()
+    
+    def mock_get_uniprot_data(*args, **kwards):
+        return dict(), {1, 2, 3}
+
+    monkeypatch.setattr(uniprot_parser, "build_parser", mock_building_parser)
+    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
+    monkeypatch.setattr(utilities, "config_logger", mock_return_logger)
+    monkeypatch.setattr(cazy_scraper, "connect_existing_db", mock_connect_existing_db)
+    monkeypatch.setattr(get_uniprot_data, "make_output_directory", mock_return_none)
+    monkeypatch.setattr("cazy_webscraper.expand.uniprot.get_uniprot_data.make_output_directory", mock_return_none)
+    monkeypatch.setattr(get_uniprot_data, "get_expansion_configuration", mock_get_expansion_configuration)
+    monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
+    monkeypatch.setattr(get_uniprot_data, "get_genbank_accessions", mock_get_genbank_accessions)
+    monkeypatch.setattr(uniprot, "get_uniprot_accessions", mock_get_genbank_accessions)
+    monkeypatch.setattr(get_uniprot_data, "get_uniprot_data", mock_return_none)
+    monkeypatch.setattr(add_uniprot_data, "add_ec_numbers", mock_return_none)
+    monkeypatch.setattr(add_uniprot_data, "add_pdb_accessions", mock_return_none)
+    monkeypatch.setattr(cazy_webscraper, "closing_message", mock_return_none)
+
+    get_uniprot_data.main()

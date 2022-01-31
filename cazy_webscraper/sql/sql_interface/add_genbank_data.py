@@ -72,13 +72,20 @@ def add_gbk_seqs_to_db(seq_dict, retrieval_date, connection, args):
             if (args.sequence_update) and (retrieval_date < existing_record['seq_date']):
                 records.add( (gbk_accession, seq_dict[gbk_accession]) )
 
-    for record in tqdm(records, desc="Adding seqs to db"):
+    for record in tqdm(records, desc="Adding seqs to db"): 
             connection.execute(
                 text(
                     "UPDATE Genbanks "
-                    f"SET sequence = {record[1]}, seq_update_date = {retrieval_date} "
+                    f"SET sequence = '{record[1]}'"
                     f"WHERE genbank_accession = '{record[0]}'"
                 )
             )
-    
+            #, seq_update_date = {retrieval_date} 
+            connection.execute(
+                text(
+                    "UPDATE Genbanks "
+                    f"SET seq_update_date = '{retrieval_date}'"
+                    f"WHERE genbank_accession = '{record[0]}'"
+                )
+            )
     return

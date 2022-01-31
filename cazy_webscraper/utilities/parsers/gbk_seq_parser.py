@@ -48,10 +48,10 @@ from typing import List, Optional
 
 
 def build_parser(argv: Optional[List] = None):
-    """Return ArgumentParser parser for the script 'expand.genbank_sequences.py'."""
+    """Return ArgumentParser parser for the script 'expand.get_genbank_sequences.py'."""
     # Create parser object
     parser = argparse.ArgumentParser(
-        prog="genbank_sequences.py",
+        prog="get_genbank_sequences.py",
         description="Populates local CAZy database with protein sequences from GenBank",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
@@ -81,6 +81,13 @@ def build_parser(argv: Optional[List] = None):
         metavar="config file",
         default=None,
         help="Path to configuration file. Default: None, scrapes entire database",
+    )
+
+    parser.add_argument(
+        "--cache_dir",
+        type=Path,
+        default=None,
+        help="Path to cache directory",
     )
 
     # Add option to use own CAZy class synoymn dict

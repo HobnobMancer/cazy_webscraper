@@ -574,10 +574,16 @@ def get_ec_config(ec_filters, args):
 
         ec_filters = set(yaml_config_dict['ec'])
 
-    ec_filters = ec_filters.union(set((args.ec_filter).split(",")))
+    if ec_filters is not None:
+        try:
+            ec_filters = ec_filters.union(set((args.ec_filter).split(",")))
+        except AttributeError:
+            pass
+        
+        ec_filters = [ec.replace("EC","") for ec in ec_filters]
+        ec_filters = [ec.replace("ec","") for ec in ec_filters]
+        ec_filters = [ec.replace("*","-") for ec in ec_filters]
 
-    ec_filters = [ec.replace("EC","") for ec in ec_filters]
-    ec_filters = [ec.replace("ec","") for ec in ec_filters]
-    ec_filters = [ec.replace("*","-") for ec in ec_filters]
+        ec_filters = set(ec_filters)
 
-    return set(ec_filters)
+    return ec_filters

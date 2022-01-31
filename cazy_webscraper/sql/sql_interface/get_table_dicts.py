@@ -69,6 +69,8 @@ def get_ec_table_dict(connection):
     for record in tqdm(db_ec_records, desc="Retrieving existing EC# records"):
         ec_table_dict[record.ec_number] = record.ec_id
 
+    return ec_table_dict
+
 
 def get_ec_gbk_table_dict(connection):
     """Load the Genbanks_Ecs table into memory and compile a dict.
@@ -288,7 +290,7 @@ def get_pdb_table_dict(connection):
         except KeyError:
             pdb_table_dict[gbk_id] = {record.pdb_accession}
 
-    pdb_table_dict 
+    return pdb_table_dict 
 
 
 def get_taxs_table_dict(connection):

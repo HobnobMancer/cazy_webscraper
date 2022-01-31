@@ -82,7 +82,7 @@ def closing_message(job, start_time, args):
             "Finished scraping CAZy\n"
             f"Scrape initated at {start_time}\n"
             f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
+            f"Total run time: {total_time}\n"
             f"Version: {VERSION_INFO}\n"
             f"Citation: {CITATION_INFO}"
         )
