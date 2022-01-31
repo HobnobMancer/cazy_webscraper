@@ -148,8 +148,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.warning(f"Retrieving UniProt data for {len(gbk_dict.keys())}")
 
     if args.uniprot_accessions is not None:
+        logger.warning(f"Using UniProt accessions from cache: {args.uniprot_accessions}")
         with open(args.uniprot_accessions, "r") as fh:
-            uniprot_dict = json.load(fh)
+            uniprot_gkb_dict = json.load(fh)
 
     else:
         # retrieve the uniprot accessions for the genbank accessions
@@ -217,8 +218,11 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
             'Protein names',
             'EC number',
             'Sequence',
+            'Date of last sequence modification',
             'Cross-reference (PDB)',
         ]]
+
+
 
         for index in tqdm(range(len(uniprot_df['Entry'])), desc="Parsing UniProt response"):
             row = uniprot_df.iloc[index]
@@ -282,7 +286,6 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
             if args.pdb:
                 # retrieve PDB accessions
                 pdb_accessions = row['Cross-reference (PDB)']
-                print('PDBS:', pdb_accessions)
                 try:
                     pdb_accessions = pdb_accessions.split('; ')
                 except AttributeError:
