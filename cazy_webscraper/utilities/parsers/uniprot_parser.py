@@ -156,6 +156,14 @@ def build_parser(argv: Optional[List] = None):
         help="Force writing in existing cache dir",
     )
 
+    parser.add_argument(
+        "--genbank_accessions",
+        type=Path,
+        default=None,
+        help="Path to a text file containing a list of GenBank accessions to retrieve data for",
+    )
+
+
     # Add option to restrict scrape to specific genera
     parser.add_argument(
         "--genera",

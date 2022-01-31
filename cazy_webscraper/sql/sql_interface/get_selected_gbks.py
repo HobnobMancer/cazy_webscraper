@@ -56,6 +56,27 @@ from cazy_webscraper.sql.sql_orm import (
 )
 
 
+def get_ids(genbank_accessions, connection):
+    """Get the local CAZyme database IDs for the list of provided GenBank accessions.
+    
+    :param genbank_accessions: set of GenBank accessions
+    :param connection: open sqlalchemy engine connection
+    
+    Return dict, keyed by GenBank accession and valued by database record ID.
+    """
+    gbk_dict = {}
+
+    for accession in tqdm(genbank_accessions, desc="Getting local db record IDs"):
+        with Session(bind=connection) as session:
+            gbk_query = session.query(Genbank).\
+                filter(Genbank.genbank_accession == accession).\
+                first()
+        
+        gbk_dict[accession] = gbk_query.genbank_id
+
+    return gbk_dict
+    
+
 def get_genbank_accessions(
     class_filters,
     family_filters,

@@ -59,6 +59,8 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 
 ``--force`` - Force writing in existing cache directory.
 
+``--genbank_accessions`` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+
 ``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
 
 ``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).

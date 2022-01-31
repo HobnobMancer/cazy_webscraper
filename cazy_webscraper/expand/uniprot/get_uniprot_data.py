@@ -136,30 +136,42 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
 
     # retrieve dict of genbank accession and genbank db ids from the local CAZyme db
-    gbk_dict = get_selected_gbks.get_genbank_accessions(
-        class_filters,
-        family_filters,
-        taxonomy_filter_dict,
-        kingdom_filters,
-        ec_filters,
-        connection,
-    )
+    if args.genbank_accessions is not None:
+        logger.warning(f"Getting GenBank accessions from file: {args.genbank_accessions}")
+        with open(args.genbank_accessions, "r") as fh:
+            lines = fh.read().splitlines()
+        
+        accessions = [line.strip() for line in lines]
+        accessions = set(accessions)
+
+        gbk_dict = get_selected_gbks.get_ids(accessions, connection)
+
+    else:
+        gbk_dict = get_selected_gbks.get_genbank_accessions(
+            class_filters,
+            family_filters,
+            taxonomy_filter_dict,
+            kingdom_filters,
+            ec_filters,
+            connection,
+        )
 
     logger.warning(f"Retrieving UniProt data for {len(gbk_dict.keys())}")
 
+    # Get the UniProt accessions/IDs for the corresponding GenBank accessions
     if args.uniprot_accessions is not None:
         logger.warning(f"Using UniProt accessions from cache: {args.uniprot_accessions}")
         with open(args.uniprot_accessions, "r") as fh:
             uniprot_gkb_dict = json.load(fh)
 
     else:
-        # retrieve the uniprot accessions for the genbank accessions
         uniprot_gkb_dict = get_uniprot_accessions(gbk_dict, args)  # {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
 
         uniprot_acc_cache = cache_dir / f"uniprot_accessions_{time_stamp}.json"
         with open(uniprot_acc_cache, "w") as fh:
             json.dump(uniprot_gkb_dict, fh)
 
+    # Get protein data from UniProt
     if args.uniprot_data is not None:
         logger.warning(f"Using UniProt data from cache: {args.uniprot_data}")
         with open(args.uniprot_data, "r") as fh:
@@ -175,7 +187,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
         uniprot_acc_cache = cache_dir / f"uniprot_data_{time_stamp}.json"
         with open(uniprot_acc_cache, "w") as fh:
-            json.dump(uniprot_gkb_dict, fh)   
+            json.dump(uniprot_dict, fh)   
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
     add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args)
