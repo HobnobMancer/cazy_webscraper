@@ -192,7 +192,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             except KeyError:
                 pass
             try:
-                uniprot_dict[uniprot_accession]['pdc'] = list(uniprot_dict[uniprot_accession]['pdc'])
+                uniprot_dict[uniprot_accession]['pdb'] = list(uniprot_dict[uniprot_accession]['pdb'])
             except KeyError:
                 pass
 
