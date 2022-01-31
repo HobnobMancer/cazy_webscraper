@@ -77,12 +77,12 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
 
             # check if the GenBank id is the same
             existing_gbk_id = uniprot_table_dict[uniprot_acc]['genbank_id']
-            retrieved_gbk_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
+            retrieved_gbk_acc = uniprot_dict[uniprot_acc]["genbank_accession"]['gbk_acc']
             retrieved_gbk_id = gbk_dict[retrieved_gbk_acc]
             if existing_gbk_id != retrieved_gbk_id:
                 update_record_gbk_id.add( (uniprot_acc, retrieved_gbk_id) )
                 
-            if args.update_name:
+            if args.name_update:
                 # check if the name has changed
                 existing_name = uniprot_table_dict[uniprot_acc]['name']
                 retrieved_name = uniprot_dict[uniprot_acc]['name']
@@ -115,7 +115,7 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
         except KeyError:  # new record to add to local CAZyme db
             
             if args.sequence or args.seq_update:
-                genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
+                genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]['gbk_acc']
                 gbk_id = gbk_dict[genbank_acc]
                 uniprot_name = uniprot_dict[uniprot_acc]["name"]
                 seq = uniprot_dict[uniprot_acc]["sequence"]
@@ -124,7 +124,7 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
                 uniprot_insert_values.add( (gbk_id, uniprot_acc, uniprot_name, seq, date) )
 
             else:  # not retrieving protein sequences
-                genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
+                genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]['gbk_acc']
                 gbk_id = gbk_dict[genbank_acc]
                 uniprot_name = uniprot_dict[uniprot_acc]["name"]
                 
@@ -210,17 +210,21 @@ def add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args):
     gbk_ec_insert_values = set()
 
     for uniprot_acc in tqdm(uniprot_dict, desc="Updating EC numbers"):
-        genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
+        genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]['gbk_acc']
         gbk_id = gbk_dict[genbank_acc]
         
         retrieved_ec_numbers = uniprot_dict[uniprot_acc]["ec"]  # EC#s retrieved from UniProt
         for ec in retrieved_ec_numbers:
             ec_id = ec_table_dict[ec]
-            
-            existing_gbk_relationships = ec_gbk_table_dict[ec_id]
-            if gbk_id not in existing_gbk_relationships:
+
+            try:
+                existing_gbk_relationships = ec_gbk_table_dict[ec_id]
+                # check if protein-ec# relationship is already in the db
+                if gbk_id not in existing_gbk_relationships:
+                    gbk_ec_insert_values.add( (gbk_id, ec_id) )
+            except KeyError:  # when adding relationship for the first time
                 gbk_ec_insert_values.add( (gbk_id, ec_id) )
-        
+
         if args.delete_old_ec:
             existing_ec_relationships = gbk_ec_table_dict[gbk_id]
             for ec in retrieved_ec_numbers:
@@ -264,14 +268,14 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
         delete_pdbs = set()  # records to delete, PDB acc no longer listed in UniProt for the given protein
 
     for uniprot_acc in tqdm(uniprot_dict, desc="Identifying new and updated PDB records"):
-        genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
+        genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]['gbk_acc']
         gbk_id = gbk_dict[genbank_acc]
 
         retrieved_pdbs = uniprot_dict[uniprot_acc]["pdb"]
         if len(retrieved_pdbs) == 0:
             continue
 
-        for pdb in retrieved_pdbs:
+        for pdb_acc in retrieved_pdbs:
             if pdb_acc in existing_pdbs:
                 # check if the gbk_id is the same
                 current_pdbs = pdb_table_dict[gbk_id]
