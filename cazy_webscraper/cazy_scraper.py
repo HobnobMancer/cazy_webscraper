@@ -221,6 +221,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     else:
         make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
+    logger.info(f"Created cache dir: {cache_dir}")
+
     if args.log is not None:  # write additional log files to user specified dir
         logger_name = args.log.split(".")[0]
     else:
@@ -229,11 +231,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         make_output_directory(logger_dir, args.force, args.nodelete_log)
         # add logger dir path to the logger name
         logger_name = f"{logger_dir}/{str(Path(logger_name).name)}"
-
-    # create dir to cache downloaded text files and logs of failed scrapes, connections and data errs
-    make_output_directory(cache_dir, args.force, args.nodelete_cache)
-
-    logger.info(f"Created cache dir: {cache_dir}")
 
     logger.info("Starting retrieval of data from CAZy")
 
