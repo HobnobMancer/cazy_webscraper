@@ -167,6 +167,17 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     else:
         uniprot_gkb_dict = get_uniprot_accessions(gbk_dict, args)  # {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
 
+        # converts sets to lists for json serialisation
+        for uniprot_accession in uniprot_gkb_dict:
+            try:
+                uniprot_gkb_dict[uniprot_accession]['ec'] = list(uniprot_gkb_dict[uniprot_accession]['ec'])
+            except KeyError:
+                pass
+            try:
+                uniprot_gkb_dict[uniprot_accession]['pdc'] = list(uniprot_gkb_dict[uniprot_accession]['pdc'])
+            except KeyError:
+                pass
+
         uniprot_acc_cache = cache_dir / f"uniprot_accessions_{time_stamp}.json"
         with open(uniprot_acc_cache, "w") as fh:
             json.dump(uniprot_gkb_dict, fh)
