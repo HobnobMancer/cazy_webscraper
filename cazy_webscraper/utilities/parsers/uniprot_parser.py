@@ -282,6 +282,13 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
+        "--uniprot_accessions",
+        type=Path,
+        default=None,
+        help="Path to a JSON file containing UniProt IDs, GenBank accessions and db IDs",
+    )  
+
+    parser.add_argument(
         "--uniprot_batch_size",
         type=int,
         default=150,

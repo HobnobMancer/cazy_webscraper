@@ -147,14 +147,19 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.warning(f"Retrieving UniProt data for {len(gbk_dict.keys())}")
 
-    # retrieve the uniprot accessions for the genbank accessions
-    uniprot_gkb_dict = get_uniprot_accessions(gbk_dict, args)  # {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
+    if args.uniprot_accessions is not None:
+        with open(args.uniprot_accessions, "r") as fh:
+            uniprot_dict = json.load(fh)
 
-    uniprot_acc_cache = cache_dir / f"uniprot_accessions_{time_stamp}.json"
-    with open(uniprot_acc_cache, "w") as fh:
-        json.dump(uniprot_gkb_dict, fh)
+    else:
+        # retrieve the uniprot accessions for the genbank accessions
+        uniprot_gkb_dict = get_uniprot_accessions(gbk_dict, args)  # {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
 
-    uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir)
+        uniprot_acc_cache = cache_dir / f"uniprot_accessions_{time_stamp}.json"
+        with open(uniprot_acc_cache, "w") as fh:
+            json.dump(uniprot_gkb_dict, fh)
+
+    uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir, args)
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
     add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args)
