@@ -227,6 +227,8 @@ Below are listed the command-line flags for configuring the retrieval of UniProt
 
 `--config`, `-c` - Path to a configuration YAML file. Default: None.
 
+``--delete_old_ec`` - Boolean, delete EC number - Protein relationships that are no longer listed in UniProt, i.e. an EC number annotation is no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
+
 `--ec`, `-e` - Enable retrieval of EC number annotations from UniProt
 
 `--ec_filter` - Limist retrieval of protein data to proteins annotated with a provided list of EC numbers. Separate the EC numbers bu single commas without spaces. Recommend to wrap the entire str in quotation marks, for example:
@@ -243,6 +245,8 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
 
 `--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+`--name_update` - Boolean, whether to overwrite the existing protein name (previously retrieved from UniProt). Default: do not update.
 
 `--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 

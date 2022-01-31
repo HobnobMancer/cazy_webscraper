@@ -51,6 +51,8 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 
 ``--classes`` - list of classes to retrieve UniProt data for.
 
+``--delete_old_ec`` - Boolean, delete EC number - Protein relationships that are no longer listed in UniProt, i.e. an EC number annotation is no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
+
 ``--ec``, ``-e`` - Enable retrieval of EC number annotations from UniProt. Default, EC number annotations are **not** retrieved.
 
 ``--ec_filter`` - List of EC numbers to limit the retrieval of protein data for proteins annotated with at least one of the given EC numbers **in the local CAZyme database**.
@@ -64,6 +66,8 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 ``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
 
 ``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+``--name_update`` - Boolean, whether to overwrite the existing protein name (previously retrieved from UniProt). Default: do not update.
 
 ``--nodelete_cache`` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
