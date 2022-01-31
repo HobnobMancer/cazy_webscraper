@@ -160,7 +160,22 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         with open(uniprot_acc_cache, "w") as fh:
             json.dump(uniprot_gkb_dict, fh)
 
-    uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir, args)
+    if args.uniprot_data is not None:
+        logger.warning(f"Using UniProt data from cache: {args.uniprot_data}")
+        with open(args.uniprot_data, "r") as fh:
+            uniprot_dict = json.load(fh)
+
+        if args.ec:
+            all_ecs = get_ecs_from_cache(uniprot_dict)
+        else:
+            all_ecs = set()
+
+    else:
+        uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir, args)
+
+        uniprot_acc_cache = cache_dir / f"uniprot_data_{time_stamp}.json"
+        with open(uniprot_acc_cache, "w") as fh:
+            json.dump(uniprot_gkb_dict, fh)   
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
     add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args)
@@ -328,6 +343,26 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
                     uniprot_dict[uniprot_acc]["seq_date"] = row['Date of last sequence modification']
 
     return uniprot_dict, all_ecs
+
+
+def get_ecs_from_cache(uniprot_dict):
+    """Extract all unique EC numbers from the UniProt data cache.
+    
+    :param uniprot_dict: dict of data retrieved from UniProt.
+    
+    Return set of EC numbers.
+    """
+    all_ecs = set()
+
+    for uniprot_acc in tqdm(uniprot_dict, desc="Getting EC numbers from cached data"):
+        ecs = uniprot_dict[uniprot_acc]["ec"]
+        try:
+            for ec in ecs:
+                all_ecs.add(ec)
+        except (ValueError, TypeError, KeyError):
+            pass
+
+    return all_ecs
 
 
 if __name__ == "__main__":

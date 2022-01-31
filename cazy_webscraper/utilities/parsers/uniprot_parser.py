@@ -289,6 +289,13 @@ def build_parser(argv: Optional[List] = None):
     )  
 
     parser.add_argument(
+        "--uniprot_data",
+        type=Path,
+        default=None,
+        help="Path to a JSON file containing data previously retrieved from UniProt by cazy_webscraper",
+    )  
+
+    parser.add_argument(
         "--uniprot_batch_size",
         type=int,
         default=150,
