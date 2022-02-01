@@ -118,16 +118,29 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             args,
         )
     
-    # retrieve dict of genbank accession and genbank accession ids from the local CAZyme db
-    gbk_dict = get_selected_gbks.get_genbank_accessions(
-        class_filters,
-        family_filters,
-        taxonomy_filter_dict,
-        kingdom_filters,
-        ec_filters,
-        connection,
-    )
+    # retrieve dict of genbank accession and genbank db ids from the local CAZyme db
+    if args.genbank_accessions is not None:
+        logger.warning(f"Getting GenBank accessions from file: {args.genbank_accessions}")
+        with open(args.genbank_accessions, "r") as fh:
+            lines = fh.read().splitlines()
+        
+        accessions = [line.strip() for line in lines]
+        accessions = set(accessions)
+
+        gbk_dict = get_selected_gbks.get_ids(accessions, connection)
+
+    else:
+        gbk_dict = get_selected_gbks.get_genbank_accessions(
+            class_filters,
+            family_filters,
+            taxonomy_filter_dict,
+            kingdom_filters,
+            ec_filters,
+            connection,
+        )
+
     genbank_accessions = list(gbk_dict.keys())
+    logger.warning(f"Retrieving GenBank sequences for {len(gbk_dict.keys())}")  
 
     seq_dict = get_sequences(genbank_accessions, cache_dir, args)  # {gbk_accession: seq}
 

@@ -139,6 +139,13 @@ def build_parser(argv: Optional[List] = None):
         help="Families to scrape. Separate families by commas 'GH1,GH2'",
     )
 
+    parser.add_argument(
+        "--genbank_accessions",
+        type=Path,
+        default=None,
+        help="Path to a text file containing a list of GenBank accessions to retrieve data for",
+    )
+
     # Add option to restrict the scrape to specific kingdoms
     parser.add_argument(
         "--kingdoms",
