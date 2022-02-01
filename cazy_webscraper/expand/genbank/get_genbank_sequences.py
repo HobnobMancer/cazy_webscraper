@@ -222,7 +222,7 @@ def get_sequences(genbank_accessions, args, retry=False):
             if retry:
                 return None, None
 
-            failed_queries.append(all_queries)
+            failed_queries.append(query_list)
             continue
 
         success_accessions = set()  # accessions for which seqs were retrieved
