@@ -49,8 +49,8 @@ from datetime import datetime
 from typing import List, Optional
 
 from Bio import Entrez, SeqIO
-# from saintBioutils.genbank import entrez_retry
 from saintBioutils.utilities import file_io
+from saintBioutils.genbank import entrez_retry
 from saintBioutils.utilities.logger import config_logger
 
 from cazy_webscraper import cazy_scraper, CITATION_INFO, VERSION_INFO
@@ -58,42 +58,6 @@ from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, add_genbank_data
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 from cazy_webscraper.utilities.parsers.gbk_seq_parser import build_parser
-
-
-def entrez_retry(entrez_func, retries, *func_args, **func_kwargs):
-    """Call to NCBI using Entrez.
-
-    :param retries: int, maximum number of retries excepted if network error encountered
-    :param entrez_func: function, call method to NCBI
-    :param *func_args: tuple, arguments passed to Entrez function
-    :param ** func_kwargs: dictionary, keyword arguments passed to Entrez function
-
-    Returns record.
-    """
-    logger = logging.getLogger(__name__)
-    record, retries, tries = None, retries, 0
-
-    while (record is None) and (tries < retries):
-        try:
-            record = entrez_func(*func_args, **func_kwargs)
-
-        except IOError:
-            # log retry attempt
-            if tries < retries:
-                logger.warning(
-                    f"Network error encountered during try no.{tries}.\nRetrying in 10s",
-                    exc_info=1,
-                )
-                time.sleep(10)
-            tries += 1
-
-    if record is None:
-        logger.error(
-            "Network error encountered too many times. Exiting attempt to call to NCBI"
-        )
-        return
-
-    return record
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -214,8 +178,8 @@ def get_sequences(genbank_accessions, cache_dir, args):
 
     # retrieve the protein sequences
     with entrez_retry(
-        Entrez.efetch,
         10,
+        Entrez.efetch,
         db="Protein",
         query_key=epost_query_key,
         WebEnv=epost_webenv,
@@ -313,8 +277,8 @@ def bulk_query_ncbi(accessions, args):
     # Runtime error captured by try/except function call
     epost_result = Entrez.read(
         entrez_retry(
-            Entrez.epost,
             10,
+            Entrez.epost,
             db="Protein",
             id=accessions_string,
         )
