@@ -29,6 +29,22 @@ The documentation is being actively updated to match the new `cazy_webscraper` v
 - **Caching:** Data downloaded from CAZy is not only parsed and written to a local CAZyme database. The raw data files are written to cache. Data can be scraped directly from a cache (ideal if CAZy updates during the retrieval of multiple datasets from the CAZy database).
 - **Handling multiple taxa:** It is possible for a single protein (identified by its unique GenBank accession) to be associated with multiple taxa in the CAZy data. For these instances, `cazy_webscraper` queries NCBI to retrieve the latest taxonomic source of the protein.
 
+## Recent updates in v2.0.5
+
+- **UniProt:** `cazy_webscraper` can now be used successfully for retrieving data from UniProt and adding the data to the local CAZyme database. This includes retrieving:
+	- UniProt accessions
+	- Protein names
+	- Protein sequences
+	- EC number annotations
+	- PDB accessions
+- **GenBank:** `cazy_webscraper` can now be used to automate the retreival of protein sequences from GenBank for proteins in a local CAZyme database mathcing the users specified critieria. These protein sequences are stored in the local CAZyme database, and can be extracted to a FASTA file using `cazy_webscraper`
+- **Caching:** 
+	- More data is cached
+	- Cached data can be used to continue data retrievals from UniProt and GenBank, when a previous retrieval and/or addition of the data to the database fails
+	- Improved default name of cache dirs and subdirs
+- **Unit tests:** Started rewrite of unit tests to match the new program architecture
+- **Documentation:** Updating the documentation to include the new flags/options, and adding new tutorials for rautomating the retrieval if data from UniProt, GenBank and PDB
+
 ## Future work for version 2:
 - Calculate the coverage of the NCBI GenBank assembly database by CAZy (i.e. how many genomic assemblies from the Assembly database are included in the CAZy dataset)
 - Fix any remaining bugs we can find (if you find a bug, please report it and provide as detailed bug report as possible!)
