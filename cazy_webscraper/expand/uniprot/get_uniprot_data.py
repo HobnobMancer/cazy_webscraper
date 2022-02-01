@@ -55,6 +55,7 @@ from urllib.error import HTTPError
 from bioservices import UniProt
 from saintBioutils.uniprot import get_uniprot_accessions
 from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutuils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper, closing_message
@@ -67,7 +68,6 @@ from cazy_webscraper.sql.sql_interface.add_uniprot_data import (
     add_uniprot_accessions,
 )
 from cazy_webscraper.sql import sql_orm
-from cazy_webscraper.utilities import config_logger
 from cazy_webscraper.utilities.parsers import uniprot_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
