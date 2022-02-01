@@ -378,8 +378,8 @@ def get_ecs_from_cache(uniprot_dict):
     all_ecs = set()
 
     for uniprot_acc in tqdm(uniprot_dict, desc="Getting EC numbers from cached data"):
-        ecs = uniprot_dict[uniprot_acc]["ec"]
         try:
+            ecs = uniprot_dict[uniprot_acc]["ec"]
             for ec in ecs:
                 all_ecs.add(ec)
         except (ValueError, TypeError, KeyError):

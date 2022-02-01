@@ -45,6 +45,7 @@ pytest -v
 """
 
 import logging
+from re import U
 from cazy_webscraper import cazy_scraper
 import pytest
 import shutil
@@ -152,3 +153,10 @@ def test_main(
     monkeypatch.setattr(cazy_webscraper, "closing_message", mock_return_none)
 
     get_uniprot_data.main()
+
+
+def test_ec_num_cache():
+    """Test get_ecs_from_cache()"""
+    uniprot_dict = {'acc1': {'ec': []}, 'acc2': {'ec': ['1.2.3.4', '4.2.5.6']}, 'acc3': {1: 2}}
+
+    get_uniprot_data.get_ecs_from_cache(uniprot_dict)
