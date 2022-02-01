@@ -148,7 +148,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             seq_dict = json.load(fh)
 
     else:
-        seq_dict = get_sequences(genbank_accessions, cache_dir, args)  # {gbk_accession: seq}
+        seq_dict = get_sequences(genbank_accessions, args)  # {gbk_accession: seq}
 
         # cache the retrieved sequences
         cache_path = cache_dir / f"genbank_seqs_{time_stamp}.json"
@@ -160,11 +160,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     closing_message("get_genbank_sequences", start_time, args)
 
 
-def get_sequences(genbank_accessions, cache_dir, args):
+def get_sequences(genbank_accessions, args):
     """Retrieve protein sequences from Entrez.
 
     :param genbank_accessions: list, GenBank accessions
-    :param cache_dir: Path, cache directory
     :param args: cmb-line args parser
 
     Return nothing.
@@ -258,11 +257,6 @@ def get_sequences(genbank_accessions, cache_dir, args):
     #     with open(cache_path, "a") as fh:
     #         for acc in genbank_accessions:
     #             fh.write(f"{acc}\n")
-    
-    cache_path = cache_dir / "seq_retrieved.txt"
-    with open(cache_path, "a") as fh:
-        for acc in success_accessions:
-            fh.write(f"{acc}\n")
 
     return seq_dict
 
