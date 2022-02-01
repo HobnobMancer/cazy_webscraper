@@ -185,6 +185,14 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
+        "-r",
+        "--retries",
+        type=int,
+        default=10,
+        help="Number of times to retry scraping a family or class page if error encountered",
+    )
+
+    parser.add_argument(
         "--seq_dict",
         type=Path,
         default=None,
