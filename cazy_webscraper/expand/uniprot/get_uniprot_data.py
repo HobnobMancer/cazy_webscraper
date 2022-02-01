@@ -56,7 +56,7 @@ from bioservices import UniProt
 from saintBioutils.misc import get_chunks_list
 from saintBioutils.uniprot import get_uniprot_accessions
 from saintBioutils.utilities.file_io import make_output_directory
-from saintBioutuils.utilities.logger import config_logger
+from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper, closing_message
