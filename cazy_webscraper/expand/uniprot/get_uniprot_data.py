@@ -53,13 +53,13 @@ from typing import List, Optional
 from urllib.error import HTTPError
 
 from bioservices import UniProt
+from saintBioutils.misc import get_chunks_list
 from saintBioutils.uniprot import get_uniprot_accessions
 from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutuils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper, closing_message
-from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_uniprot_data import (
