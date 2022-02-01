@@ -53,7 +53,7 @@ from saintBioutils.utilities import file_io
 from saintBioutils.genbank import entrez_retry
 from saintBioutils.utilities.logger import config_logger
 
-from cazy_webscraper import cazy_scraper, CITATION_INFO, VERSION_INFO
+from cazy_webscraper import cazy_scraper, closing_message
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, add_genbank_data
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
@@ -157,29 +157,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, connection, args)
 
-    end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    end_time = pd.to_datetime(end_time)
-    total_time = end_time - start_time
-
-    if args.verbose:
-        logger.info(
-            "Finished getting sequences from GenBank\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {VERSION_INFO}\n"
-            f"Citation: {CITATION_INFO}"
-        )
-    else:
-        print(
-            "=====================cazy_webscraper=====================\n"
-            "Finished getting sequences from GenBank\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {VERSION_INFO}\n"
-            f"Citation: {CITATION_INFO}"
-        )
+    closing_message("get_genbank_sequences", start_time, args)
 
 
 def get_sequences(genbank_accessions, cache_dir, args):
