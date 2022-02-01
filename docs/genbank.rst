@@ -44,6 +44,8 @@ Command line options
 
 ``email`` - **REQUIRED** User email address, required by NCBI Entrez.
 
+``--batch_size`` - Size of batch query posted to NCBI Entrez. Default 150.
+
 ``--cache_dir`` - Path to cache dir to be used instead of default cache dir path.
 
 ``--cazy_data`` - Path to a txt file downloaded from CAZy containing a CAZy database dump

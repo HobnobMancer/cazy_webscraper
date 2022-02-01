@@ -297,6 +297,8 @@ Below are listed the command-line flags for configuring the retrieval of protein
 
 `email` - \[REQUIRED\] User email address, required by NCBI Entrez.
 
+`--batch_size` - Size of batch query posted to NCBI Entrez. Default 150.
+
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
 `--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
