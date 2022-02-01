@@ -39,6 +39,7 @@
 """Retrieve proteins sequences from GenBank and populate the local database"""
 
 
+from http.client import IncompleteRead
 import json
 import logging
 import re
@@ -205,6 +206,8 @@ def get_sequences(genbank_accessions, args, retry=False):
 
     failed_queries = []  # lists which raised an error, likely because contain an accession not in NCBI
 
+    irregular_accessions = []
+
     for query_list in tqdm(all_queries, desc="Batch querying NCBI.Entrez"):
 
         try:
@@ -224,65 +227,82 @@ def get_sequences(genbank_accessions, args, retry=False):
 
         success_accessions = set()  # accessions for which seqs were retrieved
 
-        # retrieve the protein sequences
-        with entrez_retry(
-            args.retries,
-            Entrez.efetch,
-            db="Protein",
-            query_key=epost_query_key,
-            WebEnv=epost_webenv,
-            rettype="fasta",
-            retmode="text",
-        ) as seq_handle:
-            for record in SeqIO.parse(seq_handle, "fasta"):
-                temp_accession = record.id
+        try:
+            # retrieve the protein sequences
+            with entrez_retry(
+                args.retries,
+                Entrez.efetch,
+                db="Protein",
+                query_key=epost_query_key,
+                WebEnv=epost_webenv,
+                rettype="fasta",
+                retmode="text",
+            ) as seq_handle:
+                for record in SeqIO.parse(seq_handle, "fasta"):
+                    temp_accession = record.id
 
-                # check if multiple items returned in ID
-                temp_accession = temp_accession.split("|")
-                index, success = 0, False
-                
-                while (index < len(temp_accession)) and (success is False):
-                    acc = temp_accession[index]
-                    try:
-                        re.match(
-                            (
-                                r"(\D{3}\d{5,7}\.\d+)|"
-                                r"(\D\d(\D|\d){3}\d)|"
-                                r"((\D\d(\D|\d){3}\d)\.\d)|"
-                                r"(\D\d(\D|\d){3}\d\D(\D|\d){2}\d)|"
-                                r"((\D\d(\D|\d){3}\d\D(\D|\d){2}\d)\.\d)|"
-                                r"(\D\D_\d{9}\.\d)"
-                            ),
-                            acc,
-                        ).group()
-                        seq_accession = acc
-                        success = True
-                    except AttributeError:
-                        index += 1
-                        pass
-
-                if success is False:  # if could not retrieve GenBank accession from the record
-                    logger.error(
-                        "Could not retrieve a GenBank protein accession from the record with the id:\n"
-                        f"{record.id}\n"
-                        "The sequence from this record will not be added to the db"    
-                    )
-                    continue
-
-                if seq_accession not in genbank_accessions:  # if the retrieved Gbk acc does not match an acc in the db
-                    logger.warning(
-                        f"Retrieved the accession {temp_accession} from the record with the id:\n"
-                        f"{record.id},\n"
-                        "Not adding the protein seq from this record to the db"
-                    )
-                    continue
+                    # check if multiple items returned in ID
+                    temp_accession = temp_accession.split("|")
+                    index, success = 0, False
                     
-                seq_dict[seq_accession] = record.seq
+                    while (index < len(temp_accession)) and (success is False):
+                        acc = temp_accession[index]
+                        try:
+                            re.match(
+                                (
+                                    r"(\D{2}_\d{8}\.\d)|"
+                                    r"(\D{3}\d{5,7}\.\d+)|"
+                                    r"(\D\d(\D|\d){3}\d)|"
+                                    r"((\D\d(\D|\d){3}\d)\.\d)|"
+                                    r"(\D\d(\D|\d){3}\d\D(\D|\d){2}\d)|"
+                                    r"((\D\d(\D|\d){3}\d\D(\D|\d){2}\d)\.\d)|"
+                                    r"(\D\D_\d{9}\.\d)"
+                                ),
+                                acc,
+                            ).group()
+                            seq_accession = acc
+                            success = True
+                        except AttributeError:
+                            index += 1
+                            pass
 
-                success_accessions.add(seq_accession)
+                    if success is False:  # if could not retrieve GenBank accession from the record
+                        logger.error(
+                            "Could not retrieve a GenBank protein accession from the record with the id:\n"
+                            f"{record.id}\n"
+                            "The sequence from this record will not be added to the db"    
+                        )
+                        continue
+
+                    if seq_accession not in genbank_accessions:  # if the retrieved Gbk acc does not match an acc in the db
+                        logger.warning(
+                            f"Retrieved the accession {temp_accession} from the record with the id:\n"
+                            f"{record.id},\n"
+                            "Not adding the protein seq from this record to the db"
+                        )
+                        irregular_accessions.append(f"Could not retrieve recognisable accession from '{acc}'")
+                        continue
+                        
+                    seq_dict[seq_accession] = record.seq
+
+                    success_accessions.add(seq_accession)
+        
+        except IncompleteRead as err:
+            logger.warning(
+                "IncompleteRead error raised:\n"
+                f"{err}\n"
+                "Will reattempt NCBI query later"
+            )
+
+            if retry:
+                return None, None
+
+            failed_queries.append(all_queries)
+            continue
 
     # list of GenBank accessions for which no protein sequence was retrieved
     no_seq = [acc for acc in genbank_accessions if acc not in success_accessions]
+    no_seq += irregular_accessions
 
     if retry:
         return seq_dict, no_seq
