@@ -179,7 +179,7 @@ def get_sequences(genbank_accessions, args):
 
     # retrieve the protein sequences
     with entrez_retry(
-        10,
+        args.retries,
         Entrez.efetch,
         db="Protein",
         query_key=epost_query_key,
@@ -273,7 +273,7 @@ def bulk_query_ncbi(accessions, args):
     # Runtime error captured by try/except function call
     epost_result = Entrez.read(
         entrez_retry(
-            10,
+            args.retries,
             Entrez.epost,
             db="Protein",
             id=accessions_string,
