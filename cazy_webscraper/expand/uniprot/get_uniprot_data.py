@@ -68,7 +68,7 @@ from cazy_webscraper.sql.sql_interface.add_uniprot_data import (
     add_uniprot_accessions,
 )
 from cazy_webscraper.sql import sql_orm
-from cazy_webscraper.utilities.parsers import uniprot_parser
+from cazy_webscraper.utilities.parsers.uniprot_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
 
@@ -79,10 +79,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # Program preparation
     if argv is None:
-        parser = uniprot_parser.build_parser()
+        parser = build_parser()
         args = parser.parse_args()
     else:
-        parser = uniprot_parser.build_parser(argv)
+        parser = build_parser(argv)
         args = parser.parse_args()
 
     if logger is None:
