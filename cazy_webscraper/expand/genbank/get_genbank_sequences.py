@@ -163,7 +163,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         # only cache the sequence. Seq obj is not JSON serializable
         cache_dict = {}
         for key in seq_dict:
-            cache_dict[key] = seq_dict[key].data
+            cache_dict[key] = str(seq_dict[key])
 
         # cache the retrieved sequences
         cache_path = cache_dir / f"genbank_seqs_{time_stamp}.json"
