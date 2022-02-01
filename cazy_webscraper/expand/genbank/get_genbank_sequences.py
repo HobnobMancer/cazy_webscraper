@@ -49,9 +49,13 @@ from datetime import datetime
 from typing import List, Optional
 
 from Bio import Entrez, SeqIO
-from saintBioutils.utilities import file_io
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 from saintBioutils.genbank import entrez_retry
+from saintBioutils.misc import get_chunks_list
+from saintBioutils.utilities import file_io
 from saintBioutils.utilities.logger import config_logger
+from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper, closing_message
 from cazy_webscraper.sql import sql_orm, sql_interface
@@ -145,15 +149,37 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.seq_dict:
         logger.warning(f"Getting sequences from cache: {args.seq_dict}")
         with open(args.seq_dict, "r") as fh:
-            seq_dict = json.load(fh)
+            cache_dict = json.load(fh)
+
+        # convert strs to SeqRecords
+        seq_dict = {}
+        for key in cache_dict:
+            seq_dict[key] = SeqRecord(Seq(cache_dict[key]), id=key)
 
     else:
-        seq_dict = get_sequences(genbank_accessions, args)  # {gbk_accession: seq}
+        seq_dict, no_seq = get_sequences(genbank_accessions, args)  # {gbk_accession: seq}
+
+        # only cache the sequence. Seq obj is not JSON serializable
+        cache_dict = {}
+        for key in seq_dict:
+            cache_dict[key] = seq_dict[key].data
 
         # cache the retrieved sequences
         cache_path = cache_dir / f"genbank_seqs_{time_stamp}.json"
         with open(cache_path, "w") as fh:
-            json.dump(seq_dict, fh)
+            json.dump(cache_dict, fh)
+
+        if len(no_seq) != 0:
+            no_seq_cache = cache_dir / f"no_seq_retrieved_{time_stamp}.txt"
+            logger.warning(
+                f"No protein sequence retrieved for {len(no_seq)}\n"
+                f"The GenBank accessions for these proteins have been written to: {no_seq_cache}"
+            )
+            with open(no_seq_cache, "a") as fh:
+                for acc in no_seq:
+                    fh.write(f"{acc}\n")
+
+    logger.warning(f"Adding {len(list(seq_dict.keys()))} protein seqs to the db")
 
     add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, connection, args)
 
@@ -166,99 +192,82 @@ def get_sequences(genbank_accessions, args):
     :param genbank_accessions: list, GenBank accessions
     :param args: cmb-line args parser
 
-    Return nothing.
+    Return dict keyed by GenBank accession and valued by Seq instance, and a list of all GenBank accessions 
+    for which no record from NCBI was retrieved.
     """
     logger = logging.getLogger(__name__)
 
-    seq_dict = {}  # {gbk_accession: seq}
-    protein_records = set()
+    seq_dict = {}  # {gbk_accession: SeqRecord}
 
-    epost_webenv, epost_query_key = bulk_query_ncbi(genbank_accessions, args)
+    # the list of accessions is to long, break down into smaller chunks for batch querying
+    all_queries = get_chunks_list(genbank_accessions, args.batch_size)
 
-    success_accessions = set()  # accessions for which seqs were retrieved
+    for query_list in tqdm(all_queries, desc="Batch querying NCBI.Entrez"):
 
-    # retrieve the protein sequences
-    with entrez_retry(
-        args.retries,
-        Entrez.efetch,
-        db="Protein",
-        query_key=epost_query_key,
-        WebEnv=epost_webenv,
-        rettype="fasta",
-        retmode="text",
-    ) as seq_handle:
-        for record in SeqIO.parse(seq_handle, "fasta"):
-            temp_accession = record.id
+        epost_webenv, epost_query_key = bulk_query_ncbi(query_list, args)
 
-            # check if multiple items returned in ID
-            temp_accession = temp_accession.split("|")
-            index, success = 0, False
-            
-            while (index < len(temp_accession)) and (success is False):
-                acc = temp_accession[index]
-                try:
-                    re.match(
-                        (
-                            r"(\D{3}\d{5,7}\.\d+)|"
-                            r"(\D\d(\D|\d){3}\d)|"
-                            r"((\D\d(\D|\d){3}\d)\.\d)|"
-                            r"(\D\d(\D|\d){3}\d\D(\D|\d){2}\d)|"
-                            r"((\D\d(\D|\d){3}\d\D(\D|\d){2}\d)\.\d)|"
-                            r"(\D\D_\d{9}\.\d)"
-                        ),
-                        acc,
-                    ).group()
-                    seq_accession = acc
-                    success = True
-                except AttributeError:
-                    index += 1
-                    pass
+        success_accessions = set()  # accessions for which seqs were retrieved
 
-            if success is False:  # if could not retrieve GenBank accession from the record
-                logger.error(
-                    "Could not retrieve a GenBank protein accession from the record with the id:\n"
-                    f"{record.id}\n"
-                    "The sequence from this record will not be added to the db"    
-                )
-                continue
+        # retrieve the protein sequences
+        with entrez_retry(
+            args.retries,
+            Entrez.efetch,
+            db="Protein",
+            query_key=epost_query_key,
+            WebEnv=epost_webenv,
+            rettype="fasta",
+            retmode="text",
+        ) as seq_handle:
+            for record in SeqIO.parse(seq_handle, "fasta"):
+                temp_accession = record.id
 
-            if seq_accession not in genbank_accessions:  # if the retrieved Gbk acc does not match an acc in the db
-                logger.warning(
-                    f"Retrieved the accession {temp_accession} from the record with the id:\n"
-                    f"{record.id},\n"
-                    "Not adding the protein seq from this record to the db"
-                )
-                continue
+                # check if multiple items returned in ID
+                temp_accession = temp_accession.split("|")
+                index, success = 0, False
                 
-            seq_dict[seq_accession] = record.seq
+                while (index < len(temp_accession)) and (success is False):
+                    acc = temp_accession[index]
+                    try:
+                        re.match(
+                            (
+                                r"(\D{3}\d{5,7}\.\d+)|"
+                                r"(\D\d(\D|\d){3}\d)|"
+                                r"((\D\d(\D|\d){3}\d)\.\d)|"
+                                r"(\D\d(\D|\d){3}\d\D(\D|\d){2}\d)|"
+                                r"((\D\d(\D|\d){3}\d\D(\D|\d){2}\d)\.\d)|"
+                                r"(\D\D_\d{9}\.\d)"
+                            ),
+                            acc,
+                        ).group()
+                        seq_accession = acc
+                        success = True
+                    except AttributeError:
+                        index += 1
+                        pass
 
-            success_accessions.add(seq_accession)
+                if success is False:  # if could not retrieve GenBank accession from the record
+                    logger.error(
+                        "Could not retrieve a GenBank protein accession from the record with the id:\n"
+                        f"{record.id}\n"
+                        "The sequence from this record will not be added to the db"    
+                    )
+                    continue
 
-            protein_records.add(record)
+                if seq_accession not in genbank_accessions:  # if the retrieved Gbk acc does not match an acc in the db
+                    logger.warning(
+                        f"Retrieved the accession {temp_accession} from the record with the id:\n"
+                        f"{record.id},\n"
+                        "Not adding the protein seq from this record to the db"
+                    )
+                    continue
+                    
+                seq_dict[seq_accession] = record.seq
 
-    SeqIO.write(protein_records, 'pl_seq.fasta', "fasta")
+                success_accessions.add(seq_accession)
 
-    #         # remove the accession from the list
-    #         try:
-    #             genbank_accessions.remove(temp_accession)
-    #         except ValueError:
-    #             logger.warning(
-    #                 f"Tried to remove {temp_accession} from list of accessions, "
-    #                 "but it was not in the list of accessions.\n"
-    #                 "The returned accession and the one present in CAZy do not match."
-    #             )
-    
-    # if len(genbank_accessions) != 0:
-    #     # logger.warning("Protein sequences for the following CAZymes were not retrieved:")
-    #     # for acc in genbank_accessions:
-    #     #     logger.warning(f"GenBank accession: {acc}")
+    no_seq = [acc for acc in genbank_accessions if acc not in success_accessions]
 
-    #     cache_path = cache_dir / "no_seq_retrieved.txt"
-    #     with open(cache_path, "a") as fh:
-    #         for acc in genbank_accessions:
-    #             fh.write(f"{acc}\n")
-
-    return seq_dict
+    return seq_dict, no_seq
 
 
 def bulk_query_ncbi(accessions, args):

@@ -73,6 +73,13 @@ def build_parser(argv: Optional[List] = None):
 
     # Add optional arguments to parser
 
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=150,
+        help="Batch size for queries sent to NCBI.Entrez"
+    )
+
     # Add option to specify path to configuration file
     parser.add_argument(
         "-c",
