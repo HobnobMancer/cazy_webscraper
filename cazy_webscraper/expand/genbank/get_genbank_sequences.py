@@ -186,11 +186,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     closing_message("get_genbank_sequences", start_time, args)
 
 
-def get_sequences(genbank_accessions, args):
+def get_sequences(genbank_accessions, args, retry=False):
     """Retrieve protein sequences from Entrez.
 
     :param genbank_accessions: list, GenBank accessions
     :param args: cmb-line args parser
+    :param retry: bool, default False, if get_sequences is being called for retrying a previously failed query
 
     Return dict keyed by GenBank accession and valued by Seq instance, and a list of all GenBank accessions 
     for which no record from NCBI was retrieved.
@@ -202,9 +203,24 @@ def get_sequences(genbank_accessions, args):
     # the list of accessions is to long, break down into smaller chunks for batch querying
     all_queries = get_chunks_list(genbank_accessions, args.batch_size)
 
+    failed_queries = []  # lists which raised an error, likely because contain an accession not in NCBI
+
     for query_list in tqdm(all_queries, desc="Batch querying NCBI.Entrez"):
 
-        epost_webenv, epost_query_key = bulk_query_ncbi(query_list, args)
+        try:
+            epost_webenv, epost_query_key = bulk_query_ncbi(query_list, args)
+        except RuntimeError:
+            logger.warning(
+                "Runtime error raised when batch quering\n"
+                "Possible result of a accessions not being in NCBI\n"
+                "Attempt identification of the causal accession later\n"
+            )
+
+            if retry:
+                return None, None
+
+            failed_queries.append(all_queries)
+            continue
 
         success_accessions = set()  # accessions for which seqs were retrieved
 
@@ -265,15 +281,45 @@ def get_sequences(genbank_accessions, args):
 
                 success_accessions.add(seq_accession)
 
+    # list of GenBank accessions for which no protein sequence was retrieved
     no_seq = [acc for acc in genbank_accessions if acc not in success_accessions]
+
+    if retry:
+        return seq_dict, no_seq
+
+    if len(failed_queries) != 0:
+        for failed_query in tqdm(failed_queries, desc="Reparsing failed queries"):
+            first_half = failed_query[:int((len(failed_query)/2))]
+
+            seq_dict, success_accessions, failed_accessions = retry_failed_queries(
+                first_half,
+                seq_dict,
+                success_accessions,
+                args,
+            )
+
+            no_seq += failed_accessions
+
+            second_half = failed_query[int((len(failed_query)/2)):]
+
+            seq_dict, success_accessions, failed_accessions = retry_failed_queries(
+                second_half,
+                seq_dict,
+                success_accessions,
+                args,
+            )
+
+            no_seq += failed_accessions
 
     return seq_dict, no_seq
 
 
 def bulk_query_ncbi(accessions, args):
     """Bulk query NCBI and retrieve webenvironment and history tags
+
     :param accessions: list of GenBank protein accessions
     :param args: cmd-line args parser
+
     Return webenv and query key
     """
     # perform batch query of Entrez
@@ -294,6 +340,41 @@ def bulk_query_ncbi(accessions, args):
     epost_query_key = epost_result["QueryKey"]
 
     return epost_webenv, epost_query_key
+
+
+def retry_failed_queries(query, seq_dict, success_accessions, args):
+    """Parse queries which previously raised a Runtime Error, likey the result of containing accessions 
+    that are not present in NCBI.
+    
+    :param query: list GenBank accessions
+    :param seq_dict: dict, keyed by GenBank accession, valued by BioPython Seq obj
+    :param success_acessions: list of GenBank accessions for which a protein sequence was retrieved
+    :param args: cmd-line args parser
+    
+    Return seq_dict and success_accessions with data from the reparsed failed queries
+    """
+    failed_accessions = []  # accessions of proteins for which no record was retrieved from NCBI.Entrez
+
+    new_seq_dict, no_seq = get_sequences(query, args, retry=True)
+    
+    if new_seq_dict is None:  # failed retrieval of data from NCBI
+        for acc in query:
+            new_seq_dict, no_seq = get_sequences([acc], args, retry=True)
+        
+            if new_seq_dict is not None:  # retrieve data for this accession
+                seq_dict[acc] = new_seq_dict[acc]
+
+            else:  # failed to retrieve data for this accession
+                failed_accessions.append(acc)
+    
+    else:  # successful retrieval of data from NCBI
+        for acc in new_seq_dict:
+            seq_dict[acc] = new_seq_dict[acc]
+            success_accessions.append(success_accessions)
+
+        failed_accessions += no_seq
+
+    return seq_dict, success_accessions, failed_accessions
 
 
 if __name__ == "__main__":
