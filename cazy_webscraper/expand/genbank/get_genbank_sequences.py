@@ -150,10 +150,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     else:
         seq_dict = get_sequences(genbank_accessions, cache_dir, args)  # {gbk_accession: seq}
 
-    # cache the retrieved sequences
-    cache_path = cache_dir / f"genbank_seqs_{time_stamp}.json"
-    with open(cache_path, "w") as fh:
-        json.dump(seq_dict, fh)
+        # cache the retrieved sequences
+        cache_path = cache_dir / f"genbank_seqs_{time_stamp}.json"
+        with open(cache_path, "w") as fh:
+            json.dump(seq_dict, fh)
 
     add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, connection, args)
 
