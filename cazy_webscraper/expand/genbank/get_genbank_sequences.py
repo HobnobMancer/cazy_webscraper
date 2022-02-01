@@ -39,9 +39,9 @@
 """Retrieve proteins sequences from GenBank and populate the local database"""
 
 
+import json
 import logging
 import re
-import time
 
 import pandas as pd
 
@@ -90,7 +90,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_dir = args.cache_dir
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
-        cache_dir = cache_dir / "uniprot_data_retrieval"
+        cache_dir = cache_dir / "genbank_data_retrieval"
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     (
@@ -142,7 +142,18 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     genbank_accessions = list(gbk_dict.keys())
     logger.warning(f"Retrieving GenBank sequences for {len(gbk_dict.keys())}")  
 
-    seq_dict = get_sequences(genbank_accessions, cache_dir, args)  # {gbk_accession: seq}
+    if args.seq_dict:
+        logger.warning(f"Getting sequences from cache: {args.seq_dict}")
+        with open(args.seq_dict, "r") as fh:
+            seq_dict = json.load(fh)
+
+    else:
+        seq_dict = get_sequences(genbank_accessions, cache_dir, args)  # {gbk_accession: seq}
+
+    # cache the retrieved sequences
+    cache_path = cache_dir / f"genbank_seqs_{time_stamp}.json"
+    with open(cache_path, "w") as fh:
+        json.dump(seq_dict, fh)
 
     add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, connection, args)
 

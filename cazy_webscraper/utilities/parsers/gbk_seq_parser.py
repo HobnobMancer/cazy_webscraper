@@ -184,6 +184,13 @@ def build_parser(argv: Optional[List] = None):
         help="Do not delete content in existing cache dir",
     )
 
+    parser.add_argument(
+        "--seq_dict",
+        type=Path,
+        default=None,
+        help="Path to a JSON file, keyed by GenBank accessions and valued by protein sequence",
+    )
+
     # Add option to update sequences if the retrieved sequence is different
     # If not enabled then sequences will only be retrieved and added for proteins that do not
     # already have a protein sequence

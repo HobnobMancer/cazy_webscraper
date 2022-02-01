@@ -60,6 +60,8 @@ Command line options
 
 ``--families`` - List of CAZy (sub)families to retrieve UniProt protein data for.
 
+``--genbank_accessions`` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+
 ``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
 
 ``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
@@ -69,6 +71,8 @@ Command line options
 ``--nodelete_log`` - When called, content in the existing log dir will **not** be deleted. Default: False (existing content is deleted).
 
 ``--retries``, ``-r`` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
+
+``--seq_dict``, - Path to a JSON file, keyed by GenBank accessions and valued by protein sequence. This file is created as part of the cache, after all protein sequences are retrieved from GenBank.
 
 ``--seq_update`` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
