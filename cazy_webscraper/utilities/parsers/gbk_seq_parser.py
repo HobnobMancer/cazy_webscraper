@@ -226,7 +226,6 @@ def build_parser(argv: Optional[List] = None):
         help="Set SQLite engine echo to True (SQLite will print its log messages)",
     )
 
-
     # Add option to restrict the scrape to specific species. This will scrape CAZymes from
     # all strains belonging to each listed species
     parser.add_argument(

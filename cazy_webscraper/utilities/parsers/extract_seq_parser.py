@@ -251,6 +251,15 @@ def build_parser(argv: Optional[List] = None):
         ),
     )
 
+    parser.add_argument(
+        "--sql_echo",
+        dest="sql_echo",
+        action="store_true",
+        default=False,
+        help="Set SQLite engine echo to True (SQLite will print its log messages)",
+    )
+
+
     # Add option for more detail (verbose) logging
     parser.add_argument(
         "-v",
