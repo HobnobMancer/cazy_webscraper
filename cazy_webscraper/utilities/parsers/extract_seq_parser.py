@@ -51,8 +51,8 @@ def build_parser(argv: Optional[List] = None):
     """Return ArgumentParser parser for the script 'expand.genbank_sequences.py'."""
     # Create parser object
     parser = argparse.ArgumentParser(
-        prog="genbank_sequences.py",
-        description="Populates local CAZy database with protein sequences from GenBank",
+        prog="extract_sequences.py",
+        description="Extract GenBank and/or UniProt protein seqs and write to FASTA and/or BLAST db",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
