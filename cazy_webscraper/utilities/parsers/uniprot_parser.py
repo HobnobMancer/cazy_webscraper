@@ -51,8 +51,8 @@ def build_parser(argv: Optional[List] = None):
     """Return ArgumentParser parser for script."""
     # Create parser object
     parser = argparse.ArgumentParser(
-        prog="cazy_webscraper.py",
-        description="Scrapes the CAZy database",
+        prog="cw_get_uniprot_data.py",
+        description="Retrieve protein data from UniProt",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 

@@ -106,12 +106,12 @@ def db_path():
     return Path("tests/test_inputs/unit_test_database/unit_test_2021-04-27--11-54-58.db")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def engine(db_path):
     return create_engine(f"sqlite+pysqlite:///{db_path}", echo=False)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def tables(engine):
     Base.metadata.create_all(engine)
     yield

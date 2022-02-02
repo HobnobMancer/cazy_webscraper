@@ -29,6 +29,22 @@ The documentation is being actively updated to match the new `cazy_webscraper` v
 - **Caching:** Data downloaded from CAZy is not only parsed and written to a local CAZyme database. The raw data files are written to cache. Data can be scraped directly from a cache (ideal if CAZy updates during the retrieval of multiple datasets from the CAZy database).
 - **Handling multiple taxa:** It is possible for a single protein (identified by its unique GenBank accession) to be associated with multiple taxa in the CAZy data. For these instances, `cazy_webscraper` queries NCBI to retrieve the latest taxonomic source of the protein.
 
+## Recent updates in v2.0.5
+
+- **UniProt:** `cazy_webscraper` can now be used successfully for retrieving data from UniProt and adding the data to the local CAZyme database. This includes retrieving:
+	- UniProt accessions
+	- Protein names
+	- Protein sequences
+	- EC number annotations
+	- PDB accessions
+- **GenBank:** `cazy_webscraper` can now be used to automate the retreival of protein sequences from GenBank for proteins in a local CAZyme database mathcing the users specified critieria. These protein sequences are stored in the local CAZyme database, and can be extracted to a FASTA file using `cazy_webscraper`
+- **Caching:** 
+	- More data is cached
+	- Cached data can be used to continue data retrievals from UniProt and GenBank, when a previous retrieval and/or addition of the data to the database fails
+	- Improved default name of cache dirs and subdirs
+- **Unit tests:** Started rewrite of unit tests to match the new program architecture
+- **Documentation:** Updating the documentation to include the new flags/options, and adding new tutorials for rautomating the retrieval if data from UniProt, GenBank and PDB
+
 ## Future work for version 2:
 - Calculate the coverage of the NCBI GenBank assembly database by CAZy (i.e. how many genomic assemblies from the Assembly database are included in the CAZy dataset)
 - Fix any remaining bugs we can find (if you find a bug, please report it and provide as detailed bug report as possible!)
@@ -297,6 +313,8 @@ Below are listed the command-line flags for configuring the retrieval of protein
 
 `email` - \[REQUIRED\] User email address, required by NCBI Entrez.
 
+`--batch_size` - Size of batch query posted to NCBI Entrez. Default 150.
+
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
 `--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
@@ -316,6 +334,8 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--kingdoms` - List of taxonomy kingdoms to retrieve UniProt data for.
 
+`--genbank_accessions` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+
 `--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
 
 `--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
@@ -324,7 +344,9 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
 
-`--seq_update` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
+`--seq_dict`, - Path to a JSON file, keyed by GenBank accessions and valued by protein sequence. This file is created as part of the cache, after all protein sequences are retrieved from GenBank.
+
+`--seq_update` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated. This skips the retrieval of the protein sequences from GenBank.
 
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 

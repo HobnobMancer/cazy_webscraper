@@ -73,6 +73,13 @@ def build_parser(argv: Optional[List] = None):
 
     # Add optional arguments to parser
 
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=150,
+        help="Batch size for queries sent to NCBI.Entrez"
+    )
+
     # Add option to specify path to configuration file
     parser.add_argument(
         "-c",
@@ -139,6 +146,13 @@ def build_parser(argv: Optional[List] = None):
         help="Families to scrape. Separate families by commas 'GH1,GH2'",
     )
 
+    parser.add_argument(
+        "--genbank_accessions",
+        type=Path,
+        default=None,
+        help="Path to a text file containing a list of GenBank accessions to retrieve data for",
+    )
+
     # Add option to restrict the scrape to specific kingdoms
     parser.add_argument(
         "--kingdoms",
@@ -175,6 +189,21 @@ def build_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help="Do not delete content in existing cache dir",
+    )
+
+    parser.add_argument(
+        "-r",
+        "--retries",
+        type=int,
+        default=10,
+        help="Number of times to retry scraping a family or class page if error encountered",
+    )
+
+    parser.add_argument(
+        "--seq_dict",
+        type=Path,
+        default=None,
+        help="Path to a JSON file, keyed by GenBank accessions and valued by protein sequence",
     )
 
     # Add option to update sequences if the retrieved sequence is different

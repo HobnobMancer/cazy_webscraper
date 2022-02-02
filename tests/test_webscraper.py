@@ -48,7 +48,6 @@ from logging import getLogger
 import logging
 import os
 
-from numpy.core.numeric import True_
 from cazy_webscraper import cazy
 from cazy_webscraper.utilities.parse_configuration.cazy_class_synonym_dict import cazy_synonym_dict
 import pytest
