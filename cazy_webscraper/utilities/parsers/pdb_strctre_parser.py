@@ -48,6 +48,19 @@ from pathlib import Path
 from typing import List, Optional
 
 
+class ValidateFormats(argparse.Action):
+    """Check the user has provided valid structure file formats."""
+    def __call__(self, parser, args, values, option_string=None):
+        valid_formats = ("mmCif", "pdb", "xml", "mmtf", "bundle")
+        invalid = False
+        for value in values:
+            if value not in valid_formats:
+                invalid = True
+                raise ValueError(f'Invalid file format "{value}" provided. Accepted formats: {valid_formats}')
+        if invalid:
+            sys.exit(1)
+        setattr(args, self.dest, values)
+
 
 def build_parser(argv: Optional[List] = None):
     """Return ArgumentParser parser for the script 'expand.genbank_sequences.py'."""
@@ -68,6 +81,8 @@ def build_parser(argv: Optional[List] = None):
 
     parser.add_argument(
         "pdb",
+        nargs='+',
+        action=ValidateFormats,
         choices=["mmCif", "pdb", "xml", "mmtf", "bundle"],
         type=str,
         help="File format of downloaded structure from PDB",
