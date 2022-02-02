@@ -90,7 +90,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.fasta_dir:
         file_io.make_output_directory(args.fasta_dir, args.force, args.nodelete)
 
-    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
+    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp, start_time)
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
@@ -119,9 +119,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     genbank_accessions = list(gbk_dict.keys())
 
     extracted_sequences = {}  # {accession: {'db': str, 'seq': str}}
-    if args.genbank:
+    if 'genbank' in args.source:
         extracted_sequences.update(get_genbank_sequences(gbk_dict, connection))
-    if args.uniprot:
+    if 'uniprot' in args.source:
         extracted_sequences.update(get_uniprot_sequences(gbk_dict, connection))
 
     protein_records = []
@@ -134,7 +134,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
         protein_records.append(new_record)
 
-    write_output(protein_records, args)
+    write_output(protein_records, cache_dir, args)
 
     closing_message("extract_sequences", start_time, args)
     
@@ -148,18 +148,10 @@ def validate_user_options(args):
     """
     logger = logging.getLogger(__name__)
 
-    if args.genbank is False and args.uniprot is False:
-        logger.error(
-            "No external sequence sources provided\n"
-            "Call at least one of --genbank and --uniprot\n"
-            "Terminating program."
-        )
-        sys.exit(1)
-
-    if args.genbank:
+    if 'genbank' in args.source:
         logger.info("Extract GenBank protein sequences")
     
-    if args.uniprot:
+    if 'uniprot' in args.source:
         logger.info("Extracting UniProt protein sequences")
 
     if args.blastdb is False and args.fasta_dir is False and args.fasta_file is False:
