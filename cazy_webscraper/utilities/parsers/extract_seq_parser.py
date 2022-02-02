@@ -42,9 +42,28 @@
 
 
 import argparse
+import sys
 
 from pathlib import Path
 from typing import List, Optional
+
+
+class ValidateNames(argparse.Action):
+    """Check the user has provided valid database names."""
+    def __call__(self, parser, args, values, option_string=None):
+        valid_formats = ("genbank", "uniprot")
+        invalid = False
+
+        for value in values:
+            if value.lower() not in valid_formats:
+                invalid = True
+                raise ValueError(f'Invalid source "{value.lower()}" provided. Accepted sources: {valid_formats}')
+
+        if invalid:
+            sys.exit(1)
+
+        parsed_values = [_.lower() for _ in values]
+        setattr(args, self.dest, parsed_values)
 
 
 def build_parser(argv: Optional[List] = None):
@@ -62,6 +81,15 @@ def build_parser(argv: Optional[List] = None):
         type=Path,
         metavar="local CAZy database",
         help="Path to local CAZy database",
+    )
+
+    parser.add_argument(
+        "source",
+        nargs='+',
+        action=ValidateNames,
+        choices=["genbank", "uniprot"],
+        type=str,
+        help="File format of downloaded structure from PDB",
     )
 
     # Add optional arguments to parser
