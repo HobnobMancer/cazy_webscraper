@@ -62,7 +62,7 @@ from cazy_webscraper import closing_message, cazy_scraper
 from cazy_webscraper.expand import get_chunks_gen
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
 from cazy_webscraper.utilities import config_logger, file_io, parse_configuration
-from cazy_webscraper.utilities.parsers import pdb_strctre_parser
+from cazy_webscraper.utilities.parsers.extract_seq_parser import build_parser
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -72,10 +72,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     start_time = pd.to_datetime(start_time)
     # parse cmd-line arguments
     if argv is None:
-        parser = pdb_strctre_parser.build_parser()
+        parser = build_parser()
         args = parser.parse_args()
     else:
-        args = pdb_strctre_parser.build_parser(argv).parse_args()
+        args = build_parser(argv).parse_args()
 
     if logger is None:
         logger = logging.getLogger(__package__)
@@ -89,7 +89,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         file_io.make_output_directory(target_dir, args.force, args.nodelete)
     if args.fasta_dir:
         file_io.make_output_directory(args.fasta_dir, args.force, args.nodelete)
-
 
     connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
 
