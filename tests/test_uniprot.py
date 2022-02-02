@@ -152,7 +152,11 @@ def test_main(
     monkeypatch.setattr(get_uniprot_data, "add_pdb_accessions", mock_return_none)
     monkeypatch.setattr(cazy_webscraper, "closing_message", mock_return_none)
 
+    output = test_dir / "test_outputs" / "test_outputs_uniprot"
+    output.mkdir(parents=True, exist_ok=True)
     get_uniprot_data.main()
+    shutil.rmtree((test_dir / "test_outputs" / "test_outputs_uniprot"))
+    output.mkdir(parents=True, exist_ok=True)
 
 
 def test_ec_num_cache():
