@@ -43,6 +43,7 @@
 """Extract protein sequences from local CAZyme database, write to FASTA files and/or BLAST db"""
 
 
+from contextlib import closing
 import logging
 import sys
 
@@ -57,7 +58,7 @@ from Bio.Blast.Applications import NcbimakeblastdbCommandline
 from Bio.SeqRecord import SeqRecord
 
 
-from cazy_webscraper import cazy_webscraper
+from cazy_webscraper import closing_message, cazy_scraper
 from cazy_webscraper.expand import get_chunks_gen
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
 from cazy_webscraper.utilities import config_logger, file_io, parse_configuration
@@ -90,7 +91,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         file_io.make_output_directory(args.fasta_dir, args.force, args.nodelete)
 
 
-    connection, logger_name, cache_dir = cazy_webscraper.connect_existing_db(args, time_stamp)
+    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
@@ -135,6 +136,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         protein_records.append(new_record)
 
     write_output(protein_records, args)
+
+    closing_message("extract_sequences", start_time, args)
     
 
 def validate_user_options(args):
@@ -249,7 +252,6 @@ def write_output(protein_records, cache_dir, args):
     logger = logging.getLogger(__name__)
 
     if args.fasta_file:
-    
         SeqIO.write(protein_records, args.fasta_file, "fasta")
 
     if args.fasta_dir:
