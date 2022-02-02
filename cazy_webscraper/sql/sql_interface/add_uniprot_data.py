@@ -140,33 +140,36 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
 
     if len(update_record_gbk_id) != 0:
         for record in tqdm(update_record_gbk_id, desc="Updating UniProt-Gbk relationships"):
-            connection.execute(
-                text(
-                    "UPDATE Uniprots "
-                    f"SET genbank_id = {record[1]} "
-                    f"WHERE uniprot_accession = '{record[0]}'"
+            with connection.begin():
+                connection.execute(
+                    text(
+                        "UPDATE Uniprots "
+                        f"SET genbank_id = {record[1]} "
+                        f"WHERE uniprot_accession = '{record[0]}'"
+                    )
                 )
-            )
         
     if len(update_record_name) != 0:
         for record in tqdm(update_record_name, desc="Updating UniProt protein names"):
-            connection.execute(
-                text(
-                    "UPDATE Uniprots "
-                    f"SET uniprot_name = {record[1]} "
-                    f"WHERE uniprot_accession = '{record[0]}'"
+            with connection.begin():
+                connection.execute(
+                    text(
+                        "UPDATE Uniprots "
+                        f"SET uniprot_name = {record[1]} "
+                        f"WHERE uniprot_accession = '{record[0]}'"
+                    )
                 )
-            )
 
     if len(update_record_seq) != 0:
         for record in tqdm(update_record_seq, desc="Updating UniProt protein seqs"):
-            connection.execute(
-                text(
-                    "UPDATE Uniprots "
-                    f"SET sequence = {record[1]}, seq_update_date = {record[2]} "
-                    f"WHERE uniprot_accession = '{record[0]}'"
+            with connection.begin():
+                connection.execute(
+                    text(
+                        "UPDATE Uniprots "
+                        f"SET sequence = {record[1]}, seq_update_date = {record[2]} "
+                        f"WHERE uniprot_accession = '{record[0]}'"
+                    )
                 )
-            )
 
     return
 
@@ -296,22 +299,24 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
 
     if len(update_pdbs) != 0:
         for record in tqdm(update_pdbs, desc="Updating PDB records"):
-            connection.execute(
-                text(
-                    "UPDATE Pdbs "
-                    f"SET genbank_id = {record[1]} "
-                    f"WHERE pdb_accession = '{record[0]}'"
+            with connection.begin():
+                connection.execute(
+                    text(
+                        "UPDATE Pdbs "
+                        f"SET genbank_id = {record[1]} "
+                        f"WHERE pdb_accession = '{record[0]}'"
+                    )
                 )
-            )
 
     if args.delete_old_pdbs and len(delete_pdbs) != 0:
         for record in tqdm(delete_pdbs, desc="Deleteing old PDB accessions"):
             # record = (pdb_acc,)
-            connection.execute(
-                text(
-                    "DELETE Pdbs "
-                    f"WHERE pdb_accession = '{record[0]}'"
+            with connection.begin():
+                connection.execute(
+                    text(
+                        "DELETE Pdbs "
+                        f"WHERE pdb_accession = '{record[0]}'"
+                    )
                 )
-            )
-            
+                
     return

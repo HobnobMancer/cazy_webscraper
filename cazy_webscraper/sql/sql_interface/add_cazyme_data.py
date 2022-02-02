@@ -145,13 +145,14 @@ def add_source_organisms(taxa_dict, connection):
             f"Updating the parent Kingdom for {len(records_to_update)} tax records in the db"
         )
         for record in records_to_update:
-            connection.execute(
-                text(
-                    "UPDATE Taxs "
-                    f"SET kingdom_id = {record[2]} "
-                    f"WHERE genus = '{record[0]}' AND species = '{record[1]}'"
+            with connection.begin():
+                connection.execute(
+                    text(
+                        "UPDATE Taxs "
+                        f"SET kingdom_id = {record[2]} "
+                        f"WHERE genus = '{record[0]}' AND species = '{record[1]}'"
+                    )
                 )
-            )
 
     return
 
@@ -249,13 +250,14 @@ def add_genbanks(cazy_data, connection):
             f"Updating {len(gbk_record_updates)} Genbank table records with new taxonomy IDs"
         )
         for record in gbk_record_updates:
-            connection.execute(
-                text(
-                    "UPDATE Taxs "
-                    f"SET taxonomy_id = {record[1]} "
-                    f"WHERE genbank_id = '{record[0]}'"
+            with connection.begin():
+                connection.execute(
+                    text(
+                        "UPDATE Taxs "
+                        f"SET taxonomy_id = {record[1]} "
+                        f"WHERE genbank_id = '{record[0]}'"
+                    )
                 )
-            )
     
     return
 
@@ -362,12 +364,13 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
             "that are the db but are no longer in CAZy"
         )
         for record in gbk_fam_records_to_del:
-            # record = (genbank_id, fam_id,)
-            stmt = (
-                delete(genbanks_families).\
-                where(genbanks_families.c.genbank_id == record[0]).\
-                where(genbanks_families.c.family_id == record[1])
-            )
-            connection.execute(stmt)
+            with connection.begin():
+                # record = (genbank_id, fam_id,)
+                stmt = (
+                    delete(genbanks_families).\
+                    where(genbanks_families.c.genbank_id == record[0]).\
+                    where(genbanks_families.c.family_id == record[1])
+                )
+                connection.execute(stmt)
 
     return
