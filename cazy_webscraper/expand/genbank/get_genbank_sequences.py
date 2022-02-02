@@ -155,7 +155,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         # convert strs to SeqRecords
         seq_dict = {}
         for key in cache_dict:
-            seq_dict[key] = SeqRecord(Seq(cache_dict[key]), id=key)
+            seq_dict[key] = Seq(cache_dict[key])
 
     else:
         seq_dict, no_seq = get_sequences(genbank_accessions, args)  # {gbk_accession: seq}
@@ -182,7 +182,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.warning(f"Adding {len(list(seq_dict.keys()))} protein seqs to the db")
 
-    add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, connection, args)
+    add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, gbk_dict, connection, args)
 
     closing_message("get_genbank_sequences", start_time, args)
 
