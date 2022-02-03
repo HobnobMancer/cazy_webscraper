@@ -55,6 +55,7 @@ from typing import List, Optional
 from tqdm import tqdm
 from Bio import SeqIO
 from Bio.Blast.Applications import NcbimakeblastdbCommandline
+from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 
@@ -128,7 +129,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     
     for protein_accession in tqdm(extracted_sequences, "Compiling SeqRecords"):
         new_record = SeqRecord(
-            extracted_sequences[protein_accession]['seq'],
+            Seq(extracted_sequences[protein_accession]['seq']),
             id=protein_accession,
             description=extracted_sequences[protein_accession]['db']
         )
@@ -211,22 +212,18 @@ def get_uniprot_sequences(gbk_dict, connection):
     uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
     # dict = {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
 
-    gbk_uniprot_dict = {}  # {gbk_id: {uniprot_acc: str, seq: str}}
-    
-    for uniprot_accession in uniprot_table_dict:
-        gbk_id = uniprot_table_dict[uniprot_accession]['gbk_id']
-        seq = uniprot_table_dict[uniprot_accession]['seq']
-        gbk_uniprot_dict[gbk_id] = {'uniprot_accession': uniprot_accession, 'seq': seq}
+    # get the db ids of selected gbks
+    selected_genbanks = [gbk_dict[gbk_acc] for gbk_acc in gbk_dict]
 
     extracted_sequences = {}  # {accession: {'db': str, 'seq': str}}
 
-    for gbk_accession in gbk_dict:
-        gbk_id = gbk_dict[gbk_accession]['gbk_id']
-
-        extracted_sequences[gbk_accession] = {
-            'db': 'UniProt',
-            'seq': gbk_uniprot_dict[gbk_accession][gbk_id]['seq'],
-        }
+    for uniprot_accession in uniprot_table_dict:
+        gbk_id = uniprot_table_dict[uniprot_accession]['genbank_id']
+        if gbk_id in selected_genbanks:
+            extracted_sequences[uniprot_accession] = {
+                'db': 'UniProt',
+                'seq': uniprot_table_dict[uniprot_accession]['seq'],
+            }
 
     return extracted_sequences
 
