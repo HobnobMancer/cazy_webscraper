@@ -109,21 +109,52 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         ec_filters,
     ) = parse_configuration.get_expansion_configuration(args)
 
-    gbk_dict = get_selected_gbks.get_genbank_accessions(
-        class_filters,
-        family_filters,
-        taxonomy_filter_dict,
-        kingdom_filters,
-        ec_filters,
-        connection,
-    )
-    genbank_accessions = list(gbk_dict.keys())
+    gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
+    # {genbank_accession: 'taxa_id': str, 'gbk_id': int}
+
+    # check what additional tabled needed to be loaded
+    if any( ((args.genbank_accessions is not None), ('genbank' in args.source)) ):
+        logger.info("Loading the GenBank table")
+        gbk_seq_dict = get_table_dicts.get_gbk_table_seq_dict(connection)
+        # {genbank_accession: 'sequence': str, 'seq_date': str}
+
+    if any( ((args.uniprot_accessions is not None), ('uniprot' in args.source)) ):
+        logger.info("Loading the UniProt table")
+        uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+        # {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
+
+    # build dick {gbk_acc: db_id} matching the users specified criteria
+    # either via a list in a file or parameters provided via config file and/or command line
+
+    gbk_dict = {}  # {gbk_acc: gbk_id}
+
+    if args.genbank_accessions is not None:
+        logger.warning(f"Extracting protein sequences for GenBank accessions listed in {args.genbank_accessions}")
+        gbk_dict.update(get_user_genbank_sequences(gbk_table_dict, args))
+    
+    if args.uniprot_accessions is not None:
+        logger.warning(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
+        gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args, connection))
+
+    if len(list(gbk_dict.keys())) == 0:
+        gbk_dict = get_selected_gbks.get_genbank_accessions(
+            class_filters,
+            family_filters,
+            taxonomy_filter_dict,
+            kingdom_filters,
+            ec_filters,
+            connection,
+        )
+
+    # extract protein sequences from the database
 
     extracted_sequences = {}  # {accession: {'db': str, 'seq': str}}
+
     if 'genbank' in args.source:
-        extracted_sequences.update(get_genbank_sequences(gbk_dict, connection))
+        extracted_sequences.update(get_genbank_sequences(gbk_seq_dict, gbk_dict))
+
     if 'uniprot' in args.source:
-        extracted_sequences.update(get_uniprot_sequences(gbk_dict, connection))
+        extracted_sequences.update(get_uniprot_sequences(uniprot_table_dict, gbk_dict))
 
     protein_records = []
     
@@ -134,6 +165,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             description=extracted_sequences[protein_accession]['db']
         )
         protein_records.append(new_record)
+
+    # write out the sequences to the specified outputs
 
     write_output(protein_records, cache_dir, args)
 
@@ -180,19 +213,104 @@ def validate_user_options(args):
     return
 
 
-def get_genbank_sequences(gbk_dict, connection):
-    """Extract protein seqeunces from the database
+def get_user_genbank_sequences(gbk_table_dict, args):
+    """Extract protein sequences for GenBank accessions listed in a file
     
-    :param gbk_dict: dict of selected GenBank record {acc: id}
+    :param gbk_table_dict: dict {genbank_accession: 'taxa_id': int, 'gbk_id': int}
+    :param args: cmd-line args parser
+
+    Return dict {gbk_acc: db_id}
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        with open(args.genbank_accessions, "r") as fh:
+            lines = fh.read().splitlines()
+    except FileNotFoundError:
+        logger.warning(
+            f"Could not find file of GenBank accessions at {args.genbank_accessions}\n"
+            "Check the path is correct\n"
+            "Terminating program"
+        )
+        sys.exit(1)
+    
+    gbk_accessions = [line.strip() for line in lines]
+
+    gbk_dict = {}  # {accession: id}
+
+    for gbk_accession in tqdm(gbk_accessions, desc="Getting database IDs for provided GenBank IDs"):
+        try:
+            gbk_dict[gbk_accession] = gbk_table_dict[gbk_accessions]
+        except KeyError:
+            logging.warning(
+                f"Genbank accession {gbk_accession} retrieved from list in file\n"
+                "But accession not in the local CAZyme database\n"
+                f"Not extracted protein sequences for {gbk_accession}"
+            )
+
+    return gbk_dict
+
+
+def get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args, connection):
+    """Extract protein sequences for UniProt accessions listed in a file, and get the corresponing
+    GenBank accession and local db GenBank id
+    
+    :param gbk_table_dict: dict {genbank_accession: 'taxa_id': int, 'gbk_id': int}
+    :param uniprot_table_dict: dict {}
+    :param args: cmd-line args parser
     :param connection: open sqlalchemy connection to an SQLite db
+
+    Return dict {gbk_acc: db_id}
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        with open(args.genbank_accessions, "r") as fh:
+            lines = fh.read().splitlines()
+    except FileNotFoundError:
+        logger.warning(
+            f"Could not find file of UniProt accessions at {args.genbank_accessions}\n"
+            "Check the path is correct\n"
+            "Terminating program"
+        )
+        sys.exit(1)
+    
+    uniprot_accessions = [line.strip() for line in lines]
+
+    gbk_dict = {}
+
+    gbk_table_ids = list(gbk_table_dict.values())
+
+    for uniprot_accession in tqdm(uniprot_accessions, desc="Getting database Ids for provided UniProt IDs"):
+        try:
+            gbk_id = uniprot_table_dict[uniprot_accession]['genbank_id']
+        except KeyError:
+            logging.warning(
+                f"UniProt accession {uniprot_accession} retrieved from list in file\n"
+                "But accession not in the local CAZyme database\n"
+                f"Not extracted protein sequences for {uniprot_accession}"
+            )
+            continue
+        
+        position = gbk_table_ids.index(gbk_id)
+        gbk_accession = gbk_table_dict[position]
+
+        gbk_dict[gbk_accession] = gbk_id
+    
+    return gbk_dict
+
+
+def get_genbank_sequences(gbk_seq_dict, gbk_dict):
+    """Extract protein seqeunces from the database
+
+    :param gbk_seq_dict: dict {gbk_acc: {'sequence': str}}
+    :param gbk_dict: dict of selected GenBank record {acc: id}
     
     Return dict {gbk_acc: {'db': 'genbank', 'seq': str}}
     """
-    gbk_seq_dict = get_table_dicts.get_gbk_table_seq_dict(connection)
-
     extracted_sequences = {}  # {accession: {'db': str, 'seq': str}}
 
-    for gbk_accession in gbk_dict:
+    for gbk_accession in tqdm(gbk_dict, desc="Getting GenBank sequences"):
         extracted_sequences[gbk_accession] = {
             'db': 'GenBank',
             'seq': gbk_seq_dict[gbk_accession]['sequence'],
@@ -201,23 +319,20 @@ def get_genbank_sequences(gbk_dict, connection):
     return extracted_sequences
 
 
-def get_uniprot_sequences(gbk_dict, connection):
+def get_uniprot_sequences(uniprot_table_dict, gbk_dict):
     """Extract protein seqeunces from the database
     
+    :param uniprot_table_dict: {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
     :param gbk_dict: dict of selected GenBank record {acc: id}
-    :param connection: open sqlalchemy connection to an SQLite db
     
     Return dict {gbk_acc: {'db': 'genbank', 'seq': str}}
     """
-    uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
-    # dict = {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
-
     # get the db ids of selected gbks
     selected_genbanks = [gbk_dict[gbk_acc] for gbk_acc in gbk_dict]
 
     extracted_sequences = {}  # {accession: {'db': str, 'seq': str}}
 
-    for uniprot_accession in uniprot_table_dict:
+    for uniprot_accession in tqdm(uniprot_table_dict, desc="Getting UniProt sequencse from db"):
         gbk_id = uniprot_table_dict[uniprot_accession]['genbank_id']
         if gbk_id in selected_genbanks:
             extracted_sequences[uniprot_accession] = {

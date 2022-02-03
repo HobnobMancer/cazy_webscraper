@@ -93,6 +93,18 @@ def build_parser(argv: Optional[List] = None):
     )
 
     # Add optional arguments to parser
+    parser.add_argument(
+        "--genbank_accessions",
+        type=Path,
+        default=None,
+        help="Path to text file contining GenBank accessions",
+    )
+    parser.add_argument(
+        "--uniprot_accessions",
+        type=Path,
+        default=None,
+        help="Path to text file contining UniProt accessions",
+    )
 
     # Add option for building a BLAST database of retrieved protein sequences
     parser.add_argument(
