@@ -42,17 +42,36 @@
 
 
 import argparse
+import sys
 
 from pathlib import Path
 from typing import List, Optional
+
+
+class ValidateNames(argparse.Action):
+    """Check the user has provided valid database names."""
+    def __call__(self, parser, args, values, option_string=None):
+        valid_formats = ("genbank", "uniprot")
+        invalid = False
+
+        for value in values:
+            if value.lower() not in valid_formats:
+                invalid = True
+                raise ValueError(f'Invalid source "{value.lower()}" provided. Accepted sources: {valid_formats}')
+
+        if invalid:
+            sys.exit(1)
+
+        parsed_values = [_.lower() for _ in values]
+        setattr(args, self.dest, parsed_values)
 
 
 def build_parser(argv: Optional[List] = None):
     """Return ArgumentParser parser for the script 'expand.genbank_sequences.py'."""
     # Create parser object
     parser = argparse.ArgumentParser(
-        prog="genbank_sequences.py",
-        description="Populates local CAZy database with protein sequences from GenBank",
+        prog="extract_sequences.py",
+        description="Extract GenBank and/or UniProt protein seqs and write to FASTA and/or BLAST db",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
@@ -64,7 +83,28 @@ def build_parser(argv: Optional[List] = None):
         help="Path to local CAZy database",
     )
 
+    parser.add_argument(
+        "source",
+        nargs='+',
+        action=ValidateNames,
+        choices=["genbank", "uniprot"],
+        type=str,
+        help="File format of downloaded structure from PDB",
+    )
+
     # Add optional arguments to parser
+    parser.add_argument(
+        "--genbank_accessions",
+        type=Path,
+        default=None,
+        help="Path to text file contining GenBank accessions",
+    )
+    parser.add_argument(
+        "--uniprot_accessions",
+        type=Path,
+        default=None,
+        help="Path to text file contining UniProt accessions",
+    )
 
     # Add option for building a BLAST database of retrieved protein sequences
     parser.add_argument(
@@ -222,6 +262,15 @@ def build_parser(argv: Optional[List] = None):
             "(written as Genus Species Strain)"
         ),
     )
+
+    parser.add_argument(
+        "--sql_echo",
+        dest="sql_echo",
+        action="store_true",
+        default=False,
+        help="Set SQLite engine echo to True (SQLite will print its log messages)",
+    )
+
 
     # Add option for more detail (verbose) logging
     parser.add_argument(

@@ -67,17 +67,17 @@ def make_target_directory(output_path, force):
         if force is True:
 
             logger.warning(
-                "Target output path for database exists.\n"
-                "Forced overwritting enabled. Overwritting existing CAZome database."
+                "Target output path exists.\n"
+                "Forced overwritting enabled. Overwritting existing file."
             )
             return
         
         else:
             logger.warning(
-                "Target output path for database exists.\n"
+                "Target output path exists.\n"
                 "Forced overwritting NOT enabled\n."
-                "To overwrite the existing CAZome database\n,"
-                "rerun cazy_webscraper with the -f flag.\n"
+                "To overwrite the existing file\n,"
+                "rerun with the -f flag.\n"
                 "Terminating program."
             )
             sys.exit(1)

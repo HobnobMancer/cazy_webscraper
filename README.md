@@ -2,7 +2,7 @@
 
 -------------------------------
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4300858.svg)](https://doi.org/10.5281/zenodo.4300858)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5947920.svg)](https://doi.org/10.5281/zenodo.5947920)
 [![licence](https://img.shields.io/badge/Licence-MIT-green)](https://github.com/HobnobMancer/cazy_webscraper/blob/master/LICENSE)
 [![CircleCI](https://circleci.com/gh/HobnobMancer/cazy_webscraper.svg?style=shield)](https://circleci.com/gh/HobnobMancer/cazy_webscraper)
 [![codecov](https://codecov.io/gh/HobnobMancer/cazy_webscraper/branch/master/graph/badge.svg)](https://codecov.io/gh/HobnobMancer/cazy_webscraper)
@@ -376,11 +376,11 @@ Below are listed the command-line flags for configuring the extraction of protei
 
 `database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
 
-`-g`, `--genbank` - Extract protein sequences retrieved from GenBank
-
-`-u`, `--uniprot` - Extract protein sequences retrieved from UniProt.
-
-_Note: At least one of `--genbank` and `--uniprot` must be called, otherwise not protein sequences will be extracted._
+`source` - \[REQUIRED\] Define source databases of protein sequences. Accepts 'genbank' and 'uniprot'. To list both, separate with a single space, e.g.   
+```bash
+cw_extract_sequence cazy_database.db genbank uniprot
+```
+*The database names are not case sensitive, therefore, both GenBank and genbank are accepted.* 
 
 `-b`, `--blastdb` - Create BLAST database of extracted protein sequences. Provide the path to the directory to store the BLAST database in.
 
@@ -402,6 +402,8 @@ _Note: at least one of `--blastdb`, `--fasta_dir`, and `--fasta_file` must be ca
 ```bash
 cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 ```
+
+`--force`, `-f` - Force overwriting exsiting files and writing to existing output directory.
 
 `--families` - List of CAZy (sub)families to scrape.#
 

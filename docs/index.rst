@@ -126,6 +126,8 @@ For details and updates on development, please consult the `GitHub repository <h
    uniprottutorial
    genbank
    genbanktutorial
+   sequence
+   sequencetutorial
    pdb
    pdbtutorial
    cache

@@ -183,12 +183,12 @@ def get_gbk_table_seq_dict(connection):
     
     :param connection: open connection to an SQLite3 database
     
-    Return dict {genbank_accession: 'taxa_id': int, 'gbk_id': int}
+    Return dict {genbank_accession: 'sequence': str, 'seq_date': str}
     """
     with Session(bind=connection) as session:
         all_genbank = session.query(Genbank).all()
 
-    db_gbk_dict = {}  # {genbank_accession: 'taxa_id': str, 'id': int}
+    db_gbk_dict = {}  # {genbank_accession: 'sequence': str, 'seq_date': str}
     
     for gbk in all_genbank:
         db_gbk_dict[f"{gbk.genbank_accession}"] = {
