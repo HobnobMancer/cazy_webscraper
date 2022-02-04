@@ -81,6 +81,8 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 
 ``--seq_update`` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
+``--skip_uniprot_accessions`` - Path to a JSON file, keyed by UniProt accessions/IDs and valued by dicts containing ``{'gbk_acc': str, 'db_id': int}``. This file part of the cache created by ``cw_get_uniprot_data``. This is option to skip retrieving the UniProt IDs for a set of GenBank accessions, if retrieving data for the same dataset (this save a lot of time!)
+
 ``--sql_echo`` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
 ``--species`` - List of species (organsim scientific names) to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given species.
@@ -88,8 +90,6 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 ``--strains`` - List of species strains to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given strains.
 
 ``--timeout``, ``-t`` - Connection timout limit (seconds). Default: 45.
-
-``--uniprot_accessions`` - Path to a JSON file, keyed by UniProt accessions/IDs and valued by dicts containing ``{'gbk_acc': str, 'db_id': int}``. This file part of the cache created by ``cw_get_uniprot_data``. This is option to skip retrieving the UniProt IDs for a set of GenBank accessions, if retrieving data for the same dataset (this save a lot of time!)
 
 ``--uniprot_data`` - Path to JSON file containing data previosuly retrieved from UniProt by ``cazy_webscraper``, use if an error occurred while adding the data to the local CAZyme database. This will skip the retrieval of data from UniProt, and the cached data will be added to the local CAZyme database. This can also be shared with others to add the same data to their local CAZyme database.
 
