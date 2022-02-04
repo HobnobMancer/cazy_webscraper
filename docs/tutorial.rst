@@ -240,7 +240,7 @@ For example, if you want to scrape all CAZymes from Glycoside Hydrolase and Carb
    These synonyms are stored in a JSON found at ``scraper/utilities/parse_configuration/cazy_dictionary.json``. 
    Storing these synonyms allows you to modify this file if you wish to add your own synonoms for each CAZy class.
 
-If you have your own synonyms these can be used by using the ``--class_synonyms`` flag, followed by the path to your JSON file. This JSON file **must** have the same 
+If you have your own synonyms these can be used by using the ``--cazy_synonyms`` flag, followed by the path to your JSON file. This JSON file **must** have the same 
 architecture as the JSON filed used by ``cazy_webscraper``.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
