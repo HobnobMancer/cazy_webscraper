@@ -61,6 +61,10 @@ from Bio.SeqRecord import SeqRecord
 from cazy_webscraper import closing_message, cazy_scraper
 from cazy_webscraper.expand import get_chunks_gen
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_records import (
+    get_user_genbank_sequences,
+    get_user_uniprot_sequences
+)
 from cazy_webscraper.utilities import config_logger, file_io, parse_configuration
 from cazy_webscraper.utilities.parsers.extract_seq_parser import build_parser
 
@@ -112,7 +116,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # {genbank_accession: 'taxa_id': str, 'gbk_id': int}
 
     # check what additional tabled needed to be loaded
-    if any( ((args.genbank_accessions is not None), ('genbank' in args.source)) ):
+    if any( ((args.genbank_accessions is not None), (args.uniprot_accessions is not None), ('genbank' in args.source)) ):
         logger.info("Loading the GenBank table")
         gbk_seq_dict = get_table_dicts.get_gbk_table_seq_dict(connection)
         # {genbank_accession: 'sequence': str, 'seq_date': str}
@@ -133,7 +137,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     
     if args.uniprot_accessions is not None:
         logger.warning(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
-        gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args, connection))
+        gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
 
     if len(list(gbk_dict.keys())) == 0:
         gbk_dict = get_selected_gbks.get_genbank_accessions(
@@ -210,93 +214,6 @@ def validate_user_options(args):
         )
 
     return
-
-
-def get_user_genbank_sequences(gbk_table_dict, args):
-    """Extract protein sequences for GenBank accessions listed in a file
-    
-    :param gbk_table_dict: dict {genbank_accession: 'taxa_id': int, 'gbk_id': int}
-    :param args: cmd-line args parser
-
-    Return dict {gbk_acc: db_id}
-    """
-    logger = logging.getLogger(__name__)
-
-    try:
-        with open(args.genbank_accessions, "r") as fh:
-            lines = fh.read().splitlines()
-    except FileNotFoundError:
-        logger.warning(
-            f"Could not find file of GenBank accessions at {args.genbank_accessions}\n"
-            "Check the path is correct\n"
-            "Terminating program"
-        )
-        sys.exit(1)
-    
-    gbk_accessions = [line.strip() for line in lines]
-
-    gbk_dict = {}  # {accession: id}
-
-    for gbk_accession in tqdm(gbk_accessions, desc="Getting database IDs for provided GenBank IDs"):
-        try:
-            gbk_dict[gbk_accession] = gbk_table_dict[gbk_accessions]
-        except KeyError:
-            logging.warning(
-                f"Genbank accession {gbk_accession} retrieved from list in file\n"
-                "But accession not in the local CAZyme database\n"
-                f"Not extracted protein sequences for {gbk_accession}"
-            )
-
-    return gbk_dict
-
-
-def get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args, connection):
-    """Extract protein sequences for UniProt accessions listed in a file, and get the corresponing
-    GenBank accession and local db GenBank id
-    
-    :param gbk_table_dict: dict {genbank_accession: 'taxa_id': int, 'gbk_id': int}
-    :param uniprot_table_dict: dict {}
-    :param args: cmd-line args parser
-    :param connection: open sqlalchemy connection to an SQLite db
-
-    Return dict {gbk_acc: db_id}
-    """
-    logger = logging.getLogger(__name__)
-
-    try:
-        with open(args.genbank_accessions, "r") as fh:
-            lines = fh.read().splitlines()
-    except FileNotFoundError:
-        logger.warning(
-            f"Could not find file of UniProt accessions at {args.genbank_accessions}\n"
-            "Check the path is correct\n"
-            "Terminating program"
-        )
-        sys.exit(1)
-    
-    uniprot_accessions = [line.strip() for line in lines]
-
-    gbk_dict = {}
-
-    gbk_table_ids = list(gbk_table_dict.values())
-
-    for uniprot_accession in tqdm(uniprot_accessions, desc="Getting database Ids for provided UniProt IDs"):
-        try:
-            gbk_id = uniprot_table_dict[uniprot_accession]['genbank_id']
-        except KeyError:
-            logging.warning(
-                f"UniProt accession {uniprot_accession} retrieved from list in file\n"
-                "But accession not in the local CAZyme database\n"
-                f"Not extracted protein sequences for {uniprot_accession}"
-            )
-            continue
-        
-        position = gbk_table_ids.index(gbk_id)
-        gbk_accession = gbk_table_dict[position]
-
-        gbk_dict[gbk_accession] = gbk_id
-    
-    return gbk_dict
 
 
 def get_genbank_sequences(gbk_seq_dict, gbk_dict):
