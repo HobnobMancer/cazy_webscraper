@@ -29,7 +29,7 @@ The documentation is being actively updated to match the new `cazy_webscraper` v
 - **Caching:** Data downloaded from CAZy is not only parsed and written to a local CAZyme database. The raw data files are written to cache. Data can be scraped directly from a cache (ideal if CAZy updates during the retrieval of multiple datasets from the CAZy database).
 - **Handling multiple taxa:** It is possible for a single protein (identified by its unique GenBank accession) to be associated with multiple taxa in the CAZy data. For these instances, `cazy_webscraper` queries NCBI to retrieve the latest taxonomic source of the protein.
 
-## Recent updates in v2.0.5
+## Recent updates in v2
 
 - **UniProt:** `cazy_webscraper` can now be used successfully for retrieving data from UniProt and adding the data to the local CAZyme database. This includes retrieving:
 	- UniProt accessions
@@ -38,6 +38,8 @@ The documentation is being actively updated to match the new `cazy_webscraper` v
 	- EC number annotations
 	- PDB accessions
 - **GenBank:** `cazy_webscraper` can now be used to automate the retreival of protein sequences from GenBank for proteins in a local CAZyme database mathcing the users specified critieria. These protein sequences are stored in the local CAZyme database, and can be extracted to a FASTA file using `cazy_webscraper`
+- **Extract sequences from the db:** `cazy_webscraper` can be used to retrieve the GenBank and/or UniProt protein sequences stored in the database for user specified sets of CAZymes
+- **Accession lists:** As well as defining sets of CAZymes of interest for data retrieval by their class, family, EC number and/or taxonomy, `cazy_webscraper` can now accept lists of GenBank and/or UniProt accessions to define specific sets of CAZymes to additional protein data for
 - **Caching:** 
 	- More data is cached
 	- Cached data can be used to continue data retrievals from UniProt and GenBank, when a previous retrieval and/or addition of the data to the database fails
@@ -56,12 +58,13 @@ The documentation is being actively updated to match the new `cazy_webscraper` v
 
 `cazy_webscraper` is an application and Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. The code is distributed under the MIT license.
 
-`cazy_webscraper` retrieves protein data from the [CAZy database](https://www.cazy.org) into a local SQLite3 database. This enables users to integrate the dataset into analytical pipelines, and interrogate the data in a manner unachievable through the CAZy website.
+`cazy_webscraper` retrieves protein data from the [CAZy database](https://www.cazy.org) and stored the data in a local SQLite3 database. This enables users to integrate the dataset into analytical pipelines, and interrogate the data in a manner unachievable through the CAZy website.
 
 Using the `expand` subcommand, a user can retrieve:
+- Protein name, UniProt accession, EC numbers, PDB accessions and protein sequences from [UniProt](https://www.uniprot.org/)
 - CAZyme protein sequence data from [GenBank](https://www.ncbi.nlm.nih.gov/genbank/)
 - Protein structure files from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank [(PDB)](https://www.rcsb.org/)
-- EC number, PDB accessions and Uniprot protein IDs from the [UniProtKB database](https://www.uniprot.org/)
+- Extract GenBank and UniProt protein sequences stored in the local CAZyme database and write them to FASTA file and/or BLAST database
 
 `cazy_webscraper` can recover specified CAZy Classes and/or CAZy families. These queries can be filtered by taxonomy at Kingdoms, genus, species or strain level. Successive CAZy queries can be collated into a single local database. A log of each query is recorded in the database for transparency, reproducibility and shareablity.
 
@@ -149,12 +152,13 @@ Options are written in alphabetical order.
 
 `--citation`, `-C` - Print the `cazy_webscraper` citation. When called, the program terminates after printng the citation and CAZy is **not** scraped.
 
-`--database`, `-d` - Path to an **existings** local CAZyme database to add newly scraped too. Default: None.
+`--db_output`, `-o` - Path to write out a **new** local CAZyme database.
 
+`--database`, `-d` - Path to an **existings** local CAZyme database to add newly scraped too. Default: None.
 
 _Do not use `--db_output` **and** `--database` at the same time._
 
-_If `--db_output` **and** `--database` are **not** called, `cazy_webscraper` write out a local CAZyme database to the cwd with the standardised name `cazy_webscraper_<date>_<time>.db`_
+_If `--db_output` **and** `--database` are **not** called, `cazy_webscraper` writes out a local CAZyme database to the cwd with the standardised name `cazy_webscraper_<date>_<time>.db`_
 
 `--delete_old_relationships` - Detele old CAZy family annotations of GenBank accessions. These are CAZy family annotations of a given GenBank accession are in the local database but the accession is not longer associated with those CAZy families, so delete old accession-family relationships.
 
@@ -164,7 +168,13 @@ _If `--db_output` **and** `--database` are **not** called, `cazy_webscraper` wri
 
 `--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
 
+`--kingdoms` - List of taxonomic kingdoms to restrict the scrape to. Default: None, filter is not applied.
+
 `--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+`--nodelete`, `-n` - When called content in an existing output directory is not deleted.
+
+__When the `--db_output` flag is used, `cazy_webscraper` will create any necessary parent directories. If the direct/immediate parent directory of the database exists, by default `cazy_webscraper` will delete the content in this parent directory._
 
 `--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
