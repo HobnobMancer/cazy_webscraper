@@ -9,7 +9,7 @@ The extracted protein sequences can be written to any combination of:
 * One FASTA file per extracted sequence
 * A BLASTp database
 
-Protein sequences retrieved from GenBank and/or UniProt can be extracted.
+GenBank and/or UniProt protein sequences retrieved can be extracted.
 
 -----------
 Quick Start
@@ -44,7 +44,7 @@ Command line options
 
 *The database names are not case sensitive, therefore, both GenBank and genbank are accepted.* 
 
-``-b``, ``--blastdb`` - Create BLAST database of extracted protein sequences. Provide the path to the directory to store the BLAST database in.
+``--blastdb``, ``-b`` - Create BLAST database of extracted protein sequences. Provide the path to the directory to store the BLAST database in.
 
 ``--fasta_dir`` - Write out each extracted sequence to a separate FASTA file in the provided dir. Provide a path to a directory to write out the FASTA files.
 
