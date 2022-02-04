@@ -56,7 +56,7 @@ import Bio.PDB
 
 from tqdm import tqdm
 
-from cazy_webscraper import cazy_webscraper
+from cazy_webscraper import cazy_scraper, closing_message
 from cazy_webscraper.expand import get_chunks_gen
 from cazy_webscraper.sql.sql_interface import get_selected_pdbs, get_table_dicts
 from cazy_webscraper.sql.sql_interface.get_records import (
@@ -83,11 +83,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger = logging.getLogger(__package__)
         config_logger(args)
 
-    # validate PDB file choices
-    logger.info("Checking valid file types were provided")
-    validate_pdb_file_types(args)
-
-    connection, logger_name, cache_dir = cazy_webscraper.connect_existing_db(args, time_stamp)
+    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
 
     (
         config_dict,
@@ -145,57 +141,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         for acc in pdb_accessions:
             fh.write(f"{acc}\n")
 
-    end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    end_time = pd.to_datetime(end_time)
-    total_time = end_time - start_time
-
-    if args.verbose:
-        logger.info(
-            "Finished getting structure files from PDB\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {cazy_webscraper.VERSION_INFO}\n"
-            f"Citation: {cazy_webscraper.CITATION_INFO}"
-        )
-    else:
-        print(
-            "=====================cazy_webscraper=====================\n"
-            "Finished getting structure files from PDB\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {cazy_webscraper.VERSION_INFO}\n"
-            f"Citation: {cazy_webscraper.CITATION_INFO}"
-        )
-
-
-def validate_pdb_file_types(args):
-    """Check valid file types for PDB were specified by the user.
-    :param args: cmd-line args parser
-    Return nothing.
-    """
-    logger = logging.getLogger(__name__)
-
-    valid_choices = ['mmCif', 'pdb', 'xml', 'mmtf', 'bundle']
-
-    invalid_choices = []
-
-    user_choices = (args.pdb).split(",")
-
-    for choice in user_choices:
-        if choice not in valid_choices:
-            invalid_choices.append(choice)
-
-    if len(invalid_choices) != 0:
-        logger.error(
-            f"Invalid file option selected: {invalid_choices}.\n"
-            f"The valid choices are: {valid_choices}.\n"
-            "Terminating program."
-        )
-        sys.exit(1)
-
-    return
+    closing_message("Get PDB structure files", start_time, args)
 
 
 def download_pdb_structures(pdb_accessions, args):
@@ -214,7 +160,7 @@ def download_pdb_structures(pdb_accessions, args):
     if args.outdir is None:
         logger.warning("Downloading to current working directory")
         for accession_list in get_chunks_gen(pdb_accessions, args.batch_limit):
-            for file_type in tqdm((args.pdb).split(","), desc="Downloading"):
+            for file_type in tqdm(args.pdb, desc="Downloading"):
                 pdbl.download_pdb_files(
                     pdb_codes=accession_list,
                     file_format=file_type,
@@ -224,7 +170,7 @@ def download_pdb_structures(pdb_accessions, args):
     else:
         logger.warning(f"Downloading structures to {args.outdir}")
         for accession_list in get_chunks_gen(pdb_accessions, args.batch_limit):
-            for file_type in tqdm((args.pdb).split(","), desc="Downloading"):
+            for file_type in tqdm(args.pdb, desc="Downloading"):
                 pdbl.download_pdb_files(
                     pdb_codes=accession_list,
                     file_format=file_type,
