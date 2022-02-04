@@ -254,3 +254,26 @@ EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, we use the command:
 
    cw_get_uniprot_data cazy/cazyme.db --pdb --sequences --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
+------------------------------
+Providing a list of accessions
+------------------------------
+
+Instead of retrieving protein data for all CAZymes matching a defined set of criteria, 
+``cw_get_uniprot_data`` can retrieve protein data a set of CAZymes defined by their 
+GenBank accession.
+
+The flag ``--genbank_accessions`` can be used to provide ``cw_get_uniprot_data`` a list of GenBank accessions 
+to identify the specific set of CAZymes to retrieve protein data for.
+
+The list of respective accessions are provided via a plain text file, with a unique protein accession of each line. The path to this file is 
+then passed to ``cw_get_uniprot_data`` via the ``--genbank_accessions`` flag.
+
+.. WARNING::
+   ``--genbank_accessions`` takes president over the filter flags.
+
+   When ``--genbank_accessions`` is used, ``cw_get_uniprot_data`` will 
+   **not** retrieve any CAZymes from the local database matching a set of criteria.
+
+   Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cw_get_uniprot_data`` will ignore 
+   the ``--classes`` flag and only retrieve protein data for the proteins listed in the file provided via 
+   the ``--genbank_accessions``.

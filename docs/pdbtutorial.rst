@@ -269,7 +269,7 @@ Providing a list of accessions
 ------------------------------
 
 Instead of retrieving protein structure files for all CAZymes matching a defined set of criteria, 
-``cw_get_pdb_structures`` get retrieve protein structure files for a set of CAZymes defined by their 
+``cw_get_pdb_structures`` can retrieve protein structure files for a set of CAZymes defined by their 
 GenBank and/or UniProt accession.
 
 The flag ``--genbank_accessions`` can be used to provide ``cw_get_pdb_structures`` a list of GenBank accessions 
