@@ -74,6 +74,8 @@ Command line options
 
 ``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
 
+``--kingdoms`` - List of taxonomy kingdoms to retrieve UniProt data for.
+
 ``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
 
 ``--nodelete``, ``-n`` - When called, content in the existing output  will **not** be deleted. Default: False (existing content is deleted).
@@ -95,8 +97,6 @@ Command line options
 ``--timeout``, ``-t`` - Connection timout limit (seconds). Default: 45.
 
 ``--uniprot_accessions`` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
-
-``--update_seq`` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
 ``--verbose``, ``-v`` - Enable verbose logging. This does **not** set the SQLite engine ``echo`` parameter to True. Default: False.
 

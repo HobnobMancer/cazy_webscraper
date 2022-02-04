@@ -392,8 +392,15 @@ Protein sequences from GenBank and UniProt that are stored in the local CAZyme d
 
 To extract all protein seqeunces from the local CAZyme database using the following command structure:
 ```bash
-cw_extract_sequences <path_to_local_CAZyme_db> --genbank --uniprot
+cw_extract_db_sequences <path_to_local_CAZyme_db> genbank uniprot
 ```
+
+To retrieve protein sequences from GenBank or UniProt, name only the respective database. For example, to retrieve only 
+GenBank proteins:
+```bash
+cw_extract_db_sequences <path_to_local_CAZyme_db> genbank
+```
+
 
 ### Configuring extracting sequences from a local CAZyme db
 
@@ -401,7 +408,7 @@ Below are listed the command-line flags for configuring the extraction of protei
 
 `database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
 
-`source` - \[REQUIRED\] Define source databases of protein sequences. Accepts 'genbank' and 'uniprot'. To list both, separate with a single space, e.g.   
+`source` - \[REQUIRED\] Define source databases of protein sequences. Accepts 'genbank' and 'uniprot'. To list both, separate with a single space (' ')
 ```bash
 cw_extract_sequence cazy_database.db genbank uniprot
 ```
@@ -468,6 +475,14 @@ To retrieve structure files for all proteins in a local CAZyme database in `mmCi
 cw_get_pdb_structures <path_to_local_CAZyme_db> mmcif,pdb
 ```
 
+Protein structure files can be retrieved in a variety of formats, including:
+
+- mmCif (default, PDBx/mmCif file),
+- pdb (format PDB),
+- xml (PDBML/XML format),
+- mmtf (highly compressed),
+- bundle (PDB formatted archive for large structure}
+
 ### Configuring PDB protein structure file retrieval
 
 Below are listed the command-line flags for configuring the retrieval of protein structure files from PDB.
@@ -480,11 +495,13 @@ Below are listed the command-line flags for configuring the retrieval of protein
 - `xml`
 - `mmft`
 - `bundle`
-To chose multiple file types, list all desired file types, separting the files using a single comma. For example:
+To chose multiple file types, list all desired file types, separting the files using a single space (' '). For example:
 ```bash
-cw_get_genbank_seq my_cazyme_db/cazyme_db.db mmcif,pdb,xml
+cw_get_genbank_seq my_cazyme_db/cazyme_db.db mmcif pdb xml
 ```
-Providing the file types is **not** case sensitive, and the order the file types are listed does **not** matter.
+Providing the file types **is** case sensitive, but the order the file types are listed does **not** matter.
+
+`--batch_size` - Size of an individual batch query of PDB accessions submitted to PDB. Default is 150.
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
@@ -505,6 +522,8 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
 
+`--kingdoms` - List of taxonomy kingdoms to retrieve UniProt data for.
+
 `--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
 
 `--nodelete` - When called, content in the existing output dir will **not** be deleted. Default: False (existing content is deleted).
@@ -512,6 +531,8 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
 `--outdir`, `-o` - Output directory to write out downloaded protein structure files to. Default is to write out the downloaded structure files to the current working directory.
+
+`--overwrite` - Overwrite existing structure files with the same PDB accession as files being downloaded. Default false, do not overwrite existing files.
 
 `--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
 
