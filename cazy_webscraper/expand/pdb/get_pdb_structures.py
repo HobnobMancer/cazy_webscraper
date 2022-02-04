@@ -59,6 +59,10 @@ from tqdm import tqdm
 from cazy_webscraper import cazy_webscraper
 from cazy_webscraper.expand import get_chunks_gen
 from cazy_webscraper.sql.sql_interface import get_selected_pdbs
+from cazy_webscraper.sql.sql_interface.get_records import (
+    get_user_genbank_sequences,
+    get_user_uniprot_sequences
+)
 from cazy_webscraper.utilities import config_logger, file_io, parse_configuration
 from cazy_webscraper.utilities.parsers import pdb_strctre_parser
 
@@ -93,6 +97,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         taxonomy_filter_dict,
         ec_filters,
     ) = parse_configuration.get_expansion_configuration(args)
+
+    gbk_dict = {}  # {gbk_acc: gbk_id}
+
+    if args.genbank_accessions is not None:
+        logger.warning(f"Retrieving PDB structures for GenBank accessions listed in {args.genbank_accessions}")
+        gbk_dict.update(get_user_genbank_sequences(gbk_table_dict, args))
 
     pdb_accessions = get_selected_pdbs.get_pdb_accessions(
         class_filters,

@@ -52,6 +52,7 @@ def get_pdb_accessions(
     taxonomy_filters,
     kingdom_filters,
     ec_filters,
+    gbk_table_dict,
     connection,
 ):
     """Retrieve PDB accessions matching user criteria from the local CAZyme db
@@ -61,6 +62,7 @@ def get_pdb_accessions(
     :param taxonomy_filters: dict of taxonom filters to limit the retrieval of data to
     :param kingdom_filters: set of tax kingdoms to limit the retrieval of data to
     :param ec_filters: set of EC numbers to limit the retrieval of data to
+    :param gbk_table_dict: dict, of GenBank accessions and db IDs for GenBank records
     :param connection: open sqlalchemy connection to an SQLite db engine
     
     Return list of PDB accessions
@@ -78,7 +80,6 @@ def get_pdb_accessions(
     
     # retrieve all PDB accessions for each GenBank accession retrieved for the local CAZyme db
 
-    gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)  # used to convert acc to id
     pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)  # used to retrieve PDB accs
 
     pdb_accessions = set()
