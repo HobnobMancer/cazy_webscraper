@@ -58,13 +58,15 @@ Command line options
 
 ``--ec_filter`` - List of EC numbers to limit the retrieval of protein data for proteins annotated with at least one of the given EC numbers **in the local CAZyme database**.
 
-``--entrez_batch_size`` - Change the query batch size submitted via [`Entrez`]() to retrieve protein sequences from GenBank data. Default is 150. `Entrez <https://www.ncbi.nlm.nih.gov/books/NBK179288/>_` recommands queries not larger than XXX objects in length.
+``--force``, ``-f`` - Force writing cachce to exiting cache directory.
 
 ``--families`` - List of CAZy (sub)families to retrieve UniProt protein data for.
 
 ``--genbank_accessions`` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
 
 ``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
+
+``--kingdoms`` - List of taxonomy kingdoms to retrieve UniProt data for.
 
 ``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
 
@@ -83,8 +85,6 @@ Command line options
 ``--species`` - List of species (organsim scientific names) to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given species.
 
 ``--strains`` - List of species strains to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given strains.
-
-``--timeout``, ``-t`` - Connection timout limit (seconds). Default: 45.
 
 ``--verbose``, ``-v`` - Enable verbose logging. This does **not** set the SQLite engine ``echo`` parameter to True. Default: False.
 

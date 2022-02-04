@@ -346,7 +346,7 @@ Below are listed the command-line flags for configuring the retrieval of protein
 cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 ```
 
-`--entrez_batch_size` - Change the query batch size submitted via [`Entrez`]() to retrieve protein sequences from GenBank data. Default is 150. `Entrez` recommands queries not larger than XXX objects in length.
+`--force`, `-f` - Force writing cachce to exiting cache directory.
 
 `--families` - List of CAZy (sub)families to scrape.#
 
