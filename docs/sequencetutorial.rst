@@ -1,15 +1,15 @@
-==========================================================================
-Tutorials on configuring ``cazy_webscraper`` to extract protein sequences
-==========================================================================
+============================================================
+Tutorials on configuring the extraction of protein sequences
+============================================================
 
-``cazy_webscraper`` can be configured to extract GenBank and/or UniProt protein sequences for user specified data sets of proteins from 
+``cazy_webscraper`` can be configured to extract GenBank and/or UniProt protein sequences for user specified sets of proteins from 
 a local CAZyme database. Many of the configuration options 
 apply to the retrieval of protein data from CAZy, UniProt, GenBank and PDB.
 
 ``cazy_webscraper`` can be configured via the **command line** and/or via a **YAML configuration file**.
 
 This page runs through examples of how to combine the various 'filters' that can be applied, to fully customised 
-the extract of protein sequences. These tutorials are designed for those with less experience using command-line tools.
+the extraction of protein sequences. These tutorials are designed for those with less experience using command-line tools.
 
 .. NOTE::
   If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cw_extract_db_sequences`` - this is the method used in this tutorial.  
@@ -24,14 +24,13 @@ scraping of data from CAZy.
 Configuration via the command line
 ----------------------------------
 
-``cw_extract_db_sequences`` has at 3 required arguments:
+``cw_extract_db_sequences`` has at 2 required arguments:
 
 1. The path to the local CAZyme databases created using ``cazy_webscraper``
 2. The names of the database from which the proteins were sourced
-3. Target to write out output
 
 When no optional arguments are provided, the default behaviour is invoked. The default behaviour is to: 
-Extract protein sequences (previously retrieved from GenBank and/for UniProt) for **all** CAZymes in the local CAZyme db
+Extract (GenBank and/ot UniProt) protein sequences for **all** CAZymes in the local CAZyme db
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -147,7 +146,7 @@ limit the extraction of protein sequences to CAZymes in the local databaes from 
 * Species strains
 * Annotated with at least one of a set of specified EC numbers
 
-`Here <https://cazy-webscraper.readthedocs.io/en/latest/configuration_scraper.html>`_ you can find a full list of the command-line flags and options.
+`Here <https://cazy-webscraper.readthedocs.io/en/latest/sequence.html>`_ you can find a full list of the command-line flags and options.
 
 
 ----------------------------------------------------------------
