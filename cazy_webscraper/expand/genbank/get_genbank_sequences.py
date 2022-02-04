@@ -58,7 +58,7 @@ from saintBioutils.utilities import file_io
 from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
-from cazy_webscraper import cazy_scraper, closing_message
+from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, add_genbank_data
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
@@ -89,7 +89,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.seq_update:
         logger.warning("Enabled updating sequences")
 
-    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp, start_time)
+    connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir

@@ -79,7 +79,13 @@ from typing import List, Optional
 from saintBioutils.utilities.file_io import make_output_directory
 
 from Bio import Entrez
-from cazy_webscraper import cazy, crawler, taxonomy, closing_message, CITATION_INFO, VERSION_INFO
+from cazy_webscraper import (
+    CITATION_INFO,
+    VERSION_INFO,
+    closing_message,
+    connect_to_new_db,
+    connect_existing_db,
+)
 from cazy_webscraper.crawler.get_validation_data import get_validation_data
 from cazy_webscraper.cazy import (
     build_taxa_dict,
@@ -365,117 +371,6 @@ def get_cazy_data(
     add_cazyme_data.add_genbank_fam_relationships(cazy_data, connection, args)
     
     return
-
-
-def connect_existing_db(args, time_stamp, start_time):
-    """Coordinate connecting to an existing local CAZyme database, define logger name and cache dir
-    
-    :param args: cmd-line args parser
-    :param time_stamp: str, time cazy_webscraper was invoked
-    :param start_time: pd date-time obj, time cazy_webscraper was invoked
-
-    Return connection to local CAZyme database, logger file name, and path to cache dir
-    """
-    logger = logging.getLogger(__name__)
-    
-    logger.info("Adding data to an existing local CAZyme database")
-
-    if os.path.isfile(args.database) is False:
-        logger.error(
-            "Could not find local CAZy database.\n"
-            "Check path is correct.\n"
-            "Terminating programme."
-        )
-        closing_message("cazy_webscraper", start_time, args)
-        sys.exit(1)
-
-    try:
-        connection = sql_orm.get_db_connection(args.database, args, new=False)
-        logger.info("Opened connection to local CAZyme database")
-    except Exception:
-        logger.error(
-            "Failed to open connection to an exiting local CAZyme database\n."
-            "Terminating program\n",
-            exc_info=True,
-        )
-        closing_message("cazy_webscraper", start_time, args)
-        sys.exit(1)
-    
-    # used for naming additional log files
-    logger_name = str(args.database).split('.')[0]
-
-    # define path to cache family txt files
-    cache_dir = Path(f"{str(args.database.parent)}/.cazy_webscraper_{time_stamp}/cache")
-
-    return connection, logger_name, cache_dir
-    
-
-def connect_to_new_db(args, time_stamp, start_time):
-    """Build and connect to a new local CAZyme database.
-    
-    :param args: cmd-line args parser
-    :param time_stamp: str, time cazy_webscraper was invoked
-    :param start_time: pd date-time obj, time cazy_webscraper was invoked
-    
-    Return connection to the database, name of the logger, and path to the cache dir
-    """
-    logger = logging.getLogger(__name__)
-
-    if args.db_output is not None:  # user defined target output for the NEW database
-        
-        if (os.path.isfile(args.db_output)):  # target file exists
-            if args.force:
-                logger.warning(
-                    "Overwriting existing local CAZyme database at:\n"
-                    f"{args.db_output}"
-                )
-
-            else:
-                logger.warning(
-                    "Target path for new database already exists.\n"
-                    "Either enable forced overwriting (-f) or add data this data (-D).\n"
-                    "Terminating program."
-                )
-                closing_message("cazy_webscraper", start_time, args)
-                sys.exit(1)
-        
-        else:  # may need to build dirs
-            logger.info(
-                "Building new local CAZyme database\n"
-                f"Output directory: {(args.db_output).parent}\n"
-                f"Force overwriting exiting output file: {args.force}"
-            )
-
-        if str((args.db_output).parent) != '.':  # dirs defined in output put
-            output_dir = (args.db_output).parent
-            make_output_directory(output_dir, args.force, args.nodelete)
-            cache_dir = Path(f"{str(output_dir)}/.cazy_webscraper_{time_stamp}/cache")
-            
-        else:  # writing to cwd
-            cache_dir = Path(f".cazy_webscraper_{time_stamp}/cache")
-
-        logger_name = str(args.db_output).split('.')[0]
-        db_path = args.db_output
-    
-    else:
-        logger.info("Using default database name and writing to cwd")
-        db_path = Path(f"cazy_webscraper_{time_stamp}.db")
-        cache_dir = Path(f".cazy_webscraper_{time_stamp}/cache")
-        logger_name = f'cazy_webscraper_{time_stamp}'
-    
-    try:
-        connection = sql_orm.get_db_connection(db_path, args, new=True)
-        logger.warning(f"Built new local CAZyme database at\n{db_path}")
-    except Exception:
-        logger.error(
-            "Failed to build new SQL database\n."
-            "Terminating program",
-            exc_info=True,
-        )
-        closing_message("cazy_webscraper", start_time, args)
-        sys.exit(1)
-
-    return connection, logger_name, cache_dir
 
 
 if __name__ == "__main__":

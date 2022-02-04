@@ -59,7 +59,7 @@ from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
-from cazy_webscraper import cazy_scraper, closing_message
+from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_uniprot_data import (
@@ -90,7 +90,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         config_logger(args)
     
     # parse the configuration data (cache the uniprot data as .csv files)
-    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp, start_time)
+    connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
 
     # build cache directory
     if args.cache_dir is not None:  # use user defined cache dir

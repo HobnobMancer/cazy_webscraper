@@ -56,7 +56,7 @@ import Bio.PDB
 
 from tqdm import tqdm
 
-from cazy_webscraper import cazy_scraper, closing_message
+from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.expand import get_chunks_gen
 from cazy_webscraper.sql.sql_interface import get_selected_pdbs, get_table_dicts
 from cazy_webscraper.sql.sql_interface.get_records import (
@@ -83,7 +83,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger = logging.getLogger(__package__)
         config_logger(args)
 
-    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp, start_time)
+    connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
 
     (
         config_dict,

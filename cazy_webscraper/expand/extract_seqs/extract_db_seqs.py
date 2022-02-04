@@ -58,7 +58,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 
-from cazy_webscraper import closing_message, cazy_scraper
+from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.expand import get_chunks_gen
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
 from cazy_webscraper.sql.sql_interface.get_records import (
@@ -94,7 +94,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.fasta_dir:
         file_io.make_output_directory(args.fasta_dir, args.force, args.nodelete)
 
-    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp, start_time)
+    connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
