@@ -44,9 +44,6 @@ These test are intened to be run from the root of the repository using:
 pytest -v
 """
 
-import logging
-from re import U
-from cazy_webscraper import cazy_scraper
 import pytest
 import shutil
 
@@ -140,7 +137,7 @@ def test_main(
     monkeypatch.setattr(uniprot_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(utilities, "config_logger", mock_return_logger)
-    monkeypatch.setattr(cazy_scraper, "connect_existing_db", mock_connect_existing_db)
+    monkeypatch.setattr(get_uniprot_data, "connect_existing_db", mock_connect_existing_db)
     monkeypatch.setattr("cazy_webscraper.expand.uniprot.get_uniprot_data.make_output_directory", mock_return_none)
     monkeypatch.setattr(get_uniprot_data, "get_expansion_configuration", mock_get_expansion_configuration)
     monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
