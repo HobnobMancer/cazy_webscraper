@@ -43,7 +43,6 @@
 """Extract protein sequences from local CAZyme database, write to FASTA files and/or BLAST db"""
 
 
-from contextlib import closing
 import logging
 import sys
 
