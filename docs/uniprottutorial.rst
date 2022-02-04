@@ -66,7 +66,7 @@ The following behaviours of the ``cw_get_uniprot_data`` can be configured at the
 * Enable updating protein sequences in the local CAZyme database if newer versions are retrieved from UniProt
 * Enable verbose logging during the operation of the webscraper
 
-`Here <https://cazy-webscraper.readthedocs.io/en/latest/configuration_scraper.html>`_ you can find a full list of the command-line flags and options.
+`Here <https://cazy-webscraper.readthedocs.io/en/latest/uniprot.html>`_ you can find a full list of the command-line flags and options.
 
 
 ---------------------------------------------------------------
@@ -249,7 +249,7 @@ To retrieve EC numbers and PDB accessions for all CAZymes in GH and which are de
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --pdb --classes GH --genera Aspegillus,Trichoderma
+   cw_get_uniprot_data cazy/cazyme.db --pdb --ec --classes GH --genera Aspegillus,Trichoderma
 
 
 **Example 3:**
@@ -258,7 +258,7 @@ EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, we use the command:
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --pdb --sequences --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
+   cw_get_uniprot_data cazy/cazyme.db --ec --sequences --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
 ------------------------------
 Providing a list of accessions
