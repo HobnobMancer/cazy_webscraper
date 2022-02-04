@@ -297,7 +297,7 @@ def build_parser(argv: Optional[List] = None):
     )  
 
     parser.add_argument(
-        "--uniprot_data",
+        "--use_uniprot_cache",
         type=Path,
         default=None,
         help="Path to a JSON file containing data previously retrieved from UniProt by cazy_webscraper",
