@@ -220,17 +220,18 @@ Class names can be written in all upper case, all lower case, or mixed case, suc
 
 ## Retrieve data from UniProt
 
-[UniProtKB] is one of the largest protein database, incorporating data from the [PDB] structure database and other protein annotation databases.
+[UniProtKB] is one of the largest protein database, incorporating data from the [PDB] structure database, NCBI and other protein annotation databases.
 
 `cazy_webscraper` can retrieve protein data from UniProt for proteins catalogued in a local CAZyme database created using `cazy_webscraper`. Specifically, for each protein, `cazy_webscraper` can retrieve:
 - The UniProt accession
+- Protein name
 - PDB accessions of associated structure files from the PDB database
 - EC number annnotations
 - Protein sequence from the UniProt
 
-`cazy_webscraper` always retrieves the UniProt accession, but the retrieval of PDB accession, EC numbers and protein sequences is optional.
+`cazy_webscraper` always retrieves the UniProt accession and protein name, but the retrieval of PDB accession, EC numbers and protein sequences is optional.
 
-Data can be retrieived for all proteins in the local CAZyme database, or a specific subset. CAZy class, CAZy family, genus, species, strains, kingdom and EC number filters can be defined in order to define a dataset to retrieve protein data from UniProt for.
+Data can be retrieived for all proteins in the local CAZyme database, or a specific subset. CAZy class, CAZy family, genus, species, strains, kingdom and EC number filters can be defined in order to define a dataset to retrieve protein data for.
 
 To retrieve all UniProt data for all proteins in a local CAZyme datbase, using the following command:
 ```bash
@@ -253,7 +254,9 @@ Below are listed the command-line flags for configuring the retrieval of UniProt
 
 `--config`, `-c` - Path to a configuration YAML file. Default: None.
 
-``--delete_old_ec`` - Boolean, delete EC number - Protein relationships that are no longer listed in UniProt, i.e. an EC number annotation is no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
+`--delete_old_ec` - Boolean, delete EC number - Protein relationships that are no longer listed in UniProt, i.e. an EC number annotation is no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
+
+`--delete_old_pdbs` - Boolean, delete PDB accessions - Protein relationships that are no longer listed in UniProt, i.e. an PDB accessions that are no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
 
 `--ec`, `-e` - Enable retrieval of EC number annotations from UniProt
 
@@ -266,9 +269,11 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--force` - Force writing in existing cache directory.
 
-``--genbank_accessions`` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+`--genbank_accessions` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
 
 `--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
+
+`--kingdoms` - List of taxonomic kingdoms to restrict the scrape to. Default: None, filter is not applied.
 
 `--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
 
@@ -278,11 +283,15 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--nodelete_log` - When called, content in the existing log dir will **not** be deleted. Default: False (existing content is deleted).
 
+`--pdb`, `-p` - Enable retrieval of PDB accessions. Default, PDB accessions not retrieved.
+
 `--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
+
+`--skip_uniprot_accessions` - Path to a JSON file, keyed by UniProt accessions/IDs and valued by dicts containing `{'gbk_acc': str, 'db_id': int}`. This file part of the cache created by `cw_get_uniprot_data`. This is option to skip retrieving the UniProt IDs for a set of GenBank accessions, if retrieving data for the same dataset (this save a lot of time!)
 
 `--sequence`, `-s` - Retrieve protein amino acid sequences from UniProt
 
-`--skip_uniprot_accessions` - Path to a JSON file, keyed by UniProt accessions/IDs and valued by dicts containing `{'gbk_acc': str, 'db_id': int}`. This file part of the cache created by `cw_get_uniprot_data`. This is option to skip retrieving the UniProt IDs for a set of GenBank accessions, if retrieving data for the same dataset (this save a lot of time!)
+`--seq_update` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
@@ -296,9 +305,12 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--uniprot_batch_size` - Size of an individual batch query submitted to the [UniProt REST API](https://www.uniprot.org/help/programmatic_access) to retrieve the UniProt accessions of proteins identified by the GenBank accession. Default is 150. The UniProt API documentation recommands batch sizes of less than 20,000 but batch sizes of 1,000 often result in HTTP 400 errors. It is recommend to keep batch sizes less than 1,000, and ideally less than 200.
 
-`--seq_update` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
-
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
+
+### UniProt data retrieval cache
+
+- The tables retrieved from UniProt are converted to dataframes, and written out as CSV files in the cache directory
+- The parsed UniProt data as a single JSON file
 
 ## Retrieveing protein seqences from GenBank
 
@@ -310,10 +322,6 @@ To retrieve all GenBank protein seuqneces for all proteins in a local CAZyme dat
 ```bash
 cw_get_genbank_seqs <path_to_local_CAZyme_db>
 ```
-
-`cazy_webscraper` produces to cache files, which are written to the cache dir:
-1. `no_seq_retrieved.txt` which lists the GenBank accessions for which no sequence could be retrieved from GenBank
-2. `seq_retrieved.txt` which list GenBank accessiosn for which a sequence was retrieved from GenBank
 
 ### Configuring GenBank protein sequence retrieval
 
@@ -365,6 +373,13 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--strains` - List of specific species strains to restrict the scraping of CAZymes to.
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
+
+### GenBank sequence retrieval cache
+
+`cazy_webscraper` produces three cache files, which are written to the cache dir:
+1. `no_seq_retrieved.txt` which lists the GenBank accessions for which no sequence could be retrieved from GenBank
+2. `seq_retrieved.txt` which list GenBank accessiosn for which a sequence was retrieved from GenBank
+3. JSON file keyed by GenBank accessions and valued by the retrieved protein sequence
 
 ## Extracting protein sequences from the local CAZyme database and building a BLAST database
 
