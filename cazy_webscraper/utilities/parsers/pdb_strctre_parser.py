@@ -220,6 +220,14 @@ def build_parser(argv: Optional[List] = None):
         help="Path to output directory to which downloaded structures are retrieved",
     )
 
+    parser.add_argument(
+        "--overwrite",
+        dest="overwrite",
+        action="store_true",
+        default=False,
+        help="Overwrite existing structure file with the same PDB accession in the output directory",
+    )
+
     # Add option to force file over writting
     parser.add_argument(
         "--sql_echo",
