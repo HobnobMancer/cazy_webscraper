@@ -325,7 +325,8 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
                 # retrieve PDB accessions
                 pdb_accessions = row['Cross-reference (PDB)']
                 try:
-                    pdb_accessions = pdb_accessions.split('; ')
+                    pdb_accessions = pdb_accessions.split(';')
+                    pdb_accessions = [pdb.strip() for pdb in pdb_accessions]
                 except AttributeError:
                     pdb_accessions = set()
 
