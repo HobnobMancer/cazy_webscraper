@@ -409,6 +409,8 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--kingdoms` - List of taxonomy kingdoms to retrieve UniProt data for.
 
+`--genbank_accessions` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+
 `--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
 
 `--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
@@ -422,6 +424,8 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--species` - List of species written as Genus Species) to restrict the scraping of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
 
 `--strains` - List of specific species strains to restrict the scraping of CAZymes to.
+
+`--uniprot_accessions` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
@@ -472,6 +476,8 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--families` - List of CAZy (sub)families to scrape.
 
+`--genbank_accessions` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+
 `--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
 
 `--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
@@ -491,6 +497,8 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--strains` - List of specific species strains to restrict the scraping of CAZymes to.
 
 `--timeout`, `-t` - Connection timout limit (seconds). Default: 45.
+
+`--uniprot_accessions` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 

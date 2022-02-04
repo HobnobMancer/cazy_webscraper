@@ -79,6 +79,8 @@ Command line options
 
 ``--kingdoms`` - List of taxonomy kingdoms to retrieve UniProt data for.
 
+``--genbank_accession`` - Path to text file containing a list of GenBanks accessions to extract protein sequences for. A unique accession per line.
+
 ``--genera`` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
 
 ``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
@@ -92,6 +94,8 @@ Command line options
 ``--species`` - List of species written as Genus Species) to restrict the scraping of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
 
 ``--strains`` - List of specific species strains to restrict the scraping of CAZymes to.
+
+``--uniprot_accessions`` - Path to text file containing a list of UniProt accessions to extract protein sequences for. A unique accession per line.
 
 ``--verbose``, ``-v`` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 

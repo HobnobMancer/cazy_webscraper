@@ -39,11 +39,11 @@ Structure file formats
 * mmtf (highly compressed),
 * bundle (PDB formatted archive for large structure}
 
-Any combination of file formats can be provided to ``cw_get_pdb_structures`` to download every file type for each PDB accession in the local CAZyme database. To list multiple file formats, separate each file format with a single comma. For example, to download the mmCif and xml files for every PDB accession in a local CAZyme database (located at ``cazy/cazyme_db.db``), use the following command:
+Any combination of file formats can be provided to ``cw_get_pdb_structures`` to download every file type for each PDB accession in the local CAZyme database. To list multiple file formats, separate each file format with a single space (' '). For example, to download the mmCif and xml files for every PDB accession in a local CAZyme database (located at ``cazy/cazyme_db.db``), use the following command:
 
 .. code-block:: bash
     
-    cw_get_pdb_structures cazy/cazyme_db.db mmCif,xml
+    cw_get_pdb_structures cazy/cazyme_db.db mmCif xml
 
 .. WARNING::
     The file formats are case sensitive. For example, make sure to use 'mmCif' not 'mmcif'.
@@ -70,6 +70,8 @@ Command line options
 
 ``--families`` - List of CAZy (sub)families to retrieve UniProt protein data for.
 
+``--genbank_accessions`` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+
 ``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
 
 ``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
@@ -89,6 +91,8 @@ Command line options
 ``--strains`` - List of species strains to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given strains.
 
 ``--timeout``, ``-t`` - Connection timout limit (seconds). Default: 45.
+
+``--uniprot_accessions`` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
 
 ``--update_seq`` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
