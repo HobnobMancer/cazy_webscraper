@@ -590,42 +590,38 @@ Below are listed the command-line flags for configuring the interrogation of the
 
 `--classes` - List of classes from which all families are to be retrieval.
 
-`--ec` - Included EC number annotations in the output
-
 `--ec_filter` - Limist retrieval of protein data to proteins annotated with a provided list of EC numbers. Separate the EC numbers bu single commas without spaces. Recommend to wrap the entire str in quotation marks, for example:
 ```bash
 cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 ```
 
-`--family` - Include CAZy family annotations in the output.
-
 `--families` - List of CAZy (sub)families to retrieve CAZymes from. This includes families and SUBfamilies.
 
-`--genus` - Include a 'Genus' column in the output `csv` file, listing the genus for each retrieved CAZymes
-
 `--genera` - List of genera to restrict the retrieval to. Default: None, filter not applied to scrape.
+
+`--include` - List additional data to include in the output. Multiple fields can be named, separating each with a single space (' '). The accepted fields are:
+- 'class' - Include a column listing the CAZy class annotations
+- 'family' - Include a column listing the CAZy family annotations
+- 'subfamily' - Include a column listing the subfamily class annotations
+- 'uniprot' - Include a column listing the UniProt accession
+- 'ec' - Include a column listing theEC number annotations
+- 'pdb' - Include a column listing the PDB accessions
+- 'genbank_seq' - Include a column listing the GenBank protein sequence
+- 'uniprot_seq' - Include a column listing the Uniprot protein sequence
+
+`--kingdoms` - List of taxonomy kingdoms to retrieve UniProt data for.
 
 `--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
 
 `--nodelete` - When called, content in the existing output dir will **not** be deleted. Default: False (existing content is deleted).
 
-`--organism` - Include the scientific (organism) name of the source organis
-
 `--output`, `-o` - Output path to write the compiled `csv` file. Default is to write out the `csv` file to the current working directory.
-
-`--seq_genbank` - Add the protein sequences retrieved from GenBank to the query output
-
-`--seq_uniprot` - Add the protein sequences retrieved from GenBank to the query output
 
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
 `--species` - List of species written as (Genus Species) to restrict the retrieval of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
 
 `--strains` - List of specific species strains to restrict the retrieval of CAZymes to.
-
-`--subfamily` - Include the CAZy subfamily annotations for proteins matching the criteria of interest.
-
-`--uniprot` - Include the UniProt protein accession and protein name in the output.
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
