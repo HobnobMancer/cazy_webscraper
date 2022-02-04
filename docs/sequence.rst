@@ -1,11 +1,3 @@
-
-`source` - \[REQUIRED\] Define source databases of protein sequences. Accepts 'genbank' and 'uniprot'. To list both, separate with a single space, e.g.   
-```bash
-cw_extract_sequence cazy_database.db genbank uniprot
-```
-*The database names are not case sensitive, therefore, both GenBank and genbank are accepted.*  
-
-
 ================================================
 Extract protein squences from the local database
 ================================================
@@ -27,7 +19,7 @@ To extract all protein sequences previously retrieved from GenBank and UniProt, 
 
 .. code-block:: bash
 
-   cw_extract_sequences <path to local CAZyme db> genbank uniprot
+   cw_extract_db_sequences <path to local CAZyme db> genbank uniprot
 
 .. NOTE::
    The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
