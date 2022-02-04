@@ -92,11 +92,12 @@ Command line options
 Basic Usage
 -----------
 
-The command-line options listed above can be used in combination to customise the scraping of CAZy. Some options (e.g. ``--families`` and ``--classes``) define the broad group of data that will be scraped, others (e.g. ``--species``) are used to filter and fine-tune the data that is scraped.
+The command-line options listed above can be used in combination to customise the scraping of CAZy. Some options (e.g. ``--families`` and ``--classes``) 
+define the broad group of data that will be scraped, others (e.g. ``--species``) are used to filter and fine-tune the data that is scraped.
 
 The ``--classes``, ``--families``, ``--kingdoms``, ``--genera``, ``--species``, and ``--strains`` filteres are applied 
-in the exactly same for retrieving data from CAZy as retrieving data from UniProt. Examples of using these flags 
-can be found in the ``cazy_webscraper`` tutorial in this documentation.
+in the exactly same for retrieving data from CAZy as retrieving protein sequences from GenBank and protein data from UniProt. Examples of using these flags 
+can be found in the `tutorial <https://cazy-webscraper.readthedocs.io/en/latest/genbanktutorial.html>`_.
 
 The ``--seq_update`` flag is used in the same way for retrieving protein sequences from UniProt and GenBank.
 
