@@ -225,7 +225,7 @@ def build_parser(argv: Optional[List] = None):
         dest="overwrite",
         action="store_true",
         default=False,
-        help="Overwrite existing structure file with the same PDB accession in the output directory",
+        help="Overwrite existing structure files with the same PDB accession as files being downloaded. Default: don't overwrite existing file",
     )
 
     # Add option to force file over writting
