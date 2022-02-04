@@ -104,6 +104,13 @@ def build_parser(argv: Optional[List] = None):
         help="Path to text file contining UniProt accessions",
     )
 
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=150,
+        help="Batch size for queries sent to NCBI.Entrez"
+    )
+
     # Add option to specify path to configuration file
     parser.add_argument(
         "-c",
@@ -211,6 +218,15 @@ def build_parser(argv: Optional[List] = None):
         type=Path,
         metavar="output directory path",
         help="Path to output directory to which downloaded structures are retrieved",
+    )
+
+    # Add option to force file over writting
+    parser.add_argument(
+        "--sql_echo",
+        dest="sql_echo",
+        action="store_true",
+        default=False,
+        help="Set SQLite engine echo to True (SQLite will print its log messages)",
     )
 
     # Add option to restrict the scrape to specific species. This will scrape CAZymes from

@@ -159,7 +159,7 @@ def download_pdb_structures(pdb_accessions, args):
 
     if args.outdir is None:
         logger.warning("Downloading to current working directory")
-        for accession_list in get_chunks_gen(pdb_accessions, args.batch_limit):
+        for accession_list in get_chunks_gen(pdb_accessions, args.batch_size):
             for file_type in tqdm(args.pdb, desc="Downloading"):
                 pdbl.download_pdb_files(
                     pdb_codes=accession_list,
@@ -169,7 +169,7 @@ def download_pdb_structures(pdb_accessions, args):
 
     else:
         logger.warning(f"Downloading structures to {args.outdir}")
-        for accession_list in get_chunks_gen(pdb_accessions, args.batch_limit):
+        for accession_list in get_chunks_gen(pdb_accessions, args.batch_size):
             for file_type in tqdm(args.pdb, desc="Downloading"):
                 pdbl.download_pdb_files(
                     pdb_codes=accession_list,
