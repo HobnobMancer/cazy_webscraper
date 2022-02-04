@@ -134,7 +134,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_dir = cache_dir / "uniprot_data_retrieval"
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
-    download_pdb_structures(pdb_accessions, cache_dir, args)
+    download_pdb_structures(pdb_accessions, args)
 
     cache_path = cache_dir / f"pdb_retrieval_{time_stamp}.txt"
     with open(cache_path, 'a') as fh:
