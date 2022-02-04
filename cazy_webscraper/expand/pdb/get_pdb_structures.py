@@ -58,7 +58,7 @@ from tqdm import tqdm
 
 from cazy_webscraper import cazy_webscraper
 from cazy_webscraper.expand import get_chunks_gen
-from cazy_webscraper.sql.sql_interface import get_selected_pdbs
+from cazy_webscraper.sql.sql_interface import get_selected_pdbs, get_table_dicts
 from cazy_webscraper.sql.sql_interface.get_records import (
     get_user_genbank_sequences,
     get_user_uniprot_sequences
@@ -100,9 +100,17 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     gbk_dict = {}  # {gbk_acc: gbk_id}
 
+    gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
+    # {genbank_accession: 'taxa_id': str, 'gbk_id': int}
+
     if args.genbank_accessions is not None:
         logger.warning(f"Retrieving PDB structures for GenBank accessions listed in {args.genbank_accessions}")
         gbk_dict.update(get_user_genbank_sequences(gbk_table_dict, args))
+
+    if args.uniprot_accessions is not None:
+        logger.warning(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
+        uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+        gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
 
     pdb_accessions = get_selected_pdbs.get_pdb_accessions(
         class_filters,
@@ -110,6 +118,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         taxonomy_filter_dict,
         kingdom_filters,
         ec_filters,
+        gbk_table_dict,
         connection,
     )
 
