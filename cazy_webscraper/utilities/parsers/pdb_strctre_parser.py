@@ -51,7 +51,7 @@ from typing import List, Optional
 class ValidateFormats(argparse.Action):
     """Check the user has provided valid structure file formats."""
     def __call__(self, parser, args, values, option_string=None):
-        valid_formats = ("mmcif", "pdb", "xml", "mmtf", "bundle")
+        valid_formats = ("mmCif", "pdb", "xml", "mmtf", "bundle")
         invalid = False
         for value in values:
             if value not in valid_formats:
