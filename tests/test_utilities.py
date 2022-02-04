@@ -118,7 +118,7 @@ def test_parser_extract():
 
 def test_parser_arsv_extract():
     """Test building the parser when argsv is not None"""
-    extract_seq_parser.build_parser(["dummy_email"])
+    extract_seq_parser.build_parser(["dummy_email", "genbank", "uniprot"])
 
 
 def test_parser_api():
