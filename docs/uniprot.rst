@@ -53,6 +53,8 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 
 ``--delete_old_ec`` - Boolean, delete EC number - Protein relationships that are no longer listed in UniProt, i.e. an EC number annotation is no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
 
+``--delete_old_pdbs`` - Boolean, delete PDB accessions - Protein relationships that are no longer listed in UniProt, i.e. an PDB accessions that are no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
+
 ``--ec``, ``-e`` - Enable retrieval of EC number annotations from UniProt. Default, EC number annotations are **not** retrieved.
 
 ``--ec_filter`` - List of EC numbers to limit the retrieval of protein data for proteins annotated with at least one of the given EC numbers **in the local CAZyme database**.
@@ -64,6 +66,8 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 ``--genbank_accessions`` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
 
 ``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
+
+``--kingdoms`` - List of taxonomic kingdoms to restrict the scrape to. Default: None, filter is not applied.
 
 ``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
 
@@ -132,7 +136,7 @@ local CAZyme database. ``cw_get_uniprot_data`` can also retrieve from UniProt:
 Retrieving EC number annotations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To retrieve EC number annotations from UniProt add the ``--ec``/``-e`` flag to the command:
+To retrieve EC number annotations from UniProt add the ``--ec`` /  ``-e`` flag to the command:
 
 .. code-block:: bash
 
@@ -155,7 +159,7 @@ Retrieving PDB accessions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To retrieve all PDB accessions for all CAZymes in the local CAZyme database matching the given filter criteria,
-add the ``--pdb``/``-p`` flag to the command:
+add the ``--pdb`` /  ``-p`` flag to the command:
 
 .. code-block:: bash
 
@@ -173,7 +177,7 @@ Retrieving protein sequences
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To retrieve all protein amino acid sequences for all CAZymes in the local CAZyme database matching the given filter criteria,
-add the ``--sequence``/``-s`` flag to the command:
+add the ``--sequence`` /  ``-s`` flag to the command:
 
 .. code-block:: bash
 
@@ -197,7 +201,7 @@ When using ``--sequence`` flag, ``cw_get_uniprot_data`` will only add *new* prot
 it will only add protein sequences to records that do not have a sequence. Therefore, if a protein
 already has a sequence in the local database, this sequence is **not** overwritten.
 
-You may wish to update the protein sequences in your local CAZyme database. To do this use the ``--sequence``/``-s`` 
+You may wish to update the protein sequences in your local CAZyme database. To do this use the ``--sequence`` /  ``-s`` 
 flag to tell ``cw_get_uniprot_data`` to retrieve protein sequences, **and** use the ``--seq_update`` flag.
 
 .. code-block:: bash
