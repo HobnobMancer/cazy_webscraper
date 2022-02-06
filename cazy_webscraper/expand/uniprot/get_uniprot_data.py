@@ -172,9 +172,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             json.dump(uniprot_gkb_dict, fh)
 
     # Get protein data from UniProt
-    if args.uniprot_data is not None:
-        logger.warning(f"Using UniProt data from cache: {args.uniprot_data}")
-        with open(args.uniprot_data, "r") as fh:
+    if args.use_uniprot_cache is not None:
+        logger.warning(f"Using UniProt data from cache: {args.use_uniprot_cache}")
+        with open(args.use_uniprot_cache, "r") as fh:
             uniprot_dict = json.load(fh)
 
         if args.ec:
