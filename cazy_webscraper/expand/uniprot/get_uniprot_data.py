@@ -159,9 +159,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.warning(f"Retrieving UniProt data for {len(gbk_dict.keys())}")
 
     # Get the UniProt accessions/IDs for the corresponding GenBank accessions
-    if args.uniprot_accessions is not None:
-        logger.warning(f"Using UniProt accessions from cache: {args.uniprot_accessions}")
-        with open(args.uniprot_accessions, "r") as fh:
+    if args.skip_uniprot_accessions is not None:
+        logger.warning(f"Using UniProt accessions from cache: {args.skip_uniprot_accessions}")
+        with open(args.skip_uniprot_accessions, "r") as fh:
             uniprot_gkb_dict = json.load(fh)
 
     else:
