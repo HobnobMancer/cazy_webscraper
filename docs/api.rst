@@ -71,6 +71,9 @@ Command line options
 * 'class' - Include the CAZy class annotations
 * 'family' - Include the CAZy family annotations
 * 'subfamily' - Include the subfamily class annotations
+* 'kingdom' - Include the taxonomic kingdom of the source organism
+* 'genus' - Include the genus of the source organism
+* 'organism' - Include the scientific name of the source organism
 * 'uniprot_acc' - Include the UniProt accession
 * 'uniprot_name' - Include the protein name retrieved from UniProt
 * 'ec' - Include the EC number annotations
