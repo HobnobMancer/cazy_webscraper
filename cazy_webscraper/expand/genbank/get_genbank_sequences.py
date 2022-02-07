@@ -390,7 +390,7 @@ def retry_failed_queries(query, seq_dict, success_accessions, args):
     else:  # successful retrieval of data from NCBI
         for acc in new_seq_dict:
             seq_dict[acc] = new_seq_dict[acc]
-            success_accessions.add(success_accessions)
+            success_accessions.add(acc)
 
         failed_accessions += no_seq
 
