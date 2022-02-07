@@ -1,52 +1,47 @@
-===================================
-Retrieving structure files from PDB
-===================================
+====================================
+Interrogating the data using the API
+====================================
 
-``cazy_webscraper`` can be used to retrieve protein structure files for PDB accessions in a local CAZyme database from `RSCB PDB database <https://www.rcsb.org/>`_. The downloading of the structure files is handled by the ``BioPython`` module ``Bio.PDB``. 
+The data stored in the local CAZyme database can be interrogated using SQL. ``cazy_webscraper`` also 
+includes an API, which can be used to interrogate the data in the local CAZyme database and write out the retrieved data 
+in ``JSON`` and/or ``CSV`` format.
 
-For specific information of the ``Bio.PDB`` module please see the 
-`BioPython documentation <https://biopython.org/wiki/The_Biopython_Structural_Bioinformatics_FAQ>`_.
-
-.. warning::
-        If many PDB structure files are going to retrieved PDB (for example more than 100), it is expected practise to perform the
-        opretional outside peak times.
-
-.. note::
-    PDB structure files are retrieved for the PDB accessions *in* a local CAZyme database created using ``cazy_webscraper``.
+By default ``cazy_webscraper`` only includes the GenBank accessions of proteins matching the provided 
+criteria, but the inclusion of additional data (such as protein squences, UniProt accessions, EC numbers, etc) 
+is fully customisable.
 
 -----------
 Quick Start
 -----------
 
-To download the protein structure file for all PDB accessions in a local CAZyme database, use the following command structure:
+To retrieve the GenBank accession of all CAZymes stored in the local CAZyme database, use the following command 
+structure:
 
 .. code-block:: bash
 
-   cw_get_pdb_structures <path to local CAZyme db> <desired file formats>
+   cw_query_database <path to local CAZyme db> <desired file formats>
 
 .. NOTE::
    The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
    
-----------------------
-Structure file formats
-----------------------
+---------------------
+Accepted file formats
+---------------------
 
-``cw_get_pdb_structures`` can retrieve protein structure files in a series of file formats. The options of file format are (as specified in the BioPython `documentation <https://biopython.org/docs/1.75/api/Bio.PDB.PDBList.html>`_):
+``cw_query_database`` can write the output to a csv or json file.
 
-* mmCif (default, PDBx/mmCif file),
-* pdb (format PDB),
-* xml (PDBML/XML format),
-* mmtf (highly compressed),
-* bundle (PDB formatted archive for large structure}
-
-Any combination of file formats can be provided to ``cw_get_pdb_structures`` to download every file type for each PDB accession in the local CAZyme database. To list multiple file formats, separate each file format with a single space (' '). For example, to download the mmCif and xml files for every PDB accession in a local CAZyme database (located at ``cazy/cazyme_db.db``), use the following command:
+These are provided as the second arguments to ``cw_query_database``. To write out both a csv and json 
+file use both ``csv`` and ``json`` after the path to the local CAZyme database, separted with a single space.
 
 .. code-block:: bash
-    
-    cw_get_pdb_structures cazy/cazyme_db.db mmCif xml
+
+    cw_query_database <path to local CAZyme db> csv json
+
+.. NOTE::
+    The order ``csv`` and ``json`` are written does not matter.
 
 .. WARNING::
-    The file formats are case sensitive. For example, make sure to use 'mmCif' not 'mmcif'.
+    Both ``csv`` and ``json`` are case sensitive.
 
 --------------------
 Command line options
