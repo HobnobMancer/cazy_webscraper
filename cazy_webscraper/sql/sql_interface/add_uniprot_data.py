@@ -134,7 +134,7 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
         if args.sequence or args.seq_update:
             columns = ['genbank_id', 'uniprot_accession', 'uniprot_name', 'sequence', 'seq_update_date']
         else:
-            columns = ['genbakn_id', 'uniprot_accession', 'uniprot_name']
+            columns = ['genbank_id', 'uniprot_accession', 'uniprot_name']
     
         insert_data(connection, "Uniprots", columns, list(uniprot_insert_values))
 
