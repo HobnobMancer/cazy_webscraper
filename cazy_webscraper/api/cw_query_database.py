@@ -155,27 +155,27 @@ def get_query_data(gbk_dict, connection, args):
     for gbk_acc in gbk_dict:
         query_data[gbk_acc] = {}
 
-    if args.cazy_class or args.cazy_family or args.cazy_subfamily:
+    if ('class' in args.include) or ('family' in args.include) or ('subfamily' in args.include):
         # retrieve the CAZy family annotations from the local CAZyme database
         query_data = get_api_data.get_class_fam_annotations(gbk_dict, query_data, connection, args)
 
-    if args.kingdom or args.genus or args.organism:
+    if ('kingdom' in args.include) or ('genus' in args.include) or ('organism' in args.include):
         # retrieve the taxonomy data from the local CAZyme database
         query_data = get_api_data.get_tax_annotations(gbk_dict, query_data, connection, args)
 
-    if args.ec:
+    if 'ec' in args.include:
        # retrieve the ec numbers from the local CAZyme database
        query_data = get_api_data.get_ec_annotations(gbk_dict, query_data, connection)
 
-    if args.pdb:
+    if 'pdb' in args.include:
         # retrieve the PDB accessions from the local CAZyme database
         query_data = get_api_data.get_pdb_accessions(gbk_dict, query_data, connection)
 
-    if args.uniprot or args.seq_uniprot:
+    if ('uniprot_acc' in args.include) or ('uniprot_name' in args.include) or ('uniprot_seq' in args.include):
         # retrieve the UniProt data from the local CAZyme database
         query_data = get_api_data.get_uniprot_data(gbk_dict, query_data, connection, args)
 
-    if args.seq_genbank:
+    if 'genbank_seq' in args.include:
         # retrieve GenBank protein sequences from the local CAZyme database
         query_data = get_api_data.get_gbk_seq(gbk_dict, query_data, connection)
 
