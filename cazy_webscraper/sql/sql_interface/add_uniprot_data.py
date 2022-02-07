@@ -267,7 +267,7 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
 
     pdb_insert_values = set()  # new records to add to db
     update_pdbs = set()  # records to update
-    existing_pdbs = set(pdb_table_dict.values())  # records already in the db
+    existing_pdbs = set(list(pdb_table_dict.values()))  # records already in the db
     if args.delete_old_pdbs:
         delete_pdbs = set()  # records to delete, PDB acc no longer listed in UniProt for the given protein
 
