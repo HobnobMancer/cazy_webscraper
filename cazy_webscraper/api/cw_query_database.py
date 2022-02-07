@@ -42,6 +42,7 @@
 
 import logging
 import json
+import re
 
 import pandas as pd
 
@@ -107,7 +108,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     query_data = get_query_data(gbk_dict)
 
-    write_output(query_data, args)
+    output_path = compile_output_name(args, time_stamp)
+    
+    if 'json' in args.file_types:
+        json_output_path = output_path + ".json"
+        with open(json_output_path, 'w') as fh:
+            json.dump(query_data, fh)
+
+    if 'csv' in args.file_types:
+        write_csv_output(query_data, args)
 
 
 def get_query_data(gbk_dict, connection, args):
@@ -171,70 +180,77 @@ def get_query_data(gbk_dict, connection, args):
         query_data = get_api_data.get_gbk_seq(gbk_dict, query_data, connection)
 
 
-def write_output(query_data, args, time_stamp):
-    """Write out query data to disk.
+def write_csv_output(query_data, args, output_path, time_stamp):
+    """Parse the output into a df structure and write out to a csv file.
     
     :param query_data: dict containing db query data.
     :param args: cmd-line args parser
+    :param output_path: Path to write out output
+    :param time_stamp: date and time script was invoked
     
-    Return nothing"""
-    output_path = compile_output_name(args, time_stamp)
+    Return nothing.
+    """
+    output_path += ".csv"
 
-    if 'json' in args.file_types:
-        output_path += ".json"
-        with open(output_path, 'w') as fh:
-            json.dump(query_data, fh)
+    column_names = get_column_names(args)
 
-    if 'csv' in args.file_types:
-        output_path += ".csv"
+    df_data = []  # list of nested lists, one nested list per df row
 
-        # compile pandas df of the data
-        column_names = get_column_names(args)
+    for gbk_acc in tqdm(query_data, desc="Compiling output dataframe"):
+        new_rows = []
+
+        if (('class' not in args.include) and ('family' not in args.include) and ('subfamily' not in args.include)) or \
+            (('class' in args.include) and ('family' not in args.include) and ('subfamily' not in args.include)) or \
+                (('class' not in args.include) and ('family' in args.include) and ('subfamily' not in args.include)) \
+                    (('class' not in args.include) and ('family' not in args.include) and ('subfamily' in args.include)):
+                    new_rows.append([gbk_acc])  # don't need to create multiple rows to separate the class/fam/subfam annotations
         
-        df_data = []  # list of nested lists, one nested list per df row
-
-        for gbk_acc in tqdm(query_data, desc="Compiling output dataframe"):
-            new_rows = []
-
+        else:
             # create one row for each CAZy class, CAZy family and CAZy subfamily annotation
             # link the parent-child relationships between CAZy class, family and subfamily
-            if args.cazy_class is False and args.cazy_family is False and args.cazy_subfamily is False:
-                new_rows.append([gbk_acc])  # don't need to create multiple rows to separate the class/fam/subfam annotations
+            new_rows = get_class_fam_relationships(gbk_acc, query_data, args)
 
-            if args.kingdom:
-                for row in new_rows:
-                    row.append(query_data[gbk_acc]["kingdom"])
-            if args.genus:
-                for row in new_rows:
-                    row.append(query_data[gbk_acc]["genus"])
-            if args.organism:
-                for row in new_rows:
-                    row.append(query_data[gbk_acc]["organism"])
-            if args.ec:
-                for row in new_rows:
-                    row.append(" ".join(list(query_data[gbk_acc]["ec_numbers"])))
-            if args.pdb:
-                for row in new_rows:
-                    row.append(" ".join(list(query_data[gbk_acc]["pdb_accessions"])))
-            if args.uniprot:
-                for row in new_rows:
-                    row.append(query_data[gbk_acc]["uniprot_accession"])
-                    row.append(query_data[gbk_acc]["uniprot_name"])
-            if args.seq_uniprot:
-                for row in new_rows:
-                    row.append(query_data[gbk_acc]["uniprot_sequence"])
-                    row.append(query_data[gbk_acc]["uniprot_sequence_date"])
-            if args.seq_genbank:
-                for row in new_rows:
-                    row.append(query_data[gbk_acc]["gbk_sequence"])
-                    row.append(query_data[gbk_acc]["gbk_sequence_date"])
-
+        # data from CAZy
+        if 'kingdom' in args.include:
             for row in new_rows:
-                df_data.append(row)
+                row.append(query_data[gbk_acc]["kingdom"])
+        if 'genus' in args.include:
+            for row in new_rows:
+                row.append(query_data[gbk_acc]["genus"])
+        if 'organism' in args.include:
+            for row in new_rows:
+                row.append(query_data[gbk_acc]["organism"])
+        
+        # data from GenBank
+        if "genbank_seq" in args.include:
+            for row in new_rows:
+                row.append(query_data[gbk_acc]["gbk_sequence"])
+                row.append(query_data[gbk_acc]["gbk_sequence_date"])
+        
+        # data from UniProt
+        if 'uniprot_acc' in args.include:
+            for row in new_rows:
+                row.append(query_data[gbk_acc]["uniprot_accession"])
+        if 'uniprot_name' in args.include:
+            for row in new_rows:
+                row.append(query_data[gbk_acc]["uniprot_name"])
+        if "ec" in args.include:
+            for row in new_rows:
+                row.append(" ".join(list(query_data[gbk_acc]["ec_numbers"])))
+        if "pdb" in args.include:
+            for row in new_rows:
+                row.append(" ".join(list(query_data[gbk_acc]["pdb_accessions"])))
+        if "uniprot_seq" in args.include:
+            for row in new_rows:
+                row.append(query_data[gbk_acc]["uniprot_sequence"])
+                row.append(query_data[gbk_acc]["uniprot_sequence_date"])
 
-        query_df = pd.DataFrame(df_data, columns=column_names)
+        for row in new_rows:
+            df_data.append(row)
 
-        query_df.to_csv(output_path)
+    query_df = pd.DataFrame(df_data, columns=column_names)
+
+    query_df.to_csv(output_path)
 
 
 def compile_output_name(args, time_stamp):
@@ -275,33 +291,136 @@ def get_column_names(args):
     Return list of column names"""
     column_names = ["genbank_accession"]
 
-    if args.cazy_class:
+    # data from CAZy
+    if 'class' in args.include:
         column_names.append("class")
-    if args.cazy_family:
+    if 'family' in args.include:
         column_names.append("family")
-    if args.cazy_subfamily:
+    if 'subfamily' in args.include:
         column_names.append("subfamily")
-    if args.kingdom:
+    if 'kingdom' in args.include:
         column_names.append("kingdom")
-    if args.genus:
+    if 'genus' in args.include:
         column_names.append("genus")
-    if args.organism:
+    if 'organism' in args.include:
         column_names.append("source_organism")
-    if args.ec:
-        column_names.append("ec_number")
-    if args.pdb:
-        column_names.append("pdb_accession")
-    if args.uniprot:
-        column_names.append("uniprot_accession")
-        column_names.append("uniprot_name")
-    if args.seq_uniprot:
-        column_names.append("uniprot_sequence")
-        column_names.append("uniprot_sequence_date")
-    if args.seq_genbank:
+
+    # data from GenBank
+    if 'genbank_seq' in args.include:
         column_names.append("genbank_sequence")
         column_names.append("genbank_sequence_date")
 
+    # data from UniProt
+    if 'uniprot_acc' in args.include:
+        column_names.append("uniprot_accession")
+    if 'uniprot_name' in args.include:
+        column_names.append("uniprot_name")
+    if 'ec' in args.include:
+        column_names.append("ec_number")
+    if 'pdb' in args.include:
+        column_names.append("pdb_accession")
+    if 'uniprot_seq' in args.include:
+        column_names.append("uniprot_sequence")
+        column_names.append("uniprot_sequence_date")
+
     return column_names
+
+
+def get_class_fam_relationships(gbk_acc, protein_query_data, args):
+    """Define CAZy class-family-subfamily relationships in the query data.
+    
+    :param gbk_acc: str, GenBank protein accession
+    :param query_data: dict, data retrieved from the local CAZyme database for the specific protein
+        {
+            'class': {CAZy classes},
+            'family': {CAZy families},
+            'subfamily': {CAZy subfamilies},
+        }
+    :param args: cmd-line args parser
+    
+    Return list of nested lists, one nested list per relationship.
+    """
+    logger =logging.getLogger(__name__)
+
+    new_rows = []
+
+    # class and family, NO subfamily
+    if ('class' in args.include) and ('family' in args.include) and ('subfamily' not in args.include):
+        families = protein_query_data['family']
+        for family in families:
+            try:
+                parent_class = re.match(r'\D{2,3}', family).group()
+            except AttributeError:
+                logger.warning(f"Could not retrieve CAZy class from {family}, setting CAZy class as 'NA'")
+                parent_class = 'NA'
+            new_rows.append([gbk_acc, parent_class, family])
+
+    # class and subfamily, NO family
+    elif  'class' in args.include and 'family' not in args.include and 'subfamily' in args.include:
+        subfamilies = protein_query_data['subfamily']
+        for subfamily in subfamilies:
+            try:
+                parent_class = re.match(r'\D{2,3}', subfamily).group()
+            except AttributeError:
+                logger.warning(f"Could not retrieve CAZy class from {subfamily}, setting CAZy class as 'NA'")
+                parent_class = 'NA'
+            new_rows.append([gbk_acc, parent_class, subfamily])
+
+    # family and subfamily, NO class
+    elif  'class' not in args.include and 'family' in args.include and 'subfamily' in args.include:
+        subfamilies = protein_query_data['subfamily']
+        added_families = set()
+        for subfamily in subfamilies:
+            try:
+                parent_fam = re.match(r'\D{2,3}\d+_', subfamily).group()[:-1]
+                added_families.add(parent_fam)
+            except AttributeError:
+                logger.warning(f"Could not retrieve CAZy family from {subfamily}, setting CAZy family as 'NA'")
+                parent_fam = 'NA'
+            new_rows.append([gbk_acc, parent_fam, subfamily])
+
+        # add remaining families for which there is no subfamily annotation
+        families = protein_query_data['family']
+        for family in families:
+            if family not in added_families:
+                new_rows.append([gbk_acc, family, 'NA'])
+
+    # class, family and subfamily
+    else:
+        subfamilies = protein_query_data['subfamily']
+        added_families = set()
+        for subfamily in subfamilies:
+
+            # get the parent family
+            try:
+                parent_fam = re.match(r'\D{2,3}', subfamily).group()
+                added_families.add(parent_fam)
+            except AttributeError:
+                logger.warning(f"Could not retrieve CAZy family from {subfamily}, setting CAZy family as 'NA'")
+                parent_fam = 'NA'
+
+            # get the parent class
+            try:
+                parent_class = re.match(r'\D{2,3}', subfamily).group()
+            except AttributeError:
+                logger.warning(f"Could not retrieve CAZy class from {subfamily}, setting CAZy class as 'NA'")
+                parent_class = 'NA'
+
+            new_rows.append([gbk_acc, parent_class, parent_fam, subfamily])
+        
+        # add remaining families for which there is no subfamily annotation
+        families = protein_query_data['family']
+
+        for family in families:
+            if family not in added_families:
+                try:
+                    parent_class = re.match(r'\D{2,3}', family).group()
+                except AttributeError:
+                    logger.warning(f"Could not retrieve CAZy class from {family}, setting CAZy class as 'NA'")
+                    parent_class = 'NA'
+                new_rows.append([gbk_acc, parent_class, family, 'NA'])
+
+    return new_rows
 
 
 if __name__ == "__main__":
