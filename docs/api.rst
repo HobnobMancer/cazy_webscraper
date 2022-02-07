@@ -73,14 +73,15 @@ Command line options
 ``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
 
 ``--include`` - List additional data to include in the output. Multiple fields can be named, separating each with a single space (' '). The accepted fields are:
-* 'class' - Include a column listing the CAZy class annotations
-* 'family' - Include a column listing the CAZy family annotations
-* 'subfamily' - Include a column listing the subfamily class annotations
-* 'uniprot' - Include a column listing the UniProt accession
-* 'ec' - Include a column listing theEC number annotations
-* 'pdb' - Include a column listing the PDB accessions
-* 'genbank_seq' - Include a column listing the GenBank protein sequence
-* 'uniprot_seq' - Include a column listing the Uniprot protein sequence
+* 'class' - Include the CAZy class annotations
+* 'family' - Include the CAZy family annotations
+* 'subfamily' - Include the subfamily class annotations
+* 'uniprot_acc' - Include the UniProt accession
+* 'uniprot_name' - Include the protein name retrieved from UniProt
+* 'ec' - Include the EC number annotations
+* 'pdb' - Include the PDB accessions
+* 'genbank_seq' - Include the GenBank protein sequence
+* 'uniprot_seq' - Include the Uniprot protein sequence
 
 ``--kingdoms`` - List of taxonomy kingdoms to retrieve UniProt data for.
 
