@@ -41,6 +41,7 @@
 """Add data retrieved from UniProt to a local SQLite database"""
 
 
+import logging
 from sqlalchemy import delete, text
 from tqdm import tqdm
 
@@ -262,61 +263,110 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
+    pdbs_to_delete = set()  # only used if args.delete_old_pdbs is true
+    relationships_to_delete = set()  # only used if args.delete_old_pdbs is true
+
     # load in PDB objects in the local CAZyme db
     pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
+    # {pdb_accession: pdb_db_id}
 
-    pdb_insert_values = set()  # new records to add to db
-    update_pdbs = set()  # records to update
-    existing_pdbs = set(list(pdb_table_dict.values()))  # records already in the db
-    if args.delete_old_pdbs:
-        delete_pdbs = set()  # records to delete, PDB acc no longer listed in UniProt for the given protein
+    # First, identify new PDB accessions to add to the database
+    pdb_insert_values = set()
+    for uniprot_acc in tqdm(uniprot_dict, desc="Identifying new PDBs to add to db"):
+        for pdb in uniprot_dict[uniprot_acc]["pdb"]:
+            try:
+                pdb_table_dict[pdb]
+            except KeyError:
+                pdb_insert_values.add( (pdb,) )
+    
+    if len(pdb_insert_values) != 0:
+        logger.warning(f"Adding {len(pdb_insert_values)} PDB accessions to the database")
+        insert_data(connection, "Pdbs", ["pdb_accession"], list(pdb_insert_values))
+        # reload the updated pdb table
+        pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
+    
+    # load in Genbanks_Pdbs relationship table
+    gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
+    # {gbk_db_id: {pdb_db_id} }
 
-    for uniprot_acc in tqdm(uniprot_dict, desc="Identifying new and updated PDB records"):
+    # convert the data from UniProt into a dict of {gbk_db_id: pdb_db_id} 
+    # to identify pdb-protein relationships retrieved from UniProt
+    gbk_pdb_insert_values = set()
+    for uniprot_acc in tqdm(uniprot_dict, desc="Identifying new protein-PDB relationships to add to db"):
         genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]['gbk_acc']
-        gbk_id = gbk_dict[genbank_acc]
+        gbk_db_id = gbk_dict[genbank_acc]
 
+        # set of pdb_accessions retrieved from UniProt
         retrieved_pdbs = uniprot_dict[uniprot_acc]["pdb"]
         if len(retrieved_pdbs) == 0:
             continue
 
+        # set of pdb_db_ids the protein (gbk_db_id) is already related to in the db
+        existing_pdb_relationships = gbk_pdb_rel_table_dict[gbk_db_id]  
+
         for pdb_acc in retrieved_pdbs:
-            if pdb_acc in existing_pdbs:
-                # check if the gbk_id is the same
-                current_pdbs = pdb_table_dict[gbk_id]
-                if pdb_acc not in current_pdbs:
-                    update_pdbs.add( (pdb_acc, gbk_id) )
-            
-            else:
-                pdb_insert_values.add( (pdb_acc, gbk_id) )
-        
+            pdb_db_id = pdb_table_dict[pdb_acc]
+
+            try:
+                if pdb_db_id not in existing_pdb_relationships:
+                    # genbank and pdb records not yet stored together in the relationship table
+                    gbk_pdb_insert_values.add( (gbk_db_id, pdb_db_id) )
+            except KeyError:
+                # genbank not listed in the Genbanks_Pdbs relationship table
+                gbk_pdb_insert_values.add( (gbk_db_id, pdb_db_id) )
+
         if args.delete_old_pdbs:
-            existing_pdb_records = pdb_table_dict[gbk_id]
-            for pdb_acc in existing_pdb_records:
+            # convert gbk_pdb_rel_table_dict to be keyed by pdb_db_ids and valued by set of gbk_db_ids
+            pdb_gbk_relationships = {}
+            for existing_gbk_id in gbk_pdb_rel_table_dict:
+                existing_pdbs = gbk_pdb_rel_table_dict[existing_gbk_id]
+                for pdb in existing_pdbs:
+                    try:
+                        pdb_gbk_relationships[pdb].add(existing_gbk_id)
+                    except KeyError:
+                        pdb_gbk_relationships[pdb] = {existing_gbk_id}
+
+            # for each pdb_db_id related to the current protein in the db
+            # get the corresponding pdb_accession
+            all_existing_pdb_ids = list(set(pdb_table_dict.values()))
+            all_existing_pdb_accs = list(pdb_table_dict.keys())
+
+            for pdb_db_id in existing_pdb_relationships:
+                position = all_existing_pdb_ids.index(pdb_db_id)
+                pdb_acc = all_existing_pdb_accs[position]
+
                 if pdb_acc not in retrieved_pdbs:
-                    delete_pdbs.add( (pdb_acc,) )
+                    # delete genbank-pdb relationship
+                    relationships_to_delete.add( (gbk_db_id, pdb_db_id) )
 
-    if len(pdb_insert_values) != 0:
-        insert_data(connection, "Pdbs", ["pdb_accession", "genbank_id"], list(pdb_insert_values))
+                    # check if can delete pdb accession because it is not linked to any other proteins
+                    if len(pdb_gbk_relationships[pdb_db_id]) != 1:  # deleting one pdb accession will not leave not related to any genbanks
+                        pdbs_to_delete.add( (pdb_acc) )
 
-    if len(update_pdbs) != 0:
+    if len(gbk_pdb_insert_values) != 0:
+        insert_data(connection, "Genbanks_Pdbs", ["genbank_id", "pdb_id"], list(gbk_pdb_insert_values))
+
+    if args.delete_old_pdbs and len(pdbs_to_delete) != 0:
         with connection.begin():
-            for record in tqdm(update_pdbs, desc="Updating PDB records"):
-                    connection.execute(
-                        text(
-                            "UPDATE Pdbs "
-                            f"SET genbank_id = {record[1]} "
-                            f"WHERE pdb_accession = '{record[0]}'"
-                        )
-                    )
-
-    if args.delete_old_pdbs and len(delete_pdbs) != 0:
-        with connection.begin():
-            for record in tqdm(delete_pdbs, desc="Deleteing old PDB accessions"):
+            for record in tqdm(pdbs_to_delete, desc="Deleteing old PDB accessions"):
             # record = (pdb_acc,)
                 connection.execute(
                     text(
                         "DELETE Pdbs "
                         f"WHERE pdb_accession = '{record[0]}'"
+                    )
+                )
+
+    if args.delete_old_pdbs and len(relationships_to_delete) != 0:
+        with connection.begin():
+            for record in tqdm(relationships_to_delete, desc="Deleteing old Genbank-PDB relationships"):
+            # record = (pdb_acc,)
+                connection.execute(
+                    text(
+                        "DELETE Genbanks_Pdbs "
+                        f"WHERE genbank_id = '{record[0]}' AND pdb_id = '{record[1]}'"
                     )
                 )
                 
