@@ -343,7 +343,10 @@ def bulk_query_ncbi(accessions, args):
     Return webenv and query key
     """
     # perform batch query of Entrez
-    accessions_string = ",".join(accessions)
+    try:
+        accessions_string = ",".join(accessions)
+    except TypeError:
+        accessions_string = accessions
 
     # Runtime error captured by try/except function call
     epost_result = Entrez.read(
