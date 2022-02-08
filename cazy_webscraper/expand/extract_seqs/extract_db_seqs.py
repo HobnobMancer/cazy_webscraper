@@ -162,12 +162,17 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     protein_records = []
     
     for protein_accession in tqdm(extracted_sequences, "Compiling SeqRecords"):
-        new_record = SeqRecord(
-            Seq(extracted_sequences[protein_accession]['seq']),
-            id=protein_accession,
-            description=extracted_sequences[protein_accession]['db']
-        )
-        protein_records.append(new_record)
+        try:
+            new_record = SeqRecord(
+                Seq(extracted_sequences[protein_accession]['seq']),
+                id=protein_accession,
+                description=extracted_sequences[protein_accession]['db']
+            )
+            protein_records.append(new_record)
+        except TypeError:
+            if extracted_sequences[protein_accession]['seq'] is not None:
+                logger.warning(f"Seq for {protein_accession} retrieved as type {type(extracted_sequences[protein_accession]['seq'])}\nNot adding to FASTA file")
+            pass  # passed when sequence is None
 
     # write out the sequences to the specified outputs
 
