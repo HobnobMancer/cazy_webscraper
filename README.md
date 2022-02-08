@@ -124,7 +124,7 @@ Please see the [`pip` documentation](https://pypi.org/project/pip/) for further 
 
 ### Quickstart
 
-We have produced a "Getting Started With `cazy_webscraper`" [poster](https://hobnobmancer.github.io/cazy_webscraper/getting_started_poster.pdf).
+We have produced a "Getting Started With `cazy_webscraper`" [poster](https://hobnobmancer.github.io/cazy_webscraper/getting_started_cazy_webscraper_v2.pdf).
 
 To download all of CAZy and save the database in the default location (the cwd) with the default name (`cazy_webscraper_<date>_<time>.db`) use the following command:  
 ```bash
