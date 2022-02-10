@@ -116,6 +116,8 @@ def test_main(
             uniprot_data=None,
             verbose=False,
             pdb=True,
+            skip_uniprot_accessions=None,
+            use_uniprot_cache=None,
         )
         return parser
 
