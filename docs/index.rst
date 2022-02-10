@@ -130,6 +130,8 @@ For details and updates on development, please consult the `GitHub repository <h
    sequencetutorial
    pdb
    pdbtutorial
+   api
+   apitutorial
    cache
    license
 
