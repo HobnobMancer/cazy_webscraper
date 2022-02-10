@@ -131,6 +131,17 @@ local CAZyme database. ``cw_get_uniprot_data`` can also retrieve from UniProt:
 * PDB accessions
 * Protein amino acid sequences
 
+.. WARNING:: 
+    When performing retrievals of large datasets from UniProt, please perform these retrievals during quiet periods (e.g. at the weekend). 
+
+.. WARNING::
+    It is strongly advised to only download data from UniProt for the necessary protein datasets. Retrieval of very large 
+    datasets from UniProt (e.g. for +1,000,000 proteins or all proteins in the GH class) can result in UniProt 
+    terminating the connection early due to a high bandwidth command over an extended period of time.
+
+    To retrieve data from large datasets, it is recommend to break down the dataset into subgroups, and periodically 
+    retrieve the data for one subgroup. This reduces the burdeon on the UniProt server and will not break 
+    the expected use and practises of the UniProt database.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Retrieving EC number annotations
