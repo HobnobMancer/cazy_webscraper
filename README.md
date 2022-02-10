@@ -15,10 +15,21 @@
 
 > `cazy_webscraper` version 1 is depracted. Please ensure you are using `cazy_webscraper` version 2 or newer.
 
-# Beta Version 2
-This release of `cazy_webscraper` is a beta release. The main component of `cazy_webscraper` (for the downloading of data from CAZy) is stable. Expanding the data set to incorproate data from UniProt, GenBank and PDB still require some work to workout all the remaining bugs.
+## cazy_webscraper
 
-The documentation is being actively updated to match the new `cazy_webscraper` version 2.
+`cazy_webscraper` is an application and Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. The code is distributed under the MIT license.
+
+`cazy_webscraper` retrieves protein data from the [CAZy database](https://www.cazy.org) and stored the data in a local SQLite3 database. This enables users to integrate the dataset into analytical pipelines, and interrogate the data in a manner unachievable through the CAZy website.
+
+Using the `expand` subcommand, a user can retrieve:
+- Protein name, UniProt accession, EC numbers, PDB accessions and protein sequences from [UniProt](https://www.uniprot.org/)
+- CAZyme protein sequence data from [GenBank](https://www.ncbi.nlm.nih.gov/genbank/)
+- Protein structure files from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank [(PDB)](https://www.rcsb.org/)
+- Extract GenBank and UniProt protein sequences stored in the local CAZyme database and write them to FASTA file and/or BLAST database
+
+`cazy_webscraper` can recover specified CAZy Classes and/or CAZy families. These queries can be filtered by taxonomy at Kingdoms, genus, species or strain level. Successive CAZy queries can be collated into a single local database. A log of each query is recorded in the database for transparency, reproducibility and shareablity.
+
+Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest).
 
 **The `bioconda` installation method is not currently supported, but we are working on getting this fixed soon**. For now please install via pypi or from source.
 
@@ -53,20 +64,6 @@ The documentation is being actively updated to match the new `cazy_webscraper` v
 - Update the unit tests to work with the new `cazy_webscraper` architecture
 - Update the documentation
 - Create video tutorials
-
-## cazy_webscraper
-
-`cazy_webscraper` is an application and Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. The code is distributed under the MIT license.
-
-`cazy_webscraper` retrieves protein data from the [CAZy database](https://www.cazy.org) and stored the data in a local SQLite3 database. This enables users to integrate the dataset into analytical pipelines, and interrogate the data in a manner unachievable through the CAZy website.
-
-Using the `expand` subcommand, a user can retrieve:
-- Protein name, UniProt accession, EC numbers, PDB accessions and protein sequences from [UniProt](https://www.uniprot.org/)
-- CAZyme protein sequence data from [GenBank](https://www.ncbi.nlm.nih.gov/genbank/)
-- Protein structure files from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank [(PDB)](https://www.rcsb.org/)
-- Extract GenBank and UniProt protein sequences stored in the local CAZyme database and write them to FASTA file and/or BLAST database
-
-`cazy_webscraper` can recover specified CAZy Classes and/or CAZy families. These queries can be filtered by taxonomy at Kingdoms, genus, species or strain level. Successive CAZy queries can be collated into a single local database. A log of each query is recorded in the database for transparency, reproducibility and shareablity.
 
 ## Citation
 
