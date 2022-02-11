@@ -194,8 +194,8 @@ def add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args):
     ec_insert_values = set()
 
     for ec in all_ecs:
-        if ec not in existing_ecs:
-            ec_insert_values.add( (ec,) )
+        if ec[0] not in existing_ecs:
+            ec_insert_values.add( ec )
 
     if len(ec_insert_values) != 0:
         insert_data(connection, "Ecs", ["ec_number"], list(ec_insert_values))
@@ -304,7 +304,10 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
             continue
 
         # set of pdb_db_ids the protein (gbk_db_id) is already related to in the db
-        existing_pdb_relationships = gbk_pdb_rel_table_dict[gbk_db_id]  
+        try:
+            existing_pdb_relationships = gbk_pdb_rel_table_dict[gbk_db_id]  
+        except KeyError:
+            existing_pdb_relationships = set()
 
         for pdb_acc in retrieved_pdbs:
             pdb_db_id = pdb_table_dict[pdb_acc]
