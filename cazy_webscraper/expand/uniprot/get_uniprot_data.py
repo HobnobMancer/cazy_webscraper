@@ -158,20 +158,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.warning(f"Retrieving UniProt data for {len(gbk_dict.keys())}")
 
-    # Get the UniProt accessions/IDs for the corresponding GenBank accessions
-    if args.skip_uniprot_accessions is not None:
-        logger.warning(f"Using UniProt accessions from cache: {args.skip_uniprot_accessions}")
-        with open(args.skip_uniprot_accessions, "r") as fh:
-            uniprot_gkb_dict = json.load(fh)
-
-    else:
-        uniprot_gkb_dict = get_uniprot_accessions(gbk_dict, args)  # {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
-
-        uniprot_acc_cache = cache_dir / f"uniprot_accessions_{time_stamp}.json"
-        with open(uniprot_acc_cache, "w") as fh:
-            json.dump(uniprot_gkb_dict, fh)
-
-    # Get protein data from UniProt
+    # if using cachce skip accession retrieval
     if args.use_uniprot_cache is not None:
         logger.warning(f"Using UniProt data from cache: {args.use_uniprot_cache}")
         with open(args.use_uniprot_cache, "r") as fh:
@@ -183,6 +170,21 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             all_ecs = set()
 
     else:
+
+        # Get the UniProt accessions/IDs for the corresponding GenBank accessions
+        if args.skip_uniprot_accessions is not None:
+            logger.warning(f"Using UniProt accessions from cache: {args.skip_uniprot_accessions}")
+            with open(args.skip_uniprot_accessions, "r") as fh:
+                uniprot_gkb_dict = json.load(fh)
+
+        else:
+            uniprot_gkb_dict = get_uniprot_accessions(gbk_dict, args)  # {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
+
+            uniprot_acc_cache = cache_dir / f"uniprot_accessions_{time_stamp}.json"
+            with open(uniprot_acc_cache, "w") as fh:
+                json.dump(uniprot_gkb_dict, fh)
+
+        # get data from UniProt
         uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir, args)
 
         # converts sets to lists for json serialisation
@@ -383,7 +385,7 @@ def get_ecs_from_cache(uniprot_dict):
         try:
             ecs = uniprot_dict[uniprot_acc]["ec"]
             for ec in ecs:
-                all_ecs.add(ec)
+                all_ecs.add( (ec,) )
         except (ValueError, TypeError, KeyError):
             pass
 
