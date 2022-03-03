@@ -277,7 +277,10 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
                 uniprot_name = uniprot_name.replace("`", "")
 
             except AttributeError:
-                uniprot_name = row['Protein names']
+                logger.warning(
+                    f"Protein name {row['Protein names']} was returned as float not string. Converting to string"
+                )
+                uniprot_name = str(row['Protein names'])
 
             # checked if parsed before incase bioservices returned duplicate proteins
             try:
