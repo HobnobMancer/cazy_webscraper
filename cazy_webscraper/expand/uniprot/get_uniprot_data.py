@@ -268,7 +268,10 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
         for index in tqdm(range(len(uniprot_df['Entry'])), desc="Parsing UniProt response"):
             row = uniprot_df.iloc[index]
             uniprot_acc = row['Entry'].strip()
-            uniprot_name = row['Protein names'].strip()
+            try:
+                uniprot_name = row['Protein names'].strip()
+            except AttributeError:
+                uniprot_name = row['Protein names']
 
             # remove quotation marks from the protein name, else an SQL error will be raised on insert
             uniprot_name = uniprot_name.replace("'", "")
