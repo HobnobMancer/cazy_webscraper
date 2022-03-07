@@ -81,7 +81,7 @@ def mock_building_parser(*args, **kwargs):
 
 @pytest.fixture
 def mock_parser(*args, **kwargs):
-    parser = Namespace(
+    parser = {"args": Namespace(
         config=None,
         classes=None,
         database="fake_database_path",
@@ -102,7 +102,7 @@ def mock_parser(*args, **kwargs):
         streamline=None,
         timeout=45,
         verbose=False,
-    )
+    )}
     return parser
 
 

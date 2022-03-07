@@ -81,8 +81,8 @@ def log_scrape_in_db(
     Return nothing."""
     logger = logging.getLogger(__name__)
 
-    date = time_stamp[:time_stamp.find("--")]
-    time = time_stamp[((time_stamp.find("--")) + 2):].replace("-", ":")
+    date = time_stamp.split("_")[0]
+    time = time_stamp.split("_")[1]
 
     new_log = sql_orm.Log(
         date=date,
@@ -95,50 +95,90 @@ def log_scrape_in_db(
         # get classes that user named to be scraped
         try:
             classes = config_dict["classes"]
+            # E.G. {'classes': ['Polysaccharide Lyases (PLs)', 'Carbohydrate Esterases (CEs)']}
             if classes is not None:
-                classes = str(classes).replace("[", "").replace("]", "").replace("'", "")
+                classes = ""
+                for cazy_class in config_dict['classes']:
+                    if len(classes) == 0:
+                        classes = cazy_class
+                    else:
+                        classes += f", {cazy_class}"
+
                 new_log.classes = classes
         except KeyError:
             pass
+            
+        if len(classes) != 0:
+            new_log.classes = classes
 
         # create a list of families instructed to be scraped
-        families = []
+        families = ""
         for key in config_dict:
             if (key != "classes") and (config_dict[key] is not None):
-                families.append(config_dict[key])
+                for fam in config_dict[key]:
+                    if len(families) == 0:
+                        families = fam
+                    else:
+                        families += f", {fam}"
 
         if len(families) != 0:
-            families = str(families).replace("[", "").replace("]", "").replace("'", "")
             new_log.families = families
 
     # get taxonomy filters defined by user, and separate into genera, species and strains
     try:
+        genera = ""
         if len(taxonomy_filters["genera"]) != 0:
-            genera = str(taxonomy_filters["genera"]).replace("[", "").\
-                replace("]", "").replace("'", "")
+            for genus in taxonomy_filters["genera"]:
+                if len(genera) == 0:
+                    genera = genus
+                else:
+                    genera += f", {genus}"
+        if len(genera) != 0:
             new_log.genera = genera
     except TypeError:
         pass
 
     try:
+        species = ""
         if len(taxonomy_filters["species"]) != 0:
-            species = str(taxonomy_filters["species"])
-            species = species.replace("[", "").replace("]", "").replace("'", "")
+            for organism in taxonomy_filters["species"]:
+                if len(species) == 0:
+                    species = organism
+                else:
+                    species += f", {organism}"
+
+        if len(species) != 0:
             new_log.species = species
     except TypeError:
         pass
 
     try:
+        strains = ""
         if len(taxonomy_filters["strains"]) != 0:
-            strains = str(taxonomy_filters["strains"])
-            strains = strains.replace("[", "").replace("]", "").replace("'", "")
+            for organism in taxonomy_filters["strains"]:
+                if len(strains) == 0:
+                    strains = organism
+                else:
+                    strains += f", {organism}"
+        
+        if len(strains) != 0:
             new_log.strains = strains
     except TypeError:
         pass
 
     # get Taxonomy Kingdoms defined by user to be scraped
     if kingdoms is not None:
-        new_log.kingdoms = str(kingdoms).replace("[", "").replace("]", "").replace("'", "")
+        kingdoms_str = ""
+        for kingdom in kingdoms:
+            if len(kingdoms_str) == 0:
+                kingdoms_str = kingdom
+            else:
+                kingdoms_str += f", {kingdom}"
+        
+        if len(kingdoms_str) != 0:
+            new_log.kingdoms = kingdoms_str
+        else:
+            new_log.kingdoms = "ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified"
     else:
         new_log.kingdoms = "ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified"
     
@@ -147,7 +187,7 @@ def log_scrape_in_db(
     for cmd in [
         [args.classes, " --classes '"],
         [args.families, " --families '"],
-        [args.kingdoms, " --kingdoms"],
+        [args.kingdoms, " --kingdoms '"],
         [args.genera, " --genera '"],
         [args.species, " --species '"],
         [args.strains, " --strains '"],
@@ -158,7 +198,7 @@ def log_scrape_in_db(
             pass
 
     if len(ec_filter) != 0:
-        cmd_line = cmd_line + "--ec_filter" + (args.ec) + "'"
+        cmd_line = cmd_line + "--ec_filter '" + (args.ec) + "'"
         new_log.ec_filter = ','.join(list(ec_filter))
 
     if len(cmd_line) != 0:
