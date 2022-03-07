@@ -43,14 +43,12 @@
 
 import json
 import logging
-import urllib.parse
 import urllib.request
 
 import pandas as pd
 
 from datetime import datetime
 from typing import List, Optional
-from urllib.error import HTTPError
 
 from bioservices import UniProt
 from saintBioutils.misc import get_chunks_list
