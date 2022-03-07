@@ -187,7 +187,7 @@ def log_scrape_in_db(
     for cmd in [
         [args.classes, " --classes '"],
         [args.families, " --families '"],
-        [args.kingdoms, " --kingdoms"],
+        [args.kingdoms, " --kingdoms '"],
         [args.genera, " --genera '"],
         [args.species, " --species '"],
         [args.strains, " --strains '"],
