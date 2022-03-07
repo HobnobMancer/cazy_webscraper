@@ -107,15 +107,21 @@ def log_scrape_in_db(
                 new_log.classes = classes
         except KeyError:
             pass
+            
+        if len(classes) != 0:
+            new_log.classes = classes
 
         # create a list of families instructed to be scraped
-        families = []
+        families = ""
         for key in config_dict:
             if (key != "classes") and (config_dict[key] is not None):
-                families.append(config_dict[key])
+                for fam in config_dict[key]:
+                    if len(families) == 0:
+                        families = fam
+                    else:
+                        families += f", {fam}"
 
         if len(families) != 0:
-            families = str(families).replace("[", "").replace("]", "").replace("'", "")
             new_log.families = families
 
     # get taxonomy filters defined by user, and separate into genera, species and strains
