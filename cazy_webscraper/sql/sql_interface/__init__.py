@@ -126,25 +126,42 @@ def log_scrape_in_db(
 
     # get taxonomy filters defined by user, and separate into genera, species and strains
     try:
+        genera = ""
         if len(taxonomy_filters["genera"]) != 0:
-            genera = str(taxonomy_filters["genera"]).replace("[", "").\
-                replace("]", "").replace("'", "")
+            for genus in taxonomy_filters["genera"]:
+                if len(genera) == 0:
+                    genera = genus
+                else:
+                    genera += f", {genus}"
+        if len(genera) != 0:
             new_log.genera = genera
     except TypeError:
         pass
 
     try:
+        species = ""
         if len(taxonomy_filters["species"]) != 0:
-            species = str(taxonomy_filters["species"])
-            species = species.replace("[", "").replace("]", "").replace("'", "")
+            for organism in taxonomy_filters["species"]:
+                if len(species) == 0:
+                    species = organism
+                else:
+                    species += f", {organism}"
+
+        if len(species) != 0:
             new_log.species = species
     except TypeError:
         pass
 
     try:
+        strains = ""
         if len(taxonomy_filters["strains"]) != 0:
-            strains = str(taxonomy_filters["strains"])
-            strains = strains.replace("[", "").replace("]", "").replace("'", "")
+            for organism in taxonomy_filters["strains"]:
+                if len(strains) == 0:
+                    strains = organism
+                else:
+                    strains += f", {organism}"
+        
+        if len(strains) != 0:
             new_log.strains = strains
     except TypeError:
         pass
