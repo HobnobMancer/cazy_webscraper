@@ -168,7 +168,17 @@ def log_scrape_in_db(
 
     # get Taxonomy Kingdoms defined by user to be scraped
     if kingdoms is not None:
-        new_log.kingdoms = str(kingdoms).replace("[", "").replace("]", "").replace("'", "")
+        kingdoms_str = ""
+        for kingdom in kingdoms:
+            if len(kingdoms_str) == 0:
+                kingdoms_str = kingdom
+            else:
+                kingdoms_str += f", {kingdom}"
+        
+        if len(kingdoms_str) != 0:
+            new_log.kingdoms = kingdoms_str
+        else:
+            new_log.kingdoms = "ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified"
     else:
         new_log.kingdoms = "ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified"
     
