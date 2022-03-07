@@ -81,8 +81,8 @@ def log_scrape_in_db(
     Return nothing."""
     logger = logging.getLogger(__name__)
 
-    date = time_stamp[:time_stamp.find("--")]
-    time = time_stamp[((time_stamp.find("--")) + 2):].replace("-", ":")
+    date = time_stamp.split("_")[0]
+    time = time_stamp.split("_")[1]
 
     new_log = sql_orm.Log(
         date=date,
