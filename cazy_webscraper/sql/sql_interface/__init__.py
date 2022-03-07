@@ -198,7 +198,7 @@ def log_scrape_in_db(
             pass
 
     if len(ec_filter) != 0:
-        cmd_line = cmd_line + "--ec_filter" + (args.ec) + "'"
+        cmd_line = cmd_line + "--ec_filter '" + (args.ec) + "'"
         new_log.ec_filter = ','.join(list(ec_filter))
 
     if len(cmd_line) != 0:
