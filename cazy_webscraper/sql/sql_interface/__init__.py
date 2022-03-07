@@ -95,8 +95,15 @@ def log_scrape_in_db(
         # get classes that user named to be scraped
         try:
             classes = config_dict["classes"]
+            # E.G. {'classes': ['Polysaccharide Lyases (PLs)', 'Carbohydrate Esterases (CEs)']}
             if classes is not None:
-                classes = str(classes).replace("[", "").replace("]", "").replace("'", "")
+                classes = ""
+                for cazy_class in config_dict['classes']:
+                    if len(classes) == 0:
+                        classes = cazy_class
+                    else:
+                        classes += f", {cazy_class}"
+
                 new_log.classes = classes
         except KeyError:
             pass
