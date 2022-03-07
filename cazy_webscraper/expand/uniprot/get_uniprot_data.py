@@ -43,14 +43,12 @@
 
 import json
 import logging
-import urllib.parse
 import urllib.request
 
 import pandas as pd
 
 from datetime import datetime
 from typing import List, Optional
-from urllib.error import HTTPError
 
 from bioservices import UniProt
 from saintBioutils.misc import get_chunks_list
@@ -264,18 +262,11 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
         ]]
 
 
-
         for index in tqdm(range(len(uniprot_df['Entry'])), desc="Parsing UniProt response"):
             row = uniprot_df.iloc[index]
             uniprot_acc = row['Entry'].strip()
-            uniprot_name = row['Protein names'].strip()
 
-            # remove quotation marks from the protein name, else an SQL error will be raised on insert
-            uniprot_name = uniprot_name.replace("'", "")
-            uniprot_name = uniprot_name.replace('"', '')
-            uniprot_name = uniprot_name.replace("`", "")
-
-            # checked if parsed before incase bioservices returned duplicate proteins
+            # checked if uniprot ID matched the proteins of interest
             try:
                 uniprot_gbk_dict[uniprot_acc]
             except KeyError:
@@ -284,6 +275,14 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
                     "But no corresponding record was found in the local CAZyme database\n"
                     "Skipping this UniProt ID"
                 )
+                continue  # uniprot ID does not match any retrieved previously
+
+            uniprot_name = row['Protein names'].strip()
+
+            # remove quotation marks from the protein name, else an SQL error will be raised on insert
+            uniprot_name = uniprot_name.replace("'", "")
+            uniprot_name = uniprot_name.replace('"', '')
+            uniprot_name = uniprot_name.replace("`", "")
 
             try:
                 uniprot_dict[uniprot_acc]
@@ -329,7 +328,7 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
                 pdb_accessions = row['Cross-reference (PDB)']
                 try:
                     pdb_accessions = pdb_accessions.split(';')
-                    pdb_accessions = [pdb.strip() for pdb in pdb_accessions]
+                    pdb_accessions = [pdb.strip() for pdb in pdb_accessions if len(pdb.strip()) > 0]
                 except AttributeError:
                     pdb_accessions = set()
 
