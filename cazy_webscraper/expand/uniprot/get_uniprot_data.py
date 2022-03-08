@@ -69,6 +69,8 @@ from cazy_webscraper.sql import sql_orm
 from cazy_webscraper.utilities.parsers.uniprot_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
+import sys
+
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
@@ -124,8 +126,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         sql_interface.log_scrape_in_db(
             time_stamp,
             config_dict,
-            kingdom_filters,
             taxonomy_filter_dict,
+            kingdom_filters,
             ec_filters,
             'UniProt',
             retrieved_annotations,
@@ -155,6 +157,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
 
     logger.warning(f"Retrieving UniProt data for {len(gbk_dict.keys())}")
+
+    sys.exit(1)
 
     # if using cachce skip accession retrieval
     if args.use_uniprot_cache is not None:
