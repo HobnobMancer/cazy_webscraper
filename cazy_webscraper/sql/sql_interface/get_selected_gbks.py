@@ -324,31 +324,32 @@ def apply_ec_filters(
     """
     logger = logging.getLogger(__name__)
     
-    # retrieve the Genbank db IDs for all GenBank accessions associated with each user selected EC num in the db
-    gbk_ids = set()
+    ec_gbk_ids = set()
 
-    for ec in tqdm(ec_filters, desc="Retrieving selected EC numbers from db"):
+    # Retrieve all Genbank.genbank_ids for each EC number
+    for ec in tqdm(ec_filters, desc="Retrieving gbks for EC# filters"):
         with Session(bind=connection) as session:
             gbk_query = session.query(Genbank.genbank_id).\
                 join(Ec, Genbank.ecs).\
                 filter(Ec.ec_number == ec).\
                 all()
-        for gbk_id in gbk_query:
-            gbk_ids.add(gbk_id)
 
-    if len(gbk_ids) == 0:
+        for gbk_id in gbk_query:
+            ec_gbk_ids.add(gbk_id)
+
+    if len(ec_gbk_ids) == 0:
         logger.error(
         "Retrieved NO proteins matching the provided EC numbers\n"
-        "Therefore, not retrievign UniProt data for any proteins.\n"
         "Check the local CAZyme db contains the EC numbers provided\n"
         "Terminating program"
     )
         sys.exit(1)
     
-    filtered_gbks = set()
-    for gbk in current_gbk_objs:
-        if gbk.genbank_id in gbk_ids:
-            filtered_gbks.add(gbk)
-    
-    return filtered_gbks
+    ec_filtered_gbks = set()
+
+    for gbk_record in tqdm(current_gbk_objs, desc="Checking gbk records against EC filters"):
+        if (gbk_record.genbank_id,) in ec_gbk_ids:
+            ec_filtered_gbks.add(gbk_record)
+        
+    return ec_filtered_gbks
 
