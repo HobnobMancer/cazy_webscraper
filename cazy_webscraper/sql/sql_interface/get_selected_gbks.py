@@ -56,6 +56,16 @@ from cazy_webscraper.sql.sql_orm import (
 )
 
 
+CLASS_ABBREVIATIONS = {
+    'Glycoside Hydrolases (GHs)': 'GH',
+    'GlycosylTransferases (GTs)': 'GT',
+    'Polysaccharide Lyases (PLs)': 'PL',
+    'Carbohydrate Esterases (CEs)': 'CE',
+    'Auxiliary Activities (AAs)': 'AA',
+    'Carbohydrate-Binding Modules (CBMs)': 'CBM',
+}
+
+
 def get_ids(genbank_accessions, connection):
     """Get the local CAZyme database IDs for the list of provided GenBank accessions.
     
@@ -171,15 +181,6 @@ def get_class_fam_genbank_accessions(
     """
     logger = logging.getLogger(__name__)
 
-    class_abbrevs = {
-        'Glycoside Hydrolases (GHs)': 'GH',
-        'GlycosylTransferases (GTs)': 'GT',
-        'Polysaccharide Lyases (PLs)': 'PL',
-        'Carbohydrate Esterases (CEs)': 'CE',
-        'Auxiliary Activities (AAs)': 'AA',
-        'Carbohydrate-Binding Modules (CBMs)': 'CBM',
-    }
-
     initially_selected_gbk = []
 
     if len(class_filters) == 0 and len(family_filters) == 0:
@@ -200,7 +201,7 @@ def get_class_fam_genbank_accessions(
         if len(class_filters) != 0:
             logger.warning("Applying CAZy class filter(s)")
         for cazy_class in tqdm(class_filters, desc="Retrieving GenBank accessions for selected CAZy classes"):
-            class_abbrev = class_abbrevs[cazy_class]
+            class_abbrev = CLASS_ABBREVIATIONS[cazy_class]
 
             with Session(bind=connection) as session:
                 class_subquery = session.query(Genbank.genbank_id).\
