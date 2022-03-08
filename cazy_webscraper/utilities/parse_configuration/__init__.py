@@ -403,11 +403,11 @@ def get_cmd_defined_families(config_dict, args):
 
             elif fam.startswith("CBM"):
                 re.match(r"CBM\d+", fam, re.IGNORECASE).group()
-                config_dict['Carbohydrate-Binding Modules (CBMs)'].ad(fam)
+                config_dict['Carbohydrate-Binding Modules (CBMs)'].add(fam)
 
             else:
                 logger.warning(
-                    f"Invalid family specified at cmd line: {fam}\n"
+                    f"Do recognise class prefix for family specified at cmd line: {fam}\n"
                     "This family will not be scraped."
                 )
 
