@@ -44,6 +44,8 @@
 import logging
 import sys
 
+from sqlalchemy import select
+from sqlalchemy.orm import aliased
 from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_orm import (
