@@ -193,6 +193,8 @@ def get_class_fam_genbank_accessions(
                 all()
 
             initially_selected_gbk = gbk_query
+        
+        return initially_selected_gbk
 
     else:
         if len(class_filters) != 0:
