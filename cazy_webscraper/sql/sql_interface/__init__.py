@@ -178,9 +178,9 @@ def log_scrape_in_db(
         if len(kingdoms_str) != 0:
             new_log.kingdoms = kingdoms_str
         else:
-            new_log.kingdoms = "ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified"
+            new_log.kingdoms = "ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified)"
     else:
-        new_log.kingdoms = "ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified"
+        new_log.kingdoms = "ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified)"
     
     # retrieve commands from the command line
     cmd_line = ""
@@ -193,12 +193,12 @@ def log_scrape_in_db(
         [args.strains, " --strains '"],
     ]:
         try:
-            cmd_line = cmd_line + cmd[1] + cmd[0] + "'"
+            cmd_line = cmd_line + cmd[1] + cmd[0] + "' "
         except TypeError:
             pass
 
     if len(ec_filter) != 0:
-        cmd_line = cmd_line + "--ec_filter '" + (args.ec) + "'"
+        cmd_line = cmd_line + "--ec_filter '" + (args.ec_filter) + "'"
         new_log.ec_filter = ','.join(list(ec_filter))
 
     if len(cmd_line) != 0:

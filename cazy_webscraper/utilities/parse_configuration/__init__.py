@@ -381,33 +381,33 @@ def get_cmd_defined_families(config_dict, args):
 
     for fam in cmd_families:
         try:
-            if fam.find("GH") != -1:
+            if fam.startswith("GH"):
                 re.match(r"GH\d+", fam, re.IGNORECASE).group()
                 config_dict['Glycoside Hydrolases (GHs)'].add(fam)
 
-            elif fam.find("GT") != -1:
+            elif fam.startswith("GT"):
                 re.match(r"GT\d+", fam, re.IGNORECASE).group()
                 config_dict['GlycosylTransferases (GTs)'].add(fam)
 
-            elif fam.find("PL") != -1:
+            elif fam.startswith("PL"):
                 re.match(r"PL\d+", fam, re.IGNORECASE).group()
                 config_dict['Polysaccharide Lyases (PLs)'].add(fam)
 
-            elif fam.find("CE") != -1:
+            elif fam.startswith("CE"):
                 re.match(r"CE\d+", fam, re.IGNORECASE).group()
                 config_dict['Carbohydrate Esterases (CEs)'].add(fam)
 
-            elif fam.find("AA") != -1:
+            elif fam.startswith("AA"):
                 re.match(r"AA\d+", fam, re.IGNORECASE).group()
                 config_dict['Auxiliary Activities (AAs)'].add(fam)
 
-            elif fam.find("CBM") != -1:
+            elif fam.startswith("CBM"):
                 re.match(r"CBM\d+", fam, re.IGNORECASE).group()
-                config_dict['Carbohydrate-Binding Modules (CBMs)'].ad(fam)
+                config_dict['Carbohydrate-Binding Modules (CBMs)'].add(fam)
 
             else:
                 logger.warning(
-                    f"Invalid family specified at cmd line: {fam}\n"
+                    f"Do recognise class prefix for family specified at cmd line: {fam}\n"
                     "This family will not be scraped."
                 )
 
@@ -430,7 +430,6 @@ def get_excluded_classes(config_dict, cazy_class_synonym_dict):
 
     Return list of CAZy classes not to be scraped.
     """
-
     cazy_classes_to_scrape = set()
     
     # retrieve the names of classes for which specific families to be scraped HAVE BEEN named
@@ -554,6 +553,15 @@ def get_expansion_configuration(args):
 
 
 def get_ec_config(ec_filters, args):
+    """Parse EC number configuration.
+    
+    Standardise the EC numbers missing digits and remove 'EC' prefix.
+    
+    :param ec_filters: set of EC numbers
+    :param args: cmd line args parser
+    
+    Return set of EC numbers.
+    """
     logger = logging.getLogger(__name__)
 
     if args.config is not None:
