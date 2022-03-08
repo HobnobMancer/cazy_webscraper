@@ -381,27 +381,27 @@ def get_cmd_defined_families(config_dict, args):
 
     for fam in cmd_families:
         try:
-            if fam.find("GH") != -1:
+            if fam.startswith("GH"):
                 re.match(r"GH\d+", fam, re.IGNORECASE).group()
                 config_dict['Glycoside Hydrolases (GHs)'].add(fam)
 
-            elif fam.find("GT") != -1:
+            elif fam.startswith("GT"):
                 re.match(r"GT\d+", fam, re.IGNORECASE).group()
                 config_dict['GlycosylTransferases (GTs)'].add(fam)
 
-            elif fam.find("PL") != -1:
+            elif fam.startswith("PL"):
                 re.match(r"PL\d+", fam, re.IGNORECASE).group()
                 config_dict['Polysaccharide Lyases (PLs)'].add(fam)
 
-            elif fam.find("CE") != -1:
+            elif fam.startswith("CE"):
                 re.match(r"CE\d+", fam, re.IGNORECASE).group()
                 config_dict['Carbohydrate Esterases (CEs)'].add(fam)
 
-            elif fam.find("AA") != -1:
+            elif fam.startswith("AA"):
                 re.match(r"AA\d+", fam, re.IGNORECASE).group()
                 config_dict['Auxiliary Activities (AAs)'].add(fam)
 
-            elif fam.find("CBM") != -1:
+            elif fam.startswith("CBM"):
                 re.match(r"CBM\d+", fam, re.IGNORECASE).group()
                 config_dict['Carbohydrate-Binding Modules (CBMs)'].ad(fam)
 
