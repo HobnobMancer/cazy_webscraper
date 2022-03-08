@@ -430,7 +430,6 @@ def get_excluded_classes(config_dict, cazy_class_synonym_dict):
 
     Return list of CAZy classes not to be scraped.
     """
-
     cazy_classes_to_scrape = set()
     
     # retrieve the names of classes for which specific families to be scraped HAVE BEEN named
@@ -554,6 +553,15 @@ def get_expansion_configuration(args):
 
 
 def get_ec_config(ec_filters, args):
+    """Parse EC number configuration.
+    
+    Standardise the EC numbers missing digits and remove 'EC' prefix.
+    
+    :param ec_filters: set of EC numbers
+    :param args: cmd line args parser
+    
+    Return set of EC numbers.
+    """
     logger = logging.getLogger(__name__)
 
     if args.config is not None:
