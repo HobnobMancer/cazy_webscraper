@@ -221,34 +221,35 @@ def get_class_fam_genbank_accessions(
 
         initially_selected_gbk += gbk_query
 
-        if len(family_filters) != 0:
-            logger.warning("Applying CAZy family filter(s)")
-        for cazy_fam in tqdm(family_filters, desc="Retrieving GenBank accessions for selected CAZy families"):
-            if cazy_fam.find('_') != -1:  # subfamily
-                with Session(bind=connection) as session:
-                    fam_subquery = session.query(Genbank.genbank_id).\
-                    join(CazyFamily, Genbank.families).\
-                    filter(CazyFamily.subfamily == cazy_fam).\
-                    subquery()
+    if len(family_filters) != 0:
+        logger.warning("Applying CAZy family filter(s)")
+    for cazy_fam in tqdm(family_filters, desc="Retrieving GenBank accessions for selected CAZy families"):
+        inner_stmt = select(CazyFamily.family).where(CazyFamily.family == cazy_family)
+        subq = inner_stmt.subquery()
+        aliased_families = aliased(CazyFamily, subq)
+        stmt = select(aliased_families)
 
-            else:  # family
-                with Session(bind=connection) as session:
-                    fam_subquery = session.query(Genbank.genbank_id).\
-                    join(CazyFamily, Genbank.families).\
-                    filter(CazyFamily.family == cazy_fam).\
-                    subquery()
-
+        if cazy_fam.find('_') != -1:  # subfamily
             with Session(bind=connection) as session:
                 gbk_query = session.query(Genbank, Taxonomy, Kingdom).\
                     join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
                     join(Genbank, (Genbank.taxonomy_id == Taxonomy.taxonomy_id)).\
                     join(CazyFamily, Genbank.families).\
-                    filter(Genbank.genbank_id.in_(fam_subquery)).\
+                    filter(CazyFamily.subfamily.in_(stmt)).\
+                    all()
+        
+        else:
+            with Session(bind=connection) as session:
+                gbk_query = session.query(Genbank, Taxonomy, Kingdom).\
+                    join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
+                    join(Genbank, (Genbank.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(CazyFamily, Genbank.families).\
+                    filter(CazyFamily.family.in_(stmt)).\
                     all()
 
-            initially_selected_gbk += gbk_query
+        initially_selected_gbk += gbk_query
         
-    return initially_selected_gbk
+    return list(set(initially_selected_gbk))
 
 
 def apply_tax_filters(
