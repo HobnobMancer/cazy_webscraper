@@ -203,18 +203,19 @@ def get_class_fam_genbank_accessions(
         for cazy_class in tqdm(class_filters, desc="Retrieving GenBank accessions for selected CAZy classes"):
             class_abbrev = CLASS_ABBREVIATIONS[cazy_class]
 
-            with Session(bind=connection) as session:
-                class_subquery = session.query(Genbank.genbank_id).\
-                join(CazyFamily, Genbank.families).\
-                filter(CazyFamily.family.like(f'{class_abbrev}%')).\
-                subquery()
+            # perform a subquery to retrieve all CAZy families in the CAZy class
+            inner_stmt = select(CazyFamily.family).where(CazyFamily.family.like(f'{class_abbrev}%'))
+            subq = inner_stmt.subquery()
+            aliased_families = aliased(CazyFamily, subq)
+            stmt = select(aliased_families)
 
+            # perform query to retrieve proteins in the CAZy families
             with Session(bind=connection) as session:
                 gbk_query = session.query(Genbank, Taxonomy, Kingdom).\
                     join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
                     join(Genbank, (Genbank.taxonomy_id == Taxonomy.taxonomy_id)).\
                     join(CazyFamily, Genbank.families).\
-                    filter(Genbank.genbank_id.in_(class_subquery)).\
+                    filter(CazyFamily.family.in_(stmt)).\
                     all()
 
             initially_selected_gbk += gbk_query
