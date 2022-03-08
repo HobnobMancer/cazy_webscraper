@@ -158,8 +158,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.warning(f"Retrieving UniProt data for {len(gbk_dict.keys())}")
 
-    sys.exit(1)
-
     # if using cachce skip accession retrieval
     if args.use_uniprot_cache is not None:
         logger.warning(f"Using UniProt data from cache: {args.use_uniprot_cache}")
