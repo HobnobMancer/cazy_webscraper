@@ -290,28 +290,35 @@ def parse_user_cazy_classes(cazy_classes, cazy_class_synonym_dict):
     logger = logging.getLogger(__name__)
     logger.info("Standardising names of class listed in configuration file")
 
+    accepted_class_names = list(cazy_class_synonym_dict.keys()) + list(cazy_class_synonym_dict.values())
     standardised_class_names = list(cazy_class_synonym_dict.keys())
 
-    index = 0
-    for index in range(len(cazy_classes)):
+    selected_classes = []
+
+    for cazy_class in cazy_classes:
         # identify user defined CAZy classes not written in standardised format
-        if cazy_classes[index] not in standardised_class_names:
-            for key in cazy_class_synonym_dict:
-                if cazy_classes[index] in cazy_class_synonym_dict[key]:  # if in synonyms in cazy_class_synonym_dict
-                    cazy_classes[index] = key  # standardise the class name
+        if cazy_class not in standardised_class_names:
 
-        # check all names are standardised, remove names that could not be standardised
-        if cazy_classes[index] not in standardised_class_names:
-            logger.warning(
-                (
-                    f"'{cazy_classes[index]}' could not be standardised.\n"
-                    "Please use a synonym in the file_io/cazy_class_synonym_dictionary.json.\n"
-                    f"'{cazy_classes[index]}' will NOT be scraped."
+            # not written in standardised format
+            # check if accepted class name
+            if cazy_class not in accepted_class_names:
+                logger.warning(
+                    (
+                        f"'{cazy_class}' could not be standardised.\n"
+                        "Please use a synonym in the file_io/cazy_class_synonym_dictionary.json.\n"
+                        f"'{cazy_class}' will NOT be scraped."
+                    )
                 )
-            )
-            del cazy_classes[index]
 
-    return cazy_classes
+            else:  # written in accepted alternative format
+                for standardised_class_name in cazy_class_synonym_dict:
+                    if cazy_class in cazy_class_synonym_dict[standardised_class_name]:
+                        selected_classes.append(standardised_class_name)
+
+        else:  # written in standardised format
+            selected_classes.appent(cazy_class)
+
+    return list(set(cazy_classes))
 
 
 def get_cmd_scrape_config(
