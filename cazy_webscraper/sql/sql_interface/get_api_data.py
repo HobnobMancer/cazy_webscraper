@@ -73,7 +73,7 @@ def get_class_fam_annotations(gbk_dict, query_data, connection, args):
 
     # retrieve the data from the CAZy Family table
     with Session(bind=connection) as session:
-        fam_table_query = session.query(Genbank.genbank_id).\
+        fam_table_query = session.query(Genbank, CazyFamily).\
             join(CazyFamily, Genbank.families).\
             filter(Genbank.genbank_accession.in_(gbk_accessions)).\
             all()
@@ -88,7 +88,7 @@ def get_class_fam_annotations(gbk_dict, query_data, connection, args):
     for record in tqdm(fam_table_query, desc="Getting CAZy class/family annotations"):
         gbk_acc = record[0].genbank_accession
 
-        if args.cazy_class:
+        if 'class' in args.include:
             fam = record[1].family
             cazy_class = re.match(r"\D{2,3}\d", fam).group()[:-1]
 
@@ -103,7 +103,7 @@ def get_class_fam_annotations(gbk_dict, query_data, connection, args):
             except KeyError:
                 query_data[gbk_acc] = {'class': {cazy_class}}
         
-        if args.cazy_family:
+        if 'family' in args.include:
             fam = record[1].family
 
             try:
@@ -117,7 +117,7 @@ def get_class_fam_annotations(gbk_dict, query_data, connection, args):
             except KeyError:
                 query_data[gbk_acc] = {'family': {fam}}
 
-        if args.cazy_subfamily:
+        if 'subfamily' in args.include:
             subfam = record[1].subfamily
 
             try:
@@ -163,7 +163,7 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
     for record in tqdm(tax_query, desc="Getting taxonomy data"):
         gbk_acc = record[0].genbank_accession
 
-        if args.kingdom:
+        if 'kingdom' in args.include:
             kingdom = record[2].kingdom
 
             try:
@@ -182,7 +182,7 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
             except KeyError:
                 query_data[gbk_acc] = {'kingdom': kingdom}
         
-        if args.genus:
+        if 'genus' in args.include:
             genus = record[1].genus
 
             try:
@@ -201,7 +201,7 @@ def get_tax_annotations(gbk_dict, query_data, connection, args):
             except KeyError:
                 query_data[gbk_acc] = {'genus': genus}
 
-        if args.organism:
+        if 'organism' in args.include:
             genus = record[1].genus
             species = record[1].species
             organism = f"{genus} {species}"
@@ -241,7 +241,6 @@ def get_ec_annotations(gbk_dict, query_data, connection):
     # retrieve the data from the Taxonomy and Kingdom tables
     with Session(bind=connection) as session:
         ec_query = session.query(Genbank, Ec).\
-            join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
             join(Ec, Genbank.ecs).\
             filter(Genbank.genbank_accession.in_(gbk_accessions)).\
             all()
@@ -285,7 +284,7 @@ def get_pdb_accessions(gbk_dict, query_data, connection):
     # retrieve the data from the Taxonomy and Kingdom tables
     with Session(bind=connection) as session:
         pdb_query = session.query(Genbank, Pdb).\
-            join(Pdb, (Pdb.genbank_id == Genbank.genbank_id)).\
+            join(Pdb, Genbank.pdbs).\
             filter(Genbank.genbank_accession.in_(gbk_accessions)).\
             all()
 
@@ -340,34 +339,51 @@ def get_uniprot_data(gbk_dict, query_data, connection, args):
     for record in tqdm(uniprot_query, desc="Getting UniProt data"):
         gbk_acc = record[0].genbank_accession
 
-        if args.uniprot:
+        if 'uniprot_acc' in args.include:
             uniprot_accession = record[1].uniprot_accession
+
+            try:
+                query_data[gbk_acc]
+    
+                try:
+                    query_data[gbk_acc]['uniprot_accession']
+                    logger.warning(
+                        f"Multiple UniProt records found for GBK acc {gbk_acc}\n"
+                        "Retreiving only one."
+                    )
+                    query_data[gbk_acc]['uniprot_accession'] = uniprot_accession
+
+                except KeyError:
+                    query_data[gbk_acc]['uniprot_accession'] = uniprot_accession
+
+            except KeyError:
+                query_data[gbk_acc] = {
+                    'uniprot_accession': uniprot_accession,
+                }
+
+        if 'uniprot_name' in args.include:
             uniprot_name = record[1].uniprot_name
 
             try:
                 query_data[gbk_acc]
                 
                 try:
-                    query_data[gbk_acc]['uniprot_accession']
                     query_data[gbk_acc]['uniprot_name']
                     logger.warning(
                         f"Multiple UniProt records found for GBK acc {gbk_acc}\n"
                         "Retreiving only one."
                     )
-                    query_data[gbk_acc]['uniprot_accession'] = uniprot_accession
                     query_data[gbk_acc]['uniprot_name'] = uniprot_name
+                    
                 except KeyError:
-
-                    query_data[gbk_acc]['uniprot_accession'] = uniprot_accession
                     query_data[gbk_acc]['uniprot_name'] = uniprot_name
 
             except KeyError:
                 query_data[gbk_acc] = {
-                    'uniprot_accession': uniprot_accession,
                     'uniprot_name': uniprot_name,
                 }
-        
-        if args.seq_uniprot:
+
+        if 'uniprot_seq' in args.include:
             seq = record[1].sequence
             seq_date = record[1].seq_update_date
 

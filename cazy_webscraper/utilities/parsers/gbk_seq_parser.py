@@ -120,14 +120,6 @@ def build_parser(argv: Optional[List] = None):
         help="Limit retrieval to proteins annotated with the provided EC numbers. Separate EC numbers with single commas"
     )
 
-    # specify the number of accessions posted in single ePost to NCBI
-    parser.add_argument(
-        "--entrez_batch_size",
-        type=int,
-        default=150,
-        help="Number of accessions posted to NCBI per epost, advice to be max 200. Default=150"
-    )
-
     # Add option to force file over writting
     parser.add_argument(
         "-f",
@@ -135,7 +127,7 @@ def build_parser(argv: Optional[List] = None):
         dest="force",
         action="store_true",
         default=False,
-        help="Force file over writting",
+        help="Force file in existing cache directory",
     )
 
     # Add option to specify families to retrieve protein sequences for

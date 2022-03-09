@@ -52,20 +52,59 @@ Cache files when retrieving data from UniProt
 
 The dataframes retrieved with each query to UniProt are cached.
 
+In addition two JSON files are created:
+* ``uniprot_accessions_YYYY-MM-DD_HH-MM-SS.json``
+* ``uniprot_data_YYYY-MM-DD_HH-MM-SS.json``
+
+**UniProt accessions:**
+
+The first file (``uniprot_accessions``) contains the UniProt accessions/IDs for each GenBank accession retrieved 
+from the local CAZyme database that matches the provided criteria. These UniProt IDs are used to query 
+UniProt and retrieve protein data. UniProt cannot be batch queried by GenBank accessions to retrieve protein 
+data using ``bioservices``.
+
+The JSON file is keyed by the UniProt accession and is valued by a Python dictionary like structure, 
+containing the GenBank accession the corresponding ID of its record in the local CAZyme database. For example: 
+
+.. code-block:: python
+    {"A0A1S6JHP8": {"gbk_acc": "AQS71285.1", "db_id": 1225219}
+
+This file can be used to skip the retrieval of UniProt IDs from UniProt (which is the first step performed by ``cw_get_uniprot_data``). To 
+do this use the ``--skip_uniprot_accessions`` flag followed by the path to the corresponding ``uniprot_accessions_YYYY-MM-DD_HH-MM-SS.json`` file.
+
+**UniProt data:**
+
+The second json file (``uniprot_data``) contains all data retrieved from UniProt for all proteins in the local 
+CAZyme database that match the specified criteria. The data retrieved from UniProt was parsed into a Python dictionary 
+which is then dumped into the JSON file.
+
+This file is used for mannually checking the parsing method employed by ``cw_get_uniprot_data`` is working, as well as skipping the 
+retrieval of the same dataset from UniProt (for example, if you wanted to recreate a specific CAZyme proteome dataset).
+
+To use the data cached in the ``uniprot_data`` file, using the ``--use_uniprot_cache`` flag, followed by the 
+path pointing to the corresponding file. Using this flag, skips the retrieval of protein data from UniProt, and only adds 
+data from the cache file into the local CAZyme database.
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Cache files when retrieving data from GenBank
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When retrieving protein sequences from GenBank two cache file are produced:
+When retrieving protein sequences from GenBank three cache file are produced:
 
-* ``genbank_sequence_retrieved.txt`` contains the GenBank protein accessions for which a protein sequence **was** successfully retrieved
-* ``genbank_no_sequence.txt`` contains the GenBank protein accessions for which a protein sequence was not retrieved, as well as the possible reason
+* ``genbank_sequence_retrieved_YYYY-MM-DD_HH-MM-SS.txt`` contains the GenBank protein accessions for which a protein sequence **was** successfully retrieved
+* ``genbank_no_sequence_YYYY-MM-DD_HH-MM-SS.txt`` contains the GenBank protein accessions for which a protein sequence was not retrieved, as well as the possible reason
+* ``gennbank_seqs_YYYY-MM-DD_HH-MM-SS.json``, which contains the GenBank accessions of proteins matching the provided criteria and the retrieved protein sequences.
+
+.. NOTE::
+    Future features for ``cazy_webscraper`` will include the ability to use this cached protein sequences, to (i) skip the 
+    retrieval of data from GenBank and (ii) facilitate the reproduction of local CAZyme databases.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Cache files when retrieving data from PDB
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Too be added...
+One cache file is created when using ``cazy_webscraper`` to retrieval protein structure files from PDB: ``pdb_retrieval_YYYY-MM-DD_HH-MM-SS.txt``, which 
+lists the PDB accessions of all files that were successfully downloaded from PDB using ``cazy_webscraper`` and ``BioPython``.
 
 ---------------
 Cache directory

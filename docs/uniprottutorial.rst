@@ -3,12 +3,12 @@ Tutorials on configuring ``cazy_webscraper`` to retrieve data from UniProt
 ==========================================================================
 
 ``cazy_webscraper`` can be configured to retrieve user specified data sets from UniProt for specific date 
-sets of CAZymes in a local CAZyme database. Many of the configuration options 
+sets of CAZymes in a local CAZyme database. Many of the same configuration options 
 apply to the retrieval of protein data from CAZy, UniProt, GenBank and PDB.
 
 .. NOTE::
    ``cazy_webscraper`` retrieves protein data from UniProt for CAZymes in a local CAZyme database. It 
-   will not add new proteins to the database.
+   will **not** add new proteins to the database.
 
 ``cazy_webscraper`` can be configured via the **command line** and/or via a **YAML configuration file**.
 
@@ -19,7 +19,7 @@ the retrieval of data from UniProt. These tutorials are designed for those with 
   If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cw_get_uniprot_data`` - this is the method used in this tutorial.  
   If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/expand/uniprot/get_uniprot_data.py``.
 
-From this point on, we will be discussed the ``cw_get_uniprot_data``, which is the entry point for 
+From this point on, we will be discusseing the ``cw_get_uniprot_data`` command, which is used by ``cazy_webscraper`` for 
 retrieving data from UniProt. We also presume you are comfortable configuring ``cazy_webscraper`` for the 
 scraping of data from CAZy.
 
@@ -29,8 +29,10 @@ All data retrieved from UniProt by ``cw_get_uniprot_data`` is added to the local
 Configuration via the command line
 ----------------------------------
 
-``cw_get_uniprot_data`` has only one required argument: the path to the local CAZyme database created 
-using ``cazy_webscraper``. Therefore, ``cw_get_uniprot_data`` can be enabled using a simple command structure:
+``cw_get_uniprot_data`` only requires one argument: the path to the local CAZyme database created 
+using ``cazy_webscraper``.
+
+Therefore, ``cw_get_uniprot_data`` can be enabled using a simple command structure:
 
 .. code-block:: bash
 
@@ -42,10 +44,14 @@ For example, if our database was stored in ``cazy/cazyme.db``, we would used:
    
   cazy_webscraper cazy/cazyme.db
 
+.. NOTE::
+   Make sure ``cw_get_uniprot_data`` is pointed directly at the database file.
+
 When no optional arguments are provided, the default behaviour is invoked. The default behaviour is to:
 
 * Retrieve protein data for **all** CAZymes in the local CAZyme db
 * Retrieve UniProt protein accessions and protein names
+* Not retrieve EC number, PDB accessions and protein sequences
 
 -----------------------------------------
 Options configurable at the command line 
@@ -60,7 +66,7 @@ The following behaviours of the ``cw_get_uniprot_data`` can be configured at the
 * Enable updating protein sequences in the local CAZyme database if newer versions are retrieved from UniProt
 * Enable verbose logging during the operation of the webscraper
 
-`Here <https://cazy-webscraper.readthedocs.io/en/latest/configuration_scraper.html>`_ you can find a full list of the command-line flags and options.
+`Here <https://cazy-webscraper.readthedocs.io/en/latest/uniprot.html>`_ you can find a full list of the command-line flags and options.
 
 
 ---------------------------------------------------------------
@@ -243,7 +249,7 @@ To retrieve EC numbers and PDB accessions for all CAZymes in GH and which are de
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --pdb --classes GH --genera Aspegillus,Trichoderma
+   cw_get_uniprot_data cazy/cazyme.db --pdb --ec --classes GH --genera Aspegillus,Trichoderma
 
 
 **Example 3:**
@@ -252,7 +258,7 @@ EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, we use the command:
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --pdb --sequences --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
+   cw_get_uniprot_data cazy/cazyme.db --ec --sequences --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
 ------------------------------
 Providing a list of accessions

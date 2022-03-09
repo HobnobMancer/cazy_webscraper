@@ -2,8 +2,8 @@
 Tutorials on configuring ``cazy_webscraper`` to scrape CAZy
 ================================================================
 
-``cazy_webscraper`` can be configured to retrieve user specified data sets from CAZy. The configuration 
-applies to the retrieval of protein data from UniProt, protein sequences from GenBank and protein structure files from PDB.
+``cazy_webscraper`` can be configured to retrieve user specified data sets from CAZy. The same configuration 
+applies to the retrieval of protein data from UniProt, GenBank and PDB.
 
 ``cazy_webscraper`` can be configured via the **command line** and/or via a **YAML configuration file**.
 
@@ -21,7 +21,7 @@ Configuration via the command line
 ----------------------------------
 
 ``cazy_webscraper`` has only one required argument, the user email address. Therefore, 
- the scraper can be enabled by simply calling the scraper at the command line. For example, using: 
+ the scraper can be enabled to scrape all of CAZy using the following command:
 
 .. code-block:: bash
 
@@ -30,14 +30,14 @@ Configuration via the command line
 When no optional arguments are provided the default behaviour of the scraper will be performed. 
 The default behaviour is to:
 
-* Scrape the entire CAZy databases
+* Scrape the entirety of CAZy databases
 * Write the resulting database to the current working directory
-* Not to retrieve subfamilies (members of subfamilies will be retrieved but only their parent family will be listed)
+* Not retrieve subfamilies (members of subfamilies will be retrieved but only their parent family will be listed)
 
-.. note::
+.. NOTE::
    **For those new to using command-line tools:**  
    Arguments are additional pieces of information we add onto the end of the command. They are used to configure the specific behaviour 
-   performed by computer when we tell it to perform a specific command. In the examples above the command is ``cazy_webscraper myemail@domain.com``, 
+   performed by yjr computer when we tell it to perform a specific command. In the examples above the command is ``cazy_webscraper myemail@domain.com``, 
    where we have told to computer to run the Python program ``cazy_webscraper`` and submit the user email 
    address to NCBI for the retrieval of source orgnaism data. No additional information was provided, the computer 
    will invoke ``cazy_webscraper`` using its default behaviour. If you do not want the default behaviour of ``cazy_webscraper`` then we need to 
@@ -57,7 +57,7 @@ The following behaviours of the ``cazy_webscraper`` can be configured at the com
 * Enable retrieving subfamilies
 * Enable verbose logging during the operation of the webscraper
 
-`Here <https://cazy-webscraper.readthedocs.io/en/latest/configuration_scraper.html>`_ you can find a full list of the command-line flags and options.
+`Here <https://cazy-webscraper.readthedocs.io/en/latest/usage.html>`_ you can find a full list of the command-line flags and options.
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -68,16 +68,21 @@ The command-line options listed above can be used in any combination to customis
 to restrict which CAZymes are scraped from CAZy are applied in combination. For example, if the ``--families`` option and ``--genera`` option are called then 
 only CAZymes from the specified families **and** belonging to source organisms within the defined genera will be retrieved.
 
-We will now walk through some examples of how to use ``cazy_webscraper``. All example code provided in this section will presume that the terminal is pointed at the ``cazy_webscraper`` directory, which contains the ``cazy_webscraper.py`` file.
+We will now walk through some examples of how to use ``cazy_webscraper``. All example code presumes ``cazy_webscraper`` was installled using 
+``Bioconda`` or ``pip`` and therefore, be simply called using the command ``cazy_webscraper``.
 
 .. NOTE::
-   
    **For those new to using command-line tools: flags**
-   Command-line flags are used to tell the computer specifically which option(s) to change. Flags **always** come after the command. The abbreivated 
-   version of a flag with with prefixed with a single dash, followed by a single letter. For example, ``-s``,``-o`` and ``-l`` are all examples of short 
-   hand flags. The long version of a flag is prefixed by two dashes, followed by complete words. For example, ``--output`` is the long version of the ``-o``. 
+   Command-line flags are used to tell the computer specifically which option(s) to change. Flags **always** come after the command.
+   
+   The abbreivated 
+   version of a flag is given the prefixed of a single dash, followed by a single letter. For example, ``-s``, ``-o`` and ``-l`` are all examples of short 
+   hand flags.
+   
+   The long version of a flag is prefixed by two dashes, followed by complete words. For example, ``--output`` is the long version of the ``-o``. 
+
    The flags used by a program are defined within the program. This means the flag ``-o`` may represent different options for different programs. Always make 
-   sure to check the documentation to see what flags are provided with the program, and what they do.
+   sure to check the documentation to see what flags are provided with the program, and what they do!
    
    You can use the command-line to list all flags for a program/tool by typing in the command to invoke that tool, followed by the flag ``--help`` or ``-h``. For example: 
    ``cazy_webscraper --help``.
@@ -87,9 +92,13 @@ We will now walk through some examples of how to use ``cazy_webscraper``. All ex
 Configuring were the output is saved
 -------------------------------------
 
-Instead of writing out database to the current working directory using the default database name 
+^^^^^^^^^^^^^^^^^^^^^^^
+Creating a new database
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Instead of writing out the database to the current working directory using the default database name 
 (``cazy_webscraper_<date>_<time>.db``), we can name the database and directory that the database 
-created by ``cazy_webscraper`` is written by calling the ``--output`` flag. 
+created by ``cazy_webscraper`` is written to by calling the ``--output`` flag. 
 
 We add the flag to the command that invokes ``cazy_webscraper``. For example, to write the output to the directory 'cazyme_database' with the file 
 name 'cazyme_database.db' we can use:
@@ -105,7 +114,7 @@ OR we can use the short hand version of the ``--output`` flag, ``-o``:
    cazy_webscraper -o cazyme_database/cazyme_database.db
 
 .. NOTE::
-   The final element of the path provided after the ``--output``/``-o`` flag is the name of database compiled by 
+   The final element of the path provided after the ``--output`` / ``-o`` flag is the name of database compiled by 
    ``cazy_webscraper``.
 
 The output directory does not have to exist when ``cazy_webscraper`` is invoked. ``cazy_webscraper`` can make 
@@ -117,11 +126,14 @@ The ``--output`` flag can take an infinetly long path. For example, we could use
 
    cazy_webscraper -o data/cazyme_research/cazyme_database/cazyme_database.db
 
-If the directories ``cazymes_research`` and ``cazyme_database`` did not exist then ``cazy_webscraper`` will build 
+If the directories ``cazymes_research`` and ``cazyme_database`` did not exist, then ``cazy_webscraper`` will build 
 these for you.
 
-**Writing the output to an existing database**
-If you want to write the output CAZyme database to a directory that already exists, you will need to add the force (``--force`` *or* ``-f``) flag 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Overwriting an existing database or directory
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you want to write the output CAZyme database to a directory and/or file that already exists, you will need to add the force (``--force`` *or* ``-f``) flag 
 anywhere to the ``cazy_webscraper`` command. For example:
 
 .. code-block:: bash
@@ -160,6 +172,38 @@ The above examples also highlight that it does not matter if you use the long or
    about ``cazy_webscraper`` deleting content in the current working directory. This only applies if you chose to
    write the database to a directory over than the current working directory.
 
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Add the scraped data to an existing CAZyme database
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You may wish to scrape CAZy in multiple stages; maybe your internet dropped out while scraping CAZy 
+and you don't want to start again, or maybe you scraped CAZy but missed out a species of interest. No matter 
+the reason ``cazy_webscraper`` allows you to add more CAZyme data to an existing database previously created by 
+``cazy_webscraper``.
+
+To do this add the database (``--database`` or ``-d``) flag to the ``cazy_webscraper`` command, followed by the path 
+to the CAZyme database you want to add your scraped CAZy data to. For example, to add data to an existing 
+database in ``cazy/cazyme_db.db`` use the command:
+
+.. code-block:: bash
+
+   cazy_webscraper -- database cazy/cazyme_db.db
+
+.. note::
+   Don't forget the .db file extension at the end of the path!
+
+All the paths we pass to ``cazy_webscraper`` are a *relative* path. This means ``cazy_webscraper`` will start in the directory 
+the terminal is currently pointed out, and follow the path from there. For example, if we used the command:
+
+.. code-block:: bash
+
+   cazy_webscraper -d my_cazyme_databases/my_cazyme_database.db
+
+Then the computer will look for a directory called ``my_cazyme_databases`` in the directory the terminal is looking at, then within the 
+``my_cazyme_databases`` directory the computer will look for the file ``my_cazyme_database.db``.
+
+
 ----------------------------------------------
 Specifying CAZy classes and families to scrape
 ----------------------------------------------
@@ -196,6 +240,8 @@ For example, if you want to scrape all CAZymes from Glycoside Hydrolase and Carb
    These synonyms are stored in a JSON found at ``scraper/utilities/parse_configuration/cazy_dictionary.json``. 
    Storing these synonyms allows you to modify this file if you wish to add your own synonoms for each CAZy class.
 
+If you have your own synonyms these can be used by using the ``--cazy_synonyms`` flag, followed by the path to your JSON file. This JSON file **must** have the same 
+architecture as the JSON filed used by ``cazy_webscraper``.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 Scraping specific families
@@ -333,7 +379,7 @@ For example, if we wanted to retrieve all CAZymes from *Aspergillus niger* and *
 
 .. code-block:: bash
 
-   cazy_webscraper --species Aspergillus niger,Asepergillus fumigatus
+   cazy_webscraper --species "Aspergillus niger,Asepergillus fumigatus"
 
 
 .. note::
@@ -350,6 +396,16 @@ For example, if we wanted to retrieve all CAZymes from *Aspergillus niger* and *
 
    ASPERGILLUS NIGER is **incorrect**
 
+.. warning::
+  When providing any parameter that contains a space within it, enclose the entire parameter is single or double quotation marks
+  
+   "Aspergillus niger,Trichoderma reesie" is **correct**
+   
+   'Aspergillus niger,Trichoderma reesie' is **correct**
+
+   asepergillus niger,Trichoderma reesie is **incorrect**
+   
+   Therefore, when using the ``-species`` and ``--strains`` flag,s **always** enclode the provided argument (or parameter) in single or double quotation marks.
 
 .. warning::
    When you specify a species ``cazy_webscraper`` will retrieval CAZymes from *all* strains of the species.
@@ -370,7 +426,7 @@ For example, if we wanted to retrieve all CAZymes from Aspergillus niger ATCC 10
 
 .. code-block:: bash
 
-   cazy_webscraper --strains Aspergillus niger ATCC 1015,Aspergillus uvarum CBS 121591
+   cazy_webscraper --strains "Aspergillus niger ATCC 1015,Aspergillus uvarum CBS 121591"
 
 he order that the strains are listed does **not** matter.
 
@@ -378,11 +434,21 @@ he order that the strains are listed does **not** matter.
    If you use the ``--species``, ``--genera`` and ``--strains`` flags in any combination and a source organism matches 
    multiple of the taxonomy critera, the CAZymes derived from that species will only be retrieved **once**.
    
-   For example, using the command ``cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015`` 
+   For example, using the command ``cazy_webscraper --genera Aspergillus --species "Aspergillus niger" --strains "Aspergillus niger ATCC 1015"`` 
    will retrieve all CAZymes from *all* Aspergillus species *once*.
    
 The higher taxonomy levels take president, and the command will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well, and then retrieve another copy of all CAZymes from Aspergillus niger ATCC 1015.
 
+.. warning::
+  When providing any parameter that contains a space within it, enclose the entire parameter is single or double quotation marks
+  
+   "Aspergillus niger,Trichoderma reesie" is **correct**
+   
+   'Aspergillus niger,Trichoderma reesie' is **correct**
+
+   asepergillus niger,Trichoderma reesie is **incorrect**
+   
+   Therefore, when using the ``-species`` and ``--strains`` flag,s **always** enclode the provided argument (or parameter) in single or double quotation marks.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Combining taxonomic filters
@@ -395,7 +461,7 @@ we would use would be:
 
 .. code-block:: bash
 
-   cazy_webscraper --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
+   cazy_webscraper --kingdoms viruses --genera Aspergillus --species "Layia carnosa,Layia chrysanthemoides" --strains "Trichoderma reesei QM6a,Trichoderma reesei QM9414"
 
 .. note::
    This is a single command written on a single line. When typing the command into the terminal do not fit enter until you have finished the command. 
@@ -410,7 +476,7 @@ When combining taxonomy filters, the higher taxonomy levels take president. For 
    
 .. code-block:: bash
 
-   cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015
+   cazy_webscraper --genera Aspergillus --species "Aspergillus niger" --strains "Aspergillus niger ATCC 1015"
 
 will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well. 
 ``cazy_webscraper`` will retrieval all CAZymes for all strains of *Aspergillus niger*.
@@ -423,7 +489,7 @@ By default ``cazy_webscraper`` only retrieves the CAZy family annotation for eac
 retrieve the CAZy subfamily annotation. For example, a CAZyme within the CAZy subfamily GH3_1, will be 
 stored in the local CAZyme database as only a GH3 CAZyme.
 
-To retrieve the CAZy family **and** CAZy subfamily annotations, add the ``-subfamilies``/``-s`` flag, anywhere in the 
+To retrieve the CAZy family **and** CAZy subfamily annotations, add the ``-subfamilies`` / ``-s`` flag, anywhere in the 
 ``cazy_webscraper`` command. For example:
 
 .. code-block:: bash
@@ -462,7 +528,7 @@ To retrieve CAZymes from all viral species, and all Aspergillus niger strains wh
 
 .. code-block:: bash
 
-   cazy_webscraper --families GH3_1,GH3_2 --subfamilies --species Aspergillus niger --kingdoms Bacteria
+   cazy_webscraper --families GH3_1,GH3_2 --subfamilies --species "Aspergillus niger" --kingdoms Bacteria
 
 ------------------
 Configuration file
@@ -608,13 +674,16 @@ allow you to add notes to your configuration file. For example:
    ECs:  # only CAZymes with at least one of these EC numbers will be scrapped
 
 
+Example configuration files and tempate files can be found `hre <https://github.com/HobnobMancer/cazy_webscraper/tree/master/configuration_files>`_.
+
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 Using a configuration file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Once you have created a configuration file (we recommend modifying the template one provided with ``cazy_webscraper`` 
 you then need to invoke ``cazy_webscraper`` and tell it you are using a configuration file. To do this we add the 
-``--config``/``-c`` flag to the ``cazy_webscraper`` command, followed by the path to the configuration file.
+``--config`` / ``-c`` flag to the ``cazy_webscraper`` command, followed by the path to the configuration file.
 
 The path we pass to ``cazy_webscraper`` is a *relative* path. This means ``cazy_webscraper`` will start in the directory 
 the terminal is currently pointed out, and follow the path from there. For example, if we used the command:
@@ -654,36 +723,6 @@ To use a configuration file and a the command-line to configure ``cazy_webscrape
 Additional operations to fine tune how ``cazy_webscraper`` operates
 -------------------------------------------------------------------
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Add the scraped data to an existing CAZyme database
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-You may wish to scrape CAZy in multiple stages; maybe your internet dropped out while scraping CAZy 
-and you don't want to start again, or maybe you scraped CAZy but missed out a species of interest. No matter 
-the reason ``cazy_webscraper`` allows you to add more CAZyme data to an existing database previously created by 
-``cazy_webscraper``.
-
-To do this add the database (``--database`` or ``-d``) flag to the ``cazy_webscraper`` command, followed by the path 
-to the CAZyme database you want to add your scraped CAZy data to. For example, to add data to an existing 
-database in ``cazy/cazyme_db.db`` use the command:
-
-.. code-block:: bash
-
-   cazy_webscraper -- database cazy/cazyme_db.db
-
-.. note::
-   Don't forget the .db file extension at the end of the path!
-
-All the paths we pass to ``cazy_webscraper`` are a *relative* path. This means ``cazy_webscraper`` will start in the directory 
-the terminal is currently pointed out, and follow the path from there. For example, if we used the command:
-
-.. code-block:: bash
-
-   cazy_webscraper -d my_cazyme_databases/my_cazyme_database.db
-
-Then the computer will look for a directory called ``my_cazyme_databases`` in the directory the terminal is looking at, then within the 
-``my_cazyme_databases`` directory the computer will look for the file ``my_cazyme_database.db``.
-
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Scraping data from a previously downloaded CAZy txt file
@@ -713,7 +752,7 @@ Writing out a log file
 ^^^^^^^^^^^^^^^^^^^^^^
 
 If you want to have a log file of all terminal output produced by ``cazy_webscraper`` then add the log 
-``--log``/``-l`` anywhere to the ``cazy_webscraper`` command, followed by a 
+``--log`` / ``-l`` anywhere to the ``cazy_webscraper`` command, followed by a 
 path to write the log file to. This path is a *relative* path and must include target a log file specifically. 
 For example:
 

@@ -41,6 +41,7 @@
 """Add protein sequences retrieved from GenBank to a local SQLite database"""
 
 
+import logging
 from sqlalchemy import text
 from tqdm import tqdm
 
@@ -58,6 +59,8 @@ def add_gbk_seqs_to_db(seq_dict, retrieval_date, gbk_dict, connection, args):
     
     Return nothing
     """
+    logger = logging.getLogger(__name__)
+    
     # load the current Genbanks table into a dict
     gbk_table_dict = get_table_dicts.get_gbk_table_seq_dict(connection)
 
@@ -71,25 +74,28 @@ def add_gbk_seqs_to_db(seq_dict, retrieval_date, gbk_dict, connection, args):
         if existing_record['sequence'] is None:
             records.add( (db_id, seq) )
         else:
-            if (args.sequence_update) and (retrieval_date < existing_record['seq_date']):
+            if (args.seq_update) and (retrieval_date < existing_record['seq_date']):
                 records.add( (db_id, seq) )
 
-    with connection.begin():
-        for record in tqdm(records, desc="Adding seqs to db"): 
-                connection.execute(
-                    text(
-                        "UPDATE Genbanks "
-                        f"SET sequence = '{record[1]}'"
-                        f"WHERE genbank_id = '{record[0]}'"
+    if len(records) != 0:
+        with connection.begin():
+            for record in tqdm(records, desc="Adding seqs to db"): 
+                    connection.execute(
+                        text(
+                            "UPDATE Genbanks "
+                            f"SET sequence = '{record[1]}'"
+                            f"WHERE genbank_id = '{record[0]}'"
+                        )
                     )
-                )
-                #, seq_update_date = {retrieval_date} 
-                connection.execute(
-                    text(
-                        "UPDATE Genbanks "
-                        f"SET seq_update_date = '{retrieval_date}'"
-                        f"WHERE genbank_id = '{record[0]}'"
+                    #, seq_update_date = {retrieval_date} 
+                    connection.execute(
+                        text(
+                            "UPDATE Genbanks "
+                            f"SET seq_update_date = '{retrieval_date}'"
+                            f"WHERE genbank_id = '{record[0]}'"
+                        )
                     )
-                )
+    else:
+        logger.warning("No records to update")
 
     return

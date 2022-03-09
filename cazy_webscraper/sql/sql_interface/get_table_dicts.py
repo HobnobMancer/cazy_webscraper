@@ -275,22 +275,43 @@ def get_pdb_table_dict(connection):
     
     :param connection: open sqlalchemy db engine connection
     
-    Return dict {gbk_id: {pdb accessions}}
+    Return dict {pdb_accession: pdb_db_id}
     """
     with Session(bind=connection) as session:
         db_pdb_records = session.query(Pdb).all()
 
-    pdb_table_dict = {}  # {gbk_id: {pdb accessions}}
+    pdb_table_dict = {}  # {pdb_accession: pdb_db_id}
 
     for record in tqdm(db_pdb_records, desc="Loading existing PDB db records"):
-        gbk_id = record.genbank_id
-        try:
-            pdb_table_dict[gbk_id].add(record.pdb_accession)
-            
-        except KeyError:
-            pdb_table_dict[gbk_id] = {record.pdb_accession}
+        pdb_table_dict[record.pdb_accession] = record.pdb_id
 
     return pdb_table_dict 
+
+
+def get_gbk_pdb_table_dict(connection):
+    """Create dict of objects present in the Genbanks_Pdbs table.
+    
+    :param connection: open sqlalchemy db engine connection
+    
+    Return dict {gbk_db_id: {pdb_db_id} }
+    """
+    with Session(bind=connection) as session:
+        all_gbk_pdb_records = session.query(Genbank, Pdb).\
+            join(Pdb, Genbank.pdbs).\
+            all()
+
+    gbk_pdb_table_dict = {}  # {pdb_accession: pdb_db_id}
+
+    for record in tqdm(all_gbk_pdb_records, desc="Loading existing Genbank_Pdbs db records"):
+        genbank_id = record[0].genbank_id
+        pdb_id = record[1].pdb_id
+
+        try:
+            gbk_pdb_table_dict[genbank_id].add(pdb_id)
+        except KeyError:
+            gbk_pdb_table_dict[genbank_id] = {pdb_id}
+
+    return gbk_pdb_table_dict 
 
 
 def get_taxs_table_dict(connection):

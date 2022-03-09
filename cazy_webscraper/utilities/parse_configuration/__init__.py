@@ -230,10 +230,13 @@ def get_yaml_configuration(
             if yaml_config_dict["kingdoms"] is not None:
                 for kingdom in yaml_config_dict["kingdoms"]:
                     if kingdom.lower() == 'unclassified':
-                        kingdom_filters["kingdoms"].add(kingdom.lower())
+                        kingdom_filters.add(kingdom.lower())
                     else:
                         new_kingdom = kingdom[0].upper() + kingdom[1:].lower()
-                        kingdom_filters["kingdoms"].add(new_kingdom)
+                        kingdom_filters.add(new_kingdom)
+
+        elif key == 'ec':
+            continue
 
         else:  # key is a CAZy class and underneath are CAZy families to scrape
             if yaml_config_dict[key] is not None:  # CAZy families were listed
@@ -290,28 +293,35 @@ def parse_user_cazy_classes(cazy_classes, cazy_class_synonym_dict):
     logger = logging.getLogger(__name__)
     logger.info("Standardising names of class listed in configuration file")
 
+    accepted_class_names = list(cazy_class_synonym_dict.keys()) + list(cazy_class_synonym_dict.values())
     standardised_class_names = list(cazy_class_synonym_dict.keys())
 
-    index = 0
-    for index in range(len(cazy_classes)):
+    selected_classes = []
+
+    for cazy_class in cazy_classes:
         # identify user defined CAZy classes not written in standardised format
-        if cazy_classes[index] not in standardised_class_names:
-            for key in cazy_class_synonym_dict:
-                if cazy_classes[index] in cazy_class_synonym_dict[key]:  # if in synonyms in cazy_class_synonym_dict
-                    cazy_classes[index] = key  # standardise the class name
+        if cazy_class not in standardised_class_names:
 
-        # check all names are standardised, remove names that could not be standardised
-        if cazy_classes[index] not in standardised_class_names:
-            logger.warning(
-                (
-                    f"'{cazy_classes[index]}' could not be standardised.\n"
-                    "Please use a synonym in the file_io/cazy_class_synonym_dictionary.json.\n"
-                    f"'{cazy_classes[index]}' will NOT be scraped."
+            # not written in standardised format
+            # check if accepted class name
+            if cazy_class not in accepted_class_names:
+                logger.warning(
+                    (
+                        f"'{cazy_class}' could not be standardised.\n"
+                        "Please use a synonym in the file_io/cazy_class_synonym_dictionary.json.\n"
+                        f"'{cazy_class}' will NOT be scraped."
+                    )
                 )
-            )
-            del cazy_classes[index]
 
-    return cazy_classes
+            else:  # written in accepted alternative format
+                for standardised_class_name in cazy_class_synonym_dict:
+                    if cazy_class in cazy_class_synonym_dict[standardised_class_name]:
+                        selected_classes.append(standardised_class_name)
+
+        else:  # written in standardised format
+            selected_classes.appent(cazy_class)
+
+    return list(set(cazy_classes))
 
 
 def get_cmd_scrape_config(
@@ -347,13 +357,13 @@ def get_cmd_scrape_config(
 
     if args.species is not None:
         cmd_species = (args.species).split(",")
-        for cmd_species in cmd_species:
-            taxonomy_filter["species"].add(cmd_species)
+        for species in cmd_species:
+            taxonomy_filter["species"].add(species)
     
     if args.strains is not None:
         cmd_strains = (args.strains).split(",")
-        for cmd_genus in cmd_strains:
-            taxonomy_filter["strains"].add(cmd_strains)
+        for strain in cmd_strains:
+            taxonomy_filter["strains"].add(strain)
     
     if args.kingdoms is not None:
         cmd_kingdoms = (args.kingdoms).split(",")
@@ -381,33 +391,33 @@ def get_cmd_defined_families(config_dict, args):
 
     for fam in cmd_families:
         try:
-            if fam.find("GH") != -1:
+            if fam.startswith("GH"):
                 re.match(r"GH\d+", fam, re.IGNORECASE).group()
                 config_dict['Glycoside Hydrolases (GHs)'].add(fam)
 
-            elif fam.find("GT") != -1:
+            elif fam.startswith("GT"):
                 re.match(r"GT\d+", fam, re.IGNORECASE).group()
                 config_dict['GlycosylTransferases (GTs)'].add(fam)
 
-            elif fam.find("PL") != -1:
+            elif fam.startswith("PL"):
                 re.match(r"PL\d+", fam, re.IGNORECASE).group()
                 config_dict['Polysaccharide Lyases (PLs)'].add(fam)
 
-            elif fam.find("CE") != -1:
+            elif fam.startswith("CE"):
                 re.match(r"CE\d+", fam, re.IGNORECASE).group()
                 config_dict['Carbohydrate Esterases (CEs)'].add(fam)
 
-            elif fam.find("AA") != -1:
+            elif fam.startswith("AA"):
                 re.match(r"AA\d+", fam, re.IGNORECASE).group()
                 config_dict['Auxiliary Activities (AAs)'].add(fam)
 
-            elif fam.find("CBM") != -1:
+            elif fam.startswith("CBM"):
                 re.match(r"CBM\d+", fam, re.IGNORECASE).group()
-                config_dict['Carbohydrate-Binding Modules (CBMs)'].ad(fam)
+                config_dict['Carbohydrate-Binding Modules (CBMs)'].add(fam)
 
             else:
                 logger.warning(
-                    f"Invalid family specified at cmd line: {fam}\n"
+                    f"Do recognise class prefix for family specified at cmd line: {fam}\n"
                     "This family will not be scraped."
                 )
 
@@ -430,7 +440,6 @@ def get_excluded_classes(config_dict, cazy_class_synonym_dict):
 
     Return list of CAZy classes not to be scraped.
     """
-
     cazy_classes_to_scrape = set()
     
     # retrieve the names of classes for which specific families to be scraped HAVE BEEN named
@@ -554,6 +563,15 @@ def get_expansion_configuration(args):
 
 
 def get_ec_config(ec_filters, args):
+    """Parse EC number configuration.
+    
+    Standardise the EC numbers missing digits and remove 'EC' prefix.
+    
+    :param ec_filters: set of EC numbers
+    :param args: cmd line args parser
+    
+    Return set of EC numbers.
+    """
     logger = logging.getLogger(__name__)
 
     if args.config is not None:

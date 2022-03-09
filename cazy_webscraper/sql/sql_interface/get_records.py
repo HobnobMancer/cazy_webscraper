@@ -76,7 +76,7 @@ def get_user_genbank_sequences(gbk_table_dict, args):
 
     for gbk_accession in tqdm(gbk_accessions, desc="Getting database IDs for provided GenBank IDs"):
         try:
-            gbk_dict[gbk_accession] = gbk_table_dict[gbk_accessions]
+            gbk_dict[gbk_accession] = gbk_table_dict[gbk_accession]
         except KeyError:
             logging.warning(
                 f"Genbank accession {gbk_accession} retrieved from list in file\n"

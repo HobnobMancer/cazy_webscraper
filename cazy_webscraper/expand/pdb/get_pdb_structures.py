@@ -44,8 +44,6 @@
 
 
 import logging
-import os
-import sys
 
 import pandas as pd
 
@@ -53,6 +51,9 @@ from datetime import datetime
 from typing import List, Optional
 
 import Bio.PDB
+from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.logger import config_logger
 
 from tqdm import tqdm
 
@@ -63,7 +64,7 @@ from cazy_webscraper.sql.sql_interface.get_records import (
     get_user_genbank_sequences,
     get_user_uniprot_sequences
 )
-from cazy_webscraper.utilities import config_logger, file_io, parse_configuration
+from cazy_webscraper.utilities import parse_configuration
 from cazy_webscraper.utilities.parsers import pdb_strctre_parser
 
 
@@ -129,10 +130,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # make output and cache dirs
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
-        cache_dir = cache_dir / "uniprot_data_retrieval"
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        cache_dir = cache_dir / "pdb_retrieval"
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     download_pdb_structures(pdb_accessions, args)
 

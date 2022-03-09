@@ -23,7 +23,14 @@ Each CAZyme may or may not have the following data, depending on the entry:
 Database Schema
 ---------------
 
-The database ORM (schema) can be viewed `Here <https://hobnobmancer.github.io/cazy_webscraper/database_schema.pdf>`_
+Below is the database ORM. It plots the relationships between elements in each table.
+
+.. image:: cazy_webscraper_version2.svg
+   :scale: 100 %
+   :alt: cazy_webscraper database schema
+   :align: center
+
+The database ORM (schema) can also be viewed `Here <https://hobnobmancer.github.io/cazy_webscraper/database_schema.pdf>`_
 
 --------------
 The Logs table

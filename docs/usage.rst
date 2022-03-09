@@ -53,7 +53,7 @@ to download data from CAZy.
 
 .. NOTE::
   If ``--db_output`` **and** ``--database`` are **not** called,
-  ``cazy_webscraper`` will write out a local CAZyme database to the cwd with the standardised name ``cazy_webscraper_<date>_<time>.db``
+  ``cazy_webscraper`` will writes out a local CAZyme database to the cwd with the standardised name ``cazy_webscraper_<date>_<time>.db``
 
 ``--delete_old_relationships`` - Detele old CAZy family annotations of GenBank accessions. These are CAZy family annotations of a given GenBank accession are in the local database but the accession is not longer associated with those CAZy families, so delete old accession-family relationships.
 
@@ -67,9 +67,14 @@ to download data from CAZy.
 
 ``--genera`` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
 
+``--kingdoms`` - List of taxonomic kingdoms to restrict the scrape to. Default: None, filter is not applied.
+
 ``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
 
 ``--nodelete``, ``-n`` - When called, content in the existing output dir will **not** be deleted. Default: False (existing content is deleted).
+
+.. NOTE::
+    When the ``--db_output`` flag is used, ``cazy_webscraper`` will create any necessary parent directories. If the direct/immediate parent directory of the database exists, by default ``cazy_webscraper`` will delete the content in this parent directory.
 
 ``--nodelete_cache`` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
@@ -136,7 +141,7 @@ By default ``cazy_webscraper`` writes out a SQL database file to the current wor
 filename with the following structure ``cazy_webscraper_<date>_<time>.db``, where the date and time mark 
 the time ``cazy_webscraper`` was called.
 
-To specify the location of the output database the ``--db_output``/``-o`` option can be used:
+To specify the location of the output database the ``--db_output`` / ``-o`` option can be used:
 
 .. code-block:: bash
 
@@ -145,7 +150,7 @@ To specify the location of the output database the ``--db_output``/``-o`` option
 will write an SQL database file to ``GH169_output.db``.
 
 If the target output file already exists, ``cazy_webscraper`` by default will not overwrite the existing file and will terminate. To 
-overwrite an existing file use the ``--force``/``-f`` options:
+overwrite an existing file use the ``--force`` / ``-f`` options:
 
 .. code-block:: bash
 
@@ -160,20 +165,20 @@ the ``cazy`` and ``families`` directories do not exist, ``cazy_webscraper`` will
   cazy_webscraper --families GH169 -o cazy/families/GH169_output.db 
 
 If any of the output directories exist, by default, ``cazy_webscraper`` will terminate. To write to an existing output 
-directory use the ``--force``/``-f`` options:
+directory use the ``--force`` / ``-f`` options:
 
 .. code-block:: bash
 
   cazy_webscraper --families GH169 -o GH169_output.db -f
 
 By default ``cazy_webscraper`` will delete the existing content in the existing output files. To not delete the content 
-in the existing output directories use the ``--nodelete``/``-n``:
+in the existing output directories use the ``--nodelete`` / ``-n``:
 
 .. code-block:: bash
 
   cazy_webscraper --families GH169 -o GH169_output.db -f -n
 
-If you already have an existing CAZy database, then specifying this database with the ``-d``/``--database`` option will cause the scraper to use the existing database rather than creating a new one:
+If you already have an existing CAZy database, then specifying this database with the ``-d`` / ``--database`` option will cause the scraper to use the existing database rather than creating a new one:
 
 .. code-block:: bash
 

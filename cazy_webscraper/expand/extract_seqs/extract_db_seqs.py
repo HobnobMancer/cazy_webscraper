@@ -56,16 +56,17 @@ from Bio import SeqIO
 from Bio.Blast.Applications import NcbimakeblastdbCommandline
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-
+from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.logger import config_logger
 
 from cazy_webscraper import closing_message, connect_existing_db
-from cazy_webscraper.expand import get_chunks_gen
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
 from cazy_webscraper.sql.sql_interface.get_records import (
     get_user_genbank_sequences,
     get_user_uniprot_sequences
 )
-from cazy_webscraper.utilities import config_logger, file_io, parse_configuration
+from cazy_webscraper.utilities import parse_configuration
 from cazy_webscraper.utilities.parsers.extract_seq_parser import build_parser
 
 
@@ -90,18 +91,18 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # make output directories
     if args.fasta_file:
         target_dir = args.fasta_file.parent
-        file_io.make_output_directory(target_dir, args.force, args.nodelete)
+        make_output_directory(target_dir, args.force, args.nodelete)
     if args.fasta_dir:
-        file_io.make_output_directory(args.fasta_dir, args.force, args.nodelete)
+        make_output_directory(args.fasta_dir, args.force, args.nodelete)
 
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
         cache_dir = cache_dir / "sequence_extraction"
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     (
         config_dict,
@@ -162,14 +163,24 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     protein_records = []
     
     for protein_accession in tqdm(extracted_sequences, "Compiling SeqRecords"):
-        new_record = SeqRecord(
-            Seq(extracted_sequences[protein_accession]['seq']),
-            id=protein_accession,
-            description=extracted_sequences[protein_accession]['db']
-        )
-        protein_records.append(new_record)
+        try:
+            new_record = SeqRecord(
+                Seq(extracted_sequences[protein_accession]['seq']),
+                id=protein_accession,
+                description=extracted_sequences[protein_accession]['db']
+            )
+            protein_records.append(new_record)
+        except TypeError:
+            if extracted_sequences[protein_accession]['seq'] is not None:
+                logger.warning(
+                    f"Seq for {protein_accession} retrieved as type {type(extracted_sequences[protein_accession]['seq'])}\n"
+                    "Not adding to FASTA file"
+                )
+            pass  # passed when sequence is None
 
     # write out the sequences to the specified outputs
+
+    logger.warning(f"Extracted {len(protein_records)}")
 
     write_output(protein_records, cache_dir, args)
 
