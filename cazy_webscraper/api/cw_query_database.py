@@ -153,7 +153,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         write_json_output(json_output_path, query_data, args)
 
     if 'csv' in args.file_types:
-        write_csv_output(query_data, args)
+        write_csv_output(query_data, args, csv_output_path)
     
     closing_message("cw_query_database", start_time, args)
 
@@ -221,18 +221,58 @@ def get_query_data(gbk_dict, connection, args):
     return query_data
 
 
-def write_csv_output(query_data, args, output_path, time_stamp):
+
+def write_json_output(json_output_path, query_data, args):
+    """Parse dict to be suitable for JSON serialisation and write out output.
+    
+    query_data = {
+        genbank_accession: 
+            'class': {CAZy classes},
+            'family': {CAZy families},
+            'subfamily': {CAZy subfamilies},
+            'kingdom': kingdom,
+            'genus': genus,
+            'organism': genus species strain,
+            'ec_numbers': {EC number annotations},
+            'pdb_accessions': {PDB accessions},
+            'uniprot_accession': UniProt protein accession,
+            'uniprot_name': Name of the protein from UniProt,
+            'uniprot_sequence': Protein Aa seq from UniProt,
+            'uniprot_sequence_date': Date the seq was last modified in UniProt,
+            'gbk_sequence': Protein Aa seq from GenBank
+            'gbk_sequence_date': Date the seq was last modified in Gbk,
+    }
+
+    Return nothing
+    """
+    set_keys = [
+        'class',
+        'family',
+        'subfamily',
+        'ec_numbers',
+        'pdb_accessions',
+    ]
+    for genbank_accession in query_data:
+        for key in set_keys:
+            try:
+                query_data[genbank_accession][key] = list(query_data[genbank_accession][key])
+            
+            except KeyError:  # raised when data was not retrieved from the db
+                pass
+
+    with open(json_output_path, 'w') as fh:
+        json.dump(query_data, fh)
+
+
+def write_csv_output(query_data, args, output_path):
     """Parse the output into a df structure and write out to a csv file.
     
     :param query_data: dict containing db query data.
     :param args: cmd-line args parser
     :param output_path: Path to write out output
-    :param time_stamp: date and time script was invoked
     
     Return nothing.
     """
-    output_path += ".csv"
-
     column_names = get_column_names(args)
 
     df_data = []  # list of nested lists, one nested list per df row
@@ -292,48 +332,6 @@ def write_csv_output(query_data, args, output_path, time_stamp):
     query_df = pd.DataFrame(df_data, columns=column_names)
 
     query_df.to_csv(output_path)
-
-
-def write_json_output(json_output_path, query_data, args):
-    """Parse dict to be suitable for JSON serialisation and write out output.
-    
-    query_data = {
-        genbank_accession: 
-            'class': {CAZy classes},
-            'family': {CAZy families},
-            'subfamily': {CAZy subfamilies},
-            'kingdom': kingdom,
-            'genus': genus,
-            'organism': genus species strain,
-            'ec_numbers': {EC number annotations},
-            'pdb_accessions': {PDB accessions},
-            'uniprot_accession': UniProt protein accession,
-            'uniprot_name': Name of the protein from UniProt,
-            'uniprot_sequence': Protein Aa seq from UniProt,
-            'uniprot_sequence_date': Date the seq was last modified in UniProt,
-            'gbk_sequence': Protein Aa seq from GenBank
-            'gbk_sequence_date': Date the seq was last modified in Gbk,
-    }
-
-    Return nothing
-    """
-    set_keys = [
-        'class',
-        'family',
-        'subfamily',
-        'ec_numbers',
-        'pdb_accessions',
-    ]
-    for genbank_accession in query_data:
-        for key in set_keys:
-            try:
-                query_data[genbank_accession][key] = list(query_data[genbank_accession][key])
-            
-            except KeyError:  # raised when data was not retrieved from the db
-                pass
-
-    with open(json_output_path, 'w') as fh:
-        json.dump(query_data, fh)
 
 
 def compile_output_name(args):
