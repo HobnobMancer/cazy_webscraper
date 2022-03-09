@@ -279,11 +279,8 @@ def write_csv_output(query_data, args, output_path):
     for gbk_acc in tqdm(query_data, desc="Compiling output dataframe"):
         new_rows = []
 
-        if (('class' not in args.include) and ('family' not in args.include) and ('subfamily' not in args.include)) or \
-            (('class' in args.include) and ('family' not in args.include) and ('subfamily' not in args.include)) or \
-                (('class' not in args.include) and ('family' in args.include) and ('subfamily' not in args.include)) \
-                    (('class' not in args.include) and ('family' not in args.include) and ('subfamily' in args.include)):
-                    new_rows.append([gbk_acc])  # don't need to create multiple rows to separate the class/fam/subfam annotations
+        if (('class' not in args.include) and ('family' not in args.include) and ('subfamily' not in args.include)):
+            new_rows.append([gbk_acc])  # don't need to create multiple rows to separate the class/fam/subfam annotations
         
         else:
             # create one row for each CAZy class, CAZy family and CAZy subfamily annotation
@@ -317,7 +314,7 @@ def write_csv_output(query_data, args, output_path):
         # data from UniProt
         if 'uniprot_acc' in args.include:
             new_rows = add_single_value_to_rows(query_data, gbk_acc, 'uniprot_accession', new_rows)
-            
+
         if 'uniprot_name' in args.include:
             new_rows = add_single_value_to_rows(query_data, gbk_acc, 'uniprot_name', new_rows)
 
@@ -355,6 +352,8 @@ def write_csv_output(query_data, args, output_path):
         for row in new_rows:
             df_data.append(row)
 
+    print(df_data)
+    print(column_names)
     query_df = pd.DataFrame(df_data, columns=column_names)
 
     query_df.to_csv(output_path)
@@ -503,7 +502,7 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
             new_rows.append([gbk_acc, parent_class, family])
 
     # class and subfamily, NO family
-    elif  'class' in args.include and 'family' not in args.include and 'subfamily' in args.include:
+    elif  ('class' in args.include) and ('family' not in args.include) and ('subfamily' in args.include):
         subfamilies = protein_query_data['subfamily']
         for subfamily in subfamilies:
             try:
@@ -514,12 +513,12 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
             new_rows.append([gbk_acc, parent_class, subfamily])
 
     # family and subfamily, NO class
-    elif  'class' not in args.include and 'family' in args.include and 'subfamily' in args.include:
+    elif  ('class' not in args.include) and ('family' in args.include) and ('subfamily' in args.include):
         subfamilies = protein_query_data['subfamily']
         added_families = set()
         for subfamily in subfamilies:
             try:
-                parent_fam = re.match(r'\D{2,3}\d+_', subfamily).group()[:-1]
+                parent_fam = subfamily.split("_")[0]
                 added_families.add(parent_fam)
             except AttributeError:
                 logger.warning(f"Could not retrieve CAZy family from {subfamily}, setting CAZy family as 'NA'")
@@ -530,7 +529,7 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
         families = protein_query_data['family']
         for family in families:
             if family not in added_families:
-                new_rows.append([gbk_acc, family, 'NA'])
+                new_rows.append([gbk_acc, family, None])
 
     # class, family and subfamily
     else:
@@ -540,7 +539,7 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
 
             # get the parent family
             try:
-                parent_fam = re.match(r'\D{2,3}', subfamily).group()
+                parent_fam = subfamily.split("_")[0]
                 added_families.add(parent_fam)
             except AttributeError:
                 logger.warning(f"Could not retrieve CAZy family from {subfamily}, setting CAZy family as 'NA'")
