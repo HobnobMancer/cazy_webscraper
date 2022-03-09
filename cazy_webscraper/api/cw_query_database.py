@@ -352,8 +352,6 @@ def write_csv_output(query_data, args, output_path):
         for row in new_rows:
             df_data.append(row)
 
-    print(df_data)
-    print(column_names)
     query_df = pd.DataFrame(df_data, columns=column_names)
 
     query_df.to_csv(output_path)
