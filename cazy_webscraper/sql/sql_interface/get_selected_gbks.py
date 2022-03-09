@@ -147,6 +147,7 @@ def get_genbank_accessions(
     # Apply EC number filter if provided
     if len(ec_filters) != 0:
         filtered_gbk_accessions = apply_ec_filters(
+            filtered_gbk_accessions,
             ec_filters,
             connection,
         )
