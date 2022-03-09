@@ -44,6 +44,7 @@ These test are intened to be run from the root of the repository using:
 pytest -v
 """
 
+from distutils.command.config import config
 from cazy_webscraper.utilities import parse_configuration
 
 
@@ -52,14 +53,10 @@ import pytest
 from argparse import Namespace
 
 
-def test_parse_cmd_fams():
-    args_dict = {
-        "args": Namespace(
-            families="GH1,GT2,PL3,CE19,AA10,CBM4,QQQ444,CBMQQQ"
-        )
-    }
-
+@pytest.fixture
+def config_dict_blank():
     config_dict = {
+        "classes": set(),
         "Glycoside Hydrolases (GHs)": set(),
         "GlycosylTransferases (GTs)": set(),
         "Polysaccharide Lyases (PLs)": set(),
@@ -67,8 +64,43 @@ def test_parse_cmd_fams():
         "Auxiliary Activities (AAs)": set(),
         "Carbohydrate-Binding Modules (CBMs)": set(),
     }
+    return config_dict
 
-    parse_configuration.get_cmd_defined_families(config_dict, args_dict["args"])
+def test_parse_cmd_tax(monkeypatch, cazy_dictionary, config_dict_blank):
+
+    def mock_get_classes(*args, **kwards):
+        return ["GH", "PL"]
+
+    def mock_get_fams(*args, **kwards):
+        return config_dict_blank
+
+    args_dict = {
+        "args": Namespace(
+            classes="GH,PL",
+            families="GH1,GT2,PL3,CE19,AA10,CBM4,QQQ444,CBMQQQ",
+            genera="Aspergillus,Trichoderma",
+            species="Aspergillus niger,Genus species",
+            strains="Genus species strain,genus species strain",
+            kingdoms="bacteria,unclassified",
+        )
+    }
+
+    tax_dict = {'genera': set(), 'species': set(), 'strains': set()}
+
+    monkeypatch.setattr(parse_configuration, "parse_user_cazy_classes", mock_get_classes)
+    monkeypatch.setattr(parse_configuration, "get_cmd_defined_families", mock_get_fams)
+
+    parse_configuration.get_cmd_scrape_config(config_dict_blank, cazy_dictionary, tax_dict, set(), args_dict["args"])
+
+
+def test_parse_cmd_fams(config_dict_blank):
+    args_dict = {
+        "args": Namespace(
+            families="GH1,GT2,PL3,CE19,AA10,CBM4,QQQ444,CBMQQQ"
+        )
+    }
+
+    parse_configuration.get_cmd_defined_families(config_dict_blank, args_dict["args"])
 
 
 def test_excluded_classes(cazy_dictionary):
