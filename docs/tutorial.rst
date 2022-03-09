@@ -379,7 +379,7 @@ For example, if we wanted to retrieve all CAZymes from *Aspergillus niger* and *
 
 .. code-block:: bash
 
-   cazy_webscraper --species Aspergillus niger,Asepergillus fumigatus
+   cazy_webscraper --species "Aspergillus niger,Asepergillus fumigatus"
 
 
 .. note::
@@ -396,6 +396,16 @@ For example, if we wanted to retrieve all CAZymes from *Aspergillus niger* and *
 
    ASPERGILLUS NIGER is **incorrect**
 
+.. warning::
+  When providing any parameter that contains a space within it, enclose the entire parameter is single or double quotation marks
+  
+   "Aspergillus niger,Trichoderma reesie" is **correct**
+   
+   'Aspergillus niger,Trichoderma reesie' is **correct**
+
+   asepergillus niger,Trichoderma reesie is **incorrect**
+   
+   Therefore, when using the ``-species`` and ``--strains`` flag,s **always** enclode the provided argument (or parameter) in single or double quotation marks.
 
 .. warning::
    When you specify a species ``cazy_webscraper`` will retrieval CAZymes from *all* strains of the species.
@@ -416,7 +426,7 @@ For example, if we wanted to retrieve all CAZymes from Aspergillus niger ATCC 10
 
 .. code-block:: bash
 
-   cazy_webscraper --strains Aspergillus niger ATCC 1015,Aspergillus uvarum CBS 121591
+   cazy_webscraper --strains "Aspergillus niger ATCC 1015,Aspergillus uvarum CBS 121591"
 
 he order that the strains are listed does **not** matter.
 
@@ -424,11 +434,21 @@ he order that the strains are listed does **not** matter.
    If you use the ``--species``, ``--genera`` and ``--strains`` flags in any combination and a source organism matches 
    multiple of the taxonomy critera, the CAZymes derived from that species will only be retrieved **once**.
    
-   For example, using the command ``cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015`` 
+   For example, using the command ``cazy_webscraper --genera Aspergillus --species "Aspergillus niger" --strains "Aspergillus niger ATCC 1015"`` 
    will retrieve all CAZymes from *all* Aspergillus species *once*.
    
 The higher taxonomy levels take president, and the command will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well, and then retrieve another copy of all CAZymes from Aspergillus niger ATCC 1015.
 
+.. warning::
+  When providing any parameter that contains a space within it, enclose the entire parameter is single or double quotation marks
+  
+   "Aspergillus niger,Trichoderma reesie" is **correct**
+   
+   'Aspergillus niger,Trichoderma reesie' is **correct**
+
+   asepergillus niger,Trichoderma reesie is **incorrect**
+   
+   Therefore, when using the ``-species`` and ``--strains`` flag,s **always** enclode the provided argument (or parameter) in single or double quotation marks.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Combining taxonomic filters
@@ -441,7 +461,7 @@ we would use would be:
 
 .. code-block:: bash
 
-   cazy_webscraper --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
+   cazy_webscraper --kingdoms viruses --genera Aspergillus --species "Layia carnosa,Layia chrysanthemoides" --strains "Trichoderma reesei QM6a,Trichoderma reesei QM9414"
 
 .. note::
    This is a single command written on a single line. When typing the command into the terminal do not fit enter until you have finished the command. 
@@ -456,7 +476,7 @@ When combining taxonomy filters, the higher taxonomy levels take president. For 
    
 .. code-block:: bash
 
-   cazy_webscraper --genera Aspergillus --species Aspergillus niger --strains Aspergillus niger ATCC 1015
+   cazy_webscraper --genera Aspergillus --species "Aspergillus niger" --strains "Aspergillus niger ATCC 1015"
 
 will not retrieve all CAZymes from all Aspergillus species once AND all CAZymes from Aspergillus niger strains as well. 
 ``cazy_webscraper`` will retrieval all CAZymes for all strains of *Aspergillus niger*.
@@ -508,7 +528,7 @@ To retrieve CAZymes from all viral species, and all Aspergillus niger strains wh
 
 .. code-block:: bash
 
-   cazy_webscraper --families GH3_1,GH3_2 --subfamilies --species Aspergillus niger --kingdoms Bacteria
+   cazy_webscraper --families GH3_1,GH3_2 --subfamilies --species "Aspergillus niger" --kingdoms Bacteria
 
 ------------------
 Configuration file
