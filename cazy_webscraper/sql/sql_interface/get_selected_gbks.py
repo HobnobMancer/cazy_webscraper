@@ -130,13 +130,13 @@ def get_genbank_accessions(
     )
     
     # Retrieve the db ID numbers of taxonomy entries matching the users taxonomy/kingdom filters
-    tax_filtered_gbk_accessions = apply_tax_filters(
+    filtered_gbk_accessions = apply_tax_filters(
         initially_selected_gbk,
         taxonomy_filters,
         kingdom_filters,
     )
     
-    if len(tax_filtered_gbk_accessions) == 0:
+    if len(filtered_gbk_accessions) == 0:
         logger.error(
             "Retrieved NO proteins for the user selected taxonomy and kingdom filters\n"
             "Ensure proteins belonging to these taxa are catalouged into the local CAZyme db\n"
