@@ -77,7 +77,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger = logging.getLogger(__name__)
         config_logger(args)
 
-    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
+    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp, start_time)
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
