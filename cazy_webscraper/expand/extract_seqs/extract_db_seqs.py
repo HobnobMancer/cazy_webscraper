@@ -57,6 +57,8 @@ from Bio.Blast.Applications import NcbimakeblastdbCommandline
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.logger import config_logger
 
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
@@ -64,7 +66,7 @@ from cazy_webscraper.sql.sql_interface.get_records import (
     get_user_genbank_sequences,
     get_user_uniprot_sequences
 )
-from cazy_webscraper.utilities import config_logger, parse_configuration
+from cazy_webscraper.utilities import parse_configuration
 from cazy_webscraper.utilities.parsers.extract_seq_parser import build_parser
 
 
