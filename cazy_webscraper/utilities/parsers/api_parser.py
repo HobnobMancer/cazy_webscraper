@@ -118,6 +118,15 @@ def build_parser(argv: Optional[List] = None):
         help="CAZy families to UniProt data for. Separate families by commas 'GH1,GH2' (case sensitive)"
     )
 
+    parser.add_argument(
+        "-f",
+        "--force",
+        dest="force",
+        action="store_true",
+        default=False,
+        help="Force overwriting existing output",
+    )
+
     # Add option to restrict scrape to specific genera
     parser.add_argument(
         "--genera",
@@ -150,6 +159,23 @@ def build_parser(argv: Optional[List] = None):
         metavar="log file name",
         default=None,
         help="Defines log file name and/or path",
+    )
+
+    parser.add_argument(
+        "-o",
+        "--output_dir",
+        type=Path,
+        default=None,
+        help="Path to output dir, default: None (writes to cwd)",
+    )
+
+    parser.add_argument(
+        "-n",
+        "--nodelete",
+        dest="nodelete",
+        action="store_true",
+        default=False,
+        help="When called, content in the existing output dir is NOT deleted",
     )
 
     # Add option to not delete content in the existing cache dir

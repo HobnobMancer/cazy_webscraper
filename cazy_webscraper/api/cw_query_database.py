@@ -79,6 +79,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp, start_time)
 
+    if args.output_dir is not None:
+        file_io.make_output_directory(args.output_dir, args.force, args.nodelete)
+
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
@@ -190,7 +193,7 @@ def write_csv_output(query_data, args, output_path, time_stamp):
     
     Return nothing.
     """
-    output_path += ".csv"
+    file_prefix += ".csv"
 
     column_names = get_column_names(args)
 
@@ -255,31 +258,39 @@ def write_csv_output(query_data, args, output_path, time_stamp):
 
 def compile_output_name(args, time_stamp):
     db_name = args.database.name.replace(".db","")
-    output_path = args.output_dir / f"{db_name}_{time_stamp}"
+
+    file_prefix = f"{db_name}_{time_stamp}"
+    if args.prefix is not None:
+        file_prefix = f"{args.prefix}_{file_prefix}"
 
     if args.cazy_class:
-        output_path += "_classes"
+        file_prefix += "_classes"
     if args.cazy_family:
-        output_path += "_fams"
+        file_prefix += "_fams"
     if args.cazy_subfamily:
-        output_path += "_subfams"
+        file_prefix += "_subfams"
     if args.kingdom:
-        output_path += "_kngdm"
+        file_prefix += "_kngdm"
     if args.genus:
-        output_path += "_genus"
+        file_prefix += "_genus"
     if args.organism:
-        output_path += "_orgnsm"
+        file_prefix += "_orgnsm"
     if args.ec:
-        output_path += "_ec"
+        file_prefix += "_ec"
     if args.pdb:
-        output_path += "_pdb"
+        file_prefix += "_pdb"
     if args.uniprot:
-        output_path += "_uniprot"
+        file_prefix += "_uniprot"
     if args.seq_uniprot:
-        output_path += "_uniprotSeq"
+        file_prefix += "_uniprotSeq"
     if args.seq_genbank:
-        output_path += "_gbkSeq"
+        file_prefix += "_gbkSeq"
 
+    if args.output_dir is not None:
+        output_path = args.output_dir / file_prefix
+    else:
+        output_path = file_prefix
+    
     return output_path
 
 
