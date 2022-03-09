@@ -38,7 +38,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Tests the module utilities which builds the logger and args parser.
+"""Tests the module utilities which builds the args parser.
 
 These test are intened to be run from the root of the repository using:
 pytest -v
@@ -49,7 +49,6 @@ import pytest
 
 from argparse import Namespace
 
-from cazy_webscraper.utilities import config_logger, parsers
 from cazy_webscraper.utilities.parsers import (
     api_parser,
     cazy_webscraper_parser,
@@ -84,19 +83,6 @@ def args_v_true():
 
 
 # test building the parser
-
-
-# test building the logger
-
-
-def test_verbose_false(args_v_false):
-    """Test build_logger when args.verbose and args.log are false"""
-    config_logger(args_v_false["args"])
-
-
-def test_verbose_true(args_v_true):
-    """Test build_logger when args.verbose and args.log are true"""
-    config_logger(args_v_true["args"])
 
 
 # test cazy_webscraper parser
