@@ -228,6 +228,7 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
+        "-n",
         "--nodelete",
         dest="nodelete",
         action="store_true",
