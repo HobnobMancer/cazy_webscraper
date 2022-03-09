@@ -158,6 +158,56 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     closing_message("cw_query_database", start_time, args)
 
 
+def compile_output_name(args):
+    """Compile the file name for output files.
+    
+    :param args: cmd-line args parser
+    
+    Return str"""
+    file_prefix = f"{args.database.name.replace('.db', '')}"
+    if args.prefix is not None:
+        file_prefix = f"{args.prefix}_{file_prefix}"
+
+    # CAZy classification info
+    if 'class' in args.include:
+        file_prefix += "_classes"
+    if 'family' in args.include:
+        file_prefix += "_fams"
+    if 'subfamily' in args.include:
+        file_prefix += "_subfams"
+    
+    # tax infor
+    if 'kingdom' in args.include:
+        file_prefix += "_kngdm"
+    if 'genus' in args.include:
+        file_prefix += "_genus"
+    if 'organism' in args.include:
+        file_prefix += "_orgnsm"
+
+    # data from genbank
+    if "genbank_seq" in args.include:
+        file_prefix += "_gbkSeq"
+
+    # data from uniprot
+    if 'uniprot_acc' in args.include:
+        file_prefix += "_uni_acc"
+    if 'uniprot_name' in args.include:
+        file_prefix += "_uni_name"
+    if "ec" in args.include:
+        file_prefix += "_ec"
+    if "pdb" in args.include:
+        file_prefix += "_pdb"
+    if "uniprot_seq" in args.include:
+        file_prefix += "_uniprotSeq"
+
+    if args.output_dir is not None:
+        output_path = args.output_dir / file_prefix
+    else:
+        output_path = file_prefix
+    
+    return output_path
+
+
 def get_query_data(gbk_dict, connection, args):
     """Retrieve additional data as requested per retrieved GenBank accession
     
@@ -375,56 +425,6 @@ def add_single_value_to_rows(query_data, gbk_acc, key, new_rows):
         row.append(value)
     
     return new_rows
-
-
-def compile_output_name(args):
-    """Compile the file name for output files.
-    
-    :param args: cmd-line args parser
-    
-    Return str"""
-    file_prefix = f"{args.database.name.replace('.db', '')}"
-    if args.prefix is not None:
-        file_prefix = f"{args.prefix}_{file_prefix}"
-
-    # CAZy classification info
-    if 'class' in args.include:
-        file_prefix += "_classes"
-    if 'family' in args.include:
-        file_prefix += "_fams"
-    if 'subfamily' in args.include:
-        file_prefix += "_subfams"
-    
-    # tax infor
-    if 'kingdom' in args.include:
-        file_prefix += "_kngdm"
-    if 'genus' in args.include:
-        file_prefix += "_genus"
-    if 'organism' in args.include:
-        file_prefix += "_orgnsm"
-
-    # data from genbank
-    if "genbank_seq" in args.include:
-        file_prefix += "_gbkSeq"
-
-    # data from uniprot
-    if 'uniprot_acc' in args.include:
-        file_prefix += "_uni_acc"
-    if 'uniprot_name' in args.include:
-        file_prefix += "_uni_name"
-    if "ec" in args.include:
-        file_prefix += "_ec"
-    if "pdb" in args.include:
-        file_prefix += "_pdb"
-    if "uniprot_seq" in args.include:
-        file_prefix += "_uniprotSeq"
-
-    if args.output_dir is not None:
-        output_path = args.output_dir / file_prefix
-    else:
-        output_path = file_prefix
-    
-    return output_path
 
 
 def get_column_names(args):
