@@ -45,7 +45,9 @@ from typing import Optional
 
 
 def termcolour(
-    logstr: str, color: Optional[str] = None, bold: Optional[bool] = False
+    logstr: str,
+    color: Optional[str] = None,
+    bold: Optional[bool] = False
 ) -> str:
     """Return the passed logstr, wrapped in terminal colouring."""
     # For terminal colouring
