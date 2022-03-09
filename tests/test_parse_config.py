@@ -73,6 +73,27 @@ def yaml_path():
     return path_
 
 
+def test_yaml_classes_keyerror(cazy_dictionary):
+    config_dict = {}
+    parse_configuration.get_yaml_cazy_classes(config_dict, cazy_dictionary)
+
+
+def test_yaml_classes_none(cazy_dictionary):
+    config_dict = {'classes': None}
+    parse_configuration.get_yaml_cazy_classes(config_dict, cazy_dictionary)
+
+
+def test_yaml_classes(cazy_dictionary, monkeypatch):
+    def mock_get_classes(*args, **kwards):
+        return ["GH", "PL"]
+
+    config_dict = {'classes': ['PL']}
+
+    monkeypatch.setattr(parse_configuration, "parse_user_cazy_classes", mock_get_classes)
+    
+    parse_configuration.get_yaml_cazy_classes(config_dict, cazy_dictionary)
+
+
 def test_parse_classes(cazy_dictionary):
     parse_configuration.parse_user_cazy_classes(["GH", "Cat", "gh"], cazy_dictionary)
 
