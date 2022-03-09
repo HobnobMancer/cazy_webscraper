@@ -230,10 +230,10 @@ def get_yaml_configuration(
             if yaml_config_dict["kingdoms"] is not None:
                 for kingdom in yaml_config_dict["kingdoms"]:
                     if kingdom.lower() == 'unclassified':
-                        kingdom_filters["kingdoms"].add(kingdom.lower())
+                        kingdom_filters.add(kingdom.lower())
                     else:
                         new_kingdom = kingdom[0].upper() + kingdom[1:].lower()
-                        kingdom_filters["kingdoms"].add(new_kingdom)
+                        kingdom_filters.add(new_kingdom)
 
         else:  # key is a CAZy class and underneath are CAZy families to scrape
             if yaml_config_dict[key] is not None:  # CAZy families were listed
