@@ -208,6 +208,8 @@ def get_sequences(genbank_accessions, args, retry=False):
 
     irregular_accessions = []
 
+    success_accessions = set()  # accessions for which seqs were retrieved
+
     for query_list in tqdm(all_queries, desc="Batch querying NCBI.Entrez"):
 
         try:
@@ -225,8 +227,6 @@ def get_sequences(genbank_accessions, args, retry=False):
             failed_queries.append(query_list)
             continue
 
-        success_accessions = set()  # accessions for which seqs were retrieved
-
         try:
             # retrieve the protein sequences
             with entrez_retry(
@@ -243,49 +243,24 @@ def get_sequences(genbank_accessions, args, retry=False):
 
                     # check if multiple items returned in ID
                     temp_accession = temp_accession.split("|")
-                    index, success = 0, False
-                    
-                    while (index < len(temp_accession)) and (success is False):
-                        acc = temp_accession[index]
-                        try:
-                            re.match(
-                                (
-                                    r"(\D{2}_\d{8}\.\d)|"
-                                    r"(\D{3}\d{5,7}\.\d+)|"
-                                    r"(\D\d(\D|\d){3}\d)|"
-                                    r"((\D\d(\D|\d){3}\d)\.\d)|"
-                                    r"(\D\d(\D|\d){3}\d\D(\D|\d){2}\d)|"
-                                    r"((\D\d(\D|\d){3}\d\D(\D|\d){2}\d)\.\d)|"
-                                    r"(\D\D_\d{9}\.\d)"
-                                ),
-                                acc,
-                            ).group()
-                            seq_accession = acc
-                            success = True
-                        except AttributeError:
-                            index += 1
-                            pass
+                    retrieved_accession = None
 
-                    if success is False:  # if could not retrieve GenBank accession from the record
+                    for acc in temp_accession:
+                        if acc.strip() in genbank_accessions:
+                            retrieved_accession = acc
+
+                    if retrieved_accession is None:  # if could not retrieve GenBank accession from the record
                         logger.error(
-                            "Could not retrieve a GenBank protein accession from the record with the id:\n"
+                            "Could not retrieve a GenBank protein accession matching an accession from the local database from:\n"
                             f"{record.id}\n"
                             "The sequence from this record will not be added to the db"    
                         )
-                        continue
-
-                    if seq_accession not in genbank_accessions:  # if the retrieved Gbk acc does not match an acc in the db
-                        logger.warning(
-                            f"Retrieved the accession {temp_accession} from the record with the id:\n"
-                            f"{record.id},\n"
-                            "Not adding the protein seq from this record to the db"
-                        )
-                        irregular_accessions.append(f"Could not retrieve recognisable accession from '{acc}'")
+                        irregular_accessions.append(temp_accession)
                         continue
                         
-                    seq_dict[seq_accession] = record.seq
+                    seq_dict[retrieved_accession] = record.seq
 
-                    success_accessions.add(seq_accession)
+                    success_accessions.add(retrieved_accession)
         
         except IncompleteRead as err:
             logger.warning(
@@ -301,6 +276,7 @@ def get_sequences(genbank_accessions, args, retry=False):
             continue
 
     # list of GenBank accessions for which no protein sequence was retrieved
+
     no_seq = [acc for acc in genbank_accessions if acc not in success_accessions]
     no_seq += irregular_accessions
 
@@ -330,6 +306,8 @@ def get_sequences(genbank_accessions, args, retry=False):
             )
 
             no_seq += failed_accessions
+
+    logger.warning(f"Retrieved sequences for {len(success_accessions)} proteins")
 
     return seq_dict, no_seq
 
