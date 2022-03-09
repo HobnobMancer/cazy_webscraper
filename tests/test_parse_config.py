@@ -66,6 +66,11 @@ def config_dict_blank():
     }
     return config_dict
 
+
+def test_parse_classes(cazy_dictionary):
+    parse_configuration.parse_user_cazy_classes(["GH", "Cat", "gh"], cazy_dictionary)
+
+
 def test_parse_cmd_tax(monkeypatch, cazy_dictionary, config_dict_blank):
 
     def mock_get_classes(*args, **kwards):
