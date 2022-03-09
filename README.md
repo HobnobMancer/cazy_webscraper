@@ -580,13 +580,15 @@ The file names of all output files are composed of the name of the local CAZyme 
 - CAZy subfamily annotations
 - EC numbers
 - PDB accessions
-Will produce the following file name: `cazy_database_fams_subfams_ec_pdb`.  
+Will produce the following file name: `cazy_database_gbkAcc_fams_subfams_ec_pdb`.  
 
 An optional prefix can be applied to all output file names using the `-p`/`--prefix` flag, followed by the desired prefix. For example, using the same example as above, the prefix 'engineering_candidates_` can be applied to every output file by adding the following to command:
 ```bash
 --prefix engineering_candidates_
 ```
-This will produce output files with the file name `engineering_candidates_cazy_database_fams_subfams_ec_pdb`.
+This will produce output files with the file name `engineering_candidates_cazy_database_gbkAcc_fams_subfams_ec_pdb`.
+
+`_gbkAcc` is always included in the file name because GenBank accessions are always retrieved and written to the output by cthe api.
 
 The data retrieved from the local CAZyme database and included in the final output is defined using the `--include` flag, followed by a list of all data to *include* in the output, with each data separated with a single space.
 

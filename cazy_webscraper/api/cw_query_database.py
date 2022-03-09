@@ -168,6 +168,8 @@ def compile_output_name(args):
     if args.prefix is not None:
         file_prefix = f"{args.prefix}_{file_prefix}"
 
+    file_prefix += "_gbkAcc"
+    
     # CAZy classification info
     if 'class' in args.include:
         file_prefix += "_classes"
