@@ -509,7 +509,7 @@ def test_main_database(
             families=None,
             genera=None,
             kingdoms=None,
-            log='log_dir',
+            log=Path('log_dir'),
             nodelete=False,
             nodelete_cache=False,
             nodelete_log=False,
