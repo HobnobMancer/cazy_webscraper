@@ -97,6 +97,27 @@ def test_yaml_config_no_yaml(config_dict_blank, cazy_dictionary, tax_dict):
     assert pytest_wrapped_e.type == SystemExit
 
 
+def test_yaml_config(config_dict_blank, cazy_dictionary, tax_dict, monkeypatch, yaml_path):
+    def mock_get_yaml_classes(*args, **kwards):
+        return ['GH', 'PL']
+    
+    args_dict = {
+        "args": Namespace(
+            config=yaml_path,
+        )
+    }
+    
+    monkeypatch.setattr(parse_configuration, "get_yaml_cazy_classes", mock_get_yaml_classes)
+    
+    parse_configuration.get_yaml_configuration(
+        config_dict_blank,
+        cazy_dictionary,
+        tax_dict,
+        set(),
+        args_dict['args'],
+    )
+
+
 def test_yaml_classes_keyerror(cazy_dictionary):
     config_dict = {}
     parse_configuration.get_yaml_cazy_classes(config_dict, cazy_dictionary)
