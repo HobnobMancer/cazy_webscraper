@@ -132,7 +132,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_dir = args.cache_dir
         make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
-        cache_dir = cache_dir / "uniprot_data_retrieval"
+        cache_dir = cache_dir / "pdb_retrieval"
         make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     download_pdb_structures(pdb_accessions, args)
