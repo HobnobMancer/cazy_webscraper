@@ -50,6 +50,7 @@ import os
 
 from cazy_webscraper import cazy
 from cazy_webscraper.utilities.parse_configuration.cazy_class_synonym_dict import cazy_synonym_dict
+from saintBioutils.utilities import logger as saint_logger
 import pytest
 import sys
 
@@ -236,7 +237,7 @@ def test_main_citation(mock_building_parser, mock_config_logger, monkeypatch):
 
     monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+    monkeypatch.setattr(saint_logger, "config_logger", mock_config_logger)
 
     cazy_scraper.main()
 
@@ -278,7 +279,7 @@ def test_main_version(mock_building_parser, mock_config_logger, monkeypatch):
 
     monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+    monkeypatch.setattr(saint_logger,  "config_logger", mock_config_logger)
 
     cazy_scraper.main()
 
@@ -320,7 +321,7 @@ def test_main_version_argv(mock_building_parser, mock_config_logger, monkeypatch
 
     monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+    monkeypatch.setattr(saint_logger,  "config_logger", mock_config_logger)
 
     cazy_scraper.main()
 
@@ -362,7 +363,7 @@ def test_main_double_db(mock_building_parser, mock_config_logger, monkeypatch):
 
     monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+    monkeypatch.setattr(saint_logger,  "config_logger", mock_config_logger)
 
     cazy_scraper.main()
 
@@ -414,7 +415,7 @@ def test_main_new_db_exists_force(db_path, mock_building_parser, mock_config_log
     
     monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+    monkeypatch.setattr(saint_logger,  "config_logger", mock_config_logger)
     monkeypatch.setattr(cazy_scraper, "connect_to_new_db", mock_connect_db)
     monkeypatch.setattr(cazy_scraper, "connect_existing_db", mock_connect_db)
     monkeypatch.setattr(cazy_scraper, "make_output_directory", mock_return_none)
@@ -472,7 +473,7 @@ def test_main_new_db_exists(db_path, mock_building_parser, mock_config_logger, m
 
     monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+    monkeypatch.setattr(saint_logger,  "config_logger", mock_config_logger)
     monkeypatch.setattr(cazy_scraper, "connect_to_new_db", mock_connect_db)
     monkeypatch.setattr(cazy_scraper, "connect_existing_db", mock_connect_db)
     monkeypatch.setattr(cazy_scraper, "make_output_directory", mock_return_none)
@@ -548,7 +549,7 @@ def test_main_database(
 
     monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+    monkeypatch.setattr(saint_logger,  "config_logger", mock_config_logger)
     monkeypatch.setattr(parse_configuration, "parse_configuration", mock_parse_config)
     monkeypatch.setattr(cazy_scraper, "connect_existing_db", mock_connect_existing_db)
     monkeypatch.setattr(sql.sql_interface, "log_scrape_in_db", mock_return_none)
@@ -623,7 +624,7 @@ def test_main_db_output(
 
     monkeypatch.setattr(cazy_webscraper_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(utilities, "config_logger", mock_config_logger)
+    monkeypatch.setattr(saint_logger,  "config_logger", mock_config_logger)
     monkeypatch.setattr(parse_configuration, "parse_configuration", mock_parse_config)
     monkeypatch.setattr(cazy_scraper, "connect_to_new_db", mock_connect_db)
     monkeypatch.setattr(cazy_scraper, "connect_existing_db", mock_connect_db)

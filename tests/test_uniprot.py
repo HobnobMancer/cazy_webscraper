@@ -52,6 +52,7 @@ from pathlib import Path
 
 from saintBioutils import uniprot
 from saintBioutils.utilities import file_io
+from saintBioutils.utilities import logger as saint_logger
 
 import cazy_webscraper
 
@@ -138,7 +139,7 @@ def test_main(
 
     monkeypatch.setattr(uniprot_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
-    monkeypatch.setattr(utilities, "config_logger", mock_return_logger)
+    monkeypatch.setattr(saint_logger, "config_logger", mock_return_logger)
     monkeypatch.setattr(get_uniprot_data, "connect_existing_db", mock_connect_existing_db)
     monkeypatch.setattr("cazy_webscraper.expand.uniprot.get_uniprot_data.make_output_directory", mock_return_none)
     monkeypatch.setattr(get_uniprot_data, "get_expansion_configuration", mock_get_expansion_configuration)
