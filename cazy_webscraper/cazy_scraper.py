@@ -300,9 +300,9 @@ def get_cazy_data(
 
     # define paths for additional logs files
     # unless specifed they are added to the logs dir in the cache dir
-    connection_failures_logger = build_logger(Path(f"{logger_name}_{time_stamp}_connection_failures.log"))
-    multiple_taxa_logger = build_logger(Path(f"{logger_name}_{time_stamp}_multiple_taxa.log"))
-    replaced_taxa_logger = build_logger(Path(f"{logger_name}_{time_stamp}_replaced_taxa.log"))
+    connection_failures_logger = build_logger(cache_dir, Path(f"{logger_name}_{time_stamp}_connection_failures.log"))
+    multiple_taxa_logger = build_logger(cache_dir, Path(f"{logger_name}_{time_stamp}_multiple_taxa.log"))
+    replaced_taxa_logger = build_logger(cache_dir, Path(f"{logger_name}_{time_stamp}_replaced_taxa.log"))
 
     if args.validate:  # retrieve CAZy family population sizes for validating all data was retrieved
         # {fam (str): pop size (int)}
