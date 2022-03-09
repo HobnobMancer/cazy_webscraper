@@ -73,7 +73,7 @@ def get_class_fam_annotations(gbk_dict, query_data, connection, args):
 
     # retrieve the data from the CAZy Family table
     with Session(bind=connection) as session:
-        fam_table_query = session.query(Genbank.genbank_id).\
+        fam_table_query = session.query(Genbank, CazyFamily).\
             join(CazyFamily, Genbank.families).\
             filter(Genbank.genbank_accession.in_(gbk_accessions)).\
             all()
@@ -241,7 +241,6 @@ def get_ec_annotations(gbk_dict, query_data, connection):
     # retrieve the data from the Taxonomy and Kingdom tables
     with Session(bind=connection) as session:
         ec_query = session.query(Genbank, Ec).\
-            join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
             join(Ec, Genbank.ecs).\
             filter(Genbank.genbank_accession.in_(gbk_accessions)).\
             all()
@@ -285,7 +284,7 @@ def get_pdb_accessions(gbk_dict, query_data, connection):
     # retrieve the data from the Taxonomy and Kingdom tables
     with Session(bind=connection) as session:
         pdb_query = session.query(Genbank, Pdb).\
-            join(Pdb, (Pdb.genbank_id == Genbank.genbank_id)).\
+            join(Pdb, Genbank.pdbs).\
             filter(Genbank.genbank_accession.in_(gbk_accessions)).\
             all()
 

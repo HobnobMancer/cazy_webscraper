@@ -146,7 +146,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         connection,
     )
 
-    query_data = get_query_data(gbk_dict)
+    query_data = get_query_data(gbk_dict, connection, args)
     
     if 'json' in args.file_types:
         json_output_path = output_path + ".json"
