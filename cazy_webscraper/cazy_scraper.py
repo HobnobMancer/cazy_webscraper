@@ -232,6 +232,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger_name = args.log.name
         if logger_name.endswith(".log"):
             logger_name = logger_name[:-4]
+        make_output_directory(args.log, args.force, args.nodelete_log)
     else:
         # write the additional log files to the .cazy_webscraper cache dire
         logger_name = "log"
