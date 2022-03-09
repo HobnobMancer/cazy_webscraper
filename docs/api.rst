@@ -61,6 +61,8 @@ Command line options
 
 ``--ec_filter`` - List of EC numbers to limit the retrieval of protein data with at least one of the given EC numbers *in the local CAZyme database*.
 
+``--force``, ``-f`` - Force writing to existing output dir. Default: False, do not write to existing target output dir. Not applied when ``--output_dir`` is not called.
+
 ``--families`` - List of CAZy (sub)families to retrieve UniProt protein data for.
 
 ``--genbank_accessions`` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
@@ -89,9 +91,11 @@ Command line options
 
 ``--nodelete_cache`` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
-``--outdir``, ``-o`` - Define output directory to write out structure files. Default, write structure files to current working directory.
+``--output_dir``, ``-o`` - Define output directory to write out structure files. Default, write structure files to current working directory.
 
 ``--overwrite`` - Overwrite existing structure files with the same PDB accession as files being downloaded. Default false, do not overwrite existing files.
+
+``--prefix``, ``-p`` - Had prefix to all output files.
 
 ``--retries``, ``-r`` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
 
