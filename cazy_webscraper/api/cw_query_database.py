@@ -48,6 +48,7 @@ import sys
 import pandas as pd
 
 from datetime import datetime
+from pathlib import Path
 from typing import List, Optional
 
 from saintBioutils.utilities.logger import config_logger
@@ -105,13 +106,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if 'json' in args.file_types:
         json_output_path = output_path + ".json"
         logger.warning(f"JSON output path: {json_output_path}")
-        if json_output_path.exists:
+        if Path(json_output_path).exists():
             existing_files = existing_files + " " + f"{json_output_path}\n"
     
     if 'csv' in args.file_types:
         csv_output_path = output_path + ".csv"
         logger.warning(f"CSV output path: {csv_output_path}")
-        if csv_output_path.exists:
+        if Path(csv_output_path).exists():
             existing_files = existing_files + " " + f"{csv_output_path}\n"
     
     existing_files = existing_files.strip()
