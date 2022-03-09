@@ -43,7 +43,6 @@
 
 import json
 import logging
-import urllib.request
 
 import pandas as pd
 
