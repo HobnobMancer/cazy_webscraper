@@ -79,6 +79,27 @@ def tax_dict():
     return tax_dict
 
 
+def test_class_synomymns_error():
+    args_dict = {
+        "args": Namespace(
+            cazy_synonyms ="testtesttest",
+        )
+    }
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        parse_configuration.get_cazy_class_synonym_dict(args_dict['args'])
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_class_synonyms():
+    args_dict = {
+        "args": Namespace(
+            cazy_synonyms="tests/test_inputs/cazy_dictionary.json",
+        )
+    }
+    parse_configuration.get_cazy_class_synonym_dict(args_dict['args'])
+
+
 def test_yaml_config_no_yaml(config_dict_blank, cazy_dictionary, tax_dict):
     args_dict = {
         "args": Namespace(
