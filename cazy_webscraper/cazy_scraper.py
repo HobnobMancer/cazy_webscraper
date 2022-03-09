@@ -77,6 +77,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.logger import config_logger, build_logger
 
 from Bio import Entrez
 from cazy_webscraper import (
@@ -100,8 +101,6 @@ from cazy_webscraper.taxonomy import (
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface import add_cazyme_data
 from cazy_webscraper.utilities import (
-    build_logger,
-    config_logger,
     parse_configuration,
     termcolour,
 )
