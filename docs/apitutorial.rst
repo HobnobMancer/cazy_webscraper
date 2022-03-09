@@ -95,11 +95,77 @@ The following behaviours of the ``cw_query_database`` can be configured at the c
     * PDB accessions
     * Protein sequence retrieved from UniProt
 * Write the output in JSON and/or CSV format
+* Choose an output directory
+* Force overwriting existing files
 * Enable verbose logging during the operation of the webscraper
 
 `Here <https://cazy-webscraper.readthedocs.io/en/latest/api.html>`_ you can find a full list of the command-line flags and options.
 
+----------------------------
+Choosing an output directory
+----------------------------
 
+By default, ``cw_query_database`` writes all output files to the current working directory.
+
+To specify an alternative output directory, using the ``--output_dir``/``-o`` flag, followed by the path to the target output directory. ``cw_query_database`` will build all necessary parent and child output directories.
+
+For example, to write the output to the directory ``my_cazy_data`` use the following command:
+
+.. code-block:: bash
+  cw_query_database cazy/cazyme.db json csv --output_dir my_cazy_data
+  
+If the output directory already exists, ``cw_query_database`` will raise an error warning the output directory already exists and close. This is to prevent accidently writing data to the wrong location.
+
+To force ``cw_query_database`` to write the data to an existing output directory, add the ``--force``/``-f`` flag.
+
+.. code-block:: bash
+  cw_query_database cazy/cazyme.db json csv --output_dir my_cazy_data --force
+
+By default ``cw_query_database`` will delete all content already present in the existing output directory. To retain the data in the existing output directory, add the ``--nodelete``/``-n`` flag.
+
+.. code-block:: bash
+  cw_query_database cazy/cazyme.db json csv --output_dir my_cazy_data -- force --nodelete
+  
+.. note::
+  The ``--force`` and ``--nodelete`` flags are only applied when the ``--output_dir`` flag is used. ``cw_query_database`` will **not** delete content in the current working directory when writing to the current working directory when the ``--output_dir`` flag is **not** used.
+  
+------------------------
+Overwrite existing files
+------------------------
+
+``cw_query_database`` automatically compiles the names of the output files. 
+
+The file names of all output files are composed of the name of the local CAZyme database, followed by the names of the data retrieved from the local CAZyme database. For example, retrieving the following data from the local CAZyme database called ``cazy_database.db``:
+* CAZy family annotation
+* CAZy subfamily annotations
+* EC numbers
+* PDB accessions
+Will produce the following file name: ``cazy_database_gbkAcc_fams_subfams_ec_pdb``.  
+
+.. note::
+  ``_gbkAcc`` is always included in the file name because GenBank accessions are always retrieved and written to the output by ``cw_query_database``.
+
+Both the `json` and `csv` files are given the same name, the files only differ in their file extension.
+
+An optional prefix can be applied to all output file names using the ``-p``/``--prefix`` flag, followed by the desired prefix. For example, using the same example as above, the prefix 'engineering_candidates_` can be applied to every output file by adding the following to command:
+
+.. code-block:: bash
+  --prefix engineering_candidates_
+
+This will produce output files with the file name ``engineering_candidates_cazy_database_fams_subfams_ec_pdb``.
+
+If files matching the file names compiled by ``cw_query_database`` already existing at the target output location, ``cw_query_database`` will raise a warning that output files already existing and terminate. This is to prevent accidently overwriting data files.
+
+To overwrite existing datafiles add the ``--overwrite`` flag to the command. For example, the following command will retrieve all GenBank accessions stored in the local CAZyme database located at ``cazy/cazyme.db`` and write out the GenBank accessions to a file called ``all_gbk_acc_cazyme_gbkAcc.csv`` to ``my_cazy_data``, and will not delete content in the existing output directory and will overwrite the existing output file ``my_cazy_data/all_gbk_acc_cazyme_gbkAcc.csv``.
+
+.. code-block:: bash
+  cw_query_database cazy/cazyme.db csv \
+  --output_dir my_cazy_data \
+  --prefix all_gbk_accs_
+  -- force \
+  --nodelete \
+  --overwrite
+ 
 --------------------------------------------------------------------
 Retrieving protein data for CAZy classes and families to scrape
 --------------------------------------------------------------------
