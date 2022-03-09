@@ -55,7 +55,7 @@ from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_api_data
-from cazy_webscraper.utilities.parsers import query_db_parser
+from cazy_webscraper.utilities.parsers import api_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
 
@@ -67,10 +67,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # Program preparation
     if argv is None:
-        parser = query_db_parser.build_parser()
+        parser = api_parser.build_parser()
         args = parser.parse_args()
     else:
-        parser = query_db_parser.build_parser(argv)
+        parser = api_parser.build_parser(argv)
         args = parser.parse_args()
 
     if logger is None:
