@@ -73,6 +73,30 @@ def yaml_path():
     return path_
 
 
+@pytest.fixture
+def tax_dict():
+    tax_dict = {'genera': set(), 'species': set(), 'strains': set()}
+    return tax_dict
+
+
+def test_yaml_config_no_yaml(config_dict_blank, cazy_dictionary, tax_dict):
+    args_dict = {
+        "args": Namespace(
+            config="path",
+        )
+    }
+    
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        parse_configuration.get_yaml_configuration(
+            config_dict_blank,
+            cazy_dictionary,
+            tax_dict,
+            set(),
+            args_dict['args'],
+        )
+    assert pytest_wrapped_e.type == SystemExit
+
+
 def test_yaml_classes_keyerror(cazy_dictionary):
     config_dict = {}
     parse_configuration.get_yaml_cazy_classes(config_dict, cazy_dictionary)
@@ -90,7 +114,7 @@ def test_yaml_classes(cazy_dictionary, monkeypatch):
     config_dict = {'classes': ['PL']}
 
     monkeypatch.setattr(parse_configuration, "parse_user_cazy_classes", mock_get_classes)
-    
+
     parse_configuration.get_yaml_cazy_classes(config_dict, cazy_dictionary)
 
 
@@ -171,3 +195,17 @@ def test_ec_filters(yaml_path):
     }
     ec_filters = "EC3.2.1.3,1.-.-.-,ec10.0.1.*"
     parse_configuration.get_ec_config(ec_filters, args_dict['args'])
+
+
+def test_ec_err():
+    args_dict = {
+        "args": Namespace(
+            config="path",
+        )
+    }
+    ec_filters = "EC3.2.1.3,1.-.-.-,ec10.0.1.*"
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        parse_configuration.get_ec_config(ec_filters, args_dict['args'])
+    assert pytest_wrapped_e.type == SystemExit
+    
