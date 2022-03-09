@@ -56,6 +56,7 @@ from Bio import SeqIO
 from Bio.Blast.Applications import NcbimakeblastdbCommandline
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from saintBioutils.utilities.file_io import make_output_directory
 
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
@@ -88,18 +89,18 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # make output directories
     if args.fasta_file:
         target_dir = args.fasta_file.parent
-        file_io.make_output_directory(target_dir, args.force, args.nodelete)
+        make_output_directory(target_dir, args.force, args.nodelete)
     if args.fasta_dir:
-        file_io.make_output_directory(args.fasta_dir, args.force, args.nodelete)
+        make_output_directory(args.fasta_dir, args.force, args.nodelete)
 
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
         cache_dir = cache_dir / "sequence_extraction"
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     (
         config_dict,
