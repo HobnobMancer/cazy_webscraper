@@ -150,9 +150,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.warning(f"Retrieved {len(list(query_data.keys()))} proteins from the local db")
     
     if 'json' in args.file_types:
-        json_output_path = output_path + ".json"
-        with open(json_output_path, 'w') as fh:
-            json.dump(query_data, fh)
+        write_json_output(json_output_path, query_data, args)
 
     if 'csv' in args.file_types:
         write_csv_output(query_data, args)
@@ -294,6 +292,48 @@ def write_csv_output(query_data, args, output_path, time_stamp):
     query_df = pd.DataFrame(df_data, columns=column_names)
 
     query_df.to_csv(output_path)
+
+
+def write_json_output(json_output_path, query_data, args):
+    """Parse dict to be suitable for JSON serialisation and write out output.
+    
+    query_data = {
+        genbank_accession: 
+            'class': {CAZy classes},
+            'family': {CAZy families},
+            'subfamily': {CAZy subfamilies},
+            'kingdom': kingdom,
+            'genus': genus,
+            'organism': genus species strain,
+            'ec_numbers': {EC number annotations},
+            'pdb_accessions': {PDB accessions},
+            'uniprot_accession': UniProt protein accession,
+            'uniprot_name': Name of the protein from UniProt,
+            'uniprot_sequence': Protein Aa seq from UniProt,
+            'uniprot_sequence_date': Date the seq was last modified in UniProt,
+            'gbk_sequence': Protein Aa seq from GenBank
+            'gbk_sequence_date': Date the seq was last modified in Gbk,
+    }
+
+    Return nothing
+    """
+    set_keys = [
+        'class',
+        'family',
+        'subfamily',
+        'ec_numbers',
+        'pdb_accessions',
+    ]
+    for genbank_accession in query_data:
+        for key in set_keys:
+            try:
+                query_data[genbank_accession][key] = list(query_data[genbank_accession][key])
+            
+            except KeyError:  # raised when data was not retrieved from the db
+                pass
+
+    with open(json_output_path, 'w') as fh:
+        json.dump(query_data, fh)
 
 
 def compile_output_name(args):
