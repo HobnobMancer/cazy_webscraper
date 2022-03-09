@@ -124,7 +124,7 @@ def build_parser(argv: Optional[List] = None):
         dest="force",
         action="store_true",
         default=False,
-        help="Force overwriting existing output",
+        help="Force writing to existing output dir",
     )
 
     # Add option to restrict scrape to specific genera
@@ -162,14 +162,6 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "-o",
-        "--output_dir",
-        type=Path,
-        default=None,
-        help="Path to output dir, default: None (writes to cwd)",
-    )
-
-    parser.add_argument(
         "-n",
         "--nodelete",
         dest="nodelete",
@@ -185,6 +177,30 @@ def build_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help="When called, content in the existing cache dir is NOT deleted",
+    )
+
+    parser.add_argument(
+        "-o",
+        "--output_dir",
+        type=Path,
+        default=None,
+        help="Path to output dir, default: None (writes to cwd)",
+    )
+
+    parser.add_argument(
+        "--overwrite",
+        dest="overwrite",
+        action="store_true",
+        default=False,
+        help="When called, overwrites existing output files",
+    )
+
+    parser.add_argument(
+        "-p",
+        "--prefix",
+        type=str,
+        default=None,
+        help="Str to prefix all output files with, default: None",
     )
 
     # Add option to force file over writting

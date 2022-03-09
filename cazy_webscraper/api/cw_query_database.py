@@ -43,6 +43,7 @@
 import logging
 import json
 import re
+import sys
 
 import pandas as pd
 
@@ -53,7 +54,7 @@ from saintBioutils.utilities.logger import config_logger
 from saintBioutils.utilities import file_io
 from tqdm import tqdm
 
-from cazy_webscraper import cazy_scraper
+from cazy_webscraper import cazy_scraper, closing_message
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_api_data
 from cazy_webscraper.utilities.parsers import api_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
@@ -98,6 +99,41 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         ec_filters,
     ) = get_expansion_configuration(args)
 
+    output_path = compile_output_name(args, time_stamp)
+
+    existing_files = ""
+    if 'json' in args.file_types:
+        json_output_path = output_path + ".json"
+        logger.warning(f"JSON output path: {json_output_path}")
+        if json_output_path.exists:
+            existing_files = existing_files + " " + f"{json_output_path}\n"
+    
+    if 'csv' in args.file_types:
+        csv_output_path = output_path + ".csv"
+        logger.warning(f"CSV output path: {csv_output_path}")
+        if csv_output_path.exists:
+            existing_files = existing_files + " " + f"{csv_output_path}\n"
+    
+    existing_files = existing_files.strip()
+    if len(existing_files) != 0:
+        if args.overwrite:
+            logger.warning(
+                "The output files\n"
+                f"{existing_files}"
+                "Exist already. Overwrite is True. Overwriting output files"
+            )
+        else:
+            logger.warning(
+                "The output files\n"
+                f"{existing_files}"
+                "Exist already. Overwrite is False\n"
+                "To overwrite the files use the --overwrite flag, or "
+                "change the output file prefix using the --prefix flag\n"
+                "Terminating program"
+            )
+            closing_message("cw_query_database", start_time, args)
+            sys.exit(1)
+
     # get the records of GenBank accessions matching the criteria of interest
     # {gbk_acc: gbk_id}
     gbk_dict = get_selected_gbks.get_genbank_accessions(
@@ -110,8 +146,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
 
     query_data = get_query_data(gbk_dict)
-
-    output_path = compile_output_name(args, time_stamp)
     
     if 'json' in args.file_types:
         json_output_path = output_path + ".json"
@@ -120,6 +154,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     if 'csv' in args.file_types:
         write_csv_output(query_data, args)
+    
+    closing_message("cw_query_database", start_time, args)
 
 
 def get_query_data(gbk_dict, connection, args):
@@ -193,7 +229,7 @@ def write_csv_output(query_data, args, output_path, time_stamp):
     
     Return nothing.
     """
-    file_prefix += ".csv"
+    output_path += ".csv"
 
     column_names = get_column_names(args)
 

@@ -573,6 +573,23 @@ write them to a `json` file, the following command could be used for a database 
 cw_query_database cazy.db json
 ```
 
+By default the output is written to the current working directory. A specific output directory (which can be built by `cazy_webscraper`) can be defined using the `-o`/`--output_dir` flag, followed by the path of the desired output directory.
+
+The file names of all output files are composed of the name of the local CAZyme database, followed by the names of the data retrieved from the local CAZyme database. For example, retrieving the following data from the local CAZyme database called `cazy_database.db`:
+- CAZy family annotation
+- CAZy subfamily annotations
+- EC numbers
+- PDB accessions
+Will produce the following file name: `cazy_database_fams_subfams_ec_pdb`.  
+
+An optional prefix can be applied to all output file names using the `-p`/`--prefix` flag, followed by the desired prefix. For example, using the same example as above, the prefix 'engineering_candidates_` can be applied to every output file by adding the following to command:
+```bash
+--prefix engineering_candidates_
+```
+This will produce output files with the file name `engineering_candidates_cazy_database_fams_subfams_ec_pdb`.
+
+The data retrieved from the local CAZyme database and included in the final output is defined using the `--include` flag, followed by a list of all data to *include* in the output, with each data separated with a single space.
+
 ### Configuring interrogating the local CAZyme database
 
 Below are listed the command-line flags for configuring the interrogation of the local CAZyme database.
@@ -597,6 +614,8 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--families` - List of CAZy (sub)families to retrieve CAZymes from. This includes families and SUBfamilies.
 
+`--force`, `-f` - force writing to existing output dir.
+
 `--genera` - List of genera to restrict the retrieval to. Default: None, filter not applied to scrape.
 
 `--include` - List additional data to include in the output. Multiple fields can be named, separating each with a single space (' '). The accepted fields are:
@@ -616,7 +635,13 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--nodelete` - When called, content in the existing output dir will **not** be deleted. Default: False (existing content is deleted).
 
-`--output`, `-o` - Output path to write the compiled `csv` file. Default is to write out the `csv` file to the current working directory.
+`--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
+
+`--output_dir`, `-o` - Output path to write the compiled `csv` file. Default is to write out the `csv` file to the current working directory.
+
+`--overwrite` - Overwrite existing output files. Default: False, program closes if output already exists"
+
+`--prefix`, `-p` - Prefix of output files, default none.
 
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
