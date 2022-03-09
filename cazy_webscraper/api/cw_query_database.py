@@ -492,25 +492,25 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
 
     # class only
     if ('class' in args.include) and ('family' not in args.include) and ('subfamily' not in args.include):
-        classes = protein_query_data['class']
+        classes = protein_query_data[gbk_acc]['class']
         for cazy_class in classes:
             new_rows.append([gbk_acc, cazy_class])
 
     # family only
     elif ('class' not in args.include) and ('family' in args.include) and ('subfamily' not in args.include):
-        families = protein_query_data['family']
+        families = protein_query_data[gbk_acc]['family']
         for family in families:
             new_rows.append([gbk_acc, family])
 
     # subfamily only
     elif ('class' not in args.include) and ('family' not in args.include) and ('subfamily' in args.include):
-        subfamilies = protein_query_data['subfamily']
+        subfamilies = protein_query_data[gbk_acc]['subfamily']
         for subfamily in subfamilies:
             new_rows.append([gbk_acc, subfamily])
 
     # class and family, NO subfamily
     elif ('class' in args.include) and ('family' in args.include) and ('subfamily' not in args.include):
-        families = protein_query_data['family']
+        families = protein_query_data[gbk_acc]['family']
         for family in families:
             try:
                 parent_class = re.match(r'\D{2,3}', family).group()
@@ -521,7 +521,7 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
 
     # class and subfamily, NO family
     elif  ('class' in args.include) and ('family' not in args.include) and ('subfamily' in args.include):
-        subfamilies = protein_query_data['subfamily']
+        subfamilies = protein_query_data[gbk_acc]['subfamily']
         for subfamily in subfamilies:
             try:
                 parent_class = re.match(r'\D{2,3}', subfamily).group()
@@ -532,7 +532,7 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
 
     # family and subfamily, NO class
     elif  ('class' not in args.include) and ('family' in args.include) and ('subfamily' in args.include):
-        subfamilies = protein_query_data['subfamily']
+        subfamilies = protein_query_data[gbk_acc]['subfamily']
         added_families = set()
         for subfamily in subfamilies:
             try:
@@ -544,14 +544,14 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
             new_rows.append([gbk_acc, parent_fam, subfamily])
 
         # add remaining families for which there is no subfamily annotation
-        families = protein_query_data['family']
+        families = protein_query_data[gbk_acc]['family']
         for family in families:
             if family not in added_families:
                 new_rows.append([gbk_acc, family, None])
 
     # class, family and subfamily
     else:
-        subfamilies = protein_query_data['subfamily']
+        subfamilies = protein_query_data[gbk_acc]['subfamily']
         added_families = set()
         for subfamily in subfamilies:
 
@@ -573,7 +573,7 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
             new_rows.append([gbk_acc, parent_class, parent_fam, subfamily])
         
         # add remaining families for which there is no subfamily annotation
-        families = protein_query_data['family']
+        families = protein_query_data[gbk_acc]['family']
 
         for family in families:
             if family not in added_families:
