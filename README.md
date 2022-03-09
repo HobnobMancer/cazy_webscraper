@@ -42,6 +42,9 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 
 ## Recent updates in v2
 
+- Fixed failure to retrieve all proteins matching the specified criteria from the local CAZyme database
+- Faster retrieval of proteins matching the specified criteria from the local CAZyme database
+- New tutorials and comprehensive documentation added to [Read the Docs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest)
 - **UniProt:** `cazy_webscraper` can now be used successfully for retrieving data from UniProt and adding the data to the local CAZyme database. This includes retrieving:
 	- UniProt accessions
 	- Protein names
@@ -56,7 +59,6 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 	- Cached data can be used to continue data retrievals from UniProt and GenBank, when a previous retrieval and/or addition of the data to the database fails
 	- Improved default name of cache dirs and subdirs
 - **Unit tests:** Started rewrite of unit tests to match the new program architecture
-- **Documentation:** Updating the documentation to include the new flags/options, and adding new tutorials for rautomating the retrieval if data from UniProt, GenBank and PDB
 
 ## Future work for version 2:
 - Calculate the coverage of the NCBI GenBank assembly database by CAZy (i.e. how many genomic assemblies from the Assembly database are included in the CAZy dataset)
@@ -64,6 +66,7 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 - Update the unit tests to work with the new `cazy_webscraper` architecture
 - Update the documentation
 - Create video tutorials
+- Add a GUI for use, packaging and distribution
 
 ## Citation
 
