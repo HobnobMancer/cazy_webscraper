@@ -147,6 +147,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
 
     query_data = get_query_data(gbk_dict, connection, args)
+    logger.warning(f"Retrieved {len(list(query_data.keys()))} proteins from the local db")
+    sys.exit(1)
     
     if 'json' in args.file_types:
         json_output_path = output_path + ".json"
@@ -218,6 +220,8 @@ def get_query_data(gbk_dict, connection, args):
     if 'genbank_seq' in args.include:
         # retrieve GenBank protein sequences from the local CAZyme database
         query_data = get_api_data.get_gbk_seq(gbk_dict, query_data, connection)
+
+    return query_data
 
 
 def write_csv_output(query_data, args, output_path, time_stamp):
