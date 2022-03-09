@@ -490,8 +490,31 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
 
     new_rows = []
 
+    # class only
+    if ('class' in args.include) and ('family' not in args.include) and ('subfamily' not in args.include):
+        families = protein_query_data['family']
+        for family in families:
+            try:
+                parent_class = re.match(r'\D{2,3}', family).group()
+            except AttributeError:
+                logger.warning(f"Could not retrieve CAZy class from {family}, setting CAZy class as 'NA'")
+                parent_class = 'NA'
+            new_rows.append([gbk_acc, parent_class])
+
+    # family only
+    elif ('class' not in args.include) and ('family' in args.include) and ('subfamily' not in args.include):
+        families = protein_query_data['family']
+        for family in families:
+            new_rows.append([gbk_acc, family])
+
+    # subfamily only
+    elif ('class' not in args.include) and ('family' not in args.include) and ('subfamily' in args.include):
+        subfamilies = protein_query_data['subfamily']
+        for subfamily in subfamilies:
+            new_rows.append([gbk_acc, subfamily])
+
     # class and family, NO subfamily
-    if ('class' in args.include) and ('family' in args.include) and ('subfamily' not in args.include):
+    elif ('class' in args.include) and ('family' in args.include) and ('subfamily' not in args.include):
         families = protein_query_data['family']
         for family in families:
             try:
