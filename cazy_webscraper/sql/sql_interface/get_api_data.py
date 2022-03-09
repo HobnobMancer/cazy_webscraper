@@ -341,7 +341,6 @@ def get_uniprot_data(gbk_dict, query_data, connection, args):
 
         if 'uniprot_acc' in args.include:
             uniprot_accession = record[1].uniprot_accession
-            uniprot_name = record[1].uniprot_name
 
             try:
                 query_data[gbk_acc]
