@@ -100,7 +100,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         ec_filters,
     ) = get_expansion_configuration(args)
 
-    output_path = compile_output_name(args, time_stamp)
+    output_path = compile_output_name(args)
 
     existing_files = ""
     if 'json' in args.file_types:
@@ -148,7 +148,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     query_data = get_query_data(gbk_dict, connection, args)
     logger.warning(f"Retrieved {len(list(query_data.keys()))} proteins from the local db")
-    sys.exit(1)
     
     if 'json' in args.file_types:
         json_output_path = output_path + ".json"
@@ -297,10 +296,13 @@ def write_csv_output(query_data, args, output_path, time_stamp):
     query_df.to_csv(output_path)
 
 
-def compile_output_name(args, time_stamp):
-    db_name = args.database.name.replace(".db","")
-
-    file_prefix = f"{db_name}_{time_stamp}"
+def compile_output_name(args):
+    """Compile the file name for output files.
+    
+    :param args: cmd-line args parser
+    
+    Return str"""
+    file_prefix = f"{args.database.name.replace('.db', '')}"
     if args.prefix is not None:
         file_prefix = f"{args.prefix}_{file_prefix}"
 
