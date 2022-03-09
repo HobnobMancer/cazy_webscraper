@@ -64,7 +64,7 @@ from cazy_webscraper.sql.sql_interface.get_records import (
     get_user_genbank_sequences,
     get_user_uniprot_sequences
 )
-from cazy_webscraper.utilities import config_logger, file_io, parse_configuration
+from cazy_webscraper.utilities import config_logger, parse_configuration
 from cazy_webscraper.utilities.parsers.extract_seq_parser import build_parser
 
 
