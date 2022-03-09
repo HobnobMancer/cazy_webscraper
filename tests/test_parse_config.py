@@ -67,6 +67,12 @@ def config_dict_blank():
     return config_dict
 
 
+@pytest.fixture
+def yaml_path():
+    path_ = "tests/test_inputs/test_inputs_parse_configuration/config_file.yaml"
+    return path_
+
+
 def test_parse_classes(cazy_dictionary):
     parse_configuration.parse_user_cazy_classes(["GH", "Cat", "gh"], cazy_dictionary)
 
@@ -134,3 +140,13 @@ def test_get_filter_set():
     tax_dict = {'genera': {'Aspergillus', 'Trichoderma'}, 'species': None}
 
     parse_configuration.get_filter_set(tax_dict)
+
+
+def test_ec_filters(yaml_path):
+    args_dict = {
+        "args": Namespace(
+            config=yaml_path,
+        )
+    }
+    ec_filters = "EC3.2.1.3,1.-.-.-,ec10.0.1.*"
+    parse_configuration.get_ec_config(ec_filters, args_dict['args'])
