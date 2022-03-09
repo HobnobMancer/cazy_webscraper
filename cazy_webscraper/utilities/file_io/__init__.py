@@ -42,92 +42,9 @@
 
 
 import logging
-import shutil
-import sys
 
 from Bio import SeqIO
 from Bio.Blast.Applications import NcbimakeblastdbCommandline
-
-
-
-def make_target_directory(output_path, force):
-    """Create target output directory for SQL database file and/or JSON file.
-
-    :param output_path: Path to target output file
-    :param force: bool, whether to overwrite an existing output file
-
-    Raises FileExistsError if target database file output path exists and 
-    force (force overwrite) is False.
-
-    Return Nothing
-    """
-    logger = logging.getLogger(__name__)
-
-    if output_path.exists():
-        if force is True:
-
-            logger.warning(
-                "Target output path exists.\n"
-                "Forced overwritting enabled. Overwritting existing file."
-            )
-            return
-        
-        else:
-            logger.warning(
-                "Target output path exists.\n"
-                "Forced overwritting NOT enabled\n."
-                "To overwrite the existing file\n,"
-                "rerun with the -f flag.\n"
-                "Terminating program."
-            )
-            sys.exit(1)
-
-    # make output directory
-    output_path.parent.mkdir(parents=True, exist_ok=force)
-    logger.warning(f"Built output directory: {output_path.parent}")
-
-    return
-
-
-def make_output_directory(output_path, force, nodelete):
-    """Create output directory to which multiple output files will be written
-
-    :param output_path: Path to target output dir
-    :param force: bool, whether to overwrite an existing output file
-    :param nodelete: bool, whether to delete contents in an existing target output dir
-
-    Raises FileExistsError if target database file output path exists and 
-    force (force overwrite) is False.
-
-    Return Nothing
-    """
-    logger = logging.getLogger(__name__)
-
-    if output_path.exists():
-
-        if nodelete is True:
-            logger.warning(
-                "Target output path for database exists.\n"
-                "Forced writing in existing output directory.\n"
-                "NOT deleting existing content in the output directory."
-            )
-            return
-
-        else:
-            logger.warning(
-                "Target output path for database exists.\n"
-                "Forced writing in existing output directory.\n"
-                "DELETING existing content in the output directory."
-            )
-
-    # make output directory
-    try:
-        output_path.mkdir(parents=True, exist_ok=force)
-    except FileExistsError:
-        pass
-    logger.warning(f"Built directory to store family files: {output_path}")
-
-    return
 
 
 def write_out_fasta(record, genbank_accession, args):
