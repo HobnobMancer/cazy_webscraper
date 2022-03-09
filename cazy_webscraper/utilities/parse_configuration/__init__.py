@@ -235,6 +235,9 @@ def get_yaml_configuration(
                         new_kingdom = kingdom[0].upper() + kingdom[1:].lower()
                         kingdom_filters.add(new_kingdom)
 
+        elif key == 'ec':
+            continue
+
         else:  # key is a CAZy class and underneath are CAZy families to scrape
             if yaml_config_dict[key] is not None:  # CAZy families were listed
                 for fam in yaml_config_dict[key]:
