@@ -151,14 +151,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.db_output is not None and args.db_output.exists():
         if args.force:
             logger.warning(
-                f"Local db {args.database} already exists\n"
+                f"Local db {args.db_output} already exists\n"
                 "Force is True\n"
                 "Ovewriting existing database."
             )
             os.remove(args.db_output)
         else:
             logger.warning(
-                f"Local db {args.database} already exists\n"
+                f"Local db {args.db_output} already exists\n"
                 "Force is False\n"
                 "Not ovewriting existing database\n"
                 "Termianting program"
@@ -200,9 +200,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.info(termcolour(scrape_config_message, "cyan"))
 
-    if args.database:  # adding data to an EXISTING database
+    if args.database is not None:  # adding data to an EXISTING database
         connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
-    
     else:  # build a new database
         connection, logger_name, cache_dir = connect_to_new_db(args, time_stamp, start_time)
 
@@ -226,7 +225,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     else:
         make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
-    logger.info(f"Created cache dir: {cache_dir}")
+    logger.warning(f"Created cache dir: {cache_dir}")
 
     if args.log is not None:  # write additional log files to user specified dir
         logger_name = args.log.name
