@@ -347,13 +347,13 @@ def get_cmd_scrape_config(
 
     if args.species is not None:
         cmd_species = (args.species).split(",")
-        for cmd_species in cmd_species:
-            taxonomy_filter["species"].add(cmd_species)
+        for species in cmd_species:
+            taxonomy_filter["species"].add(species)
     
     if args.strains is not None:
         cmd_strains = (args.strains).split(",")
-        for cmd_genus in cmd_strains:
-            taxonomy_filter["strains"].add(cmd_strains)
+        for strain in cmd_strains:
+            taxonomy_filter["strains"].add(strain)
     
     if args.kingdoms is not None:
         cmd_kingdoms = (args.kingdoms).split(",")
