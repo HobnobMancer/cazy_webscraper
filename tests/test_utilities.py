@@ -52,4 +52,4 @@ from cazy_webscraper.utilities import termcolour
 
 def test_termcolour():
     """Test the terminal coloput func"""
-    termcolour("message", "red")
+    termcolour("message", "red", bold=True)
