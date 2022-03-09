@@ -42,8 +42,6 @@
 from http.client import IncompleteRead
 import json
 import logging
-import re
-
 import pandas as pd
 
 from datetime import datetime
@@ -51,7 +49,6 @@ from typing import List, Optional
 
 from Bio import Entrez, SeqIO
 from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
 from saintBioutils.genbank import entrez_retry
 from saintBioutils.misc import get_chunks_list
 from saintBioutils.utilities.file_io import make_output_directory
