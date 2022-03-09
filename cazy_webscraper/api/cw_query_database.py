@@ -299,28 +299,37 @@ def compile_output_name(args, time_stamp):
     if args.prefix is not None:
         file_prefix = f"{args.prefix}_{file_prefix}"
 
-    if args.cazy_class:
+    # CAZy classification info
+    if 'class' in args.include:
         file_prefix += "_classes"
-    if args.cazy_family:
+    if 'family' in args.include:
         file_prefix += "_fams"
-    if args.cazy_subfamily:
+    if 'subfamily' in args.include:
         file_prefix += "_subfams"
-    if args.kingdom:
+    
+    # tax infor
+    if 'kingdom' in args.include:
         file_prefix += "_kngdm"
-    if args.genus:
+    if 'genus' in args.include:
         file_prefix += "_genus"
-    if args.organism:
+    if 'organism' in args.include:
         file_prefix += "_orgnsm"
-    if args.ec:
-        file_prefix += "_ec"
-    if args.pdb:
-        file_prefix += "_pdb"
-    if args.uniprot:
-        file_prefix += "_uniprot"
-    if args.seq_uniprot:
-        file_prefix += "_uniprotSeq"
-    if args.seq_genbank:
+
+    # data from genbank
+    if "genbank_seq" in args.include:
         file_prefix += "_gbkSeq"
+
+    # data from uniprot
+    if 'uniprot_acc' in args.include:
+        file_prefix += "_uni_acc"
+    if 'uniprot_name' in args.include:
+        file_prefix += "_uni_name"
+    if "ec" in args.include:
+        file_prefix += "_ec"
+    if "pdb" in args.include:
+        file_prefix += "_pdb"
+    if "uniprot_seq" in args.include:
+        file_prefix += "_uniprotSeq"
 
     if args.output_dir is not None:
         output_path = args.output_dir / file_prefix
