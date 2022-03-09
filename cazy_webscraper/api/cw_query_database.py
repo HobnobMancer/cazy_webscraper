@@ -221,7 +221,6 @@ def get_query_data(gbk_dict, connection, args):
     return query_data
 
 
-
 def write_json_output(json_output_path, query_data, args):
     """Parse dict to be suitable for JSON serialisation and write out output.
     
@@ -293,38 +292,65 @@ def write_csv_output(query_data, args, output_path):
 
         # data from CAZy
         if 'kingdom' in args.include:
-            for row in new_rows:
-                row.append(query_data[gbk_acc]["kingdom"])
+            new_rows = add_single_value_to_rows(query_data, gbk_acc, 'kingdom', new_rows)
         if 'genus' in args.include:
-            for row in new_rows:
-                row.append(query_data[gbk_acc]["genus"])
+            new_rows = add_single_value_to_rows(query_data, gbk_acc, 'genus', new_rows)
         if 'organism' in args.include:
-            for row in new_rows:
-                row.append(query_data[gbk_acc]["organism"])
+            new_rows = add_single_value_to_rows(query_data, gbk_acc, 'organism', new_rows)
         
         # data from GenBank
         if "genbank_seq" in args.include:
+            try:
+                seq = query_data[gbk_acc]["gbk_sequence"]
+            except KeyError:
+                seq = None
+            
+            try:
+                date = query_data[gbk_acc]["gbk_sequence_date"]
+            except KeyError:
+                date = None
+    
             for row in new_rows:
-                row.append(query_data[gbk_acc]["gbk_sequence"])
-                row.append(query_data[gbk_acc]["gbk_sequence_date"])
+                row.append(seq)
+                row.append(date)
         
         # data from UniProt
         if 'uniprot_acc' in args.include:
-            for row in new_rows:
-                row.append(query_data[gbk_acc]["uniprot_accession"])
+            new_rows = add_single_value_to_rows(query_data, gbk_acc, 'uniprot_accession', new_rows)
+            
         if 'uniprot_name' in args.include:
-            for row in new_rows:
-                row.append(query_data[gbk_acc]["uniprot_name"])
+            new_rows = add_single_value_to_rows(query_data, gbk_acc, 'uniprot_name', new_rows)
+
         if "ec" in args.include:
+            try:
+                ec_numbers = " ".join(list(query_data[gbk_acc]["ec_numbers"]))
+            except KeyError:
+                ec_numbers = None
             for row in new_rows:
-                row.append(" ".join(list(query_data[gbk_acc]["ec_numbers"])))
+                row.append(ec_numbers)
+            
         if "pdb" in args.include:
+            try:
+                pdb_accessions = " ".join(list(query_data[gbk_acc]["pdb_accessions"]))
+            except KeyError:
+                pdb_accessions = None
             for row in new_rows:
-                row.append(" ".join(list(query_data[gbk_acc]["pdb_accessions"])))
+                row.append(pdb_accessions)
+            
         if "uniprot_seq" in args.include:
+            try:
+                seq = query_data[gbk_acc]["uniprot_sequence"]
+            except KeyError:
+                seq = None
+            
+            try:
+                date = query_data[gbk_acc]["uniprot_sequence_date"]
+            except KeyError:
+                date = None
+    
             for row in new_rows:
-                row.append(query_data[gbk_acc]["uniprot_sequence"])
-                row.append(query_data[gbk_acc]["uniprot_sequence_date"])
+                row.append(seq)
+                row.append(date)
 
         for row in new_rows:
             df_data.append(row)
@@ -332,6 +358,26 @@ def write_csv_output(query_data, args, output_path):
     query_df = pd.DataFrame(df_data, columns=column_names)
 
     query_df.to_csv(output_path)
+
+
+def add_single_value_to_rows(query_data, gbk_acc, key, new_rows):
+    """Retrieve value for key from query data for the given protein, add value to all new_rows.
+    
+    :param query_data: dict
+    :param gbk_acc: str
+    :param key: str
+    :param new_rows: list of lists
+    
+    Return new_rows
+    """
+    try:
+        value = query_data[gbk_acc][key]
+    except KeyError:
+        value = None
+    for row in new_rows:
+        row.append(value)
+    
+    return new_rows
 
 
 def compile_output_name(args):
