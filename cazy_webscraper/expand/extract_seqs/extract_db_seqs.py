@@ -171,10 +171,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             protein_records.append(new_record)
         except TypeError:
             if extracted_sequences[protein_accession]['seq'] is not None:
-                logger.warning(f"Seq for {protein_accession} retrieved as type {type(extracted_sequences[protein_accession]['seq'])}\nNot adding to FASTA file")
+                logger.warning(
+                    f"Seq for {protein_accession} retrieved as type {type(extracted_sequences[protein_accession]['seq'])}\n"
+                    "Not adding to FASTA file"
+                )
             pass  # passed when sequence is None
 
     # write out the sequences to the specified outputs
+
+    logger.warning(f"Extracted {len(protein_records)}")
 
     write_output(protein_records, cache_dir, args)
 
