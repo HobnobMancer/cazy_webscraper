@@ -52,6 +52,8 @@ from typing import List, Optional
 
 import Bio.PDB
 from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.logger import config_logger
 
 from tqdm import tqdm
 
@@ -62,7 +64,7 @@ from cazy_webscraper.sql.sql_interface.get_records import (
     get_user_genbank_sequences,
     get_user_uniprot_sequences
 )
-from cazy_webscraper.utilities import config_logger, parse_configuration
+from cazy_webscraper.utilities import parse_configuration
 from cazy_webscraper.utilities.parsers import pdb_strctre_parser
 
 
