@@ -80,14 +80,14 @@ def main():
     output_group.add_argument(
         "-o",
         "--db_output",
-        widget="FileChooser",
+        widget="DirChooser",
         default=None,
         help="Directory to write build the new database",
     )
 
     output_group.add_argument(
         "--new_database_name",
-        widget="FileChooser",
+        type=str,
         default=None,
         help="Name of the new database",
     )
@@ -338,8 +338,7 @@ def main():
 
     cit_ver_group = parser.add_argument_group(
         "Citation and version data",
-        "Print the citation and/or version",
-        "CAZy will not be scraped."
+        "Print the citation and/or version. CAZy will not be scraped.",
     )
 
     cit_ver_group.add_argument(
@@ -368,14 +367,14 @@ def main():
         if gooey_args.new_database_name is None:
             time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
             db_path = f"cazy_webscraper_{time_stamp}.db"
-            db_path = gooey_args.db_output / db_path
+            db_path = Path(gooey_args.db_output) / db_path
         else:
-            db_path = gooey_args.db_output / gooey_args.new_database_name
+            db_path = Path(gooey_args.db_output) / gooey_args.new_database_name
         
         gooey_args.db_output = db_path
 
     # cazy_scraper.main(args=gooey_args)
-    print("12345679")
+    print(str(gooey_args.db_output))
 
 
 if __name__ == "__main__":
