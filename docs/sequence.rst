@@ -19,7 +19,7 @@ To extract all protein sequences previously retrieved from GenBank and UniProt, 
 
 .. code-block:: bash
 
-   cw_extract_db_sequences <path to local CAZyme db> genbank uniprot
+   cw_extract_db_seqs <path to local CAZyme db> genbank uniprot
 
 .. NOTE::
    The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.

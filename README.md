@@ -158,7 +158,7 @@ To retrieve protein sequences from GenBank use the `cw_get_genbank_seqs` command
 
 #### Extract sequences
 
-To extract GenBank and/or UniProt protein sequences from a local CAZyme database, use the `cw_extract_db_sequences` command.
+To extract GenBank and/or UniProt protein sequences from a local CAZyme database, use the `cw_extract_db_seqs` command.
 
 #### PDB
 
@@ -422,13 +422,13 @@ Protein sequences from GenBank and UniProt that are stored in the local CAZyme d
 
 To extract all protein seqeunces from the local CAZyme database using the following command structure:
 ```bash
-cw_extract_db_sequences <path_to_local_CAZyme_db> genbank uniprot
+cw_extract_db_seqs <path_to_local_CAZyme_db> genbank uniprot
 ```
 
 To retrieve protein sequences from GenBank or UniProt, name only the respective database. For example, to retrieve only 
 GenBank proteins:
 ```bash
-cw_extract_db_sequences <path_to_local_CAZyme_db> genbank
+cw_extract_db_seqs <path_to_local_CAZyme_db> genbank
 ```
 
 
