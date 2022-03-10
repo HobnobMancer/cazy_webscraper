@@ -135,7 +135,23 @@ To download all of CAZy and save the database in the default location (the cwd) 
 cazy_webscraper <user_email>
 ```
 
+### Version and citation
+
+To retrieve the version, use the following command:
+
+```bash
+cazy_webscraper <user_email> -V
+```
+
+To retrieve the citation to use:
+
+```bash
+cazy_webscraper <user_email> -C
+```
+
 ### Command summary
+
+Below are the list of commands (excluding required and optional arguments) included in `cazy_webscraper`.
 
 #### CAZy
 
@@ -163,6 +179,10 @@ To extract GenBank and/or UniProt protein sequences from a local CAZyme database
 #### PDB
 
 To protein structure files from PDB use the `cw_get_pdb_structures` command.
+
+#### Interrogate the database
+
+To interrogate the database, use the `cw_query_database` command.
 
 ## Creating a local CAZyme database
 Command line options for `cazy_webscraper`, which is used to scrape CAZy and compile a local SQLite database. 
