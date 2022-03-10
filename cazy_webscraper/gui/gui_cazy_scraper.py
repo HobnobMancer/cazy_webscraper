@@ -40,6 +40,7 @@
 
 import argparse
 
+from datetime import datetime
 from pathlib import Path
 
 from gooey import Gooey, GooeyParser
@@ -61,14 +62,148 @@ def main():
         type=str,
         help=(
             "User email address.\n"
-            "Requirement of Entrez, used to get source organsism data. Email is not stored be cazy_webscraper."
+            "Requirement of Entrez, used to get source organsism data. The email is not stored be cazy_webscraper."
         ),
     )
 
     # Add optional arguments to parser
 
+    #
+    # OUTPUT OPTIONS
+    #
+
+    output_group = parser.add_argument_group(
+        "Output Options", 
+        "Configure where the output is written"
+    )
+
+    output_group.add_argument(
+        "-o",
+        "--db_output",
+        widget="FileChooser",
+        default=None,
+        help="Directory to write build the new database",
+    )
+
+    output_group.add_argument(
+        "--new_database_name",
+        widget="FileChooser",
+        default=None,
+        help="Name of the new database",
+    )
+
+    output_group.add_argument(
+        "-d",
+        "--database",
+        widget="FileChooser",
+        default=None,
+        help="Path to an existing local CAZy database to add data to",
+    )
+
+    output_group.add_argument(
+        "-f",
+        "--force",
+        dest="force",
+        action="store_true",
+        default=False,
+        help="Force writting to an existing output directory",
+    )
+
+    output_group.add_argument(
+        "-n",
+        "--nodelete",
+        dest="nodelete",
+        action="store_true",
+        default=False,
+        help="When called, content in the existing out dir is NOT deleted. By default cazy_webscraper deletes content in the existing output dir",
+    )
+
+    #
+    # CLASS AND FAM FILTERS
+    #
+
+    class_group = parser.add_argument_group(
+        "Class and family filters", 
+        "Define CAZy classes and CAZy families to scrape"
+    )
+
+    class_group.add_argument(
+        "--classes",
+        type=str,
+        default=None,
+        help=(
+            "Classes from which all families are to be scraped.\n"
+            "Separate classes with a single comma ','"
+        ),
+    )
+
+    class_group.add_argument(
+        "--families",
+        type=str,
+        default=None,
+        help="Families to scrape. Separate families by commas 'GH1,GH2'. CAZy families are case sensitive"
+    )
+
+    class_group.add_argument(
+        "-s",
+        "--subfamilies",
+        dest="subfamilies",
+        action="store_true",
+        default=False,
+        help="Enable retrieval of subfamilies from CAZy",
+    )
+
+    #
+    # TAX filters
+    #
+
+    tax_group = parser.add_argument_group(
+        "Taxonomy filters",
+        "These are applied after CAZy class and CAZy family filters",
+    )
+
+    tax_group.add_argument(
+        "--kingdoms",
+        type=str,
+        default=None,
+        help="Tax Kingdoms to restrict the scrape to"
+    )
+
+    # Add option to restrict scrape to specific genera
+    tax_group.add_argument(
+        "--genera",
+        type=str,
+        default=None,
+        help="Genera to restrict the scrape to"
+    )
+
+    tax_group.add_argument(
+        "--species",
+        type=str,
+        default=None,
+        help="Species (written as Genus Species) to restrict the scrape to"
+    )
+
+    tax_group.add_argument(
+        "--strains",
+        type=str,
+        default=None,
+        help=(
+            "Specific strains of organisms to restrict the scrape to "
+            "(written as Genus Species Strain)"
+        ),
+    )
+
+    #
+    # CACHE OPTIONS
+    #
+    cache_group = parser.add_argument_group(
+        "Cache Options", 
+        "Use cache files and change the cache location"
+    )
+
     # Add option to specify path to configuration file
-    parser.add_argument(
+    cache_group.add_argument(
         "--cache_dir",
         widget="DirChooser",
         default=None,
@@ -76,30 +211,107 @@ def main():
     )
 
     # Add option to use a pre-downloaded CAZy txt file
-    parser.add_argument(
+    cache_group.add_argument(
         "--cazy_data",
         widget="FileChooser",
         default=None,
-        help="Path predownloaded CAZy txt file",
+        help="Path to predownloaded CAZy txt file. Use data from a previously downloaded CAZy dump txt file",
     )
 
-    # Add option to use own CAZy class synoymn dict
-    parser.add_argument(
+    cache_group.add_argument(
+        "--nodelete_cache",
+        dest="nodelete_cache",
+        action="store_true",
+        default=False,
+        help="When called, content in the existing cache dir is NOT deleted",
+    )
+
+    #
+    # LOG OPTIONS
+    #
+
+    log_group = parser.add_argument_group("Logging Options")
+
+    log_group.add_argument(
+        "-l",
+        "--log",
+        type=Path,
+        metavar="log file name",
+        default=None,
+        help="Define directory to write out log files",
+    )
+
+    log_group.add_argument(
+        "--nodelete_log",
+        dest="nodelete_log",
+        action="store_true",
+        default=False,
+        help="When called, content in the existing log dir is NOT deleted",
+    )
+
+    log_group.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        default=False,
+        help="Use verbose logging. Set logger level to 'INFO'",
+    )
+
+    #
+    # MISC OPTIONS
+    #
+
+    misc_group = parser.add_argument_group("Misc Options")
+
+    misc_group.add_argument(
+        "-r",
+        "--retries",
+        widget="IntegerField",
+        default=10,
+        help="Number of times to retry scraping a family or class page if error encountered",
+    )
+
+    # Add option to force file over writting
+    misc_group.add_argument(
+        "--sql_echo",
+        dest="sql_echo",
+        action="store_true",
+        default=False,
+        help="Set SQLite engine echo to True (SQLite will print its log messages)",
+    )
+
+    # Add option to define time out limit for trying to connect to CAZy
+    misc_group.add_argument(
+        "-t",
+        "--timeout",
+        widget="IntegerField",
+        default=45,
+        help="Connection timeout limit (seconds)"
+    )
+
+    misc_group.add_argument(
+        "--validate",
+        dest="validate",
+        action="store_true",
+        default=False,
+        help=(
+            "Retrieve CAZy fam population sizes from CAZy and use to check\n"
+            "the number of family members added to the local database"
+        ),
+    )
+
+    misc_group.add_argument(
         "--cazy_synonyms",
         widget="FileChooser",
         default=None,
-        help="Path to JSON file containing CAZy class synoymn names",
+        help=(
+            "Path to JSON file containing CAZy class synoymn names\n"
+            "Use your own CAZy class synonyms"
+        ),
     )
 
-    # Add option to define complete classes to scrape
-    parser.add_argument(
-        "--classes",
-        type=str,
-        default=None,
-        help="Classes from which all families are to be scraped. Separate classes with a single comma ','"
-    )
-
-    parser.add_argument(
+    misc_group.add_argument(
         "-c",
         "--config",
         widget="FileChooser",
@@ -108,33 +320,7 @@ def main():
         help="Path to configuration file. Default: None, scrapes entire database",
     )
 
-    # Add option to display citation
-    parser.add_argument(
-        "-C",
-        "--citation",
-        dest="citation",
-        action="store_true",
-        default=False,
-        help="Print cazy_webscraper citation message",
-    )
-
-    parser.add_argument(
-        "-o",
-        "--db_output",
-        widget="FileChooser",
-        default=None,
-        help="Target output path to build new SQL database",
-    )
-
-    parser.add_argument(
-        "-d",
-        "--database",
-        widget="FileChooser",
-        default=None,
-        help="Path to an existing local CAZy SQL database",
-    )
-
-    parser.add_argument(
+    misc_group.add_argument(
         "--delete_old_relationships",
         dest="delete_old_relationships",
         action="store_true",
@@ -146,156 +332,26 @@ def main():
         ),
     )
 
-    # Add option to force file over writting
-    parser.add_argument(
-        "-f",
-        "--force",
-        dest="force",
+    #
+    # CITATION AND VERSION
+    #
+
+    cit_ver_group = parser.add_argument_group(
+        "Citation and version data",
+        "Print the citation and/or version",
+        "CAZy will not be scraped."
+    )
+
+    cit_ver_group.add_argument(
+        "-C",
+        "--citation",
+        dest="citation",
         action="store_true",
         default=False,
-        help="Force file over writting",
+        help="Print cazy_webscraper citation message",
     )
 
-    # Add option to specify families to scrape
-    parser.add_argument(
-        "--families",
-        type=str,
-        default=None,
-        help="Families to scrape. Separate families by commas 'GH1,GH2' (case sensitive)"
-    )
-
-    # Add option to restrict scrape to specific genera
-    parser.add_argument(
-        "--genera",
-        type=str,
-        default=None,
-        help="Genera to restrict the scrape to"
-    )
-
-    parser.add_argument(
-        "--kingdoms",
-        type=str,
-        default=None,
-        help="Tax Kingdoms to restrict the scrape to"
-    )
-
-    # Add log file name option
-    # If not given, no log file will be written out
-    parser.add_argument(
-        "-l",
-        "--log",
-        type=Path,
-        metavar="log file name",
-        default=None,
-        help="Defines log file name and/or path",
-    )
-
-    parser.add_argument(
-        "-n",
-        "--nodelete",
-        dest="nodelete",
-        action="store_true",
-        default=False,
-        help="When called, content in the existing out dir is NOT deleted",
-    )
-
-    # Add option to not delete content in the existing cache dir
-    parser.add_argument(
-        "--nodelete_cache",
-        dest="nodelete_cache",
-        action="store_true",
-        default=False,
-        help="When called, content in the existing cache dir is NOT deleted",
-    )
-
-    parser.add_argument(
-        "--nodelete_log",
-        dest="nodelete_log",
-        action="store_true",
-        default=False,
-        help="When called, content in the existing log dir is NOT deleted",
-    )
-
-    # Add option to enable number of times to retry scraping
-    parser.add_argument(
-        "-r",
-        "--retries",
-        widget="IntegerField",
-        default=10,
-        help="Number of times to retry scraping a family or class page if error encountered",
-    )
-
-    # Add option to force file over writting
-    parser.add_argument(
-        "--sql_echo",
-        dest="sql_echo",
-        action="store_true",
-        default=False,
-        help="Set SQLite engine echo to True (SQLite will print its log messages)",
-    )
-
-    # Add option to enable retrieval of subfamilies
-    parser.add_argument(
-        "-s",
-        "--subfamilies",
-        dest="subfamilies",
-        action="store_true",
-        default=False,
-        help="Enable retrieval of subfamilies from CAZy",
-    )
-
-    # Add option to restrict the scrape to specific species. This will scrape CAZymes from
-    # all strains belonging to each listed species
-    parser.add_argument(
-        "--species",
-        type=str,
-        default=None,
-        help="Species (written as Genus Species) to restrict the scrape to"
-    )
-
-    # Add option to restrict scraping to specific strains of organisms
-    parser.add_argument(
-        "--strains",
-        type=str,
-        default=None,
-        help=(
-            "Specific strains of organisms to restrict the scrape to "
-            "(written as Genus Species Strain)"
-        ),
-    )
-
-    # Add option to define time out limit for trying to connect to CAZy
-    parser.add_argument(
-        "-t",
-        "--timeout",
-        widget="IntegerField",
-        default=45,
-        help="Connection timeout limit (seconds)"
-    )
-
-    parser.add_argument(
-        "--validate",
-        dest="validate",
-        action="store_true",
-        default=False,
-        help=(
-            "Retrieve CAZy fam population sizes from CAZy and use to check\n"
-            "the number of family members added to the local database"
-        ),
-    )
-
-    # Add option for more detail (verbose) logging
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        dest="verbose",
-        action="store_true",
-        default=False,
-        help="Set logger level to 'INFO'",
-    )
-    
-    # Add option to display version
-    parser.add_argument(
+    cit_ver_group.add_argument(
         "-V",
         "--version",
         dest="version",
@@ -305,6 +361,18 @@ def main():
     )    
 
     gooey_args = parser.parse_args()
+
+    # compile db_output path
+    if gooey_args.db_output is not None:
+
+        if gooey_args.new_database_name is None:
+            time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
+            db_path = f"cazy_webscraper_{time_stamp}.db"
+            db_path = gooey_args.db_output / db_path
+        else:
+            db_path = gooey_args.db_output / gooey_args.new_database_name
+        
+        gooey_args.db_output = db_path
 
     # cazy_scraper.main(args=gooey_args)
     print("12345679")
