@@ -93,6 +93,43 @@ To download the entire CAZy dataset, and save the data set to the current workin
    for a given protein, when multiple source organisms are retrieved from CAZy for a single protein. 
    For more information please see the `NCBI Entrez <https://www.ncbi.nlm.nih.gov/books/NBK25497/>`_ documentation.
 
+---------------
+Command summary
+---------------
+
+Below are the list of commands (excluding required and optional arguments) included in ``cazy_webscraper``.
+
+**CAZy**
+
+To retrieve data from CAZy and compile and SQLite database using ``cazy_webscraper`` command.
+
+**UniProt**
+
+To retrieve protein data from UniProt, use the ``cw_get_uniprot_data`` command.
+
+The following data can be retrieved:
+- UniProt accession
+- Protein name
+- EC numbers
+- PDB accession
+- Protein sequences
+
+**GenBank**
+
+To retrieve protein sequences from GenBank use the ``cw_get_genbank_seqs`` command.
+
+**Extract sequences**
+
+To extract GenBank and/or UniProt protein sequences from a local CAZyme database, use the ``cw_extract_db_seqs`` command.
+
+**PDB**
+
+To protein structure files from PDB use the ``cw_get_pdb_structures`` command.
+
+**Interrogate the database**
+
+To interrogate the database, use the ``cw_query_database`` command.
+
 -------------
 Best practice
 -------------
