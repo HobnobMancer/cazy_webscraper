@@ -129,11 +129,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     
     # check if printing out version or citation information
     if args.version:
-        sys.stderr.write("\n".join(VERSION_INFO) + "\n")
+        print(VERSION_INFO)
         return
     
     if args.citation:
-        sys.stderr.write("\n".join(CITATION_INFO) + "\n")
+        print(CITATION_INFO)
         return
 
     # check correct output was provided, exit if not operable
