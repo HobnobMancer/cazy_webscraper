@@ -11,4 +11,4 @@ dependencies:
   - mechanicalsoup
   - tqdm
   - pyyaml
-
+  - gooey
