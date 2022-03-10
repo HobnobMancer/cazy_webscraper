@@ -52,6 +52,7 @@ def get_pdb_accessions(
     taxonomy_filters,
     kingdom_filters,
     ec_filters,
+    gbk_table_dict,
     connection,
 ):
     """Retrieve PDB accessions matching user criteria from the local CAZyme db
@@ -61,6 +62,7 @@ def get_pdb_accessions(
     :param taxonomy_filters: dict of taxonom filters to limit the retrieval of data to
     :param kingdom_filters: set of tax kingdoms to limit the retrieval of data to
     :param ec_filters: set of EC numbers to limit the retrieval of data to
+    :param gbk_table_dict: dict, of GenBank accessions and db IDs for GenBank records
     :param connection: open sqlalchemy connection to an SQLite db engine
     
     Return list of PDB accessions
@@ -78,8 +80,15 @@ def get_pdb_accessions(
     
     # retrieve all PDB accessions for each GenBank accession retrieved for the local CAZyme db
 
-    gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)  # used to convert acc to id
     pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)  # used to retrieve PDB accs
+    # {pdb_accession: pdb_db_id}
+    # convert to be keyed by pdb_db_id and valued by pdb_accession
+    pdb_id_acc_dict = {}
+    for pdb_acc in pdb_table_dict:
+        pdb_id_acc_dict[pdb_table_dict[pdb_acc]] = pdb_acc
+
+    gbk_pdb_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
+    # {gbk_db_id: {pdb_db_id}}
 
     pdb_accessions = set()
 
@@ -87,11 +96,13 @@ def get_pdb_accessions(
         gbk_id = gbk_table_dict[gbk_accession]['gbk_id']
 
         try:
-            pdbs = pdb_table_dict[gbk_id]
+            pdb_ids = gbk_pdb_table_dict[gbk_id]
 
-            for pdb in pdbs:
+            for pdb_id in pdb_ids:
+                # convert pdb_db_id to pdb_accession
+                pdb_acc = pdb_id_acc_dict[pdb_id]
                 # remove chain annotation if present
-                parent_pdb = pdb.split("[")[0]
+                parent_pdb = pdb_acc.split("[")[0]
                 pdb_accessions.add(parent_pdb)
         
         except KeyError:

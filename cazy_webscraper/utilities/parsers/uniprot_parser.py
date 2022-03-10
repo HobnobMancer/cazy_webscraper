@@ -51,8 +51,8 @@ def build_parser(argv: Optional[List] = None):
     """Return ArgumentParser parser for script."""
     # Create parser object
     parser = argparse.ArgumentParser(
-        prog="cazy_webscraper.py",
-        description="Scrapes the CAZy database",
+        prog="cw_get_uniprot_data.py",
+        description="Retrieve protein data from UniProt",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
@@ -145,6 +145,24 @@ def build_parser(argv: Optional[List] = None):
         default=None,
         help="CAZy families to UniProt data for. Separate families by commas 'GH1,GH2' (case sensitive)"
     )
+
+    # Add option to force file over writting
+    parser.add_argument(
+        "-f",
+        "--force",
+        dest="force",
+        action="store_true",
+        default=False,
+        help="Force writing in existing cache dir",
+    )
+
+    parser.add_argument(
+        "--genbank_accessions",
+        type=Path,
+        default=None,
+        help="Path to a text file containing a list of GenBank accessions to retrieve data for",
+    )
+
 
     # Add option to restrict scrape to specific genera
     parser.add_argument(
@@ -270,6 +288,20 @@ def build_parser(argv: Optional[List] = None):
         default=45,
         help="Connection timeout limit (seconds)"
     )
+
+    parser.add_argument(
+        "--skip_uniprot_accessions",
+        type=Path,
+        default=None,
+        help="Path to a JSON file containing UniProt IDs, GenBank accessions and db IDs",
+    )  
+
+    parser.add_argument(
+        "--use_uniprot_cache",
+        type=Path,
+        default=None,
+        help="Path to a JSON file containing data previously retrieved from UniProt by cazy_webscraper",
+    )  
 
     parser.add_argument(
         "--uniprot_batch_size",

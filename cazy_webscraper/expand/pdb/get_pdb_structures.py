@@ -44,8 +44,6 @@
 
 
 import logging
-import os
-import sys
 
 import pandas as pd
 
@@ -53,13 +51,20 @@ from datetime import datetime
 from typing import List, Optional
 
 import Bio.PDB
+from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.logger import config_logger
 
 from tqdm import tqdm
 
-from cazy_webscraper import cazy_webscraper
+from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.expand import get_chunks_gen
-from cazy_webscraper.sql.sql_interface import get_selected_pdbs
-from cazy_webscraper.utilities import config_logger, file_io, parse_configuration
+from cazy_webscraper.sql.sql_interface import get_selected_pdbs, get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_records import (
+    get_user_genbank_sequences,
+    get_user_uniprot_sequences
+)
+from cazy_webscraper.utilities import parse_configuration
 from cazy_webscraper.utilities.parsers import pdb_strctre_parser
 
 
@@ -79,11 +84,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger = logging.getLogger(__package__)
         config_logger(args)
 
-    # validate PDB file choices
-    logger.info("Checking valid file types were provided")
-    validate_pdb_file_types(args)
-
-    connection, logger_name, cache_dir = cazy_webscraper.connect_existing_db(args, time_stamp)
+    connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
 
     (
         config_dict,
@@ -94,12 +95,27 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         ec_filters,
     ) = parse_configuration.get_expansion_configuration(args)
 
+    gbk_dict = {}  # {gbk_acc: gbk_id}
+
+    gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
+    # {genbank_accession: 'taxa_id': str, 'gbk_id': int}
+
+    if args.genbank_accessions is not None:
+        logger.warning(f"Retrieving PDB structures for GenBank accessions listed in {args.genbank_accessions}")
+        gbk_dict.update(get_user_genbank_sequences(gbk_table_dict, args))
+
+    if args.uniprot_accessions is not None:
+        logger.warning(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
+        uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+        gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
+
     pdb_accessions = get_selected_pdbs.get_pdb_accessions(
         class_filters,
         family_filters,
         taxonomy_filter_dict,
         kingdom_filters,
         ec_filters,
+        gbk_table_dict,
         connection,
     )
 
@@ -114,69 +130,19 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # make output and cache dirs
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
-        cache_dir = cache_dir / "uniprot_data_retrieval"
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        cache_dir = cache_dir / "pdb_retrieval"
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
-    download_pdb_structures(pdb_accessions, cache_dir, args)
+    download_pdb_structures(pdb_accessions, args)
 
     cache_path = cache_dir / f"pdb_retrieval_{time_stamp}.txt"
     with open(cache_path, 'a') as fh:
         for acc in pdb_accessions:
             fh.write(f"{acc}\n")
 
-    end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    end_time = pd.to_datetime(end_time)
-    total_time = end_time - start_time
-
-    if args.verbose:
-        logger.info(
-            "Finished getting structure files from PDB\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {cazy_webscraper.VERSION_INFO}\n"
-            f"Citation: {cazy_webscraper.CITATION_INFO}"
-        )
-    else:
-        print(
-            "=====================cazy_webscraper=====================\n"
-            "Finished getting structure files from PDB\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {cazy_webscraper.VERSION_INFO}\n"
-            f"Citation: {cazy_webscraper.CITATION_INFO}"
-        )
-
-
-def validate_pdb_file_types(args):
-    """Check valid file types for PDB were specified by the user.
-    :param args: cmd-line args parser
-    Return nothing.
-    """
-    logger = logging.getLogger(__name__)
-
-    valid_choices = ['mmCif', 'pdb', 'xml', 'mmtf', 'bundle']
-
-    invalid_choices = []
-
-    user_choices = (args.pdb).split(",")
-
-    for choice in user_choices:
-        if choice not in valid_choices:
-            invalid_choices.append(choice)
-
-    if len(invalid_choices) != 0:
-        logger.error(
-            f"Invalid file option selected: {invalid_choices}.\n"
-            f"The valid choices are: {valid_choices}.\n"
-            "Terminating program."
-        )
-        sys.exit(1)
-
-    return
+    closing_message("Get PDB structure files", start_time, args)
 
 
 def download_pdb_structures(pdb_accessions, args):
@@ -194,8 +160,8 @@ def download_pdb_structures(pdb_accessions, args):
 
     if args.outdir is None:
         logger.warning("Downloading to current working directory")
-        for accession_list in get_chunks_gen(pdb_accessions, args.batch_limit):
-            for file_type in tqdm((args.pdb).split(","), desc="Downloading"):
+        for accession_list in get_chunks_gen(pdb_accessions, args.batch_size):
+            for file_type in tqdm(args.pdb, desc="Downloading"):
                 pdbl.download_pdb_files(
                     pdb_codes=accession_list,
                     file_format=file_type,
@@ -204,8 +170,8 @@ def download_pdb_structures(pdb_accessions, args):
 
     else:
         logger.warning(f"Downloading structures to {args.outdir}")
-        for accession_list in get_chunks_gen(pdb_accessions, args.batch_limit):
-            for file_type in tqdm((args.pdb).split(","), desc="Downloading"):
+        for accession_list in get_chunks_gen(pdb_accessions, args.batch_size):
+            for file_type in tqdm(args.pdb, desc="Downloading"):
                 pdbl.download_pdb_files(
                     pdb_codes=accession_list,
                     file_format=file_type,

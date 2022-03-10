@@ -24,6 +24,14 @@ the local CAZyme database, use the following command structure:
     Retrieving the data from any of these exteranl databases for the entire CAZy 
     dataset will take several hours and may unintentionally deny the service to others.
 
+To download UniProt protein accessions and names from UniProt for all protein in the local CAZyme database, including 
+EC number annotations, PDB accessions and protein sequences, and save the data to
+the local CAZyme database, use the following command structure:  
+
+.. code-block:: bash
+    
+   cw_get_uniprot_data <path to local CAZyme db> --ec --pdb --sequence
+
 --------------------
 Command line options
 --------------------
@@ -43,15 +51,27 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 
 ``--classes`` - list of classes to retrieve UniProt data for.
 
+``--delete_old_ec`` - Boolean, delete EC number - Protein relationships that are no longer listed in UniProt, i.e. an EC number annotation is no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
+
+``--delete_old_pdbs`` - Boolean, delete PDB accessions - Protein relationships that are no longer listed in UniProt, i.e. an PDB accessions that are no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
+
 ``--ec``, ``-e`` - Enable retrieval of EC number annotations from UniProt. Default, EC number annotations are **not** retrieved.
 
 ``--ec_filter`` - List of EC numbers to limit the retrieval of protein data for proteins annotated with at least one of the given EC numbers **in the local CAZyme database**.
 
 ``--families`` - List of CAZy (sub)families to retrieve UniProt protein data for.
 
+``--force`` - Force writing in existing cache directory.
+
+``--genbank_accessions`` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+
 ``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
 
+``--kingdoms`` - List of taxonomic kingdoms to restrict the scrape to. Default: None, filter is not applied.
+
 ``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+``--name_update`` - Boolean, whether to overwrite the existing protein name (previously retrieved from UniProt). Default: do not update.
 
 ``--nodelete_cache`` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
@@ -65,6 +85,8 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 
 ``--seq_update`` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
+``--skip_uniprot_accessions`` - Path to a JSON file, keyed by UniProt accessions/IDs and valued by dicts containing ``{'gbk_acc': str, 'db_id': int}``. This file part of the cache created by ``cw_get_uniprot_data``. This is option to skip retrieving the UniProt IDs for a set of GenBank accessions, if retrieving data for the same dataset (this save a lot of time!)
+
 ``--sql_echo`` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
 ``--species`` - List of species (organsim scientific names) to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given species.
@@ -72,6 +94,8 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 ``--strains`` - List of species strains to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given strains.
 
 ``--timeout``, ``-t`` - Connection timout limit (seconds). Default: 45.
+
+``--use_uniprot_cache`` - Path to JSON file containing data previosuly retrieved from UniProt by ``cazy_webscraper``, use if an error occurred while adding the data to the local CAZyme database. This will skip the retrieval of data from UniProt, and the cached data will be added to the local CAZyme database. This can also be shared with others to add the same data to their local CAZyme database.
 
 ``--uniprot_batch_size`` - Size of an individual batch query submitted to the `UniProt REST API <https://www.uniprot.org/help/programmatic_access>_` to retrieve the UniProt accessions of proteins identified by the GenBank accession. Default is 150. The UniProt API documentation recommands batch sizes of less than 20,000 but batch sizes of 1,000 often result in HTTP 400 errors. It is recommend to keep batch sizes less than 1,000, and ideally less than 200.
 
@@ -107,12 +131,23 @@ local CAZyme database. ``cw_get_uniprot_data`` can also retrieve from UniProt:
 * PDB accessions
 * Protein amino acid sequences
 
+.. WARNING:: 
+    When performing retrievals of large datasets from UniProt, please perform these retrievals during quiet periods (e.g. at the weekend). 
+
+.. WARNING::
+    It is strongly advised to only download data from UniProt for the necessary protein datasets. Retrieval of very large 
+    datasets from UniProt (e.g. for +1,000,000 proteins or all proteins in the GH class) can result in UniProt 
+    terminating the connection early due to a high bandwidth command over an extended period of time.
+
+    To retrieve data from large datasets, it is recommend to break down the dataset into subgroups, and periodically 
+    retrieve the data for one subgroup. This reduces the burdeon on the UniProt server and will not break 
+    the expected use and practises of the UniProt database.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Retrieving EC number annotations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To retrieve EC number annotations from UniProt add the ``--ec``/``-e`` flag to the command:
+To retrieve EC number annotations from UniProt add the ``--ec`` /  ``-e`` flag to the command:
 
 .. code-block:: bash
 
@@ -135,7 +170,7 @@ Retrieving PDB accessions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To retrieve all PDB accessions for all CAZymes in the local CAZyme database matching the given filter criteria,
-add the ``--pdb``/``-p`` flag to the command:
+add the ``--pdb`` /  ``-p`` flag to the command:
 
 .. code-block:: bash
 
@@ -153,7 +188,7 @@ Retrieving protein sequences
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To retrieve all protein amino acid sequences for all CAZymes in the local CAZyme database matching the given filter criteria,
-add the ``--sequence``/``-s`` flag to the command:
+add the ``--sequence`` /  ``-s`` flag to the command:
 
 .. code-block:: bash
 
@@ -177,7 +212,7 @@ When using ``--sequence`` flag, ``cw_get_uniprot_data`` will only add *new* prot
 it will only add protein sequences to records that do not have a sequence. Therefore, if a protein
 already has a sequence in the local database, this sequence is **not** overwritten.
 
-You may wish to update the protein sequences in your local CAZyme database. To do this use the ``--sequence``/``-s`` 
+You may wish to update the protein sequences in your local CAZyme database. To do this use the ``--sequence`` /  ``-s`` 
 flag to tell ``cw_get_uniprot_data`` to retrieve protein sequences, **and** use the ``--seq_update`` flag.
 
 .. code-block:: bash

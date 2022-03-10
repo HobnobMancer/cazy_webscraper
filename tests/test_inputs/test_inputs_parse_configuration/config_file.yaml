@@ -17,3 +17,8 @@ species:
 strains:
   - 'Clostridium botulinum IBCA10-7060'
   - 'Bacillus endophyticus Hbe603'
+kingdoms:
+  - 'Bacteria'
+  - 'unclassified'
+ec:
+  - '5.5.6.4'

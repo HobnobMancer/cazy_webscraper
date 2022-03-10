@@ -48,6 +48,19 @@ from pathlib import Path
 from typing import List, Optional
 
 
+class ValidateFormats(argparse.Action):
+    """Check the user has provided valid structure file formats."""
+    def __call__(self, parser, args, values, option_string=None):
+        valid_formats = ("mmCif", "pdb", "xml", "mmtf", "bundle")
+        invalid = False
+        for value in values:
+            if value not in valid_formats:
+                invalid = True
+                raise ValueError(f'Invalid file format "{value}" provided. Accepted formats: {valid_formats}')
+        if invalid:
+            sys.exit(1)
+        setattr(args, self.dest, values)
+
 
 def build_parser(argv: Optional[List] = None):
     """Return ArgumentParser parser for the script 'expand.genbank_sequences.py'."""
@@ -68,12 +81,35 @@ def build_parser(argv: Optional[List] = None):
 
     parser.add_argument(
         "pdb",
+        nargs='+',
+        action=ValidateFormats,
         choices=["mmCif", "pdb", "xml", "mmtf", "bundle"],
         type=str,
         help="File format of downloaded structure from PDB",
     )
 
     # Add optional arguments to parser
+
+    # Add optional arguments to parser
+    parser.add_argument(
+        "--genbank_accessions",
+        type=Path,
+        default=None,
+        help="Path to text file contining GenBank accessions",
+    )
+    parser.add_argument(
+        "--uniprot_accessions",
+        type=Path,
+        default=None,
+        help="Path to text file contining UniProt accessions",
+    )
+
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=150,
+        help="Batch size for queries sent to NCBI.Entrez"
+    )
 
     # Add option to specify path to configuration file
     parser.add_argument(
@@ -182,6 +218,23 @@ def build_parser(argv: Optional[List] = None):
         type=Path,
         metavar="output directory path",
         help="Path to output directory to which downloaded structures are retrieved",
+    )
+
+    parser.add_argument(
+        "--overwrite",
+        dest="overwrite",
+        action="store_true",
+        default=False,
+        help="Overwrite existing structure files with the same PDB accession as files being downloaded. Default: don't overwrite existing file",
+    )
+
+    # Add option to force file over writting
+    parser.add_argument(
+        "--sql_echo",
+        dest="sql_echo",
+        action="store_true",
+        default=False,
+        help="Set SQLite engine echo to True (SQLite will print its log messages)",
     )
 
     # Add option to restrict the scrape to specific species. This will scrape CAZymes from

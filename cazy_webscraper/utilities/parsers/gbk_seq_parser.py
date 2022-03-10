@@ -48,10 +48,10 @@ from typing import List, Optional
 
 
 def build_parser(argv: Optional[List] = None):
-    """Return ArgumentParser parser for the script 'expand.genbank_sequences.py'."""
+    """Return ArgumentParser parser for the script 'expand.get_genbank_sequences.py'."""
     # Create parser object
     parser = argparse.ArgumentParser(
-        prog="genbank_sequences.py",
+        prog="get_genbank_sequences.py",
         description="Populates local CAZy database with protein sequences from GenBank",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
@@ -73,6 +73,13 @@ def build_parser(argv: Optional[List] = None):
 
     # Add optional arguments to parser
 
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=150,
+        help="Batch size for queries sent to NCBI.Entrez"
+    )
+
     # Add option to specify path to configuration file
     parser.add_argument(
         "-c",
@@ -81,6 +88,13 @@ def build_parser(argv: Optional[List] = None):
         metavar="config file",
         default=None,
         help="Path to configuration file. Default: None, scrapes entire database",
+    )
+
+    parser.add_argument(
+        "--cache_dir",
+        type=Path,
+        default=None,
+        help="Path to cache directory",
     )
 
     # Add option to use own CAZy class synoymn dict
@@ -106,14 +120,6 @@ def build_parser(argv: Optional[List] = None):
         help="Limit retrieval to proteins annotated with the provided EC numbers. Separate EC numbers with single commas"
     )
 
-    # specify the number of accessions posted in single ePost to NCBI
-    parser.add_argument(
-        "--entrez_batch_size",
-        type=int,
-        default=150,
-        help="Number of accessions posted to NCBI per epost, advice to be max 200. Default=150"
-    )
-
     # Add option to force file over writting
     parser.add_argument(
         "-f",
@@ -121,7 +127,7 @@ def build_parser(argv: Optional[List] = None):
         dest="force",
         action="store_true",
         default=False,
-        help="Force file over writting",
+        help="Force file in existing cache directory",
     )
 
     # Add option to specify families to retrieve protein sequences for
@@ -130,6 +136,13 @@ def build_parser(argv: Optional[List] = None):
         type=str,
         default=None,
         help="Families to scrape. Separate families by commas 'GH1,GH2'",
+    )
+
+    parser.add_argument(
+        "--genbank_accessions",
+        type=Path,
+        default=None,
+        help="Path to a text file containing a list of GenBank accessions to retrieve data for",
     )
 
     # Add option to restrict the scrape to specific kingdoms
@@ -170,6 +183,21 @@ def build_parser(argv: Optional[List] = None):
         help="Do not delete content in existing cache dir",
     )
 
+    parser.add_argument(
+        "-r",
+        "--retries",
+        type=int,
+        default=10,
+        help="Number of times to retry scraping a family or class page if error encountered",
+    )
+
+    parser.add_argument(
+        "--seq_dict",
+        type=Path,
+        default=None,
+        help="Path to a JSON file, keyed by GenBank accessions and valued by protein sequence",
+    )
+
     # Add option to update sequences if the retrieved sequence is different
     # If not enabled then sequences will only be retrieved and added for proteins that do not
     # already have a protein sequence
@@ -189,7 +217,6 @@ def build_parser(argv: Optional[List] = None):
         default=False,
         help="Set SQLite engine echo to True (SQLite will print its log messages)",
     )
-
 
     # Add option to restrict the scrape to specific species. This will scrape CAZymes from
     # all strains belonging to each listed species

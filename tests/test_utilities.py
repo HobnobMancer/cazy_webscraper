@@ -38,7 +38,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Tests the module utilities which builds the logger and args parser.
+"""Tests the module utilities which creates terminal colours.
 
 These test are intened to be run from the root of the repository using:
 pytest -v
@@ -47,125 +47,9 @@ pytest -v
 
 import pytest
 
-from argparse import Namespace
-
-from cazy_webscraper.utilities import config_logger, parsers
-from cazy_webscraper.utilities.parsers import (
-    api_parser,
-    cazy_webscraper_parser,
-    extract_seq_parser,
-    gbk_seq_parser,
-    genbank_cov_parser,
-    pdb_strctre_parser,
-    uniprot_parser,
-)
+from cazy_webscraper.utilities import termcolour
 
 
-@pytest.fixture
-def args_v_false():
-    args_dict = {
-        "args": Namespace(
-            verbose=False,
-            log=None,
-        )
-    }
-    return args_dict
-
-
-@pytest.fixture
-def args_v_true():
-    args_dict = {
-        "args": Namespace(
-            verbose=True,
-            log="tests/test_outputs/test_log",
-        )
-    }
-    return args_dict
-
-
-# test building the parser
-
-
-# test building the logger
-
-
-def test_verbose_false(args_v_false):
-    """Test build_logger when args.verbose and args.log are false"""
-    config_logger(args_v_false["args"])
-
-
-def test_verbose_true(args_v_true):
-    """Test build_logger when args.verbose and args.log are true"""
-    config_logger(args_v_true["args"])
-
-
-# test cazy_webscraper parser
-
-def test_parser_cw():
-    """Test building the parser when argsv is None"""
-    cazy_webscraper_parser.build_parser()
-
-
-def test_parser_cw_arsv():
-    """Test building the parser when argsv is not None"""
-    cazy_webscraper_parser.build_parser(["dummy_email"])
-
-
-def test_parser_extract():
-    """Test building the parser when argsv is None"""
-    extract_seq_parser.build_parser()
-
-
-def test_parser_arsv_extract():
-    """Test building the parser when argsv is not None"""
-    extract_seq_parser.build_parser(["dummy_email"])
-
-
-def test_parser_api():
-    """Test building the parser when argsv is None"""
-    api_parser.build_parser()
-
-
-def test_parser_arsv_api():
-    """Test building the parser when argsv is not None"""
-    api_parser.build_parser(["db", "csv"])
-
-
-def test_parser_gbk():
-    """Test building the parser when argsv is None"""
-    gbk_seq_parser.build_parser()
-
-
-def test_parser_arsv_gbk():
-    """Test building the parser when argsv is not None"""
-    gbk_seq_parser.build_parser(["db", "dummy_email"])
-
-
-def test_parser_pdb():
-    """Test building the parser when argsv is None"""
-    pdb_strctre_parser.build_parser()
-
-
-def test_parser_arsv_pdb():
-    """Test building the parser when argsv is not None"""
-    pdb_strctre_parser.build_parser(["dummy_email", "pdb"])
-
-
-def test_parser_uniprot():
-    """Test building the parser when argsv is None"""
-    uniprot_parser.build_parser()
-
-
-def test_parser_arsv_uniprot():
-    """Test building the parser when argsv is not None"""
-    uniprot_parser.build_parser(["dummy_email"])
-
-
-def test_parser_cov():
-    """Test building the parser when argsv is None"""
-    genbank_cov_parser.build_parser()
-
-
-def test_parser_arsv_cov():
-    """Test building the parser when argsv is not None"""
-    genbank_cov_parser.build_parser(["db", "dummy_email"])
+def test_termcolour():
+    """Test the terminal coloput func"""
+    termcolour("message", "red", bold=True)

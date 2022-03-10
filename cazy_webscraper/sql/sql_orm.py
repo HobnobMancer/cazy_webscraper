@@ -40,6 +40,7 @@
 # SOFTWARE.
 """Submodule to build a local SQL database"""
 
+from distutils.command.config import LANG_EXT
 import logging
 import re
 
@@ -166,6 +167,14 @@ genbanks_ecs = Table(
 )
 
 
+genbanks_pdbs = Table(
+    "Genbanks_Pdbs",
+    Base.metadata,
+    Column("genbank_id", Integer, ForeignKey("Genbanks.genbank_id")),
+    Column("pdb_id", Integer, ForeignKey("Pdbs.pdb_id")),
+    PrimaryKeyConstraint("genbank_id", "pdb_id"),
+)
+
 
 # Define class tables
 class Genbank(Base):
@@ -206,7 +215,9 @@ class Genbank(Base):
     
     pdbs = relationship(
         "Pdb",
+        secondary=genbanks_pdbs,
         back_populates="genbank",
+        lazy="dynamic",
     )
     
     uniprot = relationship(
@@ -364,13 +375,14 @@ class Pdb(Base):
 
     pdb_id = Column(Integer, primary_key=True)
     pdb_accession = Column(String)
-    genbank_id = Column(Integer, ForeignKey('Genbanks.genbank_id'))
     
     Index('pdb_idx', pdb_accession)
 
     genbank = relationship(
         "Genbank",
+        secondary=genbanks_pdbs,
         back_populates="pdbs",
+        lazy="dynamic",
     )
     
     def __str__(self):

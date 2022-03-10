@@ -54,14 +54,20 @@ from typing import List, Optional
 from tqdm import tqdm
 from Bio import SeqIO
 from Bio.Blast.Applications import NcbimakeblastdbCommandline
+from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.logger import config_logger
 
-
-from cazy_webscraper import cazy_webscraper
-from cazy_webscraper.expand import get_chunks_gen
+from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
-from cazy_webscraper.utilities import config_logger, file_io, parse_configuration
-from cazy_webscraper.utilities.parsers import pdb_strctre_parser
+from cazy_webscraper.sql.sql_interface.get_records import (
+    get_user_genbank_sequences,
+    get_user_uniprot_sequences
+)
+from cazy_webscraper.utilities import parse_configuration
+from cazy_webscraper.utilities.parsers.extract_seq_parser import build_parser
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -71,10 +77,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     start_time = pd.to_datetime(start_time)
     # parse cmd-line arguments
     if argv is None:
-        parser = pdb_strctre_parser.build_parser()
+        parser = build_parser()
         args = parser.parse_args()
     else:
-        args = pdb_strctre_parser.build_parser(argv).parse_args()
+        args = build_parser(argv).parse_args()
 
     if logger is None:
         logger = logging.getLogger(__package__)
@@ -85,19 +91,18 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # make output directories
     if args.fasta_file:
         target_dir = args.fasta_file.parent
-        file_io.make_output_directory(target_dir, args.force, args.nodelete)
+        make_output_directory(target_dir, args.force, args.nodelete)
     if args.fasta_dir:
-        file_io.make_output_directory(args.fasta_dir, args.force, args.nodelete)
+        make_output_directory(args.fasta_dir, args.force, args.nodelete)
 
-
-    connection, logger_name, cache_dir = cazy_webscraper.connect_existing_db(args, time_stamp)
+    connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
         cache_dir = cache_dir / "sequence_extraction"
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     (
         config_dict,
@@ -108,33 +113,78 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         ec_filters,
     ) = parse_configuration.get_expansion_configuration(args)
 
-    gbk_dict = get_selected_gbks.get_genbank_accessions(
-        class_filters,
-        family_filters,
-        taxonomy_filter_dict,
-        kingdom_filters,
-        ec_filters,
-        connection,
-    )
-    genbank_accessions = list(gbk_dict.keys())
+    gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
+    # {genbank_accession: 'taxa_id': str, 'gbk_id': int}
+
+    # check what additional tabled needed to be loaded
+    if any( ((args.genbank_accessions is not None), (args.uniprot_accessions is not None), ('genbank' in args.source)) ):
+        logger.info("Loading the GenBank table")
+        gbk_seq_dict = get_table_dicts.get_gbk_table_seq_dict(connection)
+        # {genbank_accession: 'sequence': str, 'seq_date': str}
+
+    if any( ((args.uniprot_accessions is not None), ('uniprot' in args.source)) ):
+        logger.info("Loading the UniProt table")
+        uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+        # {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
+
+    # build dick {gbk_acc: db_id} matching the users specified criteria
+    # either via a list in a file or parameters provided via config file and/or command line
+
+    gbk_dict = {}  # {gbk_acc: gbk_id}
+
+    if args.genbank_accessions is not None:
+        logger.warning(f"Extracting protein sequences for GenBank accessions listed in {args.genbank_accessions}")
+        gbk_dict.update(get_user_genbank_sequences(gbk_table_dict, args))
+    
+    if args.uniprot_accessions is not None:
+        logger.warning(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
+        gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
+
+    if len(list(gbk_dict.keys())) == 0:
+        gbk_dict = get_selected_gbks.get_genbank_accessions(
+            class_filters,
+            family_filters,
+            taxonomy_filter_dict,
+            kingdom_filters,
+            ec_filters,
+            connection,
+        )
+
+    # extract protein sequences from the database
 
     extracted_sequences = {}  # {accession: {'db': str, 'seq': str}}
-    if args.genbank:
-        extracted_sequences.update(get_genbank_sequences(gbk_dict, connection))
-    if args.uniprot:
-        extracted_sequences.update(get_uniprot_sequences(gbk_dict, connection))
+
+    if 'genbank' in args.source:
+        extracted_sequences.update(get_genbank_sequences(gbk_seq_dict, gbk_dict))
+
+    if 'uniprot' in args.source:
+        extracted_sequences.update(get_uniprot_sequences(uniprot_table_dict, gbk_dict))
 
     protein_records = []
     
     for protein_accession in tqdm(extracted_sequences, "Compiling SeqRecords"):
-        new_record = SeqRecord(
-            extracted_sequences[protein_accession]['seq'],
-            id=protein_accession,
-            description=extracted_sequences[protein_accession]['db']
-        )
-        protein_records.append(new_record)
+        try:
+            new_record = SeqRecord(
+                Seq(extracted_sequences[protein_accession]['seq']),
+                id=protein_accession,
+                description=extracted_sequences[protein_accession]['db']
+            )
+            protein_records.append(new_record)
+        except TypeError:
+            if extracted_sequences[protein_accession]['seq'] is not None:
+                logger.warning(
+                    f"Seq for {protein_accession} retrieved as type {type(extracted_sequences[protein_accession]['seq'])}\n"
+                    "Not adding to FASTA file"
+                )
+            pass  # passed when sequence is None
 
-    write_output(protein_records, args)
+    # write out the sequences to the specified outputs
+
+    logger.warning(f"Extracted {len(protein_records)}")
+
+    write_output(protein_records, cache_dir, args)
+
+    closing_message("extract_sequences", start_time, args)
     
 
 def validate_user_options(args):
@@ -146,18 +196,10 @@ def validate_user_options(args):
     """
     logger = logging.getLogger(__name__)
 
-    if args.genbank is False and args.uniprot is False:
-        logger.error(
-            "No external sequence sources provided\n"
-            "Call at least one of --genbank and --uniprot\n"
-            "Terminating program."
-        )
-        sys.exit(1)
-
-    if args.genbank:
+    if 'genbank' in args.source:
         logger.info("Extract GenBank protein sequences")
     
-    if args.uniprot:
+    if 'uniprot' in args.source:
         logger.info("Extracting UniProt protein sequences")
 
     if args.blastdb is False and args.fasta_dir is False and args.fasta_file is False:
@@ -185,19 +227,17 @@ def validate_user_options(args):
     return
 
 
-def get_genbank_sequences(gbk_dict, connection):
+def get_genbank_sequences(gbk_seq_dict, gbk_dict):
     """Extract protein seqeunces from the database
-    
+
+    :param gbk_seq_dict: dict {gbk_acc: {'sequence': str}}
     :param gbk_dict: dict of selected GenBank record {acc: id}
-    :param connection: open sqlalchemy connection to an SQLite db
     
     Return dict {gbk_acc: {'db': 'genbank', 'seq': str}}
     """
-    gbk_seq_dict = get_table_dicts.get_gbk_table_seq_dict(connection)
-
     extracted_sequences = {}  # {accession: {'db': str, 'seq': str}}
 
-    for gbk_accession in gbk_dict:
+    for gbk_accession in tqdm(gbk_dict, desc="Getting GenBank sequences"):
         extracted_sequences[gbk_accession] = {
             'db': 'GenBank',
             'seq': gbk_seq_dict[gbk_accession]['sequence'],
@@ -206,33 +246,26 @@ def get_genbank_sequences(gbk_dict, connection):
     return extracted_sequences
 
 
-def get_uniprot_sequences(gbk_dict, connection):
+def get_uniprot_sequences(uniprot_table_dict, gbk_dict):
     """Extract protein seqeunces from the database
     
+    :param uniprot_table_dict: {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
     :param gbk_dict: dict of selected GenBank record {acc: id}
-    :param connection: open sqlalchemy connection to an SQLite db
     
     Return dict {gbk_acc: {'db': 'genbank', 'seq': str}}
     """
-    uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
-    # dict = {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
-
-    gbk_uniprot_dict = {}  # {gbk_id: {uniprot_acc: str, seq: str}}
-    
-    for uniprot_accession in uniprot_table_dict:
-        gbk_id = uniprot_table_dict[uniprot_accession]['gbk_id']
-        seq = uniprot_table_dict[uniprot_accession]['seq']
-        gbk_uniprot_dict[gbk_id] = {'uniprot_accession': uniprot_accession, 'seq': seq}
+    # get the db ids of selected gbks
+    selected_genbanks = [gbk_dict[gbk_acc] for gbk_acc in gbk_dict]
 
     extracted_sequences = {}  # {accession: {'db': str, 'seq': str}}
 
-    for gbk_accession in gbk_dict:
-        gbk_id = gbk_dict[gbk_accession]['gbk_id']
-
-        extracted_sequences[gbk_accession] = {
-            'db': 'UniProt',
-            'seq': gbk_uniprot_dict[gbk_accession][gbk_id]['seq'],
-        }
+    for uniprot_accession in tqdm(uniprot_table_dict, desc="Getting UniProt sequencse from db"):
+        gbk_id = uniprot_table_dict[uniprot_accession]['genbank_id']
+        if gbk_id in selected_genbanks:
+            extracted_sequences[uniprot_accession] = {
+                'db': 'UniProt',
+                'seq': uniprot_table_dict[uniprot_accession]['seq'],
+            }
 
     return extracted_sequences
 
@@ -249,7 +282,6 @@ def write_output(protein_records, cache_dir, args):
     logger = logging.getLogger(__name__)
 
     if args.fasta_file:
-    
         SeqIO.write(protein_records, args.fasta_file, "fasta")
 
     if args.fasta_dir:

@@ -42,7 +42,8 @@
 import json
 import logging
 import os
-import time
+import sys
+from tracemalloc import get_object_traceback
 
 import pandas as pd
 
@@ -52,6 +53,7 @@ from typing import List, Optional
 
 from Bio import Entrez
 from saintBioutils.genbank import entrez_retry
+from saintBioutils.misc import get_chunks_list
 from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
@@ -94,15 +96,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # make cache_dir
     make_output_directory(cache_dir, args.force_cache, args.nodelete_cache)
 
-    no_accession_logger = cache_dir / "logs"
-    # make logs dir
-    make_output_directory(no_accession_logger, args.force_cache, args.nodelete_cache)
-    no_accession_logger = no_accession_logger / f"no_genomic_accession_retrieved_{time_stamp}.log"
+    no_accession_logger = cache_dir / f"no_genomic_accession_retrieved_{time_stamp}.log"
 
     # load Genbank and Kingdom records from the db
     logger.warning("Retrieving Genbanks, Taxs and Kingdoms records from the local CAZyme db")
     genbank_kingdom_dict = get_table_dicts.get_gbk_kingdom_dict(connection)
-    logger.warning("Retrieved Genbanks, Taxs and Kingdoms records from the local CAZyme db")
+    # {kingdom: {genus: {species: {protein_accessions}}}
+
+    logger.warning(f"Retrieved Genbanks, Taxs and Kingdoms records from the local CAZyme db")
 
     nucleotide_accessions_dict = get_nucleotide_accessions(
         genbank_kingdom_dict,
@@ -150,222 +151,300 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
 
 
-def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, args):
+def get_nucleotide_accessions(genbank_kingdom_dict, no_accession_logger, cache_dir, args):
     """Retrieve the NCBI Nucleotide db records ID's containing the GenBank protein accessions.
     
     :param genbank_kingdom_dict: dict of Genbank and Kingdom records from db
         {kingdom: {genus: {species: {protein_accessions}}}
     :param no_accession_logger: Path, path to log file to save protein accessions for which no 
         genomic accession was retrieved
+    :param cache_dir: Path to cache directory
     :param args: cmd-line args parser
     
     Return dict {kingdom: {genus: {species: {nucleotide_accession: {protein_accessions},},},},}
     """
     logger = logging.getLogger(__name__)
 
+    # convert the structure of genbank_kingdom_dict
+    # { protein_accession: {species: str, genus: str, kingdom} }
+    if args.gbk_organisms_relationships is not None:
+        logger.warning(f"Retriving protein-organisms relationships from file: {args.gbk_organisms_relationships}")
+        try:
+            with open(args.gbk_organisms_relationships, "r") as fh:
+                gbk_organism_dict = json.load(fh)
+        except FileNotFoundError:
+            logger.warning(
+                f"Could not find JSON file containing protein-organisms relationships at: {args.gbk_organisms_relationships}\n"
+                "Check the correct path was given.\n"
+                "Terminating program"
+            )
+            sys.exit(1)
+    else:
+        logger.warning("Retrieving protein-organism relationships from the local database")
+        gbk_organism_dict = get_gbk_organism_relationships(genbank_kingdom_dict)
+
+    # create dict to store the nucleotide records accessions
     nucleotide_accessions_dict = {}
     # {kingdom: {genus: {species: {nucleotide record accessio: {protein_accessions},},},},}
 
+    # create a dict to keep track of protein accessions for which a nucleotide record was retrieved
+    # store all retrieved ncucleotide accessions to prevent retrieval of the
+    # same assembly record multiple times
     retrieved_proteins = {}  # {protein_accession: nucleotide record accession}
 
-    # store all retrieved ncucleotide accessions to prevent retrieval of the same assembly record multiple times
-    
-    for kingdom in tqdm(genbank_kingdom_dict, desc="Retrieving nucleotide record accessions per kingdom"):
-        genera = genbank_kingdom_dict[kingdom]
+    # create set of protein accessions for which no nucleotide ID was retrievied
+    no_retrieved_nucleotide_ids = set()
 
-        gbk_organism_dict = {}  # protein_accession: {species: str, genus: str}
+    # gbk accessions waiting for a nucleotide id to be retrieved
+    remaining_accessions = list(gbk_organism_dict.keys())
 
-        for genus in genera:
-            organisms = genera[genus]
+    # break up the list into batches
+    gbk_accessions = list(gbk_organism_dict.keys())
+    gbk_batches = get_chunks_list(gbk_accessions, args.batch_size)
 
-            for species in organisms:
-                for gbk_acc in organisms[species]:
-                    gbk_organism_dict[gbk_acc] = {'species': species, 'genus': genus}
-        
-        # retrieve all Gbk protein accessions for the given genera
-        gbk_accessions = list(gbk_organism_dict.keys())
+    failed_batches = set()
 
-        # gbk accessions waiting for a nucleotide id to be retrieved
-        remaining_accessions = list(gbk_organism_dict.keys())
+    for batch in tqdm(gbk_batches, desc="Batching quering NCBI for nucleotide IDs"):
+        # eLink Protein to Nuccore db and retrieve IDs of linked nucleotide records
+        batch_query_ids = ",".join(batch)
 
-        while len(remaining_accessions) != 0:
-            starting_loop_length = len(remaining_accessions)
-            logger.warning(f"{len(remaining_accessions)} Gbk accessions remaining to be parsed for {kingdom}")
-            
-            accessions_to_parse = remaining_accessions[:args.batch_size]
-
-            # eLink Protein to Nuccore db and retrieve IDs of linked nucleotide records
-            batch_query_ids = ",".join(accessions_to_parse)
+        try:
             with entrez_retry(
-                args.retries, Entrez.epost, "Protein", id=batch_query_ids,
+                args.retries,
+                Entrez.epost,
+                "Protein",
+                id=batch_query_ids,
             ) as handle:
-                batch_post = Entrez.read(handle)
+                epost_result = Entrez.read(handle)
+        except RuntimeError:
+            logger.warning(
+                "Runtime error raised when batch quering\n"
+                "Possible result of a accessions not being in NCBI\n"
+                "Attempt identification of the causal accession later\n"
+            )
+            failed_batches.add(batch)
+            continue
 
-            # {protein record ID: {nucleotide records IDs}}
-            nucleotide_ids = entrez.get_linked_nucleotide_record_ids(batch_post, args)
+        epost_webenv = epost_result["WebEnv"]
+        epost_query_key = epost_result["QueryKey"]
 
-            if nucleotide_ids is None: 
+        try:
+            with entrez_retry(
+                args.retries,
+                Entrez.elink,
+                dbfrom="Protein",
+                db="nuccore",
+                query_key=epost_webenv,
+                WebEnv=epost_query_key,
+                linkname='protein_nuccore',
+            ) as handle:
+                batch_nuccore = Entrez.read(handle)
+        except Exception as err:
+            logger.warning(
+                f"Failed Entrez connection: {err}\n"
+                "No nucletoide IDs retrieved for batch query\n"
+                "Will try again later"
+            )
+            failed_batches.add(batch)
+            continue
+
+        # parse the query result from nuccore
+
+        # {protein record ID: {nucleotide records IDs}}
+        nucleotide_ids = entrez.get_linked_nucleotide_record_ids(batch_nuccore)
+
+        if nucleotide_ids is None: 
+            # issue with at least one accession in the batch
+            # e.g. it is not longer stored in NCBI
+            # pass individually to find/parse the bad accession(s)
+            nucleotide_ids, no_nucleotides = entrez.link_nucleotide_ids_individually(
+                accessions_to_parse,
+                no_accession_logger,
+                args,
+            )
+
+            # no nucleotide IDs retrieved for at least one protein
+            if len(no_nucleotides) != 0:
+                logger.warning(f"{len(no_nucleotides)} proteins found with no linked Nucleotide records")
+                for protein_accession in no_nucleotides:
+                    # already logged in link_nucleotide_ids_individually()
+                    try:
+                        remaining_accessions.remove(protein_accession)
+                        no_retrieved_nucleotide_ids.add(protein_accession)
+                    except ValueError:
+                        pass
+        
+        if len(list(nucleotide_ids.values())) == 0:
+            # no linked Nucleotide records retrieved for the current batch of protein accessions
+            for protein_accession in accessions_to_parse:
+                logger.warning(
+                    f"Could not reitreve linked Nucleotide record for {protein_accession}"
+                )
+                no_retrieved_nucleotide_ids.add(protein_accession)
+                # do not try to retrieve record again
+                try:
+                    remaining_accessions.remove(protein_accession)
+                except ValueError:
+                    pass
+            continue
+
+        # retrieves the nucleotide records IDs for protein records for whcih only one
+        # nuclotide ID was retrieved
+        single_nucleotide_ids = set()
+
+        # retrieve the protein_record_ids of protein records from which multiple nucletoide 
+        # record IDs were retrieved
+        protein_records_multi_nuc = set()
+
+        for protein_record_id in tqdm(nucleotide_ids, desc="Idenitfying proteins with multiple linked nucleotide records"):
+            if len(nucleotide_ids[protein_record_id]) == 1:
+                single_nucleotide_ids.add(list(nucleotide_ids[protein_record_id])[0])
+            else:
+                logger.warning(
+                    f"Found {len(nucleotide_ids[protein_record_id])} linked nucletoide records "
+                    f"for protein record {protein_record_id}"
+                    )
+                protein_records_multi_nuc.add(protein_record_id)
+
+        # batch query to fetch nucletoide records for protein records
+        # from which only a sinlge nucleotide ID was retrieved
+        if len(single_nucleotide_ids) != 0:
+            retrieved_proteins, newly_retrieved_proteins, succcess = entrez.extract_protein_accessions(
+                single_nucleotide_ids,
+                retrieved_proteins,
+                gbk_accessions,
+                args,
+            )
+            if succcess is False:
                 # issue with at least one accession in the batch
                 # e.g. it is not longer stored in NCBI
                 # pass individually to find/parse the bad accession(s)
-                nucleotide_ids, no_nucleotides = entrez.link_nucleotide_ids_individually(
-                    accessions_to_parse,
-                    no_accession_logger,
-                    args,
-                )
-
-                if len(no_nucleotides) != 0:
-                    logger.warning(f"{len(no_nucleotides)} proteins found with no linked Nucleotide records")
-                    for protein_accession in no_nucleotides:
-                        # already logged in link_nucleotide_ids_individually()
-                        try:
-                            remaining_accessions.remove(protein_accession)
-                        except ValueError:
-                            pass
-            
-            if len(list(nucleotide_ids.values())) == 0:
-                # no linked Nucleotide records retrieved for the current batch of protein accessions
-                for protein_accession in accessions_to_parse:
-                    logger.warning(
-                        f"Could not reitreve linked Nucleotide record for {protein_accession}"
-                    )
-                    # do not try to retrieve record again
-                    try:
-                        remaining_accessions.remove(protein_accession)
-                    except ValueError:
-                        pass
-                continue
-
-            # retrieves the nucleotide records IDs for protein records for whcih only one
-            # nuclotide ID was retrieved
-            single_nucleotide_ids = set()
-
-            # retrieve the protein_record_ids of protein records from which multiple nucletoide 
-            # record IDs were retrieved
-            protein_records_multi_nuc = set()
-
-            for protein_record_id in tqdm(nucleotide_ids, desc="Idenitfying proteins with multiple linked nucleotide records"):
-                if len(nucleotide_ids[protein_record_id]) == 1:
-                    single_nucleotide_ids.add(list(nucleotide_ids[protein_record_id])[0])
-                else:
-                    logger.warning(
-                        f"Found {len(nucleotide_ids[protein_record_id])} linked nucletoide records "
-                        f"for protein record {protein_record_id}"
-                        )
-                    protein_records_multi_nuc.add(protein_record_id)
-
-            # batch query to fetch nucletoide records for protein records
-            # from which only a sinlge nucleotide ID was retrieved
-            if len(single_nucleotide_ids) != 0:
-                retrieved_proteins, newly_retrieved_proteins, succcess = entrez.extract_protein_accessions(
+                retrieved_proteins, newly_retrieved_proteins = entrez.extract_protein_accessions_individually(
                     single_nucleotide_ids,
                     retrieved_proteins,
                     gbk_accessions,
                     args,
                 )
-                if succcess is False:
-                    # issue with at least one accession in the batch
-                    # e.g. it is not longer stored in NCBI
-                    # pass individually to find/parse the bad accession(s)
-                    retrieved_proteins, newly_retrieved_proteins = entrez.extract_protein_accessions_individually(
-                        single_nucleotide_ids,
-                        retrieved_proteins,
-                        gbk_accessions,
-                        args,
-                    )
 
-                # add the nucleotide accessions to the nucleotide_accessions_dict
-                # {kingdom: {genus: {species: {nucleotide record accessio: {protein_accessions},},},},}
-                nucleotide_accessions_dict = add_nucleotide_accessions(
-                    nucleotide_accessions_dict,
-                    gbk_organism_dict,
-                    retrieved_proteins,
-                    newly_retrieved_proteins,
-                    kingdom,
-                    no_accession_logger,
-                )
+            # add the nucleotide accessions to the nucleotide_accessions_dict
+            # {kingdom: {genus: {species: {nucleotide record accessio: {protein_accessions},},},},}
+            nucleotide_accessions_dict = add_nucleotide_accessions(
+                nucleotide_accessions_dict,
+                gbk_organism_dict,
+                retrieved_proteins,
+                newly_retrieved_proteins,
+                kingdom,
+                no_accession_logger,
+            )
 
-            # for Protein records for which multiple Nucleotide record IDs were retrieved
-            # Identify the longest Nucleotide record and retrieve protein accessions from it
-            # The longest record is most likely to be the most complete record
-            for protein_record_id in tqdm(protein_records_multi_nuc, "Parsing protein records with multiple linked Nucletide records"):
-                nucleotide_record_ids = nucleotide_ids[protein_record_id]
+        # for Protein records for which multiple Nucleotide record IDs were retrieved
+        # Identify the longest Nucleotide record and retrieve protein accessions from it
+        # The longest record is most likely to be the most complete record
+        for protein_record_id in tqdm(protein_records_multi_nuc, "Parsing protein records with multiple linked Nucletide records"):
+            nucleotide_record_ids = nucleotide_ids[protein_record_id]
 
-                retrieved_proteins, newly_retrieved_proteins, success = entrez.parse_longest_record(
+            retrieved_proteins, newly_retrieved_proteins, success = entrez.parse_longest_record(
+                nucleotide_record_ids,
+                retrieved_proteins,
+                gbk_accessions,
+                args,
+            )
+
+            if success is False:
+                # issue with at least one accession in the batch
+                # e.g. it is not longer stored in NCBI
+                # pass individually to find/parse the bad accession(s)
+                retrieved_proteins, newly_retrieved_proteins, success = entrez.parse_longest_record_individually(
                     nucleotide_record_ids,
                     retrieved_proteins,
                     gbk_accessions,
                     args,
                 )
 
-                if success is False:
-                    # issue with at least one accession in the batch
-                    # e.g. it is not longer stored in NCBI
-                    # pass individually to find/parse the bad accession(s)
-                    retrieved_proteins, newly_retrieved_proteins, success = entrez.parse_longest_record_individually(
-                        nucleotide_record_ids,
-                        retrieved_proteins,
-                        gbk_accessions,
-                        args,
-                    )
+            nucleotide_accessions_dict = add_nucleotide_accessions(
+                nucleotide_accessions_dict,
+                gbk_organism_dict,
+                retrieved_proteins,
+                newly_retrieved_proteins,
+                kingdom,
+                no_accession_logger,
+            )
 
-                nucleotide_accessions_dict = add_nucleotide_accessions(
-                    nucleotide_accessions_dict,
-                    gbk_organism_dict,
-                    retrieved_proteins,
-                    newly_retrieved_proteins,
-                    kingdom,
-                    no_accession_logger,
+        # remove protein accessions from remaining_accessions because the linked Nucleotide 
+        # record ID has already been retrieved
+        for protein_accession in retrieved_proteins:
+            try:
+                remaining_accessions.remove(protein_accession)
+            except ValueError:
+                pass
+
+        if starting_loop_length == len(remaining_accessions) and len(remaining_accessions) != 0:
+            # failing to retrieve data for protein accessions
+            nucleotide_ids, no_nucleotides = entrez.link_nucleotide_ids_individually(
+                accessions_to_parse,
+                no_accession_logger, 
+                args,
+            )
+
+            if nucleotide_ids is None:
+                for protein_accession in remaining_accessions:
+                    logger.warning(
+                            f"Could not retrieve  Nucletoide record for {protein_accession}"
+                        )
+                    try:
+                        remaining_accessions.remove(protein_accession)
+                    except ValueError:
+                        pass
+                continue
+            
+        if len(list(nucleotide_ids.values())) == 0:
+            # no linked Nucleotide records retrieved for the current batch of protein accessions
+            for protein_accession in accessions_to_parse:
+                logger.warning(
+                    f"Could not reitreve linked Nucleotide record for {protein_accession}"
                 )
-
-            # remove protein accessions from remaining_accessions because the linked Nucleotide 
-            # record ID has already been retrieved
-            for protein_accession in retrieved_proteins:
+                # do not try to retrieve record again
                 try:
                     remaining_accessions.remove(protein_accession)
                 except ValueError:
                     pass
-
-            if starting_loop_length == len(remaining_accessions) and len(remaining_accessions) != 0:
-                # failing to retrieve data for protein accessions
-                nucleotide_ids, no_nucleotides = entrez.link_nucleotide_ids_individually(
-                    accessions_to_parse,
-                    no_accession_logger, 
-                    args,
-                )
-
-                if nucleotide_ids is None:
-                    for protein_accession in remaining_accessions:
-                        logger.warning(
-                                f"Could not retrieve  Nucletoide record for {protein_accession}"
-                            )
-                        try:
-                            remaining_accessions.remove(protein_accession)
-                        except ValueError:
-                            pass
-                    continue
-                
-            if len(list(nucleotide_ids.values())) == 0:
-                # no linked Nucleotide records retrieved for the current batch of protein accessions
-                for protein_accession in accessions_to_parse:
-                    logger.warning(
-                        f"Could not reitreve linked Nucleotide record for {protein_accession}"
-                    )
-                    # do not try to retrieve record again
-                    try:
-                        remaining_accessions.remove(protein_accession)
-                    except ValueError:
-                        pass
+    
+        if len(no_nucleotides) != 0:
+            for protein_accession in no_nucleotides:
+                # already logged in link_nucleotide_ids_individually()
+                try:
+                    remaining_accessions.remove(protein_accession)
+                except ValueError:
+                    pass
         
-            if len(no_nucleotides) != 0:
-                for protein_accession in no_nucleotides:
-                    # already logged in link_nucleotide_ids_individually()
-                    try:
-                        remaining_accessions.remove(protein_accession)
-                    except ValueError:
-                        pass
-            
     return nucleotide_accessions_dict
+
+
+def get_gbk_organism_relationships(genbank_kingdom_dict, cache_dir):
+    """Restructure the gbk_kingomds_dict to be keyed by genbank accessions.
+    
+    :param genbank_kingdom_dict: dict, {kingdom: {genus: {species: {protein_accessions}}}}
+    :param cache_dir: path to cache directory
+
+    Return gbk_organism_dict dict { protein_accession: {species: str, genus: str, kingdom} }
+    """
+    gbk_organism_dict = {}  # { protein_accession: {species: str, genus: str, kingdom} }
+
+    for kingdom in tqdm(genbank_kingdom_dict, desc="Retrieving protein-organisms relationships per kingdom"):
+        genera = genbank_kingdom_dict[kingdom]
+
+        for genus in tqdm(genera, desc=f"Parsing genera of {kingdom}"):
+            organisms = genera[genus]
+
+            for species in organisms:
+                for gbk_acc in organisms[species]:
+                    gbk_organism_dict[gbk_acc] = {'species': species, 'genus': genus, 'kingdom': kingdom}
+
+    gbk_organism_dict_path = cache_dir / "gbk_organisms_relationships.json"
+    with open(gbk_organism_dict_path, "w") as fh:
+        json.dump(gbk_organism_dict, fh)
+
+    return gbk_organism_dict
 
 
 def add_nucleotide_accessions(

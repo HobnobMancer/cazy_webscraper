@@ -41,21 +41,22 @@
 """Retrieve data from UniProtKB and adding it to a local CAZyme db"""
 
 
+import json
 import logging
-import urllib.parse
-import urllib.request
 
 import pandas as pd
 
 from datetime import datetime
 from typing import List, Optional
-from urllib.error import HTTPError
 
 from bioservices import UniProt
+from saintBioutils.misc import get_chunks_list
+from saintBioutils.uniprot import get_uniprot_accessions
+from saintBioutils.utilities.file_io import make_output_directory
+from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
-from cazy_webscraper import cazy_scraper
-from cazy_webscraper.expand import get_chunks_list
+from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_uniprot_data import (
@@ -64,9 +65,10 @@ from cazy_webscraper.sql.sql_interface.add_uniprot_data import (
     add_uniprot_accessions,
 )
 from cazy_webscraper.sql import sql_orm
-from cazy_webscraper.utilities import config_logger, file_io
-from cazy_webscraper.utilities.parsers import uniprot_parser
+from cazy_webscraper.utilities.parsers.uniprot_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
+
+import sys
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -76,10 +78,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # Program preparation
     if argv is None:
-        parser = uniprot_parser.build_parser()
+        parser = build_parser()
         args = parser.parse_args()
     else:
-        parser = uniprot_parser.build_parser(argv)
+        parser = build_parser(argv)
         args = parser.parse_args()
 
     if logger is None:
@@ -87,14 +89,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         config_logger(args)
     
     # parse the configuration data (cache the uniprot data as .csv files)
-    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp)
+    connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
 
+    # build cache directory
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
         cache_dir = cache_dir / "uniprot_data_retrieval"
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     (
         config_dict,
@@ -107,21 +110,23 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # add log to the local CAZyme database
     logger.info("Adding log of scrape to the local CAZyme database")
+
+    retrieved_annotations = "UniProt accessions, Protein names"
+    if args.ec:
+        retrieved_annotations += ", EC numbers"
+    if args.pdb:
+        retrieved_annotations += ", PDB accessions"
+    if args.sequence:
+        retrieved_annotations += ", Protein sequence"
+    if args.seq_update:
+        retrieved_annotations += ", Updated UniProt protein sequences"
+
     with sql_orm.Session(bind=connection) as session:
-        retrieved_annotations = "UniProt accessions"
-        if len(config_dict['ec']) != 0:
-            retrieved_annotations = f"{retrieved_annotations}, EC numbers"
-        if len(config_dict['pdb']) != 0:
-            retrieved_annotations = f"{retrieved_annotations}, PDB accessions"
-        if len(config_dict['seq']) != 0:
-            retrieved_annotations = f"{retrieved_annotations}, Protein sequence"
-        if args.seq_update:
-            retrieved_annotations = f"{retrieved_annotations}, Updated UniProt protein sequences"
         sql_interface.log_scrape_in_db(
             time_stamp,
             config_dict,
-            kingdom_filters,
             taxonomy_filter_dict,
+            kingdom_filters,
             ec_filters,
             'UniProt',
             retrieved_annotations,
@@ -129,22 +134,75 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             args,
         )
 
-    # retrieve dict of genbank accession and genbank accession ids from the local CAZyme db
-    gbk_dict = get_selected_gbks.get_genbank_accessions(
-        class_filters,
-        family_filters,
-        taxonomy_filter_dict,
-        kingdom_filters,
-        ec_filters,
-        connection,
-    )
-    genbank_accessions = list(gbk_dict.keys())
+    # retrieve dict of genbank accession and genbank db ids from the local CAZyme db
+    if args.genbank_accessions is not None:
+        logger.warning(f"Getting GenBank accessions from file: {args.genbank_accessions}")
+        with open(args.genbank_accessions, "r") as fh:
+            lines = fh.read().splitlines()
+        
+        accessions = [line.strip() for line in lines]
+        accessions = set(accessions)
 
-    # retrieve the uniprot accessions for the genbank accessions
-    uniprot_gkb_dict = get_uniprot_accessions(genbank_accessions)  # {uniprot_acc: gbk_acc}
-    uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir)
+        gbk_dict = get_selected_gbks.get_ids(accessions, connection)
+
+    else:
+        gbk_dict = get_selected_gbks.get_genbank_accessions(
+            class_filters,
+            family_filters,
+            taxonomy_filter_dict,
+            kingdom_filters,
+            ec_filters,
+            connection,
+        )
+
+    logger.warning(f"Retrieving UniProt data for {len(gbk_dict.keys())}")
+
+    # if using cachce skip accession retrieval
+    if args.use_uniprot_cache is not None:
+        logger.warning(f"Using UniProt data from cache: {args.use_uniprot_cache}")
+        with open(args.use_uniprot_cache, "r") as fh:
+            uniprot_dict = json.load(fh)
+
+        if args.ec:
+            all_ecs = get_ecs_from_cache(uniprot_dict)
+        else:
+            all_ecs = set()
+
+    else:
+
+        # Get the UniProt accessions/IDs for the corresponding GenBank accessions
+        if args.skip_uniprot_accessions is not None:
+            logger.warning(f"Using UniProt accessions from cache: {args.skip_uniprot_accessions}")
+            with open(args.skip_uniprot_accessions, "r") as fh:
+                uniprot_gkb_dict = json.load(fh)
+
+        else:
+            uniprot_gkb_dict = get_uniprot_accessions(gbk_dict, args)  # {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
+
+            uniprot_acc_cache = cache_dir / f"uniprot_accessions_{time_stamp}.json"
+            with open(uniprot_acc_cache, "w") as fh:
+                json.dump(uniprot_gkb_dict, fh)
+
+        # get data from UniProt
+        uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir, args)
+
+        # converts sets to lists for json serialisation
+        for uniprot_accession in uniprot_dict:
+            try:
+                uniprot_dict[uniprot_accession]['ec'] = list(uniprot_dict[uniprot_accession]['ec'])
+            except KeyError:
+                pass
+            try:
+                uniprot_dict[uniprot_accession]['pdb'] = list(uniprot_dict[uniprot_accession]['pdb'])
+            except KeyError:
+                pass
+
+        uniprot_acc_cache = cache_dir / f"uniprot_data_{time_stamp}.json"
+        with open(uniprot_acc_cache, "w") as fh:
+            json.dump(uniprot_dict, fh)   
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
+    logger.warning("Adding data to the local CAZyme database")
     add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args)
 
     # add ec numbers
@@ -155,99 +213,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.pdb:
         add_pdb_accessions(uniprot_dict, gbk_dict, connection, args)
 
-    end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    end_time = pd.to_datetime(end_time)
-    total_time = end_time - start_time
-
-    if args.verbose:
-        logger.info(
-            "Finished getting data from UniProt\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {cazy_scraper.VERSION_INFO}\n"
-            f"Citation: {cazy_scraper.CITATION_INFO}"
-        )
-    else:
-        print(
-            "=====================cazy_webscraper=====================\n"
-            "Finished getting data from UniProt\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {cazy_scraper.VERSION_INFO}\n"
-            f"Citation: {cazy_scraper.CITATION_INFO}"
-        )
-
-
-def get_uniprot_accessions(genbank_accessions, args):
-    """Retrieve UniProt accessions for the GenBank accessions from UniProt REST API.
-    
-    UniProt requests batch queries of no larger than 20,000, athough queries longer than 500
-    often raise HTTP 400 Error codes, especially in busy server times.
-
-    :param genbank_accessions: set, GenBank accessions to retrieve UniProt accessions for
-    :param args: cmd-line args parser
-
-    Return dict of {uniprot_accession: genbank_accession}
-    """
-    logger = logging.getLogger(__name__)
-    uniprot_url = 'https://www.uniprot.org/uploadlists/'
-
-    uniprot_rest_queries = get_chunks_list(genbank_accessions, args.uniprot_batch_size)
-
-    uniprot_gbk_dict = {}  # {uniprot_accession: gbk_accession}
-    failed_queries = {}  # {query: tries}
-
-    for query_chunk in tqdm(
-        uniprot_rest_queries,
-        desc='Batch retrieving UniProt accessions',
-    ):
-        if type(query) != str:
-            # convert the set of gbk accessions into str format
-            query = ' '.join(query_chunk)
-
-        params = {
-            'from': 'EMBL',
-            'to': 'ACC',
-            'format': 'tab',
-            'query': query
-        }
-
-        # submit query data
-        data = urllib.parse.urlencode(params)
-        data = data.encode('utf-8')
-        req = urllib.request.Request(uniprot_url, data)
-
-        # retrieve UniProt response
-        try:
-            with urllib.request.urlopen(req) as f:
-                response = f.read()
-        except HTTPError:
-            try:
-                failed_queries[query] += 1
-            except KeyError:
-                failed_queries[query] = 1
-            if failed_queries[query] > args.retries:
-                del failed_queries[query]
-            else:
-                uniprot_rest_queries.append(query)
-
-        uniprot_batch_response = response.decode('utf-8')
-
-        uniprot_batch_response = uniprot_batch_response.split('\n')
-
-        for line in uniprot_batch_response[1:]:  # the first line includes the titles, last line is an empty str
-            if line == '':  # add check incase last line is not an empty str 
-                continue
-            uniprot_gbk_dict[line.split('\t')[1]] = line.split('\t')[0]
-
-    logger.info(
-        f"Retrieved {len(genbank_accessions)} gbk accessions from the local db\n"
-        f"{len(list(uniprot_gbk_dict.keys()))} were assoicated with records in UniProt"
-    )
-
-    return uniprot_gbk_dict
+    closing_message("get_uniprot_data", start_time, args)
 
 
 def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
@@ -255,7 +221,8 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
     
     Bioservices requests batch queries no larger than 200.
 
-    :param uniprot_gbk_dict: dict, keyed by GenBank accession and valued by UniProt accession
+    :param uniprot_gbk_dict: dict, keyed by UniProt accession and valued by dict of a GenBank accession
+        and the local CAZyme db record ID {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
     :param cache_dir: path to directory to write out cache
     :param args: cmd-line args parser
     
@@ -278,7 +245,7 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
     )
 
     for query in tqdm(bioservices_queries, "Batch retrieving protein data from UniProt"):
-        uniprot_df = UniProt().get_df(entries=query)
+        uniprot_df = UniProt().get_df(entries=query, limit=None)
 
         # cache UniProt response
         _time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -291,15 +258,39 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
             'Protein names',
             'EC number',
             'Sequence',
+            'Date of last sequence modification',
             'Cross-reference (PDB)',
         ]]
 
+
         for index in tqdm(range(len(uniprot_df['Entry'])), desc="Parsing UniProt response"):
             row = uniprot_df.iloc[index]
-            uniprot_acc = row['Entry']
-            uniprot_name = row['Protein names']
+            uniprot_acc = row['Entry'].strip()
+            try:
+                uniprot_name = row['Protein names'].strip()
+
+            except AttributeError:
+                logger.warning(
+                    f"Protein name {row['Protein names']} was returned as float not string. Converting to string"
+                )
+                uniprot_name = str(row['Protein names'])
+
+            # remove quotation marks from the protein name, else an SQL error will be raised on insert
+            uniprot_name = uniprot_name.replace("'", "")
+            uniprot_name = uniprot_name.replace('"', '')
+            uniprot_name = uniprot_name.replace("`", "")
 
             # checked if parsed before incase bioservices returned duplicate proteins
+            try:
+                uniprot_gbk_dict[uniprot_acc]
+            except KeyError:
+                logger.warning(
+                    f"UniProt ID {uniprot_acc} was retrieved from UniProt\n"
+                    "But no corresponding record was found in the local CAZyme database\n"
+                    "Skipping this UniProt ID"
+                )
+                continue  # uniprot ID does not match any retrieved previously
+
             try:
                 uniprot_dict[uniprot_acc]
                 logger.warning(
@@ -312,7 +303,7 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
                     uniprot_dict[uniprot_acc] = {
                         "genbank_accession": uniprot_gbk_dict[uniprot_acc],
                         "name": uniprot_name,
-                        }
+                    }
                 except KeyError:
                     logger.warning(
                         f"Retrieved record with UniProt accession {uniprot_acc} but this "
@@ -337,14 +328,14 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
                 # add EC numbers to dict
                 for ec in ec_numbers:
                     all_ecs.add( (ec,) )
-                    uniprot_dict[uniprot_acc]["ec"].add(ec)
+                    uniprot_dict[uniprot_acc]["ec"].add(ec.strip())
 
             if args.pdb:
                 # retrieve PDB accessions
                 pdb_accessions = row['Cross-reference (PDB)']
-                print('PDBS:', pdb_accessions)
                 try:
-                    pdb_accessions = pdb_accessions.split('; ')
+                    pdb_accessions = pdb_accessions.split(';')
+                    pdb_accessions = [pdb.strip() for pdb in pdb_accessions if len(pdb.strip()) > 0]
                 except AttributeError:
                     pdb_accessions = set()
 
@@ -355,7 +346,7 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
 
                 # add PDB accessions to dict
                 for pdb in pdb_accessions:
-                    uniprot_dict[uniprot_acc]["pdb"].add(pdb)
+                    uniprot_dict[uniprot_acc]["pdb"].add(pdb.strip())
             
             if args.sequence:
                 sequence = row['Sequence']
@@ -385,6 +376,26 @@ def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
                     uniprot_dict[uniprot_acc]["seq_date"] = row['Date of last sequence modification']
 
     return uniprot_dict, all_ecs
+
+
+def get_ecs_from_cache(uniprot_dict):
+    """Extract all unique EC numbers from the UniProt data cache.
+    
+    :param uniprot_dict: dict of data retrieved from UniProt.
+    
+    Return set of EC numbers.
+    """
+    all_ecs = set()
+
+    for uniprot_acc in tqdm(uniprot_dict, desc="Getting EC numbers from cached data"):
+        try:
+            ecs = uniprot_dict[uniprot_acc]["ec"]
+            for ec in ecs:
+                all_ecs.add( (ec,) )
+        except (ValueError, TypeError, KeyError):
+            pass
+
+    return all_ecs
 
 
 if __name__ == "__main__":

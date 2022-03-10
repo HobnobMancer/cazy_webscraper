@@ -46,17 +46,15 @@ from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
 
 
-def get_linked_nucleotide_record_ids(batch_post, args):
-    """Use Entrez.elink to get the ID of the NCBI.Nucleotide db record linked to the NCBI.Protein
-    db record.
+def get_linked_nucleotide_record_ids(batch_nuccore):
+    """Parse the Entrez efetch XML result.
     
     In the resulting dict, the protein record ID is used to group nucleotide records that are 
     linked to the same protein record, and from which it will need to be determined which is
     the longest record, so that only one (and the longest) Nucleotide record is parsed for this protein
     not all retrieved Nucleotide records.
 
-    :param batch_post: Entrez dict containing WebEnv and query_key from batch posting protein accessions
-    :param args: cmd-line args parser
+    :param batch_nuccore: Entrez efetch xml query result
 
     Return dict {protein_accession: {nucleotide records IDs}}
     Return None if cannot retrieve data from NCBI
@@ -64,21 +62,6 @@ def get_linked_nucleotide_record_ids(batch_post, args):
     logger = logging.getLogger(__name__)
 
     nucleotide_ids = {}  # {protein_record_id: {nucleotide_ids}}
-    # used for identifying which nucleotide record to retrieve protein accessions from
-    with entrez_retry(
-        args.retries,
-        Entrez.elink,
-        dbfrom="Protein",
-        db="nuccore",
-        query_key=batch_post['QueryKey'],
-        WebEnv=batch_post['WebEnv'],
-        linkname='protein_nuccore',
-    ) as handle:
-        try:
-            batch_nuccore = Entrez.read(handle)
-        except Exception as err:
-            logger.warning(f"Failed Entrez connection: {err}\nNo nucletoide IDs retrieved for batch query")
-            return
 
     for record in tqdm(batch_nuccore, desc="Retrieving Nucleotide db records IDs from nuccore"):
         protein_record_id = record['IdList'][0]
@@ -92,7 +75,7 @@ def get_linked_nucleotide_record_ids(batch_post, args):
             # link_list = {'Link': [{'Id': '1127815138'}], 'DbTo': 'nuccore', 'LinkName': 'protein_nuccore'}
             links = link_dict['Link']
             for link in links:
-                # links = [{'Id': '1127815138'}]
+                # links = [{'Id': '1127815138'}, {'Id': '1127825138'}]
                 # link = {'Id': '1127815138'}
                 nucleotide_id = link['Id']
 

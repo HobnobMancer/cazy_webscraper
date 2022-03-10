@@ -85,14 +85,6 @@ def build_parser(argv: Optional[List] = None):
         help="Path to JSON file containing CAZy class synoymn names",
     )
 
-    parser.add_argument(
-        "--cazy_class",
-        dest="class",
-        action="store_true",
-        default=False,
-        help="Include CAZy class annotations in the query output"
-    )
-
     # Add option to define complete classes to scrape
     parser.add_argument(
         "--classes",
@@ -112,45 +104,10 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--delete_old_ec",
-        dest="delete_old_ec",
-        action="store_true",
-        default=False,
-        help=(
-            "Delete EC number-GenBank relationships/annotations\n"
-            "that are not longer listed in UniProt for a given protein"
-        ),
-    )
-
-    parser.add_argument(
-        "--ec",
-        dest="ec",
-        action="store_true",
-        default=False,
-        help="Include EC number annotations in the query output",
-    )
-
-    parser.add_argument(
         "--ec_filter",
         type=str,
         default=None,
         help="Limit retrieval to proteins annotated with the provided EC numbers. Separate EC numbers with single commas"
-    )
-
-    parser.add_argument(
-        "--cazy_family",
-        dest="cazy_family",
-        action="store_true",
-        default=False,
-        help="Include CAZy family annotations in the query output. This is only CAZy families NOT subfamilies"
-    )
-
-    parser.add_argument(
-        "--cazy_subfamily",
-        dest="cazy_subfamily",
-        action="store_true",
-        default=False,
-        help="Include CAZy subfamily annotations in the query output."
     )
 
     # Add option to specify families to scrape
@@ -162,11 +119,12 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--genus",
-        dest="genus",
+        "-f",
+        "--force",
+        dest="force",
         action="store_true",
         default=False,
-        help="Include Genus annotations in the query output"
+        help="Force writing to existing output dir",
     )
 
     # Add option to restrict scrape to specific genera
@@ -178,11 +136,11 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--kingdom",
-        dest="kingdom",
-        action="store_true",
-        default=False,
-        help="Include taxonomy Kingdom annotations in the query output"
+        "--include",
+        action="store",
+        nargs="+",
+        choices=["class", "family", "subfamily", "organism", "uniprot_acc", "uniprot_name", "ec", "pdb", "genbank_seq", "uniprot_seq"],
+        help="Additional data to include in the output file. Separate with a single space (' ')"
     )
 
     parser.add_argument(
@@ -203,6 +161,15 @@ def build_parser(argv: Optional[List] = None):
         help="Defines log file name and/or path",
     )
 
+    parser.add_argument(
+        "-n",
+        "--nodelete",
+        dest="nodelete",
+        action="store_true",
+        default=False,
+        help="When called, content in the existing output dir is NOT deleted",
+    )
+
     # Add option to not delete content in the existing cache dir
     parser.add_argument(
         "--nodelete_cache",
@@ -213,36 +180,27 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--organism",
-        dest="organism",
+        "-o",
+        "--output_dir",
+        type=Path,
+        default=None,
+        help="Path to output dir, default: None (writes to cwd)",
+    )
+
+    parser.add_argument(
+        "--overwrite",
+        dest="overwrite",
         action="store_true",
         default=False,
-        help="Include scientific name of the source organism in the query output"
+        help="When called, overwrites existing output files",
     )
 
     parser.add_argument(
         "-p",
-        "--pdb",
-        dest="pdb",
-        action="store_true",
-        default=False,
-        help="Include PDB accessions in the query output",
-    )
-
-    parser.add_argument(
-        "--seq_gebank",
-        dest="seq_genbank",
-        action="store_true",
-        default=False,
-        help="Include the protein sequences retrieve from GenBank in the query output"
-    )
-
-    parser.add_argument(
-        "--seq_uniprot",
-        dest="seq_uniprot",
-        action="store_true",
-        default=False,
-        help="Include the protein sequences retrieved from UniProt in the query output"
+        "--prefix",
+        type=str,
+        default=None,
+        help="Str to prefix all output files with, default: None",
     )
 
     # Add option to force file over writting
@@ -272,14 +230,6 @@ def build_parser(argv: Optional[List] = None):
             "Specific strains of organisms to UniProt data for "
             "(written as Genus Species Strain)"
         ),
-    )
-
-    parser.add_argument(
-        "--uniprot",
-        dest="uniprot",
-        action="store_true",
-        default=False,
-        help="Include UniProt ID and protein name in the query output"
     )
 
     # Add option for more detail (verbose) logging

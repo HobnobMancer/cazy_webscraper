@@ -44,6 +44,8 @@ Command line options
 
 ``email`` - **REQUIRED** User email address, required by NCBI Entrez.
 
+``--batch_size`` - Size of batch query posted to NCBI Entrez. Default 150.
+
 ``--cache_dir`` - Path to cache dir to be used instead of default cache dir path.
 
 ``--cazy_data`` - Path to a txt file downloaded from CAZy containing a CAZy database dump
@@ -56,11 +58,15 @@ Command line options
 
 ``--ec_filter`` - List of EC numbers to limit the retrieval of protein data for proteins annotated with at least one of the given EC numbers **in the local CAZyme database**.
 
-``--entrez_batch_size`` - Change the query batch size submitted via [`Entrez`]() to retrieve protein sequences from GenBank data. Default is 150. `Entrez <https://www.ncbi.nlm.nih.gov/books/NBK179288/>_` recommands queries not larger than XXX objects in length.
+``--force``, ``-f`` - Force writing cachce to exiting cache directory.
 
 ``--families`` - List of CAZy (sub)families to retrieve UniProt protein data for.
 
+``--genbank_accessions`` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+
 ``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
+
+``--kingdoms`` - List of taxonomy kingdoms to retrieve UniProt data for.
 
 ``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
 
@@ -70,6 +76,8 @@ Command line options
 
 ``--retries``, ``-r`` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
 
+``--seq_dict``, - Path to a JSON file, keyed by GenBank accessions and valued by protein sequence. This file is created as part of the cache, after all protein sequences are retrieved from GenBank. This skips the retrieval of the protein sequences from GenBank.
+
 ``--seq_update`` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
 ``--sql_echo`` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
@@ -78,19 +86,18 @@ Command line options
 
 ``--strains`` - List of species strains to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given strains.
 
-``--timeout``, ``-t`` - Connection timout limit (seconds). Default: 45.
-
 ``--verbose``, ``-v`` - Enable verbose logging. This does **not** set the SQLite engine ``echo`` parameter to True. Default: False.
 
 -----------
 Basic Usage
 -----------
 
-The command-line options listed above can be used in combination to customise the scraping of CAZy. Some options (e.g. ``--families`` and ``--classes``) define the broad group of data that will be scraped, others (e.g. ``--species``) are used to filter and fine-tune the data that is scraped.
+The command-line options listed above can be used in combination to customise the scraping of CAZy. Some options (e.g. ``--families`` and ``--classes``) 
+define the broad group of data that will be scraped, others (e.g. ``--species``) are used to filter and fine-tune the data that is scraped.
 
 The ``--classes``, ``--families``, ``--kingdoms``, ``--genera``, ``--species``, and ``--strains`` filteres are applied 
-in the exactly same for retrieving data from CAZy as retrieving data from UniProt. Examples of using these flags 
-can be found in the ``cazy_webscraper`` tutorial in this documentation.
+in the exactly same for retrieving data from CAZy as retrieving protein sequences from GenBank and protein data from UniProt. Examples of using these flags 
+can be found in the `tutorial <https://cazy-webscraper.readthedocs.io/en/latest/genbanktutorial.html>`_.
 
 The ``--seq_update`` flag is used in the same way for retrieving protein sequences from UniProt and GenBank.
 

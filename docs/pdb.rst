@@ -39,11 +39,11 @@ Structure file formats
 * mmtf (highly compressed),
 * bundle (PDB formatted archive for large structure}
 
-Any combination of file formats can be provided to ``cw_get_pdb_structures`` to download every file type for each PDB accession in the local CAZyme database. To list multiple file formats, separate each file format with a single comma. For example, to download the mmCif and xml files for every PDB accession in a local CAZyme database (located at ``cazy/cazyme_db.db``), use the following command:
+Any combination of file formats can be provided to ``cw_get_pdb_structures`` to download every file type for each PDB accession in the local CAZyme database. To list multiple file formats, separate each file format with a single space (' '). For example, to download the mmCif and xml files for every PDB accession in a local CAZyme database (located at ``cazy/cazyme_db.db``), use the following command:
 
 .. code-block:: bash
     
-    cw_get_pdb_structures cazy/cazyme_db.db mmCif,xml
+    cw_get_pdb_structures cazy/cazyme_db.db mmCif xml
 
 .. WARNING::
     The file formats are case sensitive. For example, make sure to use 'mmCif' not 'mmcif'.
@@ -70,7 +70,11 @@ Command line options
 
 ``--families`` - List of CAZy (sub)families to retrieve UniProt protein data for.
 
+``--genbank_accessions`` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+
 ``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
+
+``--kingdoms`` - List of taxonomy kingdoms to retrieve UniProt data for.
 
 ``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
 
@@ -79,6 +83,8 @@ Command line options
 ``--nodelete_cache`` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
 ``--outdir``, ``-o`` - Define output directory to write out structure files. Default, write structure files to current working directory.
+
+``--overwrite`` - Overwrite existing structure files with the same PDB accession as files being downloaded. Default false, do not overwrite existing files.
 
 ``--retries``, ``-r`` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
 
@@ -90,7 +96,7 @@ Command line options
 
 ``--timeout``, ``-t`` - Connection timout limit (seconds). Default: 45.
 
-``--update_seq`` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
+``--uniprot_accessions`` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
 
 ``--verbose``, ``-v`` - Enable verbose logging. This does **not** set the SQLite engine ``echo`` parameter to True. Default: False.
 

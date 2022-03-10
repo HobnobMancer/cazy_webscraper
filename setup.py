@@ -52,17 +52,21 @@ with Path("README.md").open("r") as long_description_handle:
 
 setuptools.setup(
     name="cazy_webscraper",
+<<<<<<< HEAD
     version="2.0.2",
+=======
+    version="2.0.10",
+>>>>>>> f1eb215c11bafe52f51fa0d23713be6e6a90fe66
     # Metadata
     author="Emma E. M. Hobbs",
     author_email="eemh1@st-andrews.ac.uk",
     description="".join(
         [
             (
-                "A webscraper to automate retrieving specific data from CAZy and"
-                "build a local CAZyme SQL database, for throughly interrogating the data. "
-                "Also, automate retrieving protein sequences, EC numbers and structure files "
-                "for specific datasets in the CAZyme database."
+                "A webscraper to automate retrieving data from CAZy, "
+                "build a local CAZyme SQL database, and throughly interrogating the data. "
+                "Also, automate retrieving protein data, sequences, EC numbers and structure files "
+                "for specific datasets in the CAZyme database from UniProt, GenBank and PDB."
             )
         ]
     ),
@@ -77,8 +81,9 @@ setuptools.setup(
             "cazy_webscraper = cazy_webscraper.cazy_scraper:main",
             "cw_get_genbank_seqs = cazy_webscraper.expand.genbank.get_genbank_sequences:main",
             "cw_get_uniprot_data = cazy_webscraper.expand.uniprot.get_uniprot_data:main",
-            "cw_extract_sequences = cazy_webscraper.expand.extract.extract_sequences:main",
+            "cw_extract_db_seqs = cazy_webscraper.expand.extract_seqs.extract_db_seqs:main",
             "cw_get_pdb_structures = cazy_webscraper.expand.pdb.get_pdb_structures:main",
+            "cw_query_database = cazy_webscraper.api.cw_query_database:main",
             "cw_cazy_genbank_coverage = cazy_webscraper.genomes.cazy_genbank_coverage:main",
         ]
     },
@@ -88,7 +93,7 @@ setuptools.setup(
         "pandas>=1.0.3",
         "pyyaml",
         "requests",
-        "saintBioutils==0.0.11",
+        "saintBioutils>=0.0.22",
         "sqlalchemy>=1.4.20",
         "tqdm",
     ],
