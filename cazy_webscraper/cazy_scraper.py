@@ -107,7 +107,7 @@ from cazy_webscraper.utilities import (
 from cazy_webscraper.utilities.parsers.cazy_webscraper_parser import build_parser
 
 
-def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
+def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None, args=None):
     """Set up parser, logger and coordinate overal scrapping of CAZy."""
     cazy_home_url = "http://www.cazy.org"
 
@@ -115,13 +115,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
     start_time = pd.to_datetime(start_time)
 
-    # Program preparation
-    if argv is None:
-        parser = build_parser()
-        args = parser.parse_args()
-    else:
-        parser = build_parser(argv)
-        args = parser.parse_args()
+    if args is None:
+        # Program preparation
+        if argv is None:
+            parser = build_parser()
+            args = parser.parse_args()
+        else:
+            parser = build_parser(argv)
+            args = parser.parse_args()
 
     if logger is None:
         logger = logging.getLogger(__name__)

@@ -68,17 +68,19 @@ from cazy_webscraper.utilities import parse_configuration
 from cazy_webscraper.utilities.parsers import pdb_strctre_parser
 
 
-def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
+def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None, args=None):
     """Set up programme and initate run."""
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
     start_time = pd.to_datetime(start_time)
-    # parse cmd-line arguments
-    if argv is None:
-        parser = pdb_strctre_parser.build_parser()
-        args = parser.parse_args()
-    else:
-        args = pdb_strctre_parser.build_parser(argv).parse_args()
+
+    if args is None:
+        # parse cmd-line arguments
+        if argv is None:
+            parser = pdb_strctre_parser.build_parser()
+            args = parser.parse_args()
+        else:
+            args = pdb_strctre_parser.build_parser(argv).parse_args()
 
     if logger is None:
         logger = logging.getLogger(__package__)

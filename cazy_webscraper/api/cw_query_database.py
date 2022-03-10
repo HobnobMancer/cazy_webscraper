@@ -61,19 +61,20 @@ from cazy_webscraper.utilities.parsers import api_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
 
-def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
+def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None, args=None):
     """Set up parser, logger and coordinate overal scrapping of CAZy."""
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
     start_time = pd.to_datetime(start_time)
 
-    # Program preparation
-    if argv is None:
-        parser = api_parser.build_parser()
-        args = parser.parse_args()
-    else:
-        parser = api_parser.build_parser(argv)
-        args = parser.parse_args()
+    if args is None:
+        # Program preparation
+        if argv is None:
+            parser = api_parser.build_parser()
+            args = parser.parse_args()
+        else:
+            parser = api_parser.build_parser(argv)
+            args = parser.parse_args()
 
     if logger is None:
         logger = logging.getLogger(__name__)
