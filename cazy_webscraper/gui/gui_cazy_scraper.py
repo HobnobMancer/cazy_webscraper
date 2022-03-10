@@ -220,7 +220,7 @@ def main():
     parser.add_argument(
         "-r",
         "--retries",
-        type=int,
+        widget="IntegerField",
         default=10,
         help="Number of times to retry scraping a family or class page if error encountered",
     )
@@ -268,7 +268,7 @@ def main():
     parser.add_argument(
         "-t",
         "--timeout",
-        type=int,
+        widget="IntegerField",
         default=45,
         help="Connection timeout limit (seconds)"
     )
