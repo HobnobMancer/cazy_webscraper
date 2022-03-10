@@ -52,11 +52,7 @@ with Path("README.md").open("r") as long_description_handle:
 
 setuptools.setup(
     name="cazy_webscraper",
-<<<<<<< HEAD
-    version="2.0.2",
-=======
     version="2.0.10",
->>>>>>> f1eb215c11bafe52f51fa0d23713be6e6a90fe66
     # Metadata
     author="Emma E. M. Hobbs",
     author_email="eemh1@st-andrews.ac.uk",
@@ -96,6 +92,7 @@ setuptools.setup(
         "saintBioutils>=0.0.22",
         "sqlalchemy>=1.4.20",
         "tqdm",
+        "gooey>=1.0.8.1",
     ],
     packages=setuptools.find_packages(),
     package_data={
