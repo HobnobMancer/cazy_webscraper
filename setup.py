@@ -52,17 +52,17 @@ with Path("README.md").open("r") as long_description_handle:
 
 setuptools.setup(
     name="cazy_webscraper",
-    version="2.0.6",
+    version="2.0.7",
     # Metadata
     author="Emma E. M. Hobbs",
     author_email="eemh1@st-andrews.ac.uk",
     description="".join(
         [
             (
-                "A webscraper to automate retrieving specific data from CAZy and"
-                "build a local CAZyme SQL database, for throughly interrogating the data. "
-                "Also, automate retrieving protein sequences, EC numbers and structure files "
-                "for specific datasets in the CAZyme database."
+                "A webscraper to automate retrieving data from CAZy, "
+                "build a local CAZyme SQL database, and throughly interrogating the data. "
+                "Also, automate retrieving protein data, sequences, EC numbers and structure files "
+                "for specific datasets in the CAZyme database from UniProt, GenBank and PDB."
             )
         ]
     ),
