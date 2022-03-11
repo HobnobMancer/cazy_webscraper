@@ -48,7 +48,10 @@ from gooey import Gooey, GooeyParser
 from cazy_webscraper import cazy_scraper
 
 
-@Gooey(program_name="cazy_webscraper")
+@Gooey(
+    program_name="cazy_webscraper",
+    image_dir="cazy_webscraper/gui/assets/cazy_webscraper",
+)
 def main():
     # Create parser object
     parser = GooeyParser(
@@ -59,10 +62,10 @@ def main():
 
     parser.add_argument(
         "email",
+        metavar="Email address",
         type=str,
         help=(
-            "User email address.\n"
-            "Requirement of Entrez, used to get source organsism data. The email is not stored be cazy_webscraper."
+            "This is a requirement of NCBI Entrez, which is used to get source organsism data. The email is not stored be cazy_webscraper."
         ),
     )
 
@@ -91,7 +94,7 @@ def main():
         metavar="New database name",
         type=str,
         default=None,
-        help="Name of the new database file",
+        help="Name of the new database file. If not given, the default name is used.",
     )
 
     output_group.add_argument(
