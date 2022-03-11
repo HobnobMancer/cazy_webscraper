@@ -188,7 +188,7 @@ def build_parser(argv: Optional[List] = None):
         "--retries",
         type=int,
         default=10,
-        help="Number of times to retry scraping a family or class page if error encountered",
+        help="Number of times to retry connection to Entrez if connection failes",
     )
 
     parser.add_argument(
