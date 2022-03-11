@@ -48,7 +48,7 @@ from gooey import Gooey, GooeyParser
 from cazy_webscraper import cazy_scraper
 
 
-@Gooey
+@Gooey(program_name="cazy_webscraper")
 def main():
     # Create parser object
     parser = GooeyParser(
@@ -80,38 +80,43 @@ def main():
     output_group.add_argument(
         "-o",
         "--db_output",
+        metavar="Database directory",
         widget="DirChooser",
         default=None,
-        help="Directory to write build the new database",
+        help="Directory to write build the new database in",
     )
 
     output_group.add_argument(
         "--new_database_name",
+        metavar="New database name",
         type=str,
         default=None,
-        help="Name of the new database",
+        help="Name of the new database file",
     )
 
     output_group.add_argument(
         "-d",
         "--database",
+        metavar="Existing database",
         widget="FileChooser",
         default=None,
-        help="Path to an existing local CAZy database to add data to",
+        help="An existing local CAZy database to add data to",
     )
 
     output_group.add_argument(
         "-f",
         "--force",
+        metavar="Force",
         dest="force",
         action="store_true",
         default=False,
-        help="Force writting to an existing output directory",
+        help="Force writting to an existing output directory. If the output directory already exists and force is False, cazy_webscraper will not run",
     )
 
     output_group.add_argument(
         "-n",
         "--nodelete",
+        metavar="Do NOT delete content in output directory",
         dest="nodelete",
         action="store_true",
         default=False,
@@ -129,6 +134,7 @@ def main():
 
     class_group.add_argument(
         "--classes",
+        metavar="CAZy classes",
         type=str,
         default=None,
         help=(
@@ -139,14 +145,16 @@ def main():
 
     class_group.add_argument(
         "--families",
+        metavar="CAZy (sub)families",
         type=str,
         default=None,
-        help="Families to scrape. Separate families by commas 'GH1,GH2'. CAZy families are case sensitive"
+        help="Families and subfamilies to scrape. Separate families by commas 'GH1,GH2'. CAZy families are case sensitive"
     )
 
     class_group.add_argument(
         "-s",
         "--subfamilies",
+        metavar="Retrieve subfamilies",
         dest="subfamilies",
         action="store_true",
         default=False,
@@ -164,6 +172,7 @@ def main():
 
     tax_group.add_argument(
         "--kingdoms",
+        metavar="Taxonomy kingdoms",
         type=str,
         default=None,
         help="Tax Kingdoms to restrict the scrape to"
@@ -172,25 +181,28 @@ def main():
     # Add option to restrict scrape to specific genera
     tax_group.add_argument(
         "--genera",
+        metavar="Genera",
         type=str,
         default=None,
-        help="Genera to restrict the scrape to"
+        help="Genera to restrict the scrape to. Separate genera with a single comma"
     )
 
     tax_group.add_argument(
         "--species",
+        metavar="Species",
         type=str,
         default=None,
-        help="Species (written as Genus Species) to restrict the scrape to"
+        help="Species (written as Genus Species) to restrict the scrape to. Separate species with a single comma"
     )
 
     tax_group.add_argument(
         "--strains",
+        metavar="Strains",
         type=str,
         default=None,
         help=(
             "Specific strains of organisms to restrict the scrape to "
-            "(written as Genus Species Strain)"
+            "(written as Genus Species Strain). Separate strains with a single comma."
         ),
     )
 
@@ -205,6 +217,7 @@ def main():
     # Add option to specify path to configuration file
     cache_group.add_argument(
         "--cache_dir",
+        metavar="Cache directory",
         widget="DirChooser",
         default=None,
         help="Target path for cache dir to be used instead of default path",
@@ -213,6 +226,7 @@ def main():
     # Add option to use a pre-downloaded CAZy txt file
     cache_group.add_argument(
         "--cazy_data",
+        metavar="CAZy db dump",
         widget="FileChooser",
         default=None,
         help="Path to predownloaded CAZy txt file. Use data from a previously downloaded CAZy dump txt file",
@@ -220,6 +234,7 @@ def main():
 
     cache_group.add_argument(
         "--nodelete_cache",
+        metavar="Do no delete existing cache",
         dest="nodelete_cache",
         action="store_true",
         default=False,
@@ -236,7 +251,7 @@ def main():
         "-l",
         "--log",
         type=Path,
-        metavar="log file name",
+        metavar="Log file name",
         default=None,
         help="Define directory to write out log files",
     )
@@ -252,10 +267,11 @@ def main():
     log_group.add_argument(
         "-v",
         "--verbose",
+        metavar="Verbose logging",
         dest="verbose",
         action="store_true",
         default=False,
-        help="Use verbose logging. Set logger level to 'INFO'",
+        help="Set logger level to 'INFO'",
     )
 
     #
@@ -267,6 +283,7 @@ def main():
     misc_group.add_argument(
         "-r",
         "--retries",
+        metavar="Number of retries",
         widget="IntegerField",
         default=10,
         help="Number of times to retry scraping a family or class page if error encountered",
@@ -275,6 +292,7 @@ def main():
     # Add option to force file over writting
     misc_group.add_argument(
         "--sql_echo",
+        metavar="SQL db echo",
         dest="sql_echo",
         action="store_true",
         default=False,
@@ -285,6 +303,7 @@ def main():
     misc_group.add_argument(
         "-t",
         "--timeout",
+        metavar="Timeout limit",
         widget="IntegerField",
         default=45,
         help="Connection timeout limit (seconds)"
@@ -292,6 +311,7 @@ def main():
 
     misc_group.add_argument(
         "--validate",
+        metavar="Validate data (primitive)",
         dest="validate",
         action="store_true",
         default=False,
@@ -303,6 +323,7 @@ def main():
 
     misc_group.add_argument(
         "--cazy_synonyms",
+        metavar="CAZy class synonyms",
         widget="FileChooser",
         default=None,
         help=(
@@ -314,14 +335,15 @@ def main():
     misc_group.add_argument(
         "-c",
         "--config",
+        metavar="Configuration file",
         widget="FileChooser",
-        metavar="config file",
         default=None,
         help="Path to configuration file. Default: None, scrapes entire database",
     )
 
     misc_group.add_argument(
         "--delete_old_relationships",
+        metavar="Delete old family annotations",
         dest="delete_old_relationships",
         action="store_true",
         default=False,
@@ -344,6 +366,7 @@ def main():
     cit_ver_group.add_argument(
         "-C",
         "--citation",
+        metavar="Citation",
         dest="citation",
         action="store_true",
         default=False,
@@ -353,6 +376,7 @@ def main():
     cit_ver_group.add_argument(
         "-V",
         "--version",
+        metavar="Version",
         dest="version",
         action="store_true",
         default=False,
