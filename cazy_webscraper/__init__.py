@@ -66,7 +66,11 @@ CITATION_INFO = (
     "\thttps://doi.org/10.6084/m9.figshare.14370860.v7"
 )
 
-COPYRIGHT = "Copyright (c) University of St Andrews 2022; Copyright (c) University of Strathclyde 2022; Copyright (c) Jame Hutton Institute 2022"
+COPYRIGHT = (
+    "Copyright (c) University of St Andrews 2022; \n"
+    "University of Strathclyde 2022; \n"
+    "Jame Hutton Institute 2022"
+)
 
 DEVELOPERS = (
     'Emma E. M. Hobbs: https://github.com/HobnobMancer\n'
