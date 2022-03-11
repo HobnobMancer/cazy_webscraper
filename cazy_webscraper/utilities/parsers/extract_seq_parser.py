@@ -89,7 +89,7 @@ def build_parser(argv: Optional[List] = None):
         action=ValidateNames,
         choices=["genbank", "uniprot"],
         type=str,
-        help="File format of downloaded structure from PDB",
+        help="Source(s) of the extracted protein sequences",
     )
 
     # Add optional arguments to parser
