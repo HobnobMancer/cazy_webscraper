@@ -42,7 +42,6 @@ import argparse
 
 from datetime import datetime
 from pathlib import Path
-from cazy_webscraper.gui.assets.cazy_webscraper import cw_menu
 
 from gooey import Gooey, GooeyParser
 
