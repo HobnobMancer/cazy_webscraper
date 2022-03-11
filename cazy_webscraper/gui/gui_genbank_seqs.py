@@ -100,7 +100,7 @@ def main():
         metavar="GenBank accessions",
         widget="FileChooser",
         default=None,
-        help="Path to text file contining GenBank accessions",
+        help="Path to text file containing GenBank accessions",
     )
 
     #
