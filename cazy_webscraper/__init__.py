@@ -53,8 +53,9 @@ from saintBioutils.utilities.file_io import make_output_directory
 from cazy_webscraper.sql import sql_orm
 
 
-__version__ = "2.0.10"
+__version__ = "2.0.11"
 
+GUI_VERSION = f"v{__version__}"
 VERSION_INFO = f"cazy_webscraper version: {__version__}"
 
 CITATION_INFO = (
@@ -64,6 +65,22 @@ CITATION_INFO = (
     "\tFigShare. Poster.\n"
     "\thttps://doi.org/10.6084/m9.figshare.14370860.v7"
 )
+
+COPYRIGHT = ()
+
+DEVELOPERS = (
+    'Emma E. M. Hobbs: https://github.com/HobnobMancer\n'
+    'Leighton Pritchard: https://github.com/widdowquinn\n'
+)
+REPOSITORY = "https://github.com/HobnobMancer/cazy_webscraper"
+
+WEBSITE = "https://hobnobmancer.github.io/cazy_webscraper/"
+
+DOCUMENTATION = 'https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest'
+
+ISSUES_PAGE = 'https://github.com/HobnobMancer/cazy_webscraper/issues/new/choose'
+
+LICENCE = ""
 
 
 def closing_message(job, start_time, args):

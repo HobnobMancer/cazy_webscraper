@@ -38,6 +38,17 @@
 # SOFTWARE.
 """Store assets and additional data for the GUIs"""
 
+from cazy_webscraper import (
+    COPYRIGHT,
+    DEVELOPERS,
+    DOCUMENTATION,
+    ISSUES_PAGE,
+    LICENCE,
+    REPOSITORY,
+    WEBSITE,
+    GUI_VERSION,
+)
+
 
 def build_menus(subcommand, desc):
     """Build the menu for the GUI.
@@ -56,44 +67,37 @@ def build_menus(subcommand, desc):
                     'menuTitle': 'About',
                     'name': subcommand,
                     'description': desc,
-                    'version': '2.0.11',
-                    'copyright': '2022',
-                    'website': 'https://hobnobmancer.github.io/cazy_webscraper/',
-                    'developer': 'https://github.com/HobnobMancer',
-                    'license': 'MIT'
+                    'version': GUI_VERSION,
+                    'copyright': COPYRIGHT,
+                    'website': WEBSITE,
+                    'developer': DEVELOPERS,
+                    'license': LICENCE,
                 },
                 {
-                    'type': 'AboutDialog',
+                    'type': 'Link',
                     'menuTitle': 'Documentation',
-                    'description': 'The full documentation is hosted at Read the Docs, including tutorials.',
-                    'website': 'https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest',
+                    'url': DOCUMENTATION,
                 },
                 {
-                    'type': 'AboutDialog',
-                    'menuTitle': 'Getting started',
-                    'description': 'To help getting started using cazy_webscraper and its subcommands, we have created a poster:',
-                    'website': 'https://hobnobmancer.github.io/cazy_webscraper/getting_started_cazy_webscraper_v2.pdf',
+                    'type': 'Link',
+                    'menuTitle': 'Getting started poster',
+                    'url': 'https://hobnobmancer.github.io/cazy_webscraper/getting_started_cazy_webscraper_v2.pdf',
                 },
                 {
                     'type': 'MessageDialog',
                     'menuTitle': 'Citation',
-                    'message': 'If use use cazy_webscraper in your work, please cite our work:',
-                    'caption': (
-                        "Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; "
-                        "Gloster, Tracey M. (2021): cazy_webscraper Microbiology "
-                        "Society Annual Conference 2021 poster. figshare. Poster. "
-                        "https://doi.org/10.6084/m9.figshare.14370860.v7"
-                    ),
+                    'message': 'If use use cazy_webscraper in your work, please cite our work: \n    Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. figshare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7',
+                    'caption': 'Plesae cite our work',
                 },
                 {
                     'type': 'Link',
                     'menuTitle': 'Visit Our Site',
-                    'url': 'https://hobnobmancer.github.io/cazy_webscraper/'
+                    'url': WEBSITE,
                 },
                 {
                     'type': 'Link',
                     'menuTitle': 'Visit the GitHub repository',
-                    'url': 'https://github.com/HobnobMancer/cazy_webscraper'
+                    'url': REPOSITORY,
                 }
             ],
         },
@@ -101,16 +105,16 @@ def build_menus(subcommand, desc):
             'name': 'Help',
             'items': [
                 {
-                    'type': 'AboutDialog',
+                    'type': 'Link',
                     'menuTitle': 'Documentation',
-                    'description': 'The full documentation is hosted at Read the Docs, including tutorials.',
-                    'website': 'https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest',
+                    'url': DOCUMENTATION,
                 },
                 {
                     'type': 'AboutDialog',
+                    'name': 'getting help',
                     'menuTitle': 'Help',
                     'description': 'If you need help, think an additional feature could be included and/or have found a bug, please raise an issue at GitHub.',
-                    'website': 'https://github.com/HobnobMancer/cazy_webscraper/issues/new/choose',
+                    'website': ISSUES_PAGE,
                 },
             ],
         },
@@ -119,31 +123,24 @@ def build_menus(subcommand, desc):
             'items': [
                 {
                     'type': 'AboutDialog',
-                    'menuTitle': 'Reporting bugs and errors',
+                    'menuTitle': 'reporting bugs and errors',
+                    'name': 'Reporting',
                     'description': 'If you find a bug, or an error in the code or documentation, please report this by raising an issue at the GitHub issues page for cazy_webscraper.',
-                    'website': 'https://github.com/HobnobMancer/cazy_webscraper/issues/new/choose',
+                    'website': ISSUES_PAGE,
                 },
                 {
                     'type': 'AboutDialog',
-                    'menuTitle': 'Contributing code or documentation',
-                    'description': (
-                        "We gratefully accept code contributions, if you would like to fix a bug, improve documentation, or extend cazy_webscraper and its subcommands.\n"
-                        "To make everyone’s lives easier in this process, we ask that you please follow the procedure below:"
-                        "1. Fork the cazy_webscraper repository under your account at GitHub\n"
-                        "2. Clone your fork to your development machine\n"
-                        "3. Create a new branch in your forked repository with an informative name, e.g. fix_issue_111\n"
-                        "4. Make the changes\n"
-                        "5. Run the unit tests included in cazy_webscraper\n"
-                        "6. If the tests pass, push the changes to your fork, and submit a pull request against the original repository.\n"
-                        "7. Indicate one of the cazy_webscraper developers as an assignee in your pull request."
-                        ),
-                    'website': 'https://github.com/HobnobMancer/cazy_webscraper',
+                    'name': 'Contributing',
+                    'menuTitle': 'contributing code or documentation',
+                    'description': "We gratefully accept code contributions, if you would like to fix a bug, improve documentation, or extend cazy_webscraper and its subcommands please see the guidelines:",
+                    'website': 'https://cazy-webscraper.readthedocs.io/en/latest/contributing.html',
                 },
                 {
                     'type': 'AboutDialog',
-                    'menuTitle': 'Suggestions for improvement',
-                    'description': "If you would like to make a suggestion for how we could improve ncfp, we welcome contributions at the GitHub issues page.",
-                    'website': 'https://github.com/HobnobMancer/cazy_webscraper/issues/new/choose',
+                    'name': 'Suggesting improvments',
+                    'menuTitle': 'suggestions for improvement',
+                    'description': "If you would like to make a suggestion for how we could improve cazy_webscraper, we welcome contributions at the GitHub issues page.",
+                    'website': ISSUES_PAGE,
                 },
             ],
         },
