@@ -42,15 +42,22 @@ import argparse
 
 from datetime import datetime
 from pathlib import Path
+from cazy_webscraper.gui.assets.cazy_webscraper import cw_menu
 
 from gooey import Gooey, GooeyParser
 
 from cazy_webscraper import cazy_scraper
+from cazy_webscraper.gui.assets import build_menus
 
+cw_menu = build_menus(
+    'cazy_webscraper',
+    'A tool to retrieve data from CAZy and compile a local CAZyme database.'
+)
 
 @Gooey(
     program_name="cazy_webscraper",
     image_dir="cazy_webscraper/gui/assets/cazy_webscraper",
+    menu=cw_menu,
 )
 def main():
     # Create parser object
@@ -400,8 +407,7 @@ def main():
         
         gooey_args.db_output = db_path
 
-    # cazy_scraper.main(args=gooey_args)
-    print(str(gooey_args.db_output))
+    cazy_scraper.main(args=gooey_args)
 
 
 if __name__ == "__main__":
