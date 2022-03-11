@@ -102,79 +102,6 @@ def main():
         help="Path to text file contining GenBank accessions",
     )
 
-    accessions_group.add_argument(
-        "--uniprot_accessions",
-        metavar="UniProt accessions",
-        widget="FileChooser",
-        default=None,
-        help="Path to text file contining GenBank accessions",
-    )
-
-    #
-    # OUTPUT OPTIONS
-    #
-
-    output_group = parser.add_argument_group(
-        "Output Options", 
-        "Configure where and what type of output is written"
-    )
-
-    output_group.add_argument(
-        "-b",
-        "--blastdb",
-        metavar="Build BLAST database",
-        widget="DirChooser",
-        default=None,
-        help=(
-            "Create BLAST database of extracted protein sequences. "
-            "Provide the path to the directory to store the database"
-        ),
-    )
-
-    output_group.add_argument(
-        "--fasta_dir",
-        metavar="Individual FASTA file dir",
-        widget="DirChooser",
-        default=None,
-        help="Write out each extracted sequence to a separate FASTA file in the specified dir",
-    )
-
-    output_group.add_argument(
-        "--single_fasta_file",
-        metavar="Multiple sequence FASTA file dir",
-        widget="DirChooser",
-        default=None,
-        help="Write out all extracted sequence to a single, multiple sequence FASTA file in the specified dir",
-    )
-
-    output_group.add_argument(
-        "--fasta_file",
-        metavar="Name of the mutliple sequence FASTA file",
-        type=str,
-        default=None,
-        help="If not provided a default name of the format 'cw_seqs_<date>_<time>.fasta' will be used",
-    )
-
-    output_group.add_argument(
-        "-f",
-        "--force",
-        metavar="Force",
-        dest="force",
-        action="store_true",
-        default=False,
-        help="Force writting to an existing output directory. If the output directory already exists and force is False, cazy_webscraper will not run",
-    )
-
-    output_group.add_argument(
-        "-n",
-        "--nodelete",
-        metavar="Do NOT delete content in output directory",
-        dest="nodelete",
-        action="store_true",
-        default=False,
-        help="When called, content in the existing out dir is NOT deleted. By default cazy_webscraper deletes content in the existing output dir",
-    )
-
     #
     # CLASS AND FAM FILTERS
     #
@@ -273,7 +200,7 @@ def main():
         "Use cache files and change the cache location"
     )
 
-    parser.add_argument(
+    cache_group.add_argument(
         "--seq_dict",
         metavar="Cached sequences",
         widget="FileChooser",
