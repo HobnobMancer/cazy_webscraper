@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2020-2021
-# (c) University of Strathclyde 2020-2021
+# (c) University of St Andrews 2022
+# (c) University of Strathclyde 2022
+# (c) James Hutton Institute 2022
 # Author:
 # Emma E. M. Hobbs
 
