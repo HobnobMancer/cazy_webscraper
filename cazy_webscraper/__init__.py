@@ -66,11 +66,11 @@ CITATION_INFO = (
     "\thttps://doi.org/10.6084/m9.figshare.14370860.v7"
 )
 
-COPYRIGHT = ()
+COPYRIGHT = "Copyright (c) University of St Andrews 2022; Copyright (c) University of Strathclyde 2022; Copyright (c) Jame Hutton Institute 2022"
 
 DEVELOPERS = (
     'Emma E. M. Hobbs: https://github.com/HobnobMancer\n'
-    'Leighton Pritchard: https://github.com/widdowquinn\n'
+    'Leighton Pritchard: https://github.com/widdowquinn'
 )
 REPOSITORY = "https://github.com/HobnobMancer/cazy_webscraper"
 
@@ -80,7 +80,27 @@ DOCUMENTATION = 'https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest'
 
 ISSUES_PAGE = 'https://github.com/HobnobMancer/cazy_webscraper/issues/new/choose'
 
-LICENCE = ""
+LICENCE = (
+    "Copyright (c) University of St Andrews 2022\n"
+    "Copyright (c) University of Strathclyde 2022\n"
+    "Copyright (c) Jame Hutton Institute 2022\n\n"
+    "Author: Emma E. H. Hobbs\n\n"
+    "Permission is hereby granted, free of charge, to any person obtaining a copy of\n"
+    "this software and associated documentation files (the “Software”), to deal in the\n"
+    "Software without restriction, including without limitation the rights to use, copy,\n"
+    "modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,\n"
+    "and to permit persons to whom the Software is furnished to do so, subject to the\n"
+    "following conditions:\n"
+    "The above copyright notice and this permission notice shall be included in all\n"
+    "copies or substantial portions of the Software.\n"
+    "THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,\n"
+    "EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n"
+    "MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\n"
+    "IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,\n"
+    "DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,\n"
+    "ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\n"
+    "DEALINGS IN THE SOFTWARE."
+)
 
 
 def closing_message(job, start_time, args):
