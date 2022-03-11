@@ -49,7 +49,7 @@ from cazy_webscraper.expand.extract_seqs import extract_db_seqs
 from cazy_webscraper.gui.assets import build_menus
 
 cw_menu = build_menus(
-    'Extract Db Sequences',
+    'cw_extract_db_seqs',
     'Extract GenBank and/or UniProt protein sequences from the local CAZyme database, and write to a multiple sequence FASTA file, one sequence per FASTA file, and/or a BLAST database.'
 )
 
@@ -75,10 +75,10 @@ def main():
 
     parser.add_argument(
         "source",
+        metavar="Source of the sequences",
         nargs='+',
-        choices=["genbank", "uniprot"],
-        type=str,
-        help="Original source(s) of the extracted protein sequences",
+        choices=["GenBank", "UniProt", "GenBank and UniProt"],
+        help="Original source(s) of the protein sequences",
     )
 
     # Add optional arguments to parser
@@ -88,12 +88,13 @@ def main():
     #
 
     accessions_group = parser.add_argument_group(
-        "Provice accessions", 
-        "Provide a list of protein accessions"
+        "Use accessions", 
+        "Provide a list  or lists of protein accessions"
     )
 
     accessions_group.add_argument(
         "--genbank_accessions",
+        metavar="GenBank accessions",
         widget="FileChooser",
         default=None,
         help="Path to text file contining GenBank accessions",
@@ -101,6 +102,7 @@ def main():
 
     accessions_group.add_argument(
         "--uniprot_accessions",
+        metavar="UniProt accessions",
         widget="FileChooser",
         default=None,
         help="Path to text file contining GenBank accessions",
@@ -115,20 +117,21 @@ def main():
         "Configure where and what type of output is written"
     )
 
-    parser.add_argument(
+    output_group.add_argument(
         "-b",
         "--blastdb",
+        metavar="Build BLAST database",
         widget="DirChooser",
         default=None,
         help=(
-            "Create BLAST database of extracted protein sequences.\n"
+            "Create BLAST database of extracted protein sequences. "
             "Provide the path to the directory to store the database"
         ),
     )
 
     output_group.add_argument(
         "--fasta_dir",
-        metavar="Single sequence FASTA file dir",
+        metavar="Individual FASTA file dir",
         widget="DirChooser",
         default=None,
         help="Write out each extracted sequence to a separate FASTA file in the specified dir",
@@ -185,7 +188,7 @@ def main():
         type=str,
         default=None,
         help=(
-            "Classes from which all families are to be scraped.\n"
+            "Classes from which all families are to be scraped. "
             "Separate classes with a single comma ','"
         ),
     )
@@ -349,7 +352,7 @@ def main():
 
     gooey_args = parser.parse_args()
 
-    # compile db_output path
+    # compile multi-seq FASTA file path
     if gooey_args.single_fasta_file is not None:
 
         if gooey_args.fasta_file is None:
@@ -360,6 +363,14 @@ def main():
             fasta_path = Path(gooey_args.single_fasta_file) / gooey_args.fasta_file
         
         gooey_args.fasta_file = fasta_path
+
+    # compile source of the protein sequences
+    if gooey_args.source == ['GenBank and UniProt']:
+        gooey_args.source = ['genbank', 'uniprot']
+    elif gooey_args.source == ['GenBank']:
+        gooey_args.source = ['genbank']
+    else:
+        gooey_args.source = ['uniprot']
 
     extract_db_seqs.main(args=gooey_args)
 
