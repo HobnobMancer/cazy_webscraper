@@ -269,16 +269,17 @@ def main():
 
     misc_group.add_argument(
         "--batch_size",
-        type=int,
+        metavar="Batch size",
+        widget="IntegerField",
         default=150,
-        help="Size of batch queries sent to NCBI Entrez"
+        help="Size of batch queries sent to RCSB PDB"
     )
 
     misc_group.add_argument(
         "-r",
         "--retries",
         metavar="Connection retries",
-        type=int,
+        widget="IntegerField",
         default=10,
         help="Number of times to retry the connection to NCBI Entrez if the connection fails",
     )

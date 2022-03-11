@@ -338,7 +338,8 @@ def main():
 
     misc_group.add_argument(
         "--batch_size",
-        type=int,
+        metavar="Batch size",
+        widget="IntegerField",
         default=150,
         help="Size of batch queries sent to RCSB PDB"
     )
