@@ -69,16 +69,8 @@ def main():
     )
 
     parser.add_argument(
-        "database",
-        metavar="Local CAZyme database",
-        widget="FileChooser",
-        help="The path to the local CAZyme database to extract protein sequences from",
-    )
-
-    parser.add_argument(
         "mmcif",
         metavar="mmCif",
-        dest="mmcif",
         action="store_true",
         default=False,
         help="Retrieve structure files in mmCif format",
@@ -86,7 +78,6 @@ def main():
     parser.add_argument(
         "pdb",
         metavar="pdb",
-        dest="pdb",
         action="store_true",
         default=False,
         help="Retrieve structure files in pdb format",
@@ -94,7 +85,6 @@ def main():
     parser.add_argument(
         "xml",
         metavar="xml",
-        dest="xml",
         action="store_true",
         default=False,
         help="Retrieve structure files in xml format",
@@ -102,10 +92,16 @@ def main():
     parser.add_argument(
         "bundle",
         metavar="bundle",
-        dest="bundle",
         action="store_true",
         default=False,
         help="Retrieve structure files in bundle format",
+    )
+
+    parser.add_argument(
+        "database",
+        metavar="Local CAZyme database",
+        widget="FileChooser",
+        help="The path to the local CAZyme database to extract protein sequences from",
     )
 
 
