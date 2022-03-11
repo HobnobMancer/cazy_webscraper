@@ -170,6 +170,7 @@ For details and updates on development, please consult the `GitHub repository <h
    api
    apitutorial
    cache
+   contributing
    license
 
 
