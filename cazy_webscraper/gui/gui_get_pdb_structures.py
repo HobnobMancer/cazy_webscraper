@@ -76,7 +76,7 @@ def main():
     )
 
     parser.add_argument(
-        "--mmcif",
+        "mmcif",
         metavar="mmCif",
         dest="mmcif",
         action="store_true",
@@ -84,7 +84,7 @@ def main():
         help="Retrieve structure files in mmCif format",
     )
     parser.add_argument(
-        "--pdb",
+        "pdb",
         metavar="pdb",
         dest="pdb",
         action="store_true",
@@ -92,7 +92,7 @@ def main():
         help="Retrieve structure files in pdb format",
     )
     parser.add_argument(
-        "--xml",
+        "xml",
         metavar="xml",
         dest="xml",
         action="store_true",
@@ -100,7 +100,7 @@ def main():
         help="Retrieve structure files in xml format",
     )
     parser.add_argument(
-        "--bundle",
+        "bundle",
         metavar="bundle",
         dest="bundle",
         action="store_true",
