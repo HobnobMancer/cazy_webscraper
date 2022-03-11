@@ -147,7 +147,7 @@ def main():
         type=str,
         default=None,
         help=(
-            "Classes from which all families are to be scraped.\n"
+            "Classes from which all families are to be scraped. "
             "Separate classes with a single comma ','"
         ),
     )
@@ -325,7 +325,7 @@ def main():
         action="store_true",
         default=False,
         help=(
-            "Retrieve CAZy fam population sizes from CAZy and use to check\n"
+            "Retrieve CAZy fam population sizes from CAZy and use to check "
             "the number of family members added to the local database"
         ),
     )
@@ -336,7 +336,7 @@ def main():
         widget="FileChooser",
         default=None,
         help=(
-            "Path to JSON file containing CAZy class synoymn names\n"
+            "Path to JSON file containing CAZy class synoymn names "
             "Use your own CAZy class synonyms"
         ),
     )
@@ -357,8 +357,8 @@ def main():
         action="store_true",
         default=False,
         help=(
-            "Delete old GenBank accession - CAZy family relationships (annotations)\n"
-            "that are in the local db but are not in CAZy, e.g. when CAZy has moved a\n"
+            "Delete old GenBank accession - CAZy family relationships (annotations) "
+            "that are in the local db but are not in CAZy, e.g. when CAZy has moved a "
             "protein from one fam to another, delete the old family annotation."
         ),
     )

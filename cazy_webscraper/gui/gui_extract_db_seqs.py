@@ -336,7 +336,7 @@ def main():
         widget="FileChooser",
         default=None,
         help=(
-            "Path to JSON file containing CAZy class synoymn names\n"
+            "Path to JSON file containing CAZy class synoymn names "
             "Use your own CAZy class synonyms"
         ),
     )
