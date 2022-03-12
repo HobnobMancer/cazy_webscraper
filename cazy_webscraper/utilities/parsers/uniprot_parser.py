@@ -307,7 +307,7 @@ def build_parser(argv: Optional[List] = None):
         "--uniprot_batch_size",
         type=int,
         default=150,
-        help="Batch size for queries sent to the UniProt REST API to retrieved UniProt accessions"
+        help="Batch size for queries sent to the UniProt REST API to retrieve UniProt accessions"
     )
 
     # Add option for more detail (verbose) logging
