@@ -37,7 +37,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Create GUI for get_genbank_seqs.py."""
+"""Create GUI for cw_query_database.py."""
 
 import argparse
 
@@ -71,7 +71,7 @@ def main():
         "database",
         metavar="Local CAZyme database",
         widget="FileChooser",
-        help="The path to the local CAZyme database to extract protein sequences from",
+        help="The path to the local CAZyme database",
     )
 
     parser.add_argument(
@@ -79,7 +79,7 @@ def main():
         metavar="Output file formats",
         action="store",
         choices=["csv", "json", "csv and json"],
-        help="File types to write the query output in [csv,json]"
+        help="File types of output files"
     )
 
     #
@@ -198,7 +198,7 @@ def main():
 
     accessions_group = parser.add_argument_group(
         "Use Accessions", 
-        "Provide a list  or lists of protein accessions to retrieve data for. This overrides providing filters to identify proteins matching the specified criteria"
+        "Provide a list or lists of protein accessions to explicitly define the proteins to retrieve data for. The provided protein accessions will be used instead of the filters to define proteins of interest"
     )
 
     accessions_group.add_argument(
@@ -206,7 +206,7 @@ def main():
         metavar="GenBank accessions",
         widget="FileChooser",
         default=None,
-        help="Path to text file containing GenBank accessions",
+        help="Path to text file contining GenBank accessions of the proteins of interset",
     )
 
     accessions_group.add_argument(
@@ -214,7 +214,7 @@ def main():
         metavar="UniProt accessions",
         widget="FileChooser",
         default=None,
-        help="Path to text file containing UniProt accessions",
+        help="Path to text file contining GenBank accessions of the proteins of interset",
     )
 
     #
@@ -223,7 +223,7 @@ def main():
 
     class_group = parser.add_argument_group(
         "Class and Family Filters", 
-        "Define CAZy classes, families and subfamilies to retrieve data from"
+        "Retrieve data for proteins from specific CAZy classes, families and subfamilies"
     )
 
     class_group.add_argument(
@@ -232,8 +232,8 @@ def main():
         type=str,
         default=None,
         help=(
-            "Classes from which all families are to be scraped. "
-            "Separate classes with a single comma ','"
+            "Classes from which all families will be scraped. "
+            "Separate classes with a single comma ',', e.g. 'GH,GT,PL'"
         ),
     )
 
@@ -242,7 +242,17 @@ def main():
         metavar="CAZy (sub)families",
         type=str,
         default=None,
-        help="Families and subfamilies to scrape. Separate families by commas 'GH1,GH2'. CAZy families are case sensitive"
+        help="Families and subfamilies to scrape. Separate families with single commas 'GH1,GH2'. CAZy families are case sensitive"
+    )
+
+    class_group.add_argument(
+        "-s",
+        "--subfamilies",
+        metavar="Retrieve subfamilies",
+        dest="subfamilies",
+        action="store_true",
+        default=False,
+        help="Enable retrieving of subfamily annotations from CAZy",
     )
 
     #
@@ -251,7 +261,7 @@ def main():
 
     tax_group = parser.add_argument_group(
         "Taxonomy Filters",
-        "These are applied after CAZy class and CAZy family filters",
+        "Limit the retrieval of data to proteins derived from specific taxonomies. These are applied after CAZy class and CAZy family filters",
     )
 
     tax_group.add_argument(
@@ -259,7 +269,7 @@ def main():
         metavar="Taxonomy kingdoms",
         type=str,
         default=None,
-        help="Tax Kingdoms to restrict the scrape to"
+        help="Retrieve data for proteins derived from organisms from specific kingdoms. Separate kingdoms with a sinlge comma, e.g. 'bacteria,eukaryota'. Excepted kingdoms are archaea, bacteria, eukaryota, viruses, and unclassified. Kingdoms are not case sensitive"
     )
 
     # Add option to restrict scrape to specific genera
@@ -268,7 +278,7 @@ def main():
         metavar="Genera",
         type=str,
         default=None,
-        help="Genera to restrict the scrape to. Separate genera with a single comma"
+        help="Retrieve data for proteins sourced from organisms belong to specific genera. Separate genera with a single comma. A direct string match is used, therefore capitalise the first letter of each genera"
     )
 
     tax_group.add_argument(
@@ -276,7 +286,7 @@ def main():
         metavar="Species",
         type=str,
         default=None,
-        help="Species (written as Genus Species) to restrict the scrape to. Separate species with a single comma"
+        help="Retrieve data for proteins soruced from specific species (written as Genus Species). Separate species with a single comma. A direct string match is used to select the species of interest"
     )
 
     tax_group.add_argument(
@@ -285,8 +295,8 @@ def main():
         type=str,
         default=None,
         help=(
-            "Specific strains of organisms to restrict the scrape to "
-            "(written as Genus Species Strain). Separate strains with a single comma."
+            "Retrieve data for proteins from specific strains of organisms "
+            "(written as Genus Species Strain). Separate strains with a single comma. A direct string match is used to select organisms of interest"
         ),
     )
 
@@ -295,22 +305,21 @@ def main():
     #
 
     add_filt_group = parser.add_argument_group(
-        "Additional Filters", 
-        "Further refine the protein sequences retrieved from the local database"
+        "Additionally Options", 
+        "Further refine selecting proteins of interest for whom data will be retrieved"
     )
 
     add_filt_group.add_argument(
         "--ec_filter",
-        metavar="EC number filters",
+        metavar="EC numbers",
         type=str,
         default=None,
-        help="Retrieve data for proteins annotated with at least one of the provided EC numbers. Separate EC numbers with a single comma, e.g. 1.2.3.4,2.3.4.5. The 'EC' prefix is optional, and '*' and *-* are accepted for missing digits"
+        help="Limit retrieval to proteins annotated with the provided EC numbers. Separate EC numbers with a single comma, e.g. 1.2.3.4,2.3.4.5. The 'EC' prefix is option, and '*' and *-* are accepted for missing digits"
     )
 
     #
     # CACHE OPTIONS
     #
-
     cache_group = parser.add_argument_group(
         "Cache Options", 
         "Use cache files and change the cache location"
@@ -322,16 +331,16 @@ def main():
         metavar="Cache directory",
         widget="DirChooser",
         default=None,
-        help="Target path for cache dir to be used instead of default path",
+        help="Directory to be used for storing the cache instead of the default cache directory",
     )
 
     cache_group.add_argument(
         "--nodelete_cache",
-        metavar="Do no delete existing cache",
+        metavar="Do not delete existing cache",
         dest="nodelete_cache",
         action="store_true",
         default=False,
-        help="When called, content in the existing cache dir is NOT deleted",
+        help="When called, content in the existing cache dir is NOT deleted. By default, if the cache directory already exists, cazy_webscraper will delete the contents",
     )
 
     #
@@ -346,7 +355,23 @@ def main():
         type=Path,
         metavar="Log file name",
         default=None,
-        help="Define directory to write out log files",
+        help="Write out the log to a file with the provided name. If not provided, no log file is written",
+    )  
+    
+    log_group.add_argument(
+        "--log_dir",
+        widget="DirChooser",
+        metavar="Log directory",
+        default=None,
+        help="Define the directory to write out log files",
+    )
+    
+    log_group.add_argument(
+        "--nodelete_log",
+        dest="nodelete_log",
+        action="store_true",
+        default=False,
+        help="When called, content in the existing log dir is NOT deleted. By default, if the directory already exists, cazy_webscraper will delete the contents",
     )
 
     log_group.add_argument(
@@ -365,17 +390,16 @@ def main():
 
     misc_group = parser.add_argument_group(
         "Operation Options",
-        "Options to find tune the operation of cazy_webscraper"
+        "Additional operations to fine tune how cazy_webscraper operates"
     )
 
-    # Add option to force file over writting
     misc_group.add_argument(
         "--sql_echo",
         metavar="SQL db echo",
         dest="sql_echo",
         action="store_true",
         default=False,
-        help="Set SQLite engine echo to True (SQLite will print its log messages)",
+        help="Set SQLite engine echo to True. sqlalchemy (which is used to manage the local database) will print its log messages to the terminal",
     )
 
     misc_group.add_argument(
@@ -383,10 +407,7 @@ def main():
         metavar="CAZy class synonyms",
         widget="FileChooser",
         default=None,
-        help=(
-            "Path to JSON file containing CAZy class synoymn names "
-            "Use your own CAZy class synonyms"
-        ),
+        help=("Path to JSON file containing CAZy class synoymn (i.e. list of accepted alternative names for CAZy classes) to be used"),
     )
 
     misc_group.add_argument(
@@ -395,7 +416,7 @@ def main():
         metavar="Configuration file",
         widget="FileChooser",
         default=None,
-        help="Path to configuration file. Default: None, scrapes entire database",
+        help="Path to configuration file",
     )
 
     gooey_args = parser.parse_args()
@@ -430,6 +451,10 @@ def main():
         included_data.append("genbank_seq")
     
     gooey_args.include = included_data
+    
+    # compile path for the log file 
+    if gooey_args.log is not None and gooey_args.log_dir is not None:
+        gooey_args.log = Path(gooey_args.log_dir) / gooey_args.log
 
     cw_query_database.main(args=gooey_args)
 
