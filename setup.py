@@ -85,6 +85,8 @@ setuptools.setup(
     },
     install_requires=[
         "biopython>=1.76",
+        "bioservices",
+        "gooey>=1.0.8.1",
         "mechanicalsoup",
         "pandas>=1.0.3",
         "pyyaml",
@@ -92,7 +94,6 @@ setuptools.setup(
         "saintBioutils>=0.0.22",
         "sqlalchemy>=1.4.20",
         "tqdm",
-        "gooey>=1.0.8.1",
     ],
     packages=setuptools.find_packages(),
     package_data={
