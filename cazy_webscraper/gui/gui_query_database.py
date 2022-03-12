@@ -92,9 +92,9 @@ def main():
     )
 
     retrieval_group.add_argument(
-        "--include_class",
+        "--include",
         metavar="CAZy class",
-        dest="include_class",
+        dest="include",
         action="store_true",
         default=False,
         help="Include CAZy class annotations",
@@ -164,8 +164,8 @@ def main():
     )
 
     retrieval_group.add_argument(
-        "--ec",
-        dest="ec",
+        "--include_ec",
+        dest="include_ec",
         metavar="EC numbers",
         action="store_true",
         default=False,
@@ -173,18 +173,18 @@ def main():
     )
 
     retrieval_group.add_argument(
-        "--pdb",
+        "--include_pdb",
         metavar="PDB accessions",
-        dest="pdb",
+        dest="include_pdb",
         action="store_true",
         default=False,
         help="Retrieve PDB accessions from UniProt",
     )
 
     retrieval_group.add_argument(
-        "--uniprot_sequence",
+        "--include_uni_seq",
         metavar="UniProt protein sequences",
-        dest="sequence",
+        dest="include_uni_seq",
         action="store_true",
         default=False,
         help=(
@@ -405,7 +405,31 @@ def main():
         gooey_args.file_types = ["csv", "json"]
 
     # Parse the data to be included in the output into a single args
-
+    included_data = []
+    if gooey_args.include:
+        included_data.append("class")
+    if gooey_args.include_fam:
+        included_data.append("family")
+    if gooey_args.include_subfam:
+        included_data.append("subfamily")  
+    if gooey_args.include_genus:
+        included_data.append("genus")
+    if gooey_args.include_organism:
+        included_data.append("organism")
+    if gooey_args.include_uni_acc:
+        included_data.append("uniprot_acc")
+    if gooey_args.include_name:
+        included_data.append("uniprot_name")
+    if gooey_args.include_ec:
+        included_data.append("ec")
+    if gooey_args.include_pdb:
+        included_data.append("pdb")
+    if gooey_args.include_uni_seq:
+        included_data.append("uniprot_seq")
+    if gooey_args.include_gkb_seq:
+        included_data.append("genbank_seq")
+    
+    gooey_args.include = included_data
 
     cw_query_database.main(args=gooey_args)
 
