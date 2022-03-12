@@ -383,7 +383,7 @@ def main():
 
     # parse the PDB structure file choices
     if gooey_args.mmcif is False and gooey_args.pdb is False and gooey_args.xml is False and gooey_args.bundle is False:
-        print("At least one structure file format must be selected")
+        print("ERROR: At least one structure file format must be selected")
         sys.exit(1)
 
     get_pdb_structures.main(args=gooey_args)
