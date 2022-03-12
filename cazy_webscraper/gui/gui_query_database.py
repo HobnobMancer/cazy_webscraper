@@ -400,6 +400,13 @@ def main():
 
     gooey_args = parser.parse_args()
 
+    # Parse the selected file types into a single args
+    if gooey_args.file_types == ["csv and json"]:
+        gooey_args.file_types = ["csv", "json"]
+
+    # Parse the data to be included in the output into a single args
+
+
     cw_query_database.main(args=gooey_args)
 
 
