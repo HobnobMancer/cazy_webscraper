@@ -68,40 +68,49 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    parser.add_argument(
-        "mmcif",
+    parser.add_argument(  
+        "database",
+        metavar="Local CAZyme database",
+        widget="FileChooser",
+        help="The path to the local CAZyme database to extract protein sequences from",
+    )
+
+    structure_group = parser.add_argument_group(
+        "Structure files [required]", 
+        "Choose which structure file formats to download from PDB. At least one file type must be selected."
+    )
+
+    structure_group.add_argument(
+        "--mmcif",
+        dest="mmcif",
         metavar="mmCif",
         action="store_true",
         default=False,
         help="Retrieve structure files in mmCif format",
     )
-    parser.add_argument(
-        "pdb",
+    structure_group.add_argument(
+        "--pdb",
+        dest="pdb",
         metavar="pdb",
         action="store_true",
         default=False,
         help="Retrieve structure files in pdb format",
     )
-    parser.add_argument(
-        "xml",
+    structure_group.add_argument(
+        "--xml",
+        dest="xml",
         metavar="xml",
         action="store_true",
         default=False,
         help="Retrieve structure files in xml format",
     )
-    parser.add_argument(
-        "bundle",
+    structure_group.add_argument(
+        "--bundle",
+        dest="bundle",
         metavar="bundle",
         action="store_true",
         default=False,
         help="Retrieve structure files in bundle format",
-    )
-
-    parser.add_argument(
-        "database",
-        metavar="Local CAZyme database",
-        widget="FileChooser",
-        help="The path to the local CAZyme database to extract protein sequences from",
     )
 
 
@@ -374,7 +383,8 @@ def main():
 
     # parse the PDB structure file choices
     if gooey_args.mmcif is False and gooey_args.pdb is False and gooey_args.xml is False and gooey_args.bundle is False:
-        raise ValueError("At least one structure file format must be selected")
+        print("At least one structure file format must be selected")
+        sys.exit(1)
 
     get_pdb_structures.main(args=gooey_args)
 
