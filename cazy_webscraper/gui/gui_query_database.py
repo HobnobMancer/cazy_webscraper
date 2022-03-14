@@ -139,7 +139,7 @@ def main():
     retrieval_group.add_argument(
         "--include_gbk_seq",
         metavar="GenBank protein sequences",
-        dest="sequence",
+        dest="include_gbk_seq",
         action="store_true",
         default=False,
         help="Including protein sequences retrieved from GenBank",
