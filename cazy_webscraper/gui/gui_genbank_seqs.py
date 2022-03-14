@@ -138,7 +138,7 @@ def main():
         type=str,
         default=None,
         help=(
-            "Classes from which all families will be scraped. "
+            "Classes for which protein sequences will be retrieved. "
             "Separate classes with a single comma ',', e.g. 'GH,GT,PL'"
         ),
     )
@@ -148,17 +148,10 @@ def main():
         metavar="CAZy (sub)families",
         type=str,
         default=None,
-        help="Families and subfamilies to scrape. Separate families with single commas 'GH1,GH2'. CAZy families are case sensitive"
-    )
-
-    class_group.add_argument(
-        "-s",
-        "--subfamilies",
-        metavar="Retrieve subfamilies",
-        dest="subfamilies",
-        action="store_true",
-        default=False,
-        help="Enable retrieving of subfamily annotations from CAZy",
+        help=(
+            "Families and subfamilies for which protein sequences will be retrieved. "
+            "Separate families with single commas 'GH1,GH2'. CAZy families are case sensitive"
+        ),
     )
 
     #
