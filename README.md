@@ -40,7 +40,7 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 - **Caching:** Data downloaded from CAZy is not only parsed and written to a local CAZyme database. The raw data files are written to cache. Data can be scraped directly from a cache (ideal if CAZy updates during the retrieval of multiple datasets from the CAZy database).
 - **Handling multiple taxa:** It is possible for a single protein (identified by its unique GenBank accession) to be associated with multiple taxa in the CAZy data. For these instances, `cazy_webscraper` queries NCBI to retrieve the latest taxonomic source of the protein.
 
-## GUI
+## GUI (Beta)
 
 As of version 2.0.11, a graphical user interface (GUI) wrapper is provided with `cazy_webscraper`. Each subcommand of `cazy_webscraper` has its own GUI.
 
