@@ -118,13 +118,23 @@ def main():
         help="Overwrite existing output files",
     )
 
-    parser.add_argument(
+    output_group.add_argument(
         "-f",
         "--force",
         dest="force",
         action="store_true",
         default=False,
         help="Force writing to existing output directory",
+    )
+
+    output_group.add_argument(
+        "-n",
+        "--nodelete",
+        metavar="Do NOT delete content in output directory",
+        dest="nodelete",
+        action="store_true",
+        default=False,
+        help="When called, content in the existing out dir is NOT deleted. By default cazy_webscraper deletes content in the existing output dir",
     )
 
     #
