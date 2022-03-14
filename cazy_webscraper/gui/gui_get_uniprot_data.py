@@ -47,12 +47,15 @@ from pathlib import Path
 from gooey import Gooey, GooeyParser
 
 from cazy_webscraper.expand.uniprot import get_uniprot_data
+from cazy_webscraper.gui import build_and_covert_to_paths
 from cazy_webscraper.gui.assets import build_menus
+
 
 cw_menu = build_menus(
     'cw_get_uniprot_data',
     'Retrieve protein data from UniProtKB for CAZymes in a local CAZyme database. The retrieved data is stored in the local CAZyme database.'
 )
+
 
 @Gooey(
     program_name="Get Protein Data From UniProt",
@@ -460,10 +463,17 @@ def main():
 
     gooey_args = parser.parse_args()
 
-    # compile path for the log file 
-    if gooey_args.log is not None and gooey_args.log_dir is not None:
-        gooey_args.log = Path(gooey_args.log_dir) / gooey_args.log
+    gooey_args = build_and_covert_to_paths(gooey_args)
+
+    if gooey_args.genbank_accessions is not None:
+        gooey_args.genbank_accession = Path(gooey_args.genbank_accessions)
+
+    if gooey_args.skip_uniprot_accessions is not None:
+        gooey_args.skip_uniprot_accessions = Path(gooey_args.skip_uniprot_accessions)
     
+    if gooey_args.use_uniprot_cache is not None:
+        gooey_args.use_uniprot_cache = Path(gooey_args.use_uniprot_cache)
+
     get_uniprot_data.main(args=gooey_args)
 
 
