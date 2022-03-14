@@ -83,6 +83,39 @@ def main():
     )
 
     #
+    # Output options
+    #
+
+    output_group = parser.add_argument_group(
+        "Output options", 
+        "By default the the output files are written to the current working directory. Detfine a different output directory and/or add a prefix to all output file names",
+    )
+
+    output_group.add_argument(
+        "-o",
+        "--output_dir",
+        widget="DirChooser",
+        default=None,
+        help="Path to output dir, default: None (writes to cwd)",
+    )
+
+    parser.add_argument(
+        "-p",
+        "--prefix",
+        type=str,
+        default=None,
+        help="String to prefix all output files with, default: None",
+    )
+
+    parser.add_argument(
+        "--overwrite",
+        dest="overwrite",
+        action="store_true",
+        default=False,
+        help="Overwrite existing output files",
+    )
+
+    #
     # Data retrieval
     #
 
