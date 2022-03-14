@@ -509,6 +509,9 @@ def main():
     
     gooey_args = build_and_covert_to_paths(gooey_args)
 
+    if gooey_args.output_dir is not None:
+        gooey_args.output_dir = Path(gooey_args.output_dir)
+
     cw_query_database.main(args=gooey_args)
 
 
