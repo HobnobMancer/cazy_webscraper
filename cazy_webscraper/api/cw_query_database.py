@@ -101,17 +101,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         ec_filters,
     ) = get_expansion_configuration(args)
 
-    output_path = compile_output_name(args)
+    json_output_path, csv_output_path = compile_output_name(args)  # returns a Path obj
 
     existing_files = ""
-    if 'json' in args.file_types:
-        json_output_path = output_path + ".json"
+    if json_output_path is not None:
         logger.warning(f"JSON output path: {json_output_path}")
         if Path(json_output_path).exists():
             existing_files = existing_files + " " + f"{json_output_path}\n"
     
-    if 'csv' in args.file_types:
-        csv_output_path = output_path + ".csv"
+    if csv_output_path is not None:
         logger.warning(f"CSV output path: {csv_output_path}")
         if Path(csv_output_path).exists():
             existing_files = existing_files + " " + f"{csv_output_path}\n"
@@ -203,12 +201,20 @@ def compile_output_name(args):
     if "uniprot_seq" in args.include:
         file_prefix += "_uniprotSeq"
 
+    # add file suffixes
+    if 'json' in args.file_types:
+        json_output_name = file_prefix + ".json"
+    if 'csv' in args.file_types:
+        csv_output_name = file_prefix + ".csv"
+
     if args.output_dir is not None:
-        output_path = args.output_dir / file_prefix
+        json_output_path = args.output_dir / json_output_name
+        csv__output_path = args.output_dir / csv_output_name
     else:
-        output_path = file_prefix
+        json_output_path = json_output_name
+        csv__output_path = csv_output_name
     
-    return output_path
+    return Path(json_output_path), Path(csv__output_path)
 
 
 def get_query_data(gbk_dict, connection, args):
