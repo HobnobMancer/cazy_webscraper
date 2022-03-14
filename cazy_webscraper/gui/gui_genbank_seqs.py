@@ -5,7 +5,7 @@
 # (c) James Hutton Institute 2022
 # Author:
 # Emma E. M. Hobbs
-
+#
 # Contact
 # eemh1@st-andrews.ac.uk
 
@@ -47,12 +47,15 @@ from pathlib import Path
 from gooey import Gooey, GooeyParser
 
 from cazy_webscraper.expand.genbank import get_genbank_sequences
+from cazy_webscraper.gui import build_and_covert_to_paths
 from cazy_webscraper.gui.assets import build_menus
+
 
 cw_menu = build_menus(
     'cw_get_genbank_seqs',
     'Retrieve protein sequences from GenBank for CAZymes in a local CAZyme database. The retrieved protein sequences are stored in the local CAZyme database.'
 )
+
 
 @Gooey(
     program_name="Get GenBank Protein Sequences",
@@ -91,7 +94,7 @@ def main():
 
     update_group = parser.add_argument_group(
         "Update Data",
-        "Enable updating data in the local CAZyme database if a more recent version of the data is available")
+        "Enable updating data in the local CAZyme database if a more recent version of the data is available",
     )
     
     update_group.add_argument(
@@ -355,6 +358,14 @@ def main():
     if gooey_args.log is not None and gooey_args.log_dir is not None:
         gooey_args.log = Path(gooey_args.log_dir) / gooey_args.log
  
+    gooey_args = build_and_covert_to_paths(gooey_args)
+
+    if gooey_args.genbank_accessions is not None:
+        gooey_args.genbank_accessions = Path(gooey_args.genbank_accessions)
+
+    if gooey_args.seq_dict is not None:
+        gooey_args.seq_dict = Path(gooey_args.seq_dict)
+
     get_genbank_sequences.main(args=gooey_args)
 
 
