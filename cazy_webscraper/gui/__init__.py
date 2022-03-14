@@ -37,3 +37,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 """Module for creating GUIs for cazy_webscraper."""
+
+
+from pathlib import Path
+
+
+def build_and_covert_to_paths(gooey_args):
+    """Build path to log file and convert strings from file/dir choosers to paths.
+    
+    :param gooey_args: arguments from gui
+    
+    Return arguments from gui"""
+    # compile path for the log file 
+    if gooey_args.log is not None and gooey_args.log_dir is not None:
+        gooey_args.log = Path(gooey_args.log_dir) / gooey_args.log
+
+    # Convert strings to Paths
+    gooey_args.database = Path(gooey_args.database)
+
+    if gooey_args.cache_dir is not None:
+        gooey_args.cache_dir = Path(gooey_args.cache_dir)
+    
+    if gooey_args.cazy_synonyms is not None:
+        gooey_args.cazy_synonyms = Path(gooey_args.cazy_synonyms)
+
+    if gooey_args.config is not None:
+        gooey_args.config = Path(gooey_args.config)
+    
+    return gooey_args
