@@ -319,8 +319,8 @@ def parse_user_cazy_classes(cazy_classes, cazy_class_synonym_dict):
 
         else:  # written in standardised format
             selected_classes.appent(cazy_class)
-
-    return list(set(cazy_classes))
+        
+    return list(set(selected_classes))
 
 
 def get_cmd_scrape_config(
