@@ -201,20 +201,41 @@ def compile_output_name(args):
     if "uniprot_seq" in args.include:
         file_prefix += "_uniprotSeq"
 
-    # add file suffixes
+    # add file suffixes to file name
     if 'json' in args.file_types:
         json_output_name = file_prefix + ".json"
+    else:
+        json_output_name = None
+
     if 'csv' in args.file_types:
         csv_output_name = file_prefix + ".csv"
+    else:
+        csv_output_name = None
+
+    # add output dir to path
 
     if args.output_dir is not None:
-        json_output_path = args.output_dir / json_output_name
-        csv__output_path = args.output_dir / csv_output_name
+        if json_output_name is not None:
+            json_output_path = args.output_dir / json_output_name
+        else:
+            json_output_path = None
+        if csv_output_name is not None:
+            csv__output_path = args.output_dir / csv_output_name
+        else:
+            csv__output_path = None
+
     else:
-        json_output_path = json_output_name
-        csv__output_path = csv_output_name
+        if json_output_name is not None:
+            json_output_path = Path(json_output_name)
+        else:
+            json_output_path = None
+        
+        if csv_output_name is not None:
+            csv__output_path = Path(csv_output_name)
+        else:
+            csv__output_path = None
     
-    return Path(json_output_path), Path(csv__output_path)
+    return json_output_path, csv__output_path
 
 
 def get_query_data(gbk_dict, connection, args):
