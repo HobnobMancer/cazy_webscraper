@@ -39,6 +39,7 @@
 # SOFTWARE.
 """Create GUI for cazy_scraper.py."""
 
+
 import argparse
 
 from datetime import datetime
@@ -47,7 +48,9 @@ from pathlib import Path
 from gooey import Gooey, GooeyParser
 
 from cazy_webscraper import cazy_scraper
+from cazy_webscraper.gui import build_and_covert_to_paths
 from cazy_webscraper.gui.assets import build_menus
+
 
 cw_menu = build_menus(
     'cazy_webscraper',
@@ -417,9 +420,7 @@ def main():
         
         gooey_args.db_output = db_path
         
-    # compile path for the log file 
-    if gooey_args.log is not None and gooey_args.log_dir is not None:
-        gooey_args.log = Path(gooey_args.log_dir) / gooey_args.log
+    gooey_args = build_and_covert_to_paths(gooey_args)
 
     cazy_scraper.main(args=gooey_args)
 
