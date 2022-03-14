@@ -293,7 +293,6 @@ def parse_user_cazy_classes(cazy_classes, cazy_class_synonym_dict):
     logger = logging.getLogger(__name__)
     logger.info("Standardising names of class listed in configuration file")
 
-    accepted_class_names = list(cazy_class_synonym_dict.keys()) + list(cazy_class_synonym_dict.values())
     standardised_class_names = list(cazy_class_synonym_dict.keys())
 
     selected_classes = []
@@ -302,9 +301,14 @@ def parse_user_cazy_classes(cazy_classes, cazy_class_synonym_dict):
         # identify user defined CAZy classes not written in standardised format
         if cazy_class not in standardised_class_names:
 
-            # not written in standardised format
-            # check if accepted class name
-            if cazy_class not in accepted_class_names:
+            class_name = None
+
+            for standardised_class_name in cazy_class_synonym_dict:
+                if cazy_class in cazy_class_synonym_dict[standardised_class_name]:
+                    class_name = standardised_class_name
+                    selected_classes.append(standardised_class_name)
+            
+            if class_name is None:
                 logger.warning(
                     (
                         f"'{cazy_class}' could not be standardised.\n"
@@ -312,11 +316,6 @@ def parse_user_cazy_classes(cazy_classes, cazy_class_synonym_dict):
                         f"'{cazy_class}' will NOT be scraped."
                     )
                 )
-
-            else:  # written in accepted alternative format
-                for standardised_class_name in cazy_class_synonym_dict:
-                    if cazy_class in cazy_class_synonym_dict[standardised_class_name]:
-                        selected_classes.append(standardised_class_name)
 
         else:  # written in standardised format
             selected_classes.appent(cazy_class)
