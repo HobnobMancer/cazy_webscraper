@@ -102,7 +102,7 @@ def main():
         help="Path to output dir, default: None (writes to cwd)",
     )
 
-    parser.add_argument(
+    output_group.add_argument(
         "-p",
         "--prefix",
         type=str,
@@ -110,12 +110,21 @@ def main():
         help="String to prefix all output files with, default: None",
     )
 
-    parser.add_argument(
+    output_group.add_argument(
         "--overwrite",
         dest="overwrite",
         action="store_true",
         default=False,
         help="Overwrite existing output files",
+    )
+
+    parser.add_argument(
+        "-f",
+        "--force",
+        dest="force",
+        action="store_true",
+        default=False,
+        help="Force writing to existing output directory",
     )
 
     #
