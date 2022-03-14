@@ -38,6 +38,7 @@
 # SOFTWARE.
 """Create GUI for extract_db_seqs.py."""
 
+
 import argparse
 
 from datetime import datetime
@@ -46,12 +47,15 @@ from pathlib import Path
 from gooey import Gooey, GooeyParser
 
 from cazy_webscraper.expand.extract_seqs import extract_db_seqs
+from cazy_webscraper.gui import build_and_covert_to_paths
 from cazy_webscraper.gui.assets import build_menus
+
 
 cw_menu = build_menus(
     'cw_extract_db_seqs',
     'Extract GenBank and/or UniProt protein sequences from a local CAZyme database, and write to a multiple sequence FASTA file, one sequence per FASTA file, and/or a BLAST database.'
 )
+
 
 @Gooey(
     program_name="Extract Db Sequences",
@@ -188,7 +192,7 @@ def main():
         type=str,
         default=None,
         help=(
-            "Classes from which all families will be scraped. "
+            "Classes to extract protein sequences from. "
             "Separate classes with a single comma ',', e.g. 'GH,GT,PL'"
         ),
     )
@@ -198,17 +202,7 @@ def main():
         metavar="CAZy (sub)families",
         type=str,
         default=None,
-        help="Families and subfamilies to scrape. Separate families with single commas 'GH1,GH2'. CAZy families are case sensitive"
-    )
-
-    class_group.add_argument(
-        "-s",
-        "--subfamilies",
-        metavar="Retrieve subfamilies",
-        dest="subfamilies",
-        action="store_true",
-        default=False,
-        help="Enable retrieving of subfamily annotations from CAZy",
+        help="Families and subfamilies to extract protein sequences from. Separate families with single commas 'GH1,GH2'. CAZy families are case sensitive"
     )
 
     #
@@ -398,9 +392,17 @@ def main():
     else:
         gooey_args.source = ['uniprot']
         
-    # compile path for the log file 
-    if gooey_args.log is not None and gooey_args.log_dir is not None:
-        gooey_args.log = Path(gooey_args.log_dir) / gooey_args.log
+    gooey_args = build_and_covert_to_paths(gooey_args)
+
+    if gooey_args.genbank_accessions is not None:
+        gooey_args.genbank_accessions = Path(gooey_args.genbank_accessions)
+    if gooey_args.uniprot_accessions is not None:
+        gooey_args.uniprot_accessions = Path(gooey_args.uniprot_accessions)
+
+    if gooey_args.fasta_dir is not None:
+        gooey_args.fasta_dir = Path(gooey_args.fasta_dir)
+    if gooey_args.uniprot_accessions is not None:
+        gooey_args.blastdb = Path(gooey_args.blastdb)
 
     extract_db_seqs.main(args=gooey_args)
 
