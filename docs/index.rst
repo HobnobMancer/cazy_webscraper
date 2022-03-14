@@ -170,6 +170,7 @@ For details and updates on development, please consult the `GitHub repository <h
    api
    apitutorial
    cache
+   gui
    license
 
 
@@ -181,6 +182,12 @@ If you use ``cazy_webscraper`` in your work *please* do cite our work (including
    
    Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
 
+
+------------------------
+Graphical User Interface
+------------------------
+
+As well as being a command line tool, a graphical user interface (GUI) which wraps ``cazy_webscraper`` is also provided.
 
 ----------------------
 Development and issues

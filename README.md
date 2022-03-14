@@ -55,7 +55,7 @@ cw_gui_get_uniprot_data
 ```
 
 - **Scrape CAZy:** `cw_gui_cazy_webscraper`
-- **Get data from UniProt:** `gui_get_uniprot_data`
+- **Get data from UniProt:** `cw_gui_get_uniprot_data`
 - **Get protein sequences from GenBank:** `cw_gui_get_genbank_seqs`
 - **Extract protein sequences from the local database:** `cw_gui_extract_db_seqs`
 - **Get structure files from PDB:** `cw_gui_get_pdb_structures`
