@@ -447,7 +447,7 @@ def main():
         included_data.append("pdb")
     if gooey_args.include_uni_seq:
         included_data.append("uniprot_seq")
-    if gooey_args.include_gkb_seq:
+    if gooey_args.include_gbk_seq:
         included_data.append("genbank_seq")
     
     gooey_args.include = included_data
