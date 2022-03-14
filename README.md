@@ -40,33 +40,32 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 - **Caching:** Data downloaded from CAZy is not only parsed and written to a local CAZyme database. The raw data files are written to cache. Data can be scraped directly from a cache (ideal if CAZy updates during the retrieval of multiple datasets from the CAZy database).
 - **Handling multiple taxa:** It is possible for a single protein (identified by its unique GenBank accession) to be associated with multiple taxa in the CAZy data. For these instances, `cazy_webscraper` queries NCBI to retrieve the latest taxonomic source of the protein.
 
-## Recent updates in v2
+## GUI
 
-- Fixed failure to retrieve all proteins matching the specified criteria from the local CAZyme database
-- Faster retrieval of proteins matching the specified criteria from the local CAZyme database
-- New tutorials and comprehensive documentation added to [Read the Docs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest)
-- **UniProt:** `cazy_webscraper` can now be used successfully for retrieving data from UniProt and adding the data to the local CAZyme database. This includes retrieving:
-	- UniProt accessions
-	- Protein names
-	- Protein sequences
-	- EC number annotations
-	- PDB accessions
-- **GenBank:** `cazy_webscraper` can now be used to automate the retreival of protein sequences from GenBank for proteins in a local CAZyme database mathcing the users specified critieria. These protein sequences are stored in the local CAZyme database, and can be extracted to a FASTA file using `cazy_webscraper`
-- **Extract sequences from the db:** `cazy_webscraper` can be used to retrieve the GenBank and/or UniProt protein sequences stored in the database for user specified sets of CAZymes
-- **Accession lists:** As well as defining sets of CAZymes of interest for data retrieval by their class, family, EC number and/or taxonomy, `cazy_webscraper` can now accept lists of GenBank and/or UniProt accessions to define specific sets of CAZymes to additional protein data for
-- **Caching:** 
-	- More data is cached
-	- Cached data can be used to continue data retrievals from UniProt and GenBank, when a previous retrieval and/or addition of the data to the database fails
-	- Improved default name of cache dirs and subdirs
-- **Unit tests:** Started rewrite of unit tests to match the new program architecture
+As of version 2.0.11, a graphical user interface (GUI) wrapper is provided with `cazy_webscraper`. Each subcommand of `cazy_webscraper` has its own GUI.
+
+The GUIs are built uisng [`gooey`](https://github.com/chriskiehl/Gooey).
+
+All GUIs are packaged into the `gui` module (under `cazy_webscraper/gui` in the repository).
+
+The GUIs can be called using the same commands use for calling the `cazy_webscraper` subcommands, albeit with the prefix `cw_gui_` not `cw_`. For example, to call the GUI for retrieving protein data from UniProt use the command:
+
+```bash
+cw_gui_get_uniprot_data
+```
+
+- **Scrape CAZy:** `cw_gui_cazy_webscraper`
+- **Get data from UniProt:** `gui_get_uniprot_data`
+- **Get protein sequences from GenBank:** `cw_gui_get_genbank_seqs`
+- **Extract protein sequences from the local database:** `cw_gui_extract_db_seqs`
+- **Get structure files from PDB:** `cw_gui_get_pdb_structures`
+- **Interrogate the local database and extract information:** `cw_gui_query_database`
 
 ## Future work for version 2:
 - Calculate the coverage of the NCBI GenBank assembly database by CAZy (i.e. how many genomic assemblies from the Assembly database are included in the CAZy dataset)
 - Fix any remaining bugs we can find (if you find a bug, please report it and provide as detailed bug report as possible!)
 - Update the unit tests to work with the new `cazy_webscraper` architecture
 - Update the documentation
-- Create video tutorials
-- Add a GUI for use, packaging and distribution
 
 ## Citation
 
