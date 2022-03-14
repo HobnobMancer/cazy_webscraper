@@ -52,7 +52,7 @@ with Path("README.md").open("r") as long_description_handle:
 
 setuptools.setup(
     name="cazy_webscraper",
-    version="2.0.10",
+    version="2.0.11",
     # Metadata
     author="Emma E. M. Hobbs",
     author_email="eemh1@st-andrews.ac.uk",
@@ -75,12 +75,18 @@ setuptools.setup(
     entry_points={
         "console_scripts": [
             "cazy_webscraper = cazy_webscraper.cazy_scraper:main",
-            "cw_get_genbank_seqs = cazy_webscraper.expand.genbank.get_genbank_sequences:main",
             "cw_get_uniprot_data = cazy_webscraper.expand.uniprot.get_uniprot_data:main",
+            "cw_get_genbank_seqs = cazy_webscraper.expand.genbank.get_genbank_sequences:main",
             "cw_extract_db_seqs = cazy_webscraper.expand.extract_seqs.extract_db_seqs:main",
             "cw_get_pdb_structures = cazy_webscraper.expand.pdb.get_pdb_structures:main",
             "cw_query_database = cazy_webscraper.api.cw_query_database:main",
             "cw_cazy_genbank_coverage = cazy_webscraper.genomes.cazy_genbank_coverage:main",
+            "cw_gui_cazy_webscraper = cazy_webscraper.gui.gui_cazy_scraper:main",
+            "cw_gui_get_uniprot_data = cazy_webscraper.gui.gui_get_uniprot_data:main",
+            "cw_gui_get_genbank_seqs = cazy_webscraper.gui.gui_genbank_seq:main",
+            "cw_gui_extract_db_seqs = cazy_webscraper.gui.gui_extract_db_seqs:main",
+            "cw_gui_get_pdb_structures = cazy_webscraper.gui.gui_get_pdb_structures:main",
+            "cw_gui_query_database = cazy_webscraper.gui.gui_query_database:main",
         ]
     },
     install_requires=[
