@@ -47,12 +47,15 @@ from pathlib import Path
 from gooey import Gooey, GooeyParser
 
 from cazy_webscraper.api import cw_query_database
+from cazy_webscraper.gui import build_and_covert_to_paths
 from cazy_webscraper.gui.assets import build_menus
+
 
 cw_menu = build_menus(
     'cw_query_database',
     'Interrogate and retrieve data from a local CAZyme database.'
 )
+
 
 @Gooey(
     program_name="Query The Local Database",
@@ -485,9 +488,7 @@ def main():
     
     gooey_args.include = included_data
     
-    # compile path for the log file 
-    if gooey_args.log is not None and gooey_args.log_dir is not None:
-        gooey_args.log = Path(gooey_args.log_dir) / gooey_args.log
+    gooey_args = build_and_covert_to_paths(gooey_args)
 
     cw_query_database.main(args=gooey_args)
 
