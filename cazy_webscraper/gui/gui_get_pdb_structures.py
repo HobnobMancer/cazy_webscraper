@@ -39,6 +39,7 @@
 # SOFTWARE.
 """Create GUI for get_pdb_structures.py."""
 
+
 import argparse
 import sys
 
@@ -47,6 +48,7 @@ from pathlib import Path
 from gooey import Gooey, GooeyParser
 
 from cazy_webscraper.expand.pdb import get_pdb_structures
+from cazy_webscraper.gui import build_and_covert_to_paths
 from cazy_webscraper.gui.assets import build_menus
 
 
@@ -54,6 +56,7 @@ cw_menu = build_menus(
     'cw_get_pdb_structures',
     'Retrieve protein structure files from the RCSB PDB database for PDB accessions in a local CAZyme database, and write the structure files to disk.'
 )
+
 
 @Gooey(
     program_name="Get Protein Structure Files",
@@ -411,9 +414,16 @@ def main():
         print("ERROR: At least one structure file format must be selected")
         sys.exit(1)
 
-    # compile path for the log file 
-    if gooey_args.log is not None and gooey_args.log_dir is not None:
-        gooey_args.log = Path(gooey_args.log_dir) / gooey_args.log
+    gooey_args = build_and_covert_to_paths(gooey_args)
+
+    if gooey_args.output_dir is not None:
+        gooey_args.output_dir = Path(gooey_args.output_dir)
+
+    if gooey_args.genbank_accessions is not None:
+        gooey_args.genbank_accessions = Path(gooey_args.genbank_accessions)
+
+    if gooey_args.uniprot_accessions is not None:
+        gooey_args.uniprot_accessions = Path(gooey_args.uniprot_accessions)
 
     get_pdb_structures.main(args=gooey_args)
 
