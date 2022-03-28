@@ -108,11 +108,6 @@ def mock_parser(*args, **kwargs):
 
 
 @pytest.fixture
-def mock_config_logger(*args, **kwargs):
-    return
-
-
-@pytest.fixture
 def taxonomic_filter_dict():
     """Dict returned from parse_configuration when no tax filters given."""
     taxonomy_filter = {"genera": [], "species": [], "strains": []}

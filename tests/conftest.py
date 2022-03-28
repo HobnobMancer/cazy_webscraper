@@ -95,6 +95,11 @@ def mock_return_logger(*args, **kwards):
 
 
 @pytest.fixture
+def mock_config_logger(*args, **kwargs):
+    return
+
+
+@pytest.fixture
 def config_dict():
     configuration_dict = {
         'classes': [],
