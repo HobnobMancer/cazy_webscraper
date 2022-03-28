@@ -59,6 +59,9 @@ import sys
 from cazy_webscraper import connect_to_new_db, connect_existing_db
 
 
+# Test connecting to an existing db
+
+
 def test_no_existing_db(time_stamp, start_time, mock_config_logger, monkeypatch):
     """"Test connect_exiting_db when db does not exist"""
     argsdict = {
@@ -88,4 +91,24 @@ def test_existing_db_cant_open(time_stamp, start_time, mock_config_logger, monke
 
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         connect_existing_db(argsdict['args'], time_stamp, start_time)
+    assert pytest_wrapped_e.type == SystemExit
+
+
+# Test building a new db
+
+
+def test_new_db_dboutput_exists_force_false(time_stamp, start_time, mock_config_logger, monkeypatch):
+    """Test connect_to_new_db when the file exists and FORCE is false"""
+    argsdict = {
+        "args": Namespace(
+            db_output="cazy_webscraper/__init__.py",
+            verbose=False,
+            force=False,
+        )
+    }
+
+    monkeypatch.setattr(saint_logger, "config_logger", mock_config_logger)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        connect_to_new_db(argsdict['args'], time_stamp, start_time)
     assert pytest_wrapped_e.type == SystemExit
