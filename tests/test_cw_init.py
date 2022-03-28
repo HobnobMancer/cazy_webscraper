@@ -45,18 +45,14 @@ pytest -v
 """
 
 from argparse import Namespace
+from cazy_webscraper import sql
 
-from logging import getLogger
-import logging
-import os
-
-from cazy_webscraper import cazy
-from cazy_webscraper.utilities.parse_configuration.cazy_class_synonym_dict import cazy_synonym_dict
 from saintBioutils.utilities import logger as saint_logger
+from saintBioutils.utilities import file_io as saint_fileio
 import pytest
-import sys
 
 from cazy_webscraper import connect_to_new_db, connect_existing_db
+from cazy_webscraper.sql import sql_orm
 
 
 # Test connecting to an existing db
@@ -108,6 +104,66 @@ def test_new_db_dboutput_exists_force_false(time_stamp, start_time, mock_config_
     }
 
     monkeypatch.setattr(saint_logger, "config_logger", mock_config_logger)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        connect_to_new_db(argsdict['args'], time_stamp, start_time)
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_new_db_dboutput_exists_force_true(test_input_dir, time_stamp, start_time, mock_config_logger, monkeypatch):
+    """Test connect_to_new_db when the file exists and FORCE is true"""
+    argsdict = {
+        "args": Namespace(
+            db_output=(test_input_dir / "unit_test_database" / "blank_db.db"),
+            verbose=False,
+            force=True,
+            nodelete=True,
+        )
+    }
+
+    monkeypatch.setattr(saint_logger, "config_logger", mock_config_logger)
+    monkeypatch.setattr(saint_fileio, "make_output_directory", mock_config_logger)
+    monkeypatch.setattr(sql_orm, "get_db_connection", mock_config_logger)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        connect_to_new_db(argsdict['args'], time_stamp, start_time)
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_new_db_dboutput_doesnt_exist(test_input_dir, time_stamp, start_time, mock_config_logger, monkeypatch):
+    """Test connect_to_new_db when the file exists and FORCE is true"""
+    argsdict = {
+        "args": Namespace(
+            db_output=(test_input_dir / "unit_test_database" / f"blank_db{time_stamp}.db"),
+            verbose=False,
+            force=True,
+            nodelete=True,
+        )
+    }
+
+    monkeypatch.setattr(saint_logger, "config_logger", mock_config_logger)
+    monkeypatch.setattr(saint_fileio, "make_output_directory", mock_config_logger)
+    monkeypatch.setattr(sql_orm, "get_db_connection", mock_config_logger)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        connect_to_new_db(argsdict['args'], time_stamp, start_time)
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_new_db_doesnt_exist(time_stamp, start_time, mock_config_logger, monkeypatch):
+    """Test connect_to_new_db when the file exists and FORCE is true"""
+    argsdict = {
+        "args": Namespace(
+            db_output=None,
+            verbose=False,
+            force=True,
+            nodelete=True,
+        )
+    }
+
+    monkeypatch.setattr(saint_logger, "config_logger", mock_config_logger)
+    monkeypatch.setattr(saint_fileio, "make_output_directory", mock_config_logger)
+    monkeypatch.setattr(sql_orm, "get_db_connection", mock_config_logger)
 
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         connect_to_new_db(argsdict['args'], time_stamp, start_time)
