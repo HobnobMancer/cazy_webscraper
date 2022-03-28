@@ -204,6 +204,8 @@ def get_class_fam_genbank_accessions(
     for cazy_class in tqdm(class_filters, desc="Retrieving GenBank accessions for selected CAZy classes"):
         if cazy_class not in list(CLASS_ABBREVIATIONS.values()):
             class_abbrev = CLASS_ABBREVIATIONS[cazy_class]
+        else:
+            class_abbrev = cazy_class
         
         logger.warning(f"Retrieving CAZymes for CAZy class {cazy_class}")
 
