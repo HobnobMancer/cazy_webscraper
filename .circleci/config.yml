@@ -6,7 +6,7 @@ orbs:
 jobs:
   build-and-test:
     docker:
-      - image: cimg/python:3.8.3
+      - image: circleci/python:3.8.3
       
     working_directory: ~/cazy_webscraper
 
