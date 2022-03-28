@@ -202,7 +202,10 @@ def get_class_fam_genbank_accessions(
     if len(class_filters) != 0:
         logger.warning("Applying CAZy class filter(s)")
     for cazy_class in tqdm(class_filters, desc="Retrieving GenBank accessions for selected CAZy classes"):
-        class_abbrev = CLASS_ABBREVIATIONS[cazy_class]
+        if cazy_class not in list(CLASS_ABBREVIATIONS.values()):
+            class_abbrev = CLASS_ABBREVIATIONS[cazy_class]
+        
+        logger.warning(f"Retrieving CAZymes for CAZy class {cazy_class}")
 
         # perform a subquery to retrieve all CAZy families in the CAZy class
         inner_stmt = select(CazyFamily.family).where(CazyFamily.family.like(f'{class_abbrev}%'))
@@ -224,6 +227,9 @@ def get_class_fam_genbank_accessions(
     if len(family_filters) != 0:
         logger.warning("Applying CAZy family filter(s)")
     for cazy_family in tqdm(family_filters, desc="Retrieving GenBank accessions for selected CAZy families"):
+
+        logger.warning(f"Retrieving CAZymes for CAZy family {cazy_family}")
+
         inner_stmt = select(CazyFamily.family).where(CazyFamily.family == cazy_family)
         subq = inner_stmt.subquery()
         aliased_families = aliased(CazyFamily, subq)
