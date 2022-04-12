@@ -303,6 +303,7 @@ def write_output(protein_records, cache_dir, args):
             cmd='makeblastdb',
             dbtype='prot',
             input_file=fasta_name,
+            title=args.blastdb,
         )
         stdout, stderr = cmd_makedb()
 
