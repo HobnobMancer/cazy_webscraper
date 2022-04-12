@@ -293,7 +293,7 @@ def write_output(protein_records, cache_dir, args):
     
     if args.blastdb:
         fasta_name = args.blastdb / 'blastdb.fasta'
-        SeqIO.write(protein_records, target_path, "fasta")
+        SeqIO.write(protein_records, fasta_name, "fasta")
 
         cmd_makedb = NcbimakeblastdbCommandline(
             cmd='makeblastdb',
