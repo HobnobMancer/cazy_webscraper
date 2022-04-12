@@ -57,7 +57,6 @@ from Bio.Blast.Applications import NcbimakeblastdbCommandline
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from saintBioutils.utilities.file_io import make_output_directory
-from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger
 
 from cazy_webscraper import closing_message, connect_existing_db
@@ -292,7 +291,12 @@ def write_output(protein_records, cache_dir, args):
             SeqIO.write([record], target_path, "fasta")
     
     if args.blastdb:
-        fasta_name = args.blastdb / 'blastdb.fasta'
+        # check if building a dir
+        if str(args.blastdb).find("/") != -1:
+            # build output dir
+            make_output_directory(args.blastdb.parent, args.force, args.nodelete)
+
+        fasta_name = f"{args.blastdb}_blastdb.fasta"
         SeqIO.write(protein_records, fasta_name, "fasta")
 
         cmd_makedb = NcbimakeblastdbCommandline(
