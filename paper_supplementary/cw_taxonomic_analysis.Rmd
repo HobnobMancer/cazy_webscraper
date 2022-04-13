@@ -1,0 +1,415 @@
+---
+title: "Exploration of the CAZy database using cazy_webscraper"
+author: "Emma E. M. Hobbs"
+date: "05/04/2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library('kableExtra')
+library(magrittr) 
+library('ggplot2')
+library("DT")
+library("datasets")
+library("dplyr")
+library("GGally")
+library("ggridges")
+library("rjson")
+library("readr")
+library(knitr)
+library(tidyverse)
+library("MLmetrics")
+library('mclust')  # adjusted rand index
+library('Metrics')  # Fbeta score
+library("devtools")
+library(ggpubr)
+library(RColorBrewer)
+library(cowplot)
+library(scales)
+library("MASS")
+library("interp")
+library('reshape2')
+library(gridExtra)
+library("stringr")
+library(ggrepel)
+library("heatmaply")
+library(RColorBrewer)
+library("viridis") 
+
+# set up
+colour_set <- c("#3888e0", "#d4af37", "#8660b5", "#acbf1b", "#c22176", "#c2c2c2")
+kingdoms_vector <- c('Archaea', 'Bacteria', 'Eukaryota', 'Viruses', 'Unclassified')
+
+# load data
+get.kingdom.df <- function(df.path){
+  df <- read.csv(df.path)
+  colnames(df) <- c('Kingdom', 'Num_of_CAZymes')
+  df$Kingdom <- str_replace(df$Kingdom, "unclassified", "Unclassified")
+  return(df)
+}
+
+all.cazy.df <- get.kingdom.df("cazymes_per_kingdom.csv")
+
+per.kingdom.df.gh <- get.kingdom.df("gh_cazymes_per_kingdom.csv")
+per.kingdom.df.gt <- get.kingdom.df("gt_cazymes_per_kingdom.csv")
+per.kingdom.df.pl <- get.kingdom.df("pl_cazymes_per_kingdom.csv")
+per.kingdom.df.ce <- get.kingdom.df("ce_cazymes_per_kingdom.csv")
+per.kingdom.df.aa <- get.kingdom.df("aa_cazymes_per_kingdom.csv")
+per.kingdom.df.cbm <- get.kingdom.df("cbm_cazymes_per_kingdom.csv")
+
+per.fam.df <- read.csv("ce_cazymes_per_kingdom_per_family.csv")
+per.fam.df <- rename(per.fam.df, 'Family' = 'ï..Family')
+
+structures.count.df.ce <- read.csv("ce_structures_per_fam.csv")
+colnames(structures.count.df.ce) <- c('Family', 'Num_of_proteins_with_structures')
+
+blastp.pl20.df <- read.csv("pl20_blastp_output", sep="\t")
+colnames(blastp.pl20.df) <- c("qseqid", "sseqid", "pident", "qcovs", "qlen", "slen", "length", "bitscore", "evalue")
+
+pl20.kingdoms.df <- read.csv("pl20_taxonomy.csv")
+colnames(pl20.kingdoms.df) <- c("qseqid", "Genus", "Species", "Kingdom")
+```
+
+This notebook presents the methods and results from exploring the CAZy database (www.cazy.org) using the command-line tool cazy_webscraper..
+
+# Kingdom distribution
+
+Below is the total number of CAZymes per taxonomic kingdom listed in CAZy, for all CAZymes in the CAZy database (January 2022).
+
+```{r allCazy, echo=FALSE, fig.cap="Bar chart of the total number of CAZymes per taxonomic class listed in CAZy."}
+# set order data is presented
+all.cazy.df$Kingdom <- factor(all.cazy.df$Kingdom, levels=kingdoms_vector) 
+
+# make more easily readable numbers for the labels
+all.cazy.df$Num_of_CAZymes_labels <- prettyNum(all.cazy.df$Num_of_CAZymes, big.mark=',', preserve.width="none")
+
+p.all.cazy.kingdom <- ggplot(all.cazy.df, aes(x=Kingdom, y=Num_of_CAZymes, fill=Kingdom)) +
+  geom_bar(stat='identity') +
+  scale_fill_manual(values = colour_set) +
+  geom_label(data=all.cazy.df,
+             aes(label=Num_of_CAZymes_labels, x=Kingdom, y=Num_of_CAZymes, fill=Kingdom),
+             inherit.aes = FALSE) +
+  labs(x="Kingdom", y="Number of CAZymes") +
+  theme(legend.position = "none")
+p.all.cazy.kingdom
+```
+
+```{r saveAllCazyPlot, include=FALSE}
+p.all.cazy.kingdom <- ggplot(all.cazy.df, aes(x=Kingdom, y=Num_of_CAZymes, fill=Kingdom)) +
+  geom_bar(stat='identity') +
+  scale_fill_manual(values = colour_set) +
+  geom_label(data=all.cazy.df,
+             aes(label=Num_of_CAZymes_labels, x=Kingdom, y=Num_of_CAZymes, fill=Kingdom),
+             inherit.aes = FALSE,
+             size=5) +
+  labs(x="Kingdom", y="Number of CAZymes") +
+  theme(legend.position = "none",
+        axis.text=element_text(size=12),
+        axis.title=element_text(size=13,face="bold"),
+        axis.text.x = element_text (angle = 35, vjust = 1, hjust=1))
+png(file = "cazyCazymesPerKingdom.png", width = 8.58, height = 5.5, res=900, units='in')
+p.all.cazy.kingdom
+dev.off()
+```
+
+The distribution of CAZymes per taxonomic kingdom was speculated to be a reflection of the number of sequences available in the NCBI GenBank database, which CAZy analyses to compile CAZyme records. The number of genomic assembly and protein records per taxonomic kingdom in GenBank is listed in the table below.
+
+```{r genbankRecords, echo=FALSE}
+# Data manually retrieved April 2022
+Kingdoms <- c('Archaea', 'Bacteria', 'Eukaryote', 'Viruses')
+GenBank_Genomes <- c(8813, 1147617, 22314, 48039)
+GenBank_Proteins <- c(7406349, 457300627, 70492169, 32564811)
+gbk.df <- data.frame(Kingdoms, GenBank_Genomes, GenBank_Proteins)
+kable(gbk.df, caption="Number of GenBank genomic assemblies and protein records in April 2022 per taxonomic kingdom listed in CAZy", align='c',) %>% kable_styling(full_width = F)
+```
+
+## Taxonomic distribution per CAZy class
+
+Below we present the taxonomic distribution of CAZymes per CAZy class in CAZy, as a bar chart and in tabular format.
+
+```{r cazymesPerClass, echo=FALSE}
+# compile the cazy class dfs into a single df
+all.class.df <- per.kingdom.df.gh
+all.class.df$CAZy_class <- rep('GH', 5)
+per.kingdom.df.gt$CAZy_class <- rep('GT', 5)
+all.class.df <- rbind(all.class.df, per.kingdom.df.gt)
+per.kingdom.df.pl$CAZy_class <- rep('PL', 5)
+all.class.df <- rbind(all.class.df, per.kingdom.df.pl)
+per.kingdom.df.ce$CAZy_class <- rep('CE', 5)
+all.class.df <- rbind(all.class.df, per.kingdom.df.ce)
+per.kingdom.df.aa$CAZy_class <- rep('AA', 5)
+all.class.df <- rbind(all.class.df, per.kingdom.df.aa)
+per.kingdom.df.cbm$CAZy_class <- rep('CBM', 5)
+all.class.df <- rbind(all.class.df, per.kingdom.df.cbm)
+
+# set order data is presented
+all.class.df$Kingdom <- factor(all.class.df$Kingdom, levels=kingdoms_vector) 
+all.class.df$CAZy_class <- factor(all.class.df$CAZy_class, levels=c('GH', 'GT', 'PL', 'CE', 'AA', 'CBM')) 
+
+# make more easily readable numbers for the labels
+all.class.df$Num_of_CAZymes_labels <- prettyNum(all.class.df$Num_of_CAZymes, big.mark=',', preserve.width="none")
+
+p.per.class <- ggplot(all.class.df, aes(x=Kingdom, y=Num_of_CAZymes, fill=Kingdom)) +
+  geom_bar(stat='identity') +
+  scale_fill_manual(values = colour_set) +
+  geom_label(data=all.class.df,
+             aes(label=Num_of_CAZymes_labels, x=Kingdom, y=Num_of_CAZymes, fill=Kingdom),
+             inherit.aes = FALSE,
+             size=3) +
+  labs(x="Kingdom", y="Number of CAZymes") +
+  theme(legend.position = "none",
+        axis.text=element_text(size=8),
+        axis.title=element_text(size=8,face="bold"),
+        strip.text = element_text(size=8)) +
+  facet_wrap(~CAZy_class, ncol=3)
+p.per.class
+```
+
+```{r cazyClassTaxTable, echo=FALSE}
+classes <- c('GH', 'GT', 'PL', 'CE', 'AA', 'CBM')
+CAZy_class <- c()
+Archaea <- c()
+Bacteria <- c()
+Eukaryota <- c()
+Viruses <- c()
+Unclassified <- c()
+Total <- c()
+
+for(c.class in classes){
+  CAZy_class <- append(CAZy_class, c.class)
+  
+  class.rows <- all.class.df[which(all.class.df$CAZy_class == c.class), ]
+  
+  archaea <- class.rows[which(class.rows$Kingdom == 'Archaea'), ]$Num_of_CAZymes
+  Archaea <- append(Archaea, archaea)
+  bacteria <- class.rows[which(class.rows$Kingdom == 'Bacteria'), ]$Num_of_CAZymes
+  Bacteria <- append(Bacteria, bacteria)
+  euk <- class.rows[which(class.rows$Kingdom == 'Eukaryota'), ]$Num_of_CAZymes
+  Eukaryota <- append(Eukaryota, euk)
+  vir <- class.rows[which(class.rows$Kingdom == 'Viruses'), ]$Num_of_CAZymes
+  Viruses <- append(Viruses, vir)
+  un <- class.rows[which(class.rows$Kingdom == 'Unclassified'), ]$Num_of_CAZymes
+  Unclassified <- append(Unclassified, un)
+  
+  total <- archaea + bacteria + euk + vir + un
+  Total <- append(Total, total)
+}
+
+all.classes.df <- data.frame(CAZy_class, Archaea, Bacteria, Eukaryota, Viruses, Unclassified, Total)
+colnames(all.classes.df) <-c('CAZy_class', 'Archaea','Bacteria','Eukaryota','Viruses','Unclassified', 'Total')
+kable(all.classes.df, caption="Distribution of CAZymes per taxonomic kingdom across CAZy", align='c',) %>% kable_styling(full_width = F)
+```
+
+## Kingdom distribution per CE family
+
+The following figure looks specifically at the taxonomic kingdom distribution per family in the CAZy class carbohydrate esterases (CE), as well as lists the number of CAZymes per CE family with at least one RSCB PDB structure ID listed in UniProt (a representation of the number of CAZymes per family with at least one resolved structure available).
+
+```{r ceFams, echo=FALSE, fig.cap="The number of CAZymes per taxonomic class in CAZy for all CAZy CE families, excluding families CE10 and CE20, which contain no CAZymes. Also the number of CAZymes with at least one RCSB PDB structure ID listed in UniProt is presented."}
+all.fam.kingdoms <- per.fam.df
+
+category_vector <- kingdoms_vector
+category_vector <- append(category_vector, 'Structures')
+
+for(fam.num in 0:20){
+  fam <- paste('CE', as.character(fam.num), sep="")
+  
+  # get all rows for the family
+  fam.rows <- per.fam.df[which(per.fam.df$Family == fam), ]
+  
+  if(nrow(fam.rows) == 0){
+    # create df with all 0s
+    # Family <- rep(fam, 5)
+    # Kingdom <- kingdoms_vector
+    # Num_of_CAZymes <- rep('0', 5)
+    # fam.rows <- data.frame(Family, Kingdom, Num_of_CAZymes)
+    # all.fam.kingdoms <- rbind(all.fam.kingdoms, fam.rows)
+    next
+  }
+  else {
+    # add 0 values for missing kingdoms
+    for(kingdom in kingdoms_vector){
+      if(any(fam.rows==kingdom)){
+        next
+      }
+      else{  # add data for missing kingdom
+        new.data <- c(fam, kingdom, '0')
+        all.fam.kingdoms <- rbind(all.fam.kingdoms, new.data)
+      }
+    }
+    
+    # add number of proteins with at least one PDB ID in uniprot to the df
+    fam.struct.row <- structures.count.df.ce[which(structures.count.df.ce$Family == fam), ]
+    if(nrow(fam.struct.row) == 0){
+      num.of.structures = 0
+    } else {
+      num.of.structures = fam.struct.row$Num_of_proteins_with_structures
+    }
+    new.data <- c(fam, 'Structures', num.of.structures)
+    all.fam.kingdoms <- rbind(all.fam.kingdoms, new.data)
+  }
+  
+}
+
+# set numofCAZymes as numeric
+all.fam.kingdoms$Num_of_CAZymes <- as.numeric(as.character(all.fam.kingdoms$Num_of_CAZymes))  # set numofCAZymes as numeric
+
+# set order data is presented
+all.fam.kingdoms$Kingdom  <- factor(all.fam.kingdoms$Kingdom, levels=category_vector) 
+all.fam.kingdoms$Family  <- factor(all.fam.kingdoms$Family, levels=c('CE0', 'CE1', 'CE2', 'CE3', 'CE4', 'CE5', 'CE6', 'CE7', 'CE8', 'CE9', 'CE10', 'CE11', 'CE12', 'CE13', 'CE14', 'CE15', 'CE16', 'CE17', 'CE18', 'CE19', 'CE20'))
+
+# make more easily readable numbers for the labels
+all.fam.kingdoms$Num_of_CAZymes_labels <- prettyNum(all.fam.kingdoms$Num_of_CAZymes, big.mark=',', preserve.width="none")
+
+all.fam.kingdoms.mutated <- all.fam.kingdoms %>% mutate(label = ifelse(
+  Num_of_CAZymes > 0,
+  prettyNum(Num_of_CAZymes, big.mark=',', preserve.width="none"),
+  NA
+))
+
+y.max <- as.numeric(sort(all.fam.kingdoms$Num_of_CAZymes, decreasing=TRUE)[1]) + 600
+
+p.per.fam <- ggplot(all.fam.kingdoms.mutated, aes(x=Kingdom, y=Num_of_CAZymes, fill=Kingdom)) +
+  geom_bar(stat='identity') +
+  scale_fill_manual(values = colour_set) +
+  geom_label(label=all.fam.kingdoms.mutated$label, size=3, nudge_y=600) +
+  labs(x="Kingdom", y="Number of CAZymes") +
+  theme(legend.position = "none",
+        axis.text=element_text(size=8),
+        axis.title=element_text(size=8,face="bold"),
+        strip.text = element_text(size=8),
+        axis.text.x = element_text(angle = 90, vjust=-0.0000001)) +
+  ylim(0, y.max) + 
+  facet_wrap(~Family, ncol=4)
+p.per.fam
+```
+
+```{r saveCeFams, include=FALSE}
+# write out figure for presentation in a report
+p.per.fam <- ggplot(all.fam.kingdoms.mutated, aes(x=Kingdom, y=Num_of_CAZymes, fill=Kingdom)) +
+  geom_bar(stat='identity') +
+  scale_fill_manual(values = colour_set) +
+  geom_label(label=all.fam.kingdoms.mutated$label, size=3, nudge_y=700, label.padding = unit(0.2, "lines")) +
+  labs(x="Kingdom", y="Number of CAZymes") +
+  theme(legend.position = "none",
+        axis.text=element_text(size=8),
+        axis.title=element_text(size=10,face="bold"),
+        strip.text = element_text(size=8),
+        axis.text.x = element_text(angle = 90, vjust=-0.000000001)) +
+  ylim(0, (y.max+500)) + 
+  facet_wrap(~Family, ncol=3)
+
+png(file = "cazyCeCazymesPerKingdom.png", width = 7.5, height = 9, res=900, units='in')
+p.per.fam
+dev.off()
+```
+
+Archaea are primarily sequestered to CE families 4, 9 and 14.  
+CE families 4, 9, 11, 13, 16 and 18 were dominated by eukaryotic proteins.  
+
+No PDB accessions were returned from UniProt for any proteins in CE13 and CE16, and only one protein in each CE family 6, 17, 18 and 19. Therefore, these families contain many proteins of interest for novel structural characterisation.
+
+Therefore, through simple queries of the CAZy database via a local CAZyme database compiled by cazy_webscraper, the taxonomic distribution of proteins across the CAZy database is revealed as well as gaps in our current understanding of the biochemical and structural properties of CAZymes in CAZy.
+
+# Sequence diversity in CAZy family PL20
+
+cazy_webscraper was used to retrieve the protein sequences for all 54 CAZymes listed in CAZy family PL20, and BLASTP was used to perform all pairwise alignments between all 54 proteins. To facilitate comparison between all alignments, the bitscore was normalised for the length of the query protein sequence by calculating the BLAST Score Ratio (BSR).
+
+```{r plotBLASTP, echo=FALSE}
+# normalise the bitscore for length
+blastp.pl20.df$BSR <- blastp.pl20.df$bitscore / blastp.pl20.df$qlen
+
+# build matrix using BSR
+bsr.df <- data.frame(blastp.pl20.df$qseqid, blastp.pl20.df$sseqid, blastp.pl20.df$BSR)
+colnames(bsr.df) <- c("qseqid", "sseqid", "BSR")
+bsr.matrix <- reshape(
+  bsr.df,
+  idvar="qseqid",
+  timevar="sseqid",
+  direction="wide"
+)
+rownames(bsr.matrix) <- bsr.matrix$qseqid
+bsr.matrix <- subset(bsr.matrix, select = -c(qseqid))
+
+# Drop 'BSR.' prefix from col names
+original_names <- colnames(bsr.matrix)
+new_names <- c()
+for (name in original_names){
+  new_name <- sub('BSR.', '', name)
+  new_names <- append(new_names, new_name)
+}
+colnames(bsr.matrix) <- new_names
+
+# cluster and build heatmap
+pl20.heatmap <- heatmaply(
+  as.matrix(bsr.matrix),
+  column_text_angle = 90,
+  show_dendrogram=FALSE,
+  key.title="BSR",
+  fontsize_row=8,
+  fontsize_col=8,
+  return_ppxpy =TRUE
+)
+
+# get order of axis labels
+y.protein_order <- ggplot_build(pl20.heatmap[[1]])$layout$panel_params[[1]]$y$get_labels()
+y.kingdoms <- c()
+for (protein in y.protein_order){
+  kingdom <- pl20.kingdoms.df[which(pl20.kingdoms.df$qseqid == protein), ]$Kingdom
+  y.kingdoms <- append(y.kingdoms, kingdom)
+}
+
+x.protein_order <- ggplot_build(pl20.heatmap[[1]])$layout$panel_params[[1]]$x$get_labels()
+x.kingdoms <- c()
+for (protein in x.protein_order){
+  kingdom <- pl20.kingdoms.df[which(pl20.kingdoms.df$qseqid == protein), ]$Kingdom
+  x.kingdoms <- append(x.kingdoms, kingdom)
+}
+x.kingdoms.df <- data.frame(x.protein_order, x.kingdoms)
+x.kingdoms.df$x.protein_order <- factor(x.kingdoms.df$x.protein_order, levels=x.protein_order)
+
+pl20.heatmap.plot <- ggheatmap(
+  as.matrix(bsr.matrix),
+  column_text_angle = 90,
+  show_dendrogram=FALSE,
+  key.title="BSR",
+  fontsize_row=8,
+  fontsize_col=8,
+  #'row_side_colors=rev(y.kingdoms),
+  # col_side_colors=x.kingdoms.df$x.kingdoms,
+)
+```
+
+```{r saveBLASTP, include=FALSE}
+png(file = "pl20seqDiversity_.png", width = 10, height = 8, res=900, units='in')
+pl20.heatmap.plot
+dev.off()
+```
+
+To ensure the taxonomic information is present correctly, separate charts presenting the taxonomic kingdom for each CAZyme are generated.
+
+```{r colColours, include=FALSE}
+col.colours <- data.frame(x.protein_order, x.kingdoms)
+col.colours$x.protein_order <- factor(col.colours$x.protein_order, levels=x.protein_order)
+col.p <- ggplot(col.colours, aes(x='col.colours', y=x.protein_order, fill=x.kingdoms)) +
+  geom_tile() +
+  scale_fill_manual(values=c("#0a7a6d", "#d4af37", "#7844b8", "#acbf1b", "#c22176", "#3888e0"))
+png(file = "pl20colColours.png", width = 3, height = 8, res=900, units='in')
+col.p
+dev.off()
+```
+
+```{r rowColors, include=FALSE}
+row.colours <- data.frame(y.protein_order, y.kingdoms)
+row.colours$y.protein_order <- factor(row.colours$y.protein_order, levels=y.protein_order)
+row.p <- ggplot(row.colours, aes(x='row.colours', y=y.protein_order, fill=y.kingdoms)) +
+  geom_tile() +
+  scale_fill_manual(values=c("#0a7a6d", "#d4af37", "#7844b8", "#acbf1b", "#c22176", "#3888e0"))
+png(file = "pl20rowColours.png", width = 3, height = 8, res=900, units='in')
+row.p
+dev.off()
+```
+
+
