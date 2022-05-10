@@ -46,6 +46,66 @@ from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
 
 
+def query_ncbi(protein_ids, args):
+    """Coordinate querying NCBI to get the genomic accessions for a set of proteins
+    
+    :param protein_ids: list, GenBank protein accession numbers
+    :param args: cmd-line args parser
+    
+    Return dict {protein_id: {'genbank' str, 'refseq': str}}
+    """
+    logger = logging.getLogger(__name__)
+
+    logger.info("Positing protein IDs")
+
+    # post protein IDs to Entrez
+    query_key, web_env = post_protein_ids(protein_ids, args)
+
+    if query_key is None:
+        return
+
+    # eLink protein records to nuccore records
+
+
+
+
+
+def post_protein_ids(protein_ids, args):
+    """Post protein IDs to Entrez
+    
+    :param protein_ids: list, GenBank protein accession numbers
+    :param args: cmd-line args parser
+    
+    Return None (x2) if fails
+    Else return query_key and web_env
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.epost,
+            db="Protein",
+            id=str(",".join(protein_ids)),
+        ) as handle:
+            posted_prot_records = Entrez.read(handle, validate=False)
+
+    # if no record is returned from call to Entrez
+    except (TypeError, AttributeError) as err:
+        logger.warning(
+            f"Failed to post protein IDs to entrez."
+        )
+        return None, None
+
+    query_key = posted_prot_records['QueryKey']
+    web_env = posted_prot_records['WebEnv']
+
+    return query_key, web_env
+
+
+
+
+
 def get_linked_nucleotide_record_ids(batch_nuccore):
     """Parse the Entrez efetch XML result.
     
