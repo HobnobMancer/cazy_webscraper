@@ -56,17 +56,26 @@ def query_ncbi(protein_ids, args):
     """
     logger = logging.getLogger(__name__)
 
-    logger.info("Positing protein IDs")
-
     # post protein IDs to Entrez
+    logger.info("Positing protein IDs")
     query_key, web_env = post_protein_ids(protein_ids, args)
 
     if query_key is None:
         return
 
     # eLink protein records to nuccore records
+    logger.info(
+        "Linking protein records to nuccore records and\n"
+        "Retrieving Nuccore record IDs"
+    )
 
+    nuccore_ids = link_proteins_to_nuccore(query_key, web_env, args)
 
+    if len(list(nuccore_ids.keys())) == 0:
+        logger.warning("Retrieved no nucleotide IDs for this batch")
+        return
+    
+    
 
 
 
@@ -102,6 +111,106 @@ def post_protein_ids(protein_ids, args):
 
     return query_key, web_env
 
+
+def link_proteins_to_nuccore(query_key, web_env, args):
+    """Link protein records to nuccore records in Entrez
+    
+    :param query_key: str, from Entrez.epost
+    :param web_env: str, from Entrez.epost
+    :param args: cmd-line args parser
+    
+    Return a dict {protein_id: nuccore_id}
+    or None if fails
+    """
+    logger = logging.getLogger(__name__)
+
+    # retrieve record ID and accession, to associated id and accession
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.esummary,
+            query_key=query_key,
+            WebEnv=web_env,
+            db="Protein",
+            retmode="xml",
+        ) as handle:
+            protein_records = Entrez.read(handle, validate=False)
+        
+    except (TypeError, AttributeError) as error:
+        print(
+            f"Entrez failed to retireve protein records.",
+            error
+        )
+        return
+
+    protein_id_dict = {}  # {protein_id: protein_accession}
+    for record in protein_records:
+        try:
+            protein_id_dict[record['Id']]
+            logger.warning(
+                f"Multiple IDs retrieved for protein acc {record['AccessionVersion']}\n"
+                "Using last Id to be retrieved"
+            )
+            protein_id_dict[record['Id']] = record['AccessionVersion']
+
+        except KeyError:
+            protein_id_dict[record['Id']] = record['AccessionVersion']
+
+    # link protein records and nuccore records
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.elink,
+            query_key=query_key,
+            WebEnv=web_env,
+            dbfrom="Protein",
+            db="Nuccore",
+            linkname="protein_nuccore",
+        ) as handle:
+            nuccore_records = Entrez.read(handle, validate=False)
+        
+    except (TypeError, AttributeError) as error:
+        logger.warning(
+            f"Entrez failed to retireve accession numbers\n",
+            error
+        )
+        return
+
+    # associated nuccore IDs with protein IDs and thus protein accession used in the db
+
+    nuccore_ids = {}  # {protein_accession: nuccore_id}
+    
+    for record in nuccore_records:
+        if len(record['LinkSetDb']) != 0:
+            nuccore_id = record['LinkSetDb'][0]['Link'][0]['Id']
+            protein_ids = record['IdList']
+
+            # identify the corresponding protein accession for the nucleotide record
+            protein_accession = None
+            
+            for protein_id in protein_ids:
+                try:
+                    protein_accession = protein_id_dict[protein_id]
+                except KeyError:
+                    pass
+            
+            if protein_accession is None:
+                logger.warning(f"Could not identify corresponding protein for nuccore id {nuccore_id}")
+                continue
+
+            # store the nucleotide id and protein accession together
+            try:
+                nuccore_ids[protein_accession]
+                logger.warning(
+                    f"Multiple nucleotide sequences linked to protein {protein_accession}\n"
+                    "Using the last nucleotide sequence to retrieved"
+                )
+                nuccore_ids[protein_accession] = nuccore_id
+            
+            except KeyError:
+                nuccore_ids[protein_accession] = nuccore_id
+    
+    return nuccore_ids
 
 
 
