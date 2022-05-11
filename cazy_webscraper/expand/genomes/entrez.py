@@ -74,9 +74,6 @@ def query_ncbi(protein_ids, args):
     if len(list(nuccore_ids.keys())) == 0:
         logger.warning("Retrieved no nucleotide IDs for this batch")
         return
-    
-    
-
 
 
 def post_protein_ids(protein_ids, args):
@@ -113,7 +110,9 @@ def post_protein_ids(protein_ids, args):
 
 
 def link_proteins_to_nuccore(query_key, web_env, args):
-    """Link protein records to nuccore records in Entrez
+    """Retrieved protein record IDs and link protein records to nuccore records in Entrez
+
+    Retrieves the nuccore record IDs and associates them with the corresponding protein accession
     
     :param query_key: str, from Entrez.epost
     :param web_env: str, from Entrez.epost
