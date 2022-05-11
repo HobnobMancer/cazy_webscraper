@@ -58,9 +58,9 @@ def query_ncbi(protein_ids, args):
 
     # post protein IDs to Entrez
     logger.info("Positing protein IDs")
-    query_key, web_env = post_protein_ids(protein_ids, args)
+    query_key_prot, web_env_prot = post_protein_ids(protein_ids, args)
 
-    if query_key is None:
+    if query_key_prot is None:
         return
 
     # eLink protein records to nuccore records
@@ -69,11 +69,14 @@ def query_ncbi(protein_ids, args):
         "Retrieving Nuccore record IDs"
     )
 
-    nuccore_ids = link_proteins_to_nuccore(query_key, web_env, args)
+    nuccore_ids = link_proteins_to_nuccore(query_key_prot, web_env_prot, args) # {protein_accession: nuccore_id}
 
     if len(list(nuccore_ids.keys())) == 0:
         logger.warning("Retrieved no nucleotide IDs for this batch")
         return
+
+    # post nuccore IDs
+    query_key_nuccore, web_env_nuccore = post_nuccore_ids(list(nuccore_ids.values), args)
 
 
 def post_protein_ids(protein_ids, args):
@@ -212,6 +215,33 @@ def link_proteins_to_nuccore(query_key, web_env, args):
     return nuccore_ids
 
 
+def post_nuccore_ids(nuccore_ids_list, args):
+    """Post list of nuccore IDs to Entrez
+    
+    :param nuccore_ids_list: list, nuccore ids (int)
+    :param args: cmd-line args parser
+    
+    Return query key and webenv, or None (x2) if fails
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.epost,
+            db="Nuccore",
+            id=str(",".join(list(nuccore_ids_list))),
+        ) as handle:
+            posted_records = Entrez.read(handle, validate=False)
+    
+    except (TypeError, AttributeError) as error:
+        logger.warning("Failed to post nuccore IDs:\n", error)
+        return None, None
+    
+    query_key = posted_records['QueryKey']
+    web_env = posted_records['WebEnv']
+
+    return query_key, web_env
 
 
 def get_linked_nucleotide_record_ids(batch_nuccore):
