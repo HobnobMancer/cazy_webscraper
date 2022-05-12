@@ -60,7 +60,8 @@ from cazy_webscraper import utilities
 from cazy_webscraper.cazy_scraper import connect_existing_db
 from cazy_webscraper.expand.uniprot import get_uniprot_data
 from cazy_webscraper.sql import sql_interface
-from cazy_webscraper.sql.sql_interface import add_uniprot_data, get_selected_gbks
+from cazy_webscraper.sql.sql_interface.add_data import add_uniprot_data
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
 from cazy_webscraper.utilities.parsers import uniprot_parser
 
 
