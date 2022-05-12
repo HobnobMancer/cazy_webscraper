@@ -61,7 +61,7 @@ from datetime import datetime
 from pathlib import Path
 
 from cazy_webscraper import cazy_scraper, sql, utilities, closing_message
-from cazy_webscraper.sql.sql_interface import add_cazyme_data
+from cazy_webscraper.sql.sql_interface.add_data import add_cazyme_data
 from cazy_webscraper.sql import sql_interface, sql_orm
 from cazy_webscraper.utilities import parse_configuration, parsers
 from cazy_webscraper.utilities.parsers import cazy_webscraper_parser
