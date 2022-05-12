@@ -94,6 +94,8 @@ def log_scrape_in_db(
         retrieved_annotations=retrieved_annotations,
     )
 
+    classes = []
+
     if config_dict is not None:
         # get classes that user named to be scraped
         try:
