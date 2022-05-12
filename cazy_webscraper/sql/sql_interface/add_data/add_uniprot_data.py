@@ -45,7 +45,8 @@ import logging
 from sqlalchemy import delete, text
 from tqdm import tqdm
 
-from cazy_webscraper.sql.sql_interface import insert_data, get_table_dicts
+from cazy_webscraper.sql.sql_interface import insert_data
+from cazy_webscraper.sql.sql_interface.get_data import get_table_dicts
 from cazy_webscraper.sql.sql_orm import genbanks_ecs
 
 
