@@ -76,3 +76,30 @@ def test_select_first_organism(cazy_data):
     logger = logging.getLogger(__name__)
 
     taxonomy.select_first_organism(cazy_data, ['gbk1', 'gbk2', 'gbk3', 'gbk4'], logger)
+
+
+def test_multi_taxa_invalid(cazy_data, monkeypatch):
+    """Test replace_multiple_tax_with_invalid_ids"""
+    gbk_accs = ['gbk1', 'gbk2', 'gbk3', 'gbk4']
+    logger = logging.getLogger(__name__)
+
+    def mock_replace_multiple(*args, **kwards):
+        return cazy_data, False
+    
+    monkeypatch.setattr(taxonomy, "replace_multiple_tax", mock_replace_multiple)
+
+    taxonomy.replace_multiple_tax_with_invalid_ids(cazy_data, gbk_accs, logger, "args")
+
+
+def test_multi_taxa(cazy_data, monkeypatch):
+    """Test replace_multiple_tax_with_invalid_ids"""
+    gbk_accs = ['gbk1', 'gbk2', 'gbk3', 'gbk4']
+    logger = logging.getLogger(__name__)
+
+    def mock_replace_multiple(*args, **kwards):
+        return cazy_data, True
+    
+    monkeypatch.setattr(taxonomy, "replace_multiple_tax", mock_replace_multiple)
+
+    taxonomy.replace_multiple_tax_with_invalid_ids(cazy_data, gbk_accs, logger, "args")
+    
