@@ -58,7 +58,7 @@ from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql import sql_interface
-from cazy_webscraper.sql.sql_interface import get_selected_gbks
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_data.add_uniprot_data import (
     add_ec_numbers,
     add_pdb_accessions,
