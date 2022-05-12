@@ -404,7 +404,7 @@ def extract_protein_accessions(single_nucleotide_ids, retrieved_proteins, gbk_ac
                             retrieved_proteins[protein_accession].add(nucleotide_accession)
                         except KeyError:
                             retrieved_proteins[protein_accession] = {nucleotide_accession}
-                        
+
                         newly_retrieved_proteins.add(protein_accession)
 
     return retrieved_proteins, newly_retrieved_proteins, True
@@ -413,12 +413,12 @@ def extract_protein_accessions(single_nucleotide_ids, retrieved_proteins, gbk_ac
 def extract_protein_accessions_individually(single_nucleotide_ids, retrieved_proteins, gbk_accessions, args):
     """Retrieve and parse Nucleotide db records, for NCBI.Protein records from which only
     one NCBI.Nucleotide db record ID was retrieved.
-    
+
     :param retrieved_proteins: dict, {protein_accession: nucleotide record accession}
     :param single_nucleotide_ids: list of nucloetide record IDs
     :param gbk_accessions: list of protein GenBank accessions from the local CAZyme database
     :param args: cmd-line args parser
-    
+
     Return retrieved_proteins (dict)
         newly_retrieved_proteins: set of CAZyme protein accessions retrieved from parsed records
     """
@@ -441,7 +441,7 @@ def extract_protein_accessions_individually(single_nucleotide_ids, retrieved_pro
                     f"Failed Entrez connection for fetching Nucleotide records: {err}"
                 )
                 pass
-    
+
         for record in tqdm(batch_nucleotide, desc="Extracting data from Nucleotide records"):
             nucleotide_accession = record['GBSeq_accession-version']
 
@@ -462,7 +462,7 @@ def extract_protein_accessions_individually(single_nucleotide_ids, retrieved_pro
                                 retrieved_proteins[protein_accession].add(nucleotide_accession)
                             except KeyError:
                                 retrieved_proteins[protein_accession] = {nucleotide_accession}
-                            
+
                             newly_retrieved_proteins.add(protein_accession)
 
     return retrieved_proteins, newly_retrieved_proteins
@@ -470,12 +470,12 @@ def extract_protein_accessions_individually(single_nucleotide_ids, retrieved_pro
 
 def parse_longest_record(nucleotide_record_ids, retrieved_proteins, gbk_accessions, args):
     """Identify the longest NCBI.Nucleotide record, and extract Protein GenBank accessions
-    
+
     :param nucleotide_record_ids: set, NCBI.Nucleotide records IDs retrieved for one Protein record
     :param retrieved_proteins: dict, {protein_accession: nucleotide record accession}
     :param gbk_accessions: list of protein GenBank accessions from the local CAZyme database
     :param args: cmd-line args parser
-    
+
     Return retrieved_proteins (dict)
         newly_retrieved_proteins: set of CAZyme protein accessions retrieved from parsed records
         bool: True if successful Entrez connection, False is connection fails
@@ -507,7 +507,7 @@ def parse_longest_record(nucleotide_record_ids, retrieved_proteins, gbk_accessio
     print("fetched")
     record_lengths = {}  # {Nucleotide record accession: {len: Number of features (int), record: record}
     # longest (most features) record interpretted as the most complete record
-    
+
     for record in tqdm(batch_nucleotide, desc="Selecting longest Nucleotide record"):
         nucleotide_accession = record['GBSeq_accession-version']
 
@@ -517,9 +517,9 @@ def parse_longest_record(nucleotide_record_ids, retrieved_proteins, gbk_accessio
             for feature_qual in feature_dict['GBFeature_quals']:
                 if feature_qual['GBQualifier_name'] == 'protein_id':
                     number_of_features += 1
-        
+
         record_lengths[nucleotide_accession] = {'length': number_of_features, 'record': record}
-    
+
     list_of_lengths = [acc['length'] for acc in list(record_lengths.keys())]
     list_of_lengths.sort(reverse=True)
     longest_length = list_of_lengths[0]
@@ -540,18 +540,18 @@ def parse_longest_record(nucleotide_record_ids, retrieved_proteins, gbk_accessio
 
                         newly_retrieved_proteins.add(protein_accession)
             break
-    
+
     return retrieved_proteins, newly_retrieved_proteins, True
 
 
 def parse_longest_record_individually(nucleotide_record_ids, retrieved_proteins, gbk_accessions, args):
     """Identify the longest NCBI.Nucleotide record, and extract Protein GenBank accessions
-    
+
     :param nucleotide_record_ids: set, NCBI.Nucleotide records IDs retrieved for one Protein record
     :param retrieved_proteins: dict, {protein_accession: nucleotide record accession}
     :param gbk_accessions: list of protein GenBank accessions from the local CAZyme database
     :param args: cmd-line args parser
-    
+
     Return retrieved_proteins (dict)
         newly_retrieved_proteins: set of CAZyme protein accessions retrieved from parsed records
         bool: True if successful Entrez connection, False is connection fails
@@ -583,9 +583,9 @@ def parse_longest_record_individually(nucleotide_record_ids, retrieved_proteins,
                     for feature_qual in feature_dict['GBFeature_quals']:
                         if feature_qual['GBQualifier_name'] == 'protein_id':
                             number_of_features += 1
-                
+
                 record_lengths[nucleotide_accession] = {'length': number_of_features, 'record': record}
-            
+
     list_of_lengths = [acc['length'] for acc in list(record_lengths.keys())]
     list_of_lengths.sort(reverse=True)
     longest_length = list_of_lengths[0]
@@ -606,6 +606,5 @@ def parse_longest_record_individually(nucleotide_record_ids, retrieved_proteins,
 
                         newly_retrieved_proteins.add(protein_accession)
             break
-    
-    return retrieved_proteins, newly_retrieved_proteins, True
 
+    return retrieved_proteins, newly_retrieved_proteins, True
