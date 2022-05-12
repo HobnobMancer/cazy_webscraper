@@ -58,7 +58,8 @@ from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql import sql_orm, sql_interface
-from cazy_webscraper.sql.sql_interface import get_selected_gbks, add_genbank_data
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
+from cazy_webscraper.sql.sql_interface.add_data import add_genbank_data
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 from cazy_webscraper.utilities.parsers.gbk_seq_parser import build_parser
 
@@ -188,7 +189,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     
     SeqIO.write(seq_records, "ce_gbk_protein_seqs.fasta", "fasta")
 
-    # add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, gbk_dict, connection, args)
+    add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, gbk_dict, connection, args)
 
     closing_message("get_genbank_sequences", start_time, args)
 
