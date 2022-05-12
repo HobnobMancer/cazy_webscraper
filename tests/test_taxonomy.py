@@ -69,3 +69,10 @@ def test_id_multi_tax(cazy_data):
     returned_list = taxonomy.identify_multiple_taxa(cazy_data, logger)
 
     assert len(returned_list) == 4
+
+
+def test_select_first_organism(cazy_data):
+    """Test select_first_organism()"""
+    logger = logging.getLogger(__name__)
+
+    taxonomy.select_first_organism(cazy_data, ['gbk1', 'gbk2', 'gbk3', 'gbk4'], logger)
