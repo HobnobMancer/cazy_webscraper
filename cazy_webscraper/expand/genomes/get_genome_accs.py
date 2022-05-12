@@ -50,16 +50,14 @@ import pandas as pd
 from datetime import datetime
 from typing import List, Optional
 
+from Bio import Entrez
 from tqdm import tqdm
 from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger
 
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
-from cazy_webscraper.sql.sql_interface.get_records import (
-    get_user_genbank_sequences,
-    get_user_uniprot_sequences
-)
+from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.utilities import parse_configuration
 from cazy_webscraper.utilities.parsers.extract_seq_parser import build_parser
 
@@ -80,6 +78,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if logger is None:
         logger = logging.getLogger(__package__)
         config_logger(args)
+
+    Entrez.email = args.email
 
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
 
@@ -111,10 +111,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     gbk_dict = {}  # {gbk_acc: gbk_id}
 
-    if args.genbank_accessions is not None:
-        logger.info(f"Extracting protein sequences for GenBank accessions listed in {args.genbank_accessions}")
-        gbk_dict.update(get_user_genbank_sequences(gbk_table_dict, args))
-
     if len(list(gbk_dict.keys())) == 0:
         gbk_dict = get_selected_gbks.get_genbank_accessions(
             class_filters,
@@ -128,4 +124,32 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # retrieve genome accessions from NCBI
 
     closing_message("extract_sequences", start_time, args)
+    
+
+def get_genomic_accessions(protein_ids, args):
+    """Retrieve genomic accessions for a set of proteins from NCBI.
+    
+    :param protein_ids: list, GenBank protein IDs
+    :param args: cmd-line args parser
+    
+    Return dict {protein_id: {'genbank': str, 'refseq': str}}
+    """
+    logger = logging.getLogger(__name__)
+
+    logger.info("Starting retrieval of genomic accessions")
+
+    failed_batches = []  # store lists that causes issues
+
+    genome_dict = {}  # used for storing retrieved genomic accessions
+
+    # break up long list into smaller batches
+    batches = get_chunks_list(protein_ids, args.batch_size)
+
+    for batch in tqdm(batches, desc="Batch quering NCBI"):
+        try:
+            #
+            logger.info()
+        except RuntimeError:
+            failed_batches.append(batch)
+
     
