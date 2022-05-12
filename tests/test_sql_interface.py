@@ -50,6 +50,8 @@ from datetime import datetime
 
 import pytest
 
+from sqlalchemy.exc import IntegrityError
+
 from cazy_webscraper.sql import sql_interface, sql_orm
 
 
@@ -121,6 +123,70 @@ def test_log_scrape(db_path, argsdict):
         session.rollback()
 
 
+
+def test_log_scrape_class_error(db_path, argsdict):
+    """Test log_scrape_in_db()"""
+    time_stamp = "time_Stamp"
+    config_dict = {
+        "GH": {"GH1"},
+    }
+    taxonomy_filters = {"genera": "Trichoderma", "species": {"1", "2"}, "strains": {"1"}}
+    kingdoms = []
+    ec_filter = []
+    retrieved_annotations = "unit test"
+    db = "unit test"
+    
+    db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
+
+    with sql_orm.Session(bind=db_connection) as session:
+        sql_interface.log_scrape_in_db(
+            time_stamp,
+            config_dict,
+            taxonomy_filters,
+            kingdoms,
+            ec_filter,
+            db,
+            retrieved_annotations,
+            session,
+            argsdict["args"],
+        )
+
+        session.rollback()
+
+
+def test_log_scrape_no_classes(db_path, argsdict):
+    """Test log_scrape_in_db()"""
+    time_stamp = "time_Stamp"
+    config_dict = {
+        "classes": [],
+        "GH": {"GH1", "GH1"},
+        "CE": set(),
+    }
+    taxonomy_filters = dict()
+    kingdoms = {"Bacteria", "Viruses"}
+    ec_filter = {"32.15.1.2"}
+    retrieved_annotations = "unit test"
+    db = "unit test"
+    
+    db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
+
+    with sql_orm.Session(bind=db_connection) as session:
+        sql_interface.log_scrape_in_db(
+            time_stamp,
+            config_dict,
+            taxonomy_filters,
+            kingdoms,
+            ec_filter,
+            db,
+            retrieved_annotations,
+            session,
+            argsdict["args"],
+        )
+
+        session.rollback()
+
+
+
 def test_insert_data(db_path, argsdict):
     """Test insert_data"""
     db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
@@ -138,3 +204,4 @@ def test_get_table(db_path, argsdict):
     db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
 
     sql_interface.get_gbk_table_dict(db_connection)
+
