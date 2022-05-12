@@ -49,6 +49,7 @@ from typing import List, Optional
 
 from Bio import Entrez, SeqIO
 from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 from saintBioutils.genbank import entrez_retry
 from saintBioutils.misc import get_chunks_list
 from saintBioutils.utilities.file_io import make_output_directory
@@ -179,7 +180,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.warning(f"Adding {len(list(seq_dict.keys()))} protein seqs to the db")
 
-    add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, gbk_dict, connection, args)
+    seq_records = []
+    for acc in seq_dict:
+        sequence = Seq(seq_dict[acc])
+        record = SeqRecord(sequence, id=acc)
+        seq_records.append(record)
+    
+    SeqIO.write(seq_records, "ce_gbk_protein_seqs.fasta", "fasta")
+
+    # add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, gbk_dict, connection, args)
 
     closing_message("get_genbank_sequences", start_time, args)
 
