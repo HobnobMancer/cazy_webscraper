@@ -140,7 +140,7 @@ def log_scrape_in_db(
                     genera += f", {genus}"
         if len(genera) != 0:
             new_log.genera = genera
-    except TypeError:
+    except (TypeError, KeyError):
         pass
 
     try:
@@ -154,7 +154,7 @@ def log_scrape_in_db(
 
         if len(species) != 0:
             new_log.species = species
-    except TypeError:
+    except (TypeError, KeyError):
         pass
 
     try:
@@ -168,7 +168,7 @@ def log_scrape_in_db(
         
         if len(strains) != 0:
             new_log.strains = strains
-    except TypeError:
+    except (TypeError, KeyError):
         pass
 
     # get Taxonomy Kingdoms defined by user to be scraped
