@@ -46,7 +46,7 @@ pytest -v
 
 
 from argparse import Namespace
-from cazy_webscraper import sql
+from datetime import datetime
 
 import pytest
 
@@ -125,7 +125,16 @@ def test_insert_data(db_path, argsdict):
     """Test insert_data"""
     db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
 
-    sql_interface.insert_data(db_connection, "Kingdoms", ["Kingdom"], [('Bacteria',)])
+    time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    sql_interface.insert_data(db_connection, "Kingdoms", ["Kingdom"], [(time_stamp,)])
 
     with sql_orm.Session(bind=db_connection) as session:
         session.rollback()
+
+
+def test_get_table(db_path, argsdict):
+    """Test get_gbk_table_dict"""
+    db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
+
+    sql_interface.get_gbk_table_dict(db_connection)
