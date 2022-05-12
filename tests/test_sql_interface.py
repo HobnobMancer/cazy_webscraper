@@ -53,19 +53,9 @@ import pytest
 from cazy_webscraper.sql import sql_interface, sql_orm
 
 
-def test_log_scrape(db_path):
-    """Test log_scrape_in_db()"""
-    time_stamp = "time_Stamp"
-    config_dict = {
-        "classes": {'GH'},
-        "GH": {"GH1"},
-    }
-    taxonomy_filters = {"genera": "Trichoderma", "species": {"1", "2"}, "strains": {"1"}}
-    kingdoms = {"Bacteria"}
-    ec_filter = {"32.15.1.2"}
-    retrieved_annotations = "unit test"
-    db = "unit test"
-    argsdict = {
+@pytest.fixture
+def argsdict():
+    args_data = {
         "args": Namespace(
             email="dummy@domain.com",
             cache_dir=None,
@@ -97,6 +87,21 @@ def test_log_scrape(db_path):
             version=False,
         )
     }
+    return args_data
+
+
+def test_log_scrape(db_path, argsdict):
+    """Test log_scrape_in_db()"""
+    time_stamp = "time_Stamp"
+    config_dict = {
+        "classes": {'GH'},
+        "GH": {"GH1"},
+    }
+    taxonomy_filters = {"genera": "Trichoderma", "species": {"1", "2"}, "strains": {"1"}}
+    kingdoms = {"Bacteria"}
+    ec_filter = {"32.15.1.2"}
+    retrieved_annotations = "unit test"
+    db = "unit test"
     
     db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
 
@@ -113,4 +118,14 @@ def test_log_scrape(db_path):
             argsdict["args"],
         )
 
+        session.rollback()
+
+
+def test_insert_data(db_path, argsdict):
+    """Test insert_data"""
+    db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
+
+    sql_interface.insert_data(db_connection, "Kingdoms", ["Kingdom"], [('Bacteria',)])
+
+    with sql_orm.Session(bind=db_connection) as session:
         session.rollback()
