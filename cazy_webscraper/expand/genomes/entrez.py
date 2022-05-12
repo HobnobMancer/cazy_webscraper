@@ -126,38 +126,6 @@ def link_proteins_to_nuccore(query_key, web_env, args):
     """
     logger = logging.getLogger(__name__)
 
-    # retrieve record ID and accession, to associated id and accession
-    try:
-        with entrez_retry(
-            args.retries,
-            Entrez.esummary,
-            query_key=query_key,
-            WebEnv=web_env,
-            db="Protein",
-            retmode="xml",
-        ) as handle:
-            protein_records = Entrez.read(handle, validate=False)
-        
-    except (TypeError, AttributeError) as error:
-        print(
-            f"Entrez failed to retireve protein records.",
-            error
-        )
-        return
-
-    protein_id_dict = {}  # {protein_id: protein_accession}
-    for record in protein_records:
-        try:
-            protein_id_dict[record['Id']]
-            logger.warning(
-                f"Multiple IDs retrieved for protein acc {record['AccessionVersion']}\n"
-                "Using last Id to be retrieved"
-            )
-            protein_id_dict[record['Id']] = record['AccessionVersion']
-
-        except KeyError:
-            protein_id_dict[record['Id']] = record['AccessionVersion']
-
     # link protein records and nuccore records
     try:
         with entrez_retry(
@@ -178,47 +146,47 @@ def link_proteins_to_nuccore(query_key, web_env, args):
         )
         return
 
-    # associated nuccore IDs with protein IDs and thus protein accession used in the db
-
-    nuccore_ids = {}  # {protein_accession: nuccore_id}
+    # retrieve all nuccore IDs
+    nuccore_ids = set()
     
     for record in nuccore_records:
         if len(record['LinkSetDb']) != 0:
-            nuccore_id = record['LinkSetDb'][0]['Link'][0]['Id']
-            protein_ids = record['IdList']
+            for nuc_id in record['LinkSetDb'][0]['Link']:
+                nuccore_ids.add(nuc_id['Id'])
 
-            # identify the corresponding protein accession for the nucleotide record
-            protein_accession = None
-            
-            for protein_id in protein_ids:
-                try:
-                    protein_accession = protein_id_dict[protein_id]
-                except KeyError:
-                    pass
-            
-            if protein_accession is None:
-                logger.warning(f"Could not identify corresponding protein for nuccore id {nuccore_id}")
-                continue
-
-            # store the nucleotide id and protein accession together
-            try:
-                nuccore_ids[protein_accession]
-                logger.warning(
-                    f"Multiple nucleotide sequences linked to protein {protein_accession}\n"
-                    "Using the last nucleotide sequence to retrieved"
-                )
-                nuccore_ids[protein_accession] = nuccore_id
-            
-            except KeyError:
-                nuccore_ids[protein_accession] = nuccore_id
+    query_key, web_env = post_nuccore_ids(nuccore_ids, args)
     
+    if query_key is None:
+        return None
+    
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.efetch,
+            db="Nucleotide",
+            query_key=query_key,
+            WebEnv=web_env,
+            retmode="xml",
+        ) as handle:
+            nuccore_records = Entrez.read(handle, validate=False)
+    
+    except (TypeError, AttributeError) as error:
+        logger.warning("Failed to retrieve nuccore records\n", error)
+        return
+    
+    protein_nuccore_dict = {}  # {protein_acc: nuccore_id}
+
+    for record in tqdm(nuccore_records, desc="Parsing nuccore records"):
+        
+
+
     return nuccore_ids
 
 
-def post_nuccore_ids(nuccore_ids_list, args):
+def post_nuccore_ids(nuccore_ids, args):
     """Post list of nuccore IDs to Entrez
     
-    :param nuccore_ids_list: list, nuccore ids (int)
+    :param nuccore_ids: list, nuccore ids (int)
     :param args: cmd-line args parser
     
     Return query key and webenv, or None (x2) if fails
@@ -230,7 +198,7 @@ def post_nuccore_ids(nuccore_ids_list, args):
             args.retries,
             Entrez.epost,
             db="Nuccore",
-            id=str(",".join(list(nuccore_ids_list))),
+            id=",".join(nuccore_ids),
         ) as handle:
             posted_records = Entrez.read(handle, validate=False)
     
@@ -242,6 +210,9 @@ def post_nuccore_ids(nuccore_ids_list, args):
     web_env = posted_records['WebEnv']
 
     return query_key, web_env
+
+
+#######
 
 
 def get_linked_nucleotide_record_ids(batch_nuccore):
