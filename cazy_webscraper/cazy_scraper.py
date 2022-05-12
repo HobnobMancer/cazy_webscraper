@@ -99,7 +99,7 @@ from cazy_webscraper.taxonomy import (
     replace_multiple_tax,
 )
 from cazy_webscraper.sql import sql_orm, sql_interface
-from cazy_webscraper.sql.sql_interface import add_cazyme_data
+from cazy_webscraper.sql.sql_interface.add_data import add_cazyme_data 
 from cazy_webscraper.utilities import (
     parse_configuration,
     termcolour,
