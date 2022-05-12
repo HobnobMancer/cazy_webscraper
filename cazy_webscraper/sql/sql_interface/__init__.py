@@ -41,6 +41,7 @@
 """Submodule to interact with local SQLite database, and adding data other than CAZyme records."""
 
 
+from asyncio.log import logger
 import logging
 
 from tqdm import tqdm
@@ -80,6 +81,8 @@ def log_scrape_in_db(
 
     Return nothing."""
     logger = logging.getLogger(__name__)
+
+    logger.info("Adding log of scrape to db")
 
     date = time_stamp.split("_")[0]
     time = time_stamp.split("_")[1]
@@ -221,6 +224,10 @@ def insert_data(connection, table_name, column_names, insert_values):
     
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
+    logger.info("Bulk inserting data into db")
+
     # set up series of ? to fill in the VALUES statement
     value_stmt = ''
     for name in range((len(column_names)) - 1):
@@ -246,6 +253,10 @@ def get_gbk_table_dict(connection):
     
     Return dict {gbk accession : gbk id}
     """
+    logger = logging.getLogger(__name__)
+
+    logger.info("Compiling Genbank protein table into dict")
+
     with sql_orm.Session(bind=connection) as session:
         all_genbank = session.query(sql_orm.Genbank).all()
 
