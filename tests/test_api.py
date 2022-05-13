@@ -45,6 +45,9 @@ pytest -v
 """
 
 
+import json
+import pandas as pd
+
 from argparse import Namespace, ArgumentParser
 from datetime import datetime
 from pathlib import Path
@@ -161,6 +164,28 @@ def argsdict_all():
         )
     }
     return data
+
+
+@pytest.fixture
+def query_data():
+    query_data = {
+        "genbank_accession": {
+            'class': {"CAZy classes"},
+            'family': {"CAZy families"},
+            'subfamily': {"CAZy subfamilies"},
+            'kingdom': "kingdom",
+            'genus': "genus",
+            'organism': "genus species strain",
+            'ec_numbers': {"EC number annotations"},
+            'pdb_accessions': {"PDB accessions"},
+            'uniprot_accession': "UniProt protein accession",
+            'uniprot_name': "Name of the protein from UniProt",
+            'uniprot_sequence': "Protein Aa seq from UniProt",
+            'uniprot_sequence_date': "Date the seq was last modified in UniProt",
+            'gbk_sequence': "Protein Aa seq from GenBank0",
+            'gbk_sequence_date': "Date the seq was last modified in Gbk",
+    },}
+    return query_data
 
 
 def test_main_new_output(config_dict, db_path, mock_config_logger, mock_building_parser, monkeypatch):
@@ -451,3 +476,33 @@ def test_single_values():
     query_data = {"gbk_acc": {key: [1, 2]}}
     
     assert cw_query_database.add_single_value_to_rows(query_data, "gbk_acc", key, new_rows) == [[1, [1, 2]], [2, [1, 2]]]
+
+
+def test_json_output(query_data, monkeypatch, argsdict_all):
+    """Test write_json_output()"""
+
+    def mock_return_none(*args, **kwards):
+        return None
+
+    monkeypatch.setattr(json, "dump", mock_return_none)
+
+    cw_query_database.write_json_output("tests/test_outputs/test_api/test_json.json", query_data, argsdict_all["args"])
+
+
+def test_csv_output(query_data, monkeypatch, argsdict_all):
+    """Test write_csv_output()"""
+
+    def mock_columns(*args, **kwards):
+        return ['genbank_accession', 'class', 'family', 'subfamily', 'kingdom', 'genus', 'source_organism', 'genbank_sequence', 'genbank_sequence_date', 'uniprot_accession', 'uniprot_name', 'ec_number', 'pdb_accession', 'uniprot_sequence', 'uniprot_sequence_date']
+    
+    def mock_class(*args, **kwards):
+        return [[1,2,3,4,5,6,7,8,9,10,11]]
+
+    def mock_return_none(*args, **kwards):
+        return None
+
+    monkeypatch.setattr(cw_query_database, "get_column_names", mock_columns)
+    monkeypatch.setattr(cw_query_database, "get_class_fam_relationships", mock_class)
+    monkeypatch.setattr(cw_query_database, "add_single_value_to_rows", mock_class)
+
+    cw_query_database.write_csv_output(query_data, argsdict_all["args"], "tests/test_outputs/test_api/test.csv")
