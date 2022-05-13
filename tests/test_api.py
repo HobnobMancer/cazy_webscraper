@@ -375,3 +375,43 @@ def test_main_existing_output_overwrite(config_dict, db_path, mock_config_logger
     monkeypatch.setattr(cw_query_database, "compile_output_name",mock_names)
 
     cw_query_database.main()
+
+
+def test_compile_names():
+    """Test compile_output_name()"""
+    data = {
+        "args": Namespace(
+            email="dummy@domain.com",
+            cache_dir=None,
+            cazy_data=None,
+            cazy_synonyms=None,
+            classes=None,
+            config=None,
+            citation=False,
+            db_output=Path("db_path"),
+            database=Path("db_path"),
+            output_dir=Path("output_dir/output"),
+            delete_old_relationships=False,
+            force=False,
+            families=None,
+            genera=None,
+            kingdoms=None,
+            log=None,
+            nodelete=False,
+            nodelete_cache=False,
+            nodelete_log=False,
+            retries=10,
+            sql_echo=False,
+            subfamilies=False,
+            species=None,
+            strains=None,
+            timeout=45,
+            validate=True,
+            verbose=False,
+            version=False,
+            prefix="test",
+            include=['class', 'family', 'subfamily', 'kingdom', 'genus', 'organism', 'genbank_seq', 'uniprot_acc', 'uniprot_name', 'ec', 'pdb', 'uniprot_seq']
+        )
+    }
+
+    assert cw_query_database.compile_output_name(data["args"]) == Path("output_dir/output/test_db_path_gbkAcc_classes_fams_subfams_kngdm_genus_orgnsm_gbkSeq_uni_acc_uni_name_ec_pdb_uniprotSeq")
