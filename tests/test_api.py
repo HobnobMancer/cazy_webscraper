@@ -437,3 +437,8 @@ def test_query_data(argsdict_all, monkeypatch):
     monkeypatch.setattr(get_api_data, "get_gbk_seq", mock_get_data)
 
     cw_query_database.get_query_data(gbk_dict, "db", argsdict_all["args"])
+
+
+def test_column_names(argsdict_all):
+    """Tests get_column_names()"""
+    cw_query_database.get_column_names(argsdict_all["args"])
