@@ -182,7 +182,7 @@ def query_data():
             'uniprot_name': "Name of the protein from UniProt",
             'uniprot_sequence': "Protein Aa seq from UniProt",
             'uniprot_sequence_date': "Date the seq was last modified in UniProt",
-            'gbk_sequence': "Protein Aa seq from GenBank0",
+            'gbk_sequence': "Protein Aa seq from GenBank",
             'gbk_sequence_date': "Date the seq was last modified in Gbk",
     },}
     return query_data
@@ -506,3 +506,69 @@ def test_csv_output(query_data, monkeypatch, argsdict_all):
     monkeypatch.setattr(cw_query_database, "add_single_value_to_rows", mock_class)
 
     cw_query_database.write_csv_output(query_data, argsdict_all["args"], "tests/test_outputs/test_api/test.csv")
+
+
+def test_get_relationships_all(query_data, argsdict_all):
+    """Test get_class_fam_relationships()"""
+    cw_query_database.get_class_fam_relationships("genbank_accession", query_data, argsdict_all["args"])
+
+
+def test_get_relationships_class_only(query_data):
+    """Test get_class_fam_relationships() when retrieving only class annotations"""
+    data = {
+        "args": Namespace(
+            include=['class'],
+        )
+    }
+    cw_query_database.get_class_fam_relationships("genbank_accession", query_data, data["args"])
+
+
+def test_get_relationships_family_only(query_data):
+    """Test get_class_fam_relationships() when retrieving only family annotations"""
+    data = {
+        "args": Namespace(
+            include=['family'],
+        )
+    }
+    cw_query_database.get_class_fam_relationships("genbank_accession", query_data, data["args"])
+
+
+def test_get_relationships_subfamily_only(query_data):
+    """Test get_class_fam_relationships() when retrieving only subfamily annotations"""
+    data = {
+        "args": Namespace(
+            include=['subfamily'],
+        )
+    }
+    cw_query_database.get_class_fam_relationships("genbank_accession", query_data, data["args"])
+
+
+def test_get_relationships_class_fam(query_data):
+    """Test get_class_fam_relationships() when retrieving class and family annotations"""
+    data = {
+        "args": Namespace(
+            include=['class', 'family'],
+        )
+    }
+    cw_query_database.get_class_fam_relationships("genbank_accession", query_data, data["args"])
+
+
+def test_get_relationships_class_subfam(query_data):
+    """Test get_class_fam_relationships() when retrieving class and subfamily annotations"""
+    data = {
+        "args": Namespace(
+            include=['class', 'subfamily'],
+        )
+    }
+    cw_query_database.get_class_fam_relationships("genbank_accession", query_data, data["args"])
+
+
+def test_get_relationships_fam_subfam(query_data):
+    """Test get_class_fam_relationships() when retrieving family and subfamily annotations"""
+    data = {
+        "args": Namespace(
+            include=['family','subfamily'],
+        )
+    }
+    cw_query_database.get_class_fam_relationships("genbank_accession", query_data, data["args"])
+
