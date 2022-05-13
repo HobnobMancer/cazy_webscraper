@@ -441,4 +441,13 @@ def test_query_data(argsdict_all, monkeypatch):
 
 def test_column_names(argsdict_all):
     """Tests get_column_names()"""
-    cw_query_database.get_column_names(argsdict_all["args"])
+    assert cw_query_database.get_column_names(argsdict_all["args"]) == ['genbank_accession', 'class', 'family', 'subfamily', 'kingdom', 'genus', 'source_organism', 'genbank_sequence', 'genbank_sequence_date', 'uniprot_accession', 'uniprot_name', 'ec_number', 'pdb_accession', 'uniprot_sequence', 'uniprot_sequence_date']
+
+
+def test_single_values():
+    """Test add_single_value_to_rows()"""
+    new_rows = [[1], [2]]
+    key = "family"
+    query_data = {"gbk_acc": {key: [1, 2]}}
+    
+    assert cw_query_database.add_single_value_to_rows(query_data, "gbk_acc", key, new_rows) == [[1, [1, 2]], [2, [1, 2]]]
