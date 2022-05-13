@@ -59,7 +59,7 @@ from cazy_webscraper import cazy_scraper
 from cazy_webscraper.api import cw_query_database
 from cazy_webscraper.utilities.parsers import api_parser
 from cazy_webscraper.utilities import parse_configuration
-from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_api_data
 
 
 @pytest.fixture
@@ -122,6 +122,45 @@ def mock_building_parser(*args, **kwargs):
         add_help=True,
     )
     return parser_args
+
+
+@pytest.fixture
+def argsdict_all():
+    data = {
+        "args": Namespace(
+            email="dummy@domain.com",
+            cache_dir=None,
+            cazy_data=None,
+            cazy_synonyms=None,
+            classes=None,
+            config=None,
+            citation=False,
+            db_output=Path("db_path"),
+            database=Path("db_path"),
+            output_dir=Path("output_dir/output"),
+            delete_old_relationships=False,
+            force=False,
+            families=None,
+            genera=None,
+            kingdoms=None,
+            log=None,
+            nodelete=False,
+            nodelete_cache=False,
+            nodelete_log=False,
+            retries=10,
+            sql_echo=False,
+            subfamilies=False,
+            species=None,
+            strains=None,
+            timeout=45,
+            validate=True,
+            verbose=False,
+            version=False,
+            prefix="test",
+            include=['class', 'family', 'subfamily', 'kingdom', 'genus', 'organism', 'genbank_seq', 'uniprot_acc', 'uniprot_name', 'ec', 'pdb', 'uniprot_seq']
+        )
+    }
+    return data
 
 
 def test_main_new_output(config_dict, db_path, mock_config_logger, mock_building_parser, monkeypatch):
@@ -377,41 +416,24 @@ def test_main_existing_output_overwrite(config_dict, db_path, mock_config_logger
     cw_query_database.main()
 
 
-def test_compile_names():
+def test_compile_names(argsdict_all):
     """Test compile_output_name()"""
-    data = {
-        "args": Namespace(
-            email="dummy@domain.com",
-            cache_dir=None,
-            cazy_data=None,
-            cazy_synonyms=None,
-            classes=None,
-            config=None,
-            citation=False,
-            db_output=Path("db_path"),
-            database=Path("db_path"),
-            output_dir=Path("output_dir/output"),
-            delete_old_relationships=False,
-            force=False,
-            families=None,
-            genera=None,
-            kingdoms=None,
-            log=None,
-            nodelete=False,
-            nodelete_cache=False,
-            nodelete_log=False,
-            retries=10,
-            sql_echo=False,
-            subfamilies=False,
-            species=None,
-            strains=None,
-            timeout=45,
-            validate=True,
-            verbose=False,
-            version=False,
-            prefix="test",
-            include=['class', 'family', 'subfamily', 'kingdom', 'genus', 'organism', 'genbank_seq', 'uniprot_acc', 'uniprot_name', 'ec', 'pdb', 'uniprot_seq']
-        )
-    }
 
-    assert cw_query_database.compile_output_name(data["args"]) == Path("output_dir/output/test_db_path_gbkAcc_classes_fams_subfams_kngdm_genus_orgnsm_gbkSeq_uni_acc_uni_name_ec_pdb_uniprotSeq")
+    assert cw_query_database.compile_output_name(argsdict_all["args"]) == Path("output_dir/output/test_db_path_gbkAcc_classes_fams_subfams_kngdm_genus_orgnsm_gbkSeq_uni_acc_uni_name_ec_pdb_uniprotSeq")
+
+
+def test_query_data(argsdict_all, monkeypatch):
+    """Test get_query_data()"""
+    gbk_dict = {"acc": "id"}
+
+    def mock_get_data(*args, **kwards):
+        return gbk_dict
+    
+    monkeypatch.setattr(get_api_data, "get_class_fam_annotations", mock_get_data)
+    monkeypatch.setattr(get_api_data, "get_tax_annotations", mock_get_data)
+    monkeypatch.setattr(get_api_data, "get_ec_annotations", mock_get_data)
+    monkeypatch.setattr(get_api_data, "get_pdb_accessions", mock_get_data)
+    monkeypatch.setattr(get_api_data, "get_uniprot_data", mock_get_data)
+    monkeypatch.setattr(get_api_data, "get_gbk_seq", mock_get_data)
+
+    cw_query_database.get_query_data(gbk_dict, "db", argsdict_all["args"])
