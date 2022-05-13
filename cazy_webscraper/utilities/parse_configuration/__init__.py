@@ -293,7 +293,15 @@ def parse_user_cazy_classes(cazy_classes, cazy_class_synonym_dict):
     logger = logging.getLogger(__name__)
     logger.info("Standardising names of class listed in configuration file")
 
-    accepted_class_names = list(cazy_class_synonym_dict.keys()) + list(cazy_class_synonym_dict.values())
+    class_names = list(cazy_class_synonym_dict.keys()) + list(cazy_class_synonym_dict.values())
+    accepted_class_names = []
+    for i in class_names:
+        if type(i) == list:
+            for j in i:
+                accepted_class_names.append(j)
+        else:
+            accepted_class_names.append(i)
+
     standardised_class_names = list(cazy_class_synonym_dict.keys())
 
     selected_classes = []

@@ -23,6 +23,9 @@ Contains fixtures used by multiple test files.
 
 import logging
 import json
+import re
+
+import pandas as pd
 
 from datetime import datetime
 from pathlib import Path
@@ -35,6 +38,18 @@ from sqlalchemy import create_engine
 
 
 Base = declarative_base()
+
+
+@pytest.fixture
+def time_stamp():
+    time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
+    return time_stamp
+
+@pytest.fixture
+def start_time():   
+    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
+    start_time = pd.to_datetime(start_time)
+    return start_time
 
 
 @pytest.fixture
@@ -77,6 +92,11 @@ def time_stamp():
 @pytest.fixture
 def mock_return_logger(*args, **kwards):
     return logging.getLogger('mock_logger')
+
+
+@pytest.fixture
+def mock_config_logger(*args, **kwargs):
+    return
 
 
 @pytest.fixture

@@ -41,6 +41,7 @@
 """Submodule to interact with local SQLite database, and adding data other than CAZyme records."""
 
 
+from asyncio.log import logger
 import logging
 
 from tqdm import tqdm
@@ -81,6 +82,8 @@ def log_scrape_in_db(
     Return nothing."""
     logger = logging.getLogger(__name__)
 
+    logger.info("Adding log of scrape to db")
+
     date = time_stamp.split("_")[0]
     time = time_stamp.split("_")[1]
 
@@ -90,6 +93,8 @@ def log_scrape_in_db(
         database=db,
         retrieved_annotations=retrieved_annotations,
     )
+
+    classes = []
 
     if config_dict is not None:
         # get classes that user named to be scraped
@@ -135,7 +140,7 @@ def log_scrape_in_db(
                     genera += f", {genus}"
         if len(genera) != 0:
             new_log.genera = genera
-    except TypeError:
+    except (TypeError, KeyError):
         pass
 
     try:
@@ -149,7 +154,7 @@ def log_scrape_in_db(
 
         if len(species) != 0:
             new_log.species = species
-    except TypeError:
+    except (TypeError, KeyError):
         pass
 
     try:
@@ -163,7 +168,7 @@ def log_scrape_in_db(
         
         if len(strains) != 0:
             new_log.strains = strains
-    except TypeError:
+    except (TypeError, KeyError):
         pass
 
     # get Taxonomy Kingdoms defined by user to be scraped
@@ -221,6 +226,10 @@ def insert_data(connection, table_name, column_names, insert_values):
     
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
+    logger.info("Bulk inserting data into db")
+
     # set up series of ? to fill in the VALUES statement
     value_stmt = ''
     for name in range((len(column_names)) - 1):
@@ -246,6 +255,10 @@ def get_gbk_table_dict(connection):
     
     Return dict {gbk accession : gbk id}
     """
+    logger = logging.getLogger(__name__)
+
+    logger.info("Compiling Genbank protein table into dict")
+
     with sql_orm.Session(bind=connection) as session:
         all_genbank = session.query(sql_orm.Genbank).all()
 

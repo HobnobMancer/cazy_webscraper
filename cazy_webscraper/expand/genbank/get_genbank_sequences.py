@@ -49,6 +49,7 @@ from typing import List, Optional
 
 from Bio import Entrez, SeqIO
 from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 from saintBioutils.genbank import entrez_retry
 from saintBioutils.misc import get_chunks_list
 from saintBioutils.utilities.file_io import make_output_directory
@@ -57,7 +58,8 @@ from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql import sql_orm, sql_interface
-from cazy_webscraper.sql.sql_interface import get_selected_gbks, add_genbank_data
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
+from cazy_webscraper.sql.sql_interface.add_data import add_genbank_data
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 from cazy_webscraper.utilities.parsers.gbk_seq_parser import build_parser
 
@@ -178,6 +180,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                     fh.write(f"{acc}\n")
 
     logger.warning(f"Adding {len(list(seq_dict.keys()))} protein seqs to the db")
+
+    seq_records = []
+    for acc in seq_dict:
+        sequence = Seq(seq_dict[acc])
+        record = SeqRecord(sequence, id=acc)
+        seq_records.append(record)
+    
+    SeqIO.write(seq_records, "ce_gbk_protein_seqs.fasta", "fasta")
 
     add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, gbk_dict, connection, args)
 
