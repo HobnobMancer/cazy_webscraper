@@ -58,7 +58,7 @@ from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper, closing_message
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_api_data
-from cazy_webscraper.utilities.parsers import api_parser
+from cazy_webscraper.utilities.parsers.api_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
 
@@ -70,10 +70,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # Program preparation
     if argv is None:
-        parser = api_parser.build_parser()
+        parser = build_parser()
         args = parser.parse_args()
     else:
-        parser = api_parser.build_parser(argv)
+        parser = build_parser(argv)
         args = parser.parse_args()
 
     if logger is None:
@@ -108,13 +108,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     existing_files = ""
     if 'json' in args.file_types:
-        json_output_path = output_path + ".json"
+        json_output_path = str(output_path) + ".json"
         logger.warning(f"JSON output path: {json_output_path}")
         if Path(json_output_path).exists():
             existing_files = existing_files + " " + f"{json_output_path}\n"
     
     if 'csv' in args.file_types:
-        csv_output_path = output_path + ".csv"
+        csv_output_path = str(output_path) + ".csv"
         logger.warning(f"CSV output path: {csv_output_path}")
         if Path(csv_output_path).exists():
             existing_files = existing_files + " " + f"{csv_output_path}\n"
