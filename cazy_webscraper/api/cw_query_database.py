@@ -56,7 +56,7 @@ from saintBioutils.utilities import file_io
 from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper, closing_message
-from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_api_data
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_api_data
 from cazy_webscraper.utilities.parsers import api_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
@@ -80,14 +80,17 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         config_logger(args)
 
     connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp, start_time)
+    logger.info("Open connection to local cazyme database:", args.database)
 
     if args.output_dir is not None:
         file_io.make_output_directory(args.output_dir, args.force, args.nodelete)
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
+        logger.info("Building cache dir")
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
+        logger.info("Building cache dir")
         cache_dir = cache_dir / "uniprot_data_retrieval"
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
