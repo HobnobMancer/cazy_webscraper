@@ -59,8 +59,8 @@ from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.expand import get_chunks_gen
-from cazy_webscraper.sql.sql_interface import get_selected_pdbs, get_table_dicts
-from cazy_webscraper.sql.sql_interface.get_records import (
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_pdbs, get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data.get_records import (
     get_user_genbank_sequences,
     get_user_uniprot_sequences
 )

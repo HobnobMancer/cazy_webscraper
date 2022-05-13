@@ -40,6 +40,7 @@
 """Interrogate the local CAZyme database"""
 
 
+from cmath import log
 import logging
 import json
 import re
@@ -56,8 +57,8 @@ from saintBioutils.utilities import file_io
 from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper, closing_message
-from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_api_data
-from cazy_webscraper.utilities.parsers import api_parser
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_api_data
+from cazy_webscraper.utilities.parsers.api_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
 
@@ -69,10 +70,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # Program preparation
     if argv is None:
-        parser = api_parser.build_parser()
+        parser = build_parser()
         args = parser.parse_args()
     else:
-        parser = api_parser.build_parser(argv)
+        parser = build_parser(argv)
         args = parser.parse_args()
 
     if logger is None:
@@ -80,14 +81,17 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         config_logger(args)
 
     connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp, start_time)
+    logger.info("Open connection to local cazyme database:", args.database)
 
     if args.output_dir is not None:
         file_io.make_output_directory(args.output_dir, args.force, args.nodelete)
 
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
+        logger.info("Building cache dir")
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
+        logger.info("Building cache dir")
         cache_dir = cache_dir / "uniprot_data_retrieval"
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
@@ -104,13 +108,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     existing_files = ""
     if 'json' in args.file_types:
-        json_output_path = output_path + ".json"
+        json_output_path = str(output_path) + ".json"
         logger.warning(f"JSON output path: {json_output_path}")
         if Path(json_output_path).exists():
             existing_files = existing_files + " " + f"{json_output_path}\n"
     
     if 'csv' in args.file_types:
-        csv_output_path = output_path + ".csv"
+        csv_output_path = str(output_path) + ".csv"
         logger.warning(f"CSV output path: {csv_output_path}")
         if Path(csv_output_path).exists():
             existing_files = existing_files + " " + f"{csv_output_path}\n"
@@ -164,6 +168,9 @@ def compile_output_name(args):
     :param args: cmd-line args parser
     
     Return str"""
+    logger = logging.getLogger(__name__)
+    logger.info("Compiling names of output files")
+
     file_prefix = f"{args.database.name.replace('.db', '')}"
     if args.prefix is not None:
         file_prefix = f"{args.prefix}_{file_prefix}"
@@ -207,6 +214,8 @@ def compile_output_name(args):
     else:
         output_path = file_prefix
     
+    logger.info("Compiled output path: ", output_path)
+    
     return output_path
 
 
@@ -239,6 +248,8 @@ def get_query_data(gbk_dict, connection, args):
     Retrun dict of retrieved data, keyed by GenBank accession and valued by dict containing
         requested data.
     """
+    logger = logging.getLogger(__name__)
+
     # create dict to store all data retrieved from the databsae query
     query_data = {}
     
@@ -247,26 +258,32 @@ def get_query_data(gbk_dict, connection, args):
         query_data[gbk_acc] = {}
 
     if ('class' in args.include) or ('family' in args.include) or ('subfamily' in args.include):
+        logger.info("Retrieving CAZy family annotations")
         # retrieve the CAZy family annotations from the local CAZyme database
         query_data = get_api_data.get_class_fam_annotations(gbk_dict, query_data, connection, args)
 
     if ('kingdom' in args.include) or ('genus' in args.include) or ('organism' in args.include):
+        logger.info("Retrieving taxonomy data")
         # retrieve the taxonomy data from the local CAZyme database
         query_data = get_api_data.get_tax_annotations(gbk_dict, query_data, connection, args)
 
     if 'ec' in args.include:
-       # retrieve the ec numbers from the local CAZyme database
-       query_data = get_api_data.get_ec_annotations(gbk_dict, query_data, connection)
+        logger.info("Retrieving EC numbers")
+        # retrieve the ec numbers from the local CAZyme database
+        query_data = get_api_data.get_ec_annotations(gbk_dict, query_data, connection)
 
     if 'pdb' in args.include:
+        logger.info("Retrieving PDB accessions")
         # retrieve the PDB accessions from the local CAZyme database
         query_data = get_api_data.get_pdb_accessions(gbk_dict, query_data, connection)
 
     if ('uniprot_acc' in args.include) or ('uniprot_name' in args.include) or ('uniprot_seq' in args.include):
+        logger.info("Retrieving UniProt data")
         # retrieve the UniProt data from the local CAZyme database
         query_data = get_api_data.get_uniprot_data(gbk_dict, query_data, connection, args)
 
     if 'genbank_seq' in args.include:
+        logger.info("Retrieving GenBank protein sequences")
         # retrieve GenBank protein sequences from the local CAZyme database
         query_data = get_api_data.get_gbk_seq(gbk_dict, query_data, connection)
 
@@ -296,6 +313,9 @@ def write_json_output(json_output_path, query_data, args):
 
     Return nothing
     """
+    logger = logging.getLogger(__name__)
+    logger.info("Writing JSON output")
+
     set_keys = [
         'class',
         'family',
@@ -324,6 +344,9 @@ def write_csv_output(query_data, args, output_path):
     
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+    logger.info("Writing CSV output")
+
     column_names = get_column_names(args)
 
     df_data = []  # list of nested lists, one nested list per df row
@@ -435,6 +458,9 @@ def get_column_names(args):
     :param args: cmd-line args parser
     
     Return list of column names"""
+    logger = logging.getLogger(__name__)
+    logger.info("Compiling column names for the CSV output")
+
     column_names = ["genbank_accession"]
 
     # data from CAZy
@@ -492,24 +518,28 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
 
     # class only
     if ('class' in args.include) and ('family' not in args.include) and ('subfamily' not in args.include):
+        logging.info("Only retrieving CAZy classes annotations")
         classes = protein_query_data[gbk_acc]['class']
         for cazy_class in classes:
             new_rows.append([gbk_acc, cazy_class])
 
     # family only
     elif ('class' not in args.include) and ('family' in args.include) and ('subfamily' not in args.include):
+        logger.info("Only retrieving CAZy family annotations")
         families = protein_query_data[gbk_acc]['family']
         for family in families:
             new_rows.append([gbk_acc, family])
 
     # subfamily only
     elif ('class' not in args.include) and ('family' not in args.include) and ('subfamily' in args.include):
+        logger.info("Retrieving only CAZy subfamily annotations")
         subfamilies = protein_query_data[gbk_acc]['subfamily']
         for subfamily in subfamilies:
             new_rows.append([gbk_acc, subfamily])
 
     # class and family, NO subfamily
     elif ('class' in args.include) and ('family' in args.include) and ('subfamily' not in args.include):
+        logger.info("Retrieving CAZy class and family annotations")
         families = protein_query_data[gbk_acc]['family']
         for family in families:
             try:
@@ -521,6 +551,7 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
 
     # class and subfamily, NO family
     elif  ('class' in args.include) and ('family' not in args.include) and ('subfamily' in args.include):
+        logger.info("Retrieving CAZy class and subfamily annotations")
         subfamilies = protein_query_data[gbk_acc]['subfamily']
         for subfamily in subfamilies:
             try:
@@ -532,6 +563,7 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
 
     # family and subfamily, NO class
     elif  ('class' not in args.include) and ('family' in args.include) and ('subfamily' in args.include):
+        logger.info("Retrieving CAZy family and subfamily annotations")
         subfamilies = protein_query_data[gbk_acc]['subfamily']
         added_families = set()
         for subfamily in subfamilies:
@@ -551,6 +583,7 @@ def get_class_fam_relationships(gbk_acc, protein_query_data, args):
 
     # class, family and subfamily
     else:
+        logger.info("Retrieving CAZy class, family and subfamily annotations")
         subfamilies = protein_query_data[gbk_acc]['subfamily']
         added_families = set()
         for subfamily in subfamilies:

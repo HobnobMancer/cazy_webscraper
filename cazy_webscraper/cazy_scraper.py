@@ -99,7 +99,7 @@ from cazy_webscraper.taxonomy import (
     replace_multiple_tax,
 )
 from cazy_webscraper.sql import sql_orm, sql_interface
-from cazy_webscraper.sql.sql_interface import add_cazyme_data
+from cazy_webscraper.sql.sql_interface.add_data import add_cazyme_data 
 from cazy_webscraper.utilities import (
     parse_configuration,
     termcolour,
@@ -125,7 +125,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     if logger is None:
         logger = logging.getLogger(__name__)
-        config_logger(args)
+        config_logger(args, logger_name=__name__)
     
     # check if printing out version or citation information
     if args.version:

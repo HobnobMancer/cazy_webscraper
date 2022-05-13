@@ -52,11 +52,7 @@ with Path("README.md").open("r") as long_description_handle:
 
 setuptools.setup(
     name="cazy_webscraper",
-<<<<<<< HEAD
-    version="2.0.2",
-=======
-    version="2.0.10",
->>>>>>> f1eb215c11bafe52f51fa0d23713be6e6a90fe66
+    version="2.0.12",
     # Metadata
     author="Emma E. M. Hobbs",
     author_email="eemh1@st-andrews.ac.uk",

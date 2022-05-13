@@ -57,12 +57,11 @@ from Bio.Blast.Applications import NcbimakeblastdbCommandline
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from saintBioutils.utilities.file_io import make_output_directory
-from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger
 
 from cazy_webscraper import closing_message, connect_existing_db
-from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
-from cazy_webscraper.sql.sql_interface.get_records import (
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data.get_records import (
     get_user_genbank_sequences,
     get_user_uniprot_sequences
 )
@@ -292,13 +291,19 @@ def write_output(protein_records, cache_dir, args):
             SeqIO.write([record], target_path, "fasta")
     
     if args.blastdb:
-        fasta_name = args.blastdb / 'blastdb.fasta'
-        SeqIO.write(protein_records, target_path, "fasta")
+        # check if building a dir
+        if str(args.blastdb).find("/") != -1:
+            # build output dir
+            make_output_directory(args.blastdb.parent, args.force, args.nodelete)
+
+        fasta_name = f"{args.blastdb}_blastdb.fasta"
+        SeqIO.write(protein_records, fasta_name, "fasta")
 
         cmd_makedb = NcbimakeblastdbCommandline(
             cmd='makeblastdb',
             dbtype='prot',
             input_file=fasta_name,
+            title=args.blastdb,
         )
         stdout, stderr = cmd_makedb()
 
