@@ -122,10 +122,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
     organisms = get_taxonomies(genbank_accessions, connection)
 
-    # parse kingdom table into dict
-    kingdom_db_dict = {}  # {kingdom_id: kingdom}
-
-    genus_dict = build_genus_dict(organisms, kingdom_db_dict)
+    # convert list of organisms into dict {genus: {species: {strain}}}
+    genus_dict = build_genus_dict(organisms)
     genera = list(genus_dict).keys()
 
     Entrez.email = args.email
@@ -189,7 +187,7 @@ def get_gbk_accessions(
 
 
 
-def build_genus_dict(organisms, db_kingdom_dict):
+def build_genus_dict(organisms):
     """Build a dict of {genus: {species: {strains}}} from list of organisms
     
     :param organisms: list, scientific names of organisms from a local cazyme database
