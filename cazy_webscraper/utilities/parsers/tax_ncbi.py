@@ -52,7 +52,7 @@ def build_parser(argv: Optional[List] = None):
     """Return ArgumentParser parser for the script 'expand.genbank_sequences.py'."""
     # Create parser object
     parser = argparse.ArgumentParser(
-        prog="get_ncbi_summary.py",
+        prog="get_ncbi_lineages.py",
         description="Retrieve lineage data from NCBI",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
