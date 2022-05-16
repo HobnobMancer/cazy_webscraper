@@ -520,3 +520,7 @@ def parse_failed_batches(batches, args, lineage_dict, cache_dir):
                 fh.write(f"{genus}\n")
     
     return lineage_dict
+
+
+if __name__ == "__main__":
+    main()
