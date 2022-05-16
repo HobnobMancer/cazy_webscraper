@@ -186,7 +186,6 @@ def get_gbk_accessions(
     return list(gbk_dict.keys())
 
 
-
 def build_genus_dict(organisms):
     """Build a dict of {genus: {species: {strains}}} from list of organisms
     
@@ -223,10 +222,11 @@ def build_genus_dict(organisms):
     return db_tax_dict
 
 
-def build_lineage_dict(genera, args):
+def build_lineage_dict(genera, cache_dir, args):
     """Retrieve full lineage for each organism from the NCBI Taxonomy database
     
     :param genera: set of genera from the local CAZyme database
+    :param cache_dir: path to cache dir
     :param args: cmd-line args parser
     
     Return dataframe of lineages, one unique organism per row.
@@ -264,6 +264,8 @@ def build_lineage_dict(genera, args):
             failed_batches.add(batch)
     
     # handled failed batches
+    if len(failed_batches) != 0:
+        lineage_dict = parse_failed_batches(batches, args, lineage_dict, cache_dir)
 
     return lineage_dict
         
@@ -469,3 +471,52 @@ def build_lineage_df(lineage_dict, genus_dict):
     df = pd.DataFrame(df_data, ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', ' Genus', 'Species', 'Strain'])
 
     return df
+
+
+def parse_failed_batches(batches, args, lineage_dict, cache_dir):
+    """Rerun failed batches.
+    
+    :param bataches: set of batches, each batch is a list of genera
+    :param args: cmd-line args parser
+    :param lineage_dict: 
+    :param cache_dir: path to cache directory
+    
+    Return lineage dict
+    """
+    logger = logging.getLogger(__name__)
+
+    failed_log = cache_dir / "failed_organisms.txt"
+    failed_organisms = set()
+
+    for batch in tqdm(batches, desc="Rerunning failed batches"):
+        for genus in batch:
+            tax_id_dict, failed_genera = get_tax_record_ids([genus], args)
+
+            if len(failed_genera) != 0:
+                logger.warning(f"Could not retrieve tax data from NCBI for {genus}")
+                failed_organisms.add(genus)
+                continue
+
+            if len(list(tax_id_dict.keys())) == 0:
+                logger.warning(f"Could not retrieve tax data from NCBI for {genus}")
+                failed_organisms.add(genus)
+                continue
+
+            query_key, web_env = post_to_entrez([genus], args)
+
+            if query_key is None:
+                failed_organisms.add(genus)
+                continue
+
+            lineage_dict, success = get_lineage([genus], lineage_dict, query_key, web_env, args)
+
+            if success is False:
+                failed_organisms.add(genus)
+                continue
+
+    if len(failed_organisms) != 0:
+        with open(failed_log, "w") as fh:
+            for genus in failed_organisms:
+                fh.write(f"{genus}\n")
+    
+    return lineage_dict
