@@ -120,17 +120,22 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         connection,
         args,
     )
+    logger.info(f"Retrieved {len(genbank_accessions)} matching the provided criteria")
+
     organisms = get_taxonomies(genbank_accessions, connection)
+    logger.info(f"Identified {len(organisms)} matching the provided criteria")
 
     # convert list of organisms into dict {genus: {species: {strain}}}
     genus_dict = build_genus_dict(organisms)
     genera = list(genus_dict).keys()
+    logger.info(f"Retrievied {len(genera)} matching the provided criteria")
 
     Entrez.email = args.email
 
     lineage_dict = build_lineage_dict(genera, args)
 
     lineage_df = build_lineage_df(lineage_dict, genus_dict)
+    logger.info(f"Compiled {len(lineage_df)} lineages")
 
     lineage_df.to_csv(args.output)
 
@@ -193,6 +198,10 @@ def build_genus_dict(organisms):
     
     Return dict
     """
+    logger = logging.getLogger(__name__)
+
+    logger.info("Building dict of organisms of interest")
+
     db_tax_dict = {}  # {genus: {species: {strain}}}
 
     for organism in tqdm(organisms, desc="Compiling tax dict"):
