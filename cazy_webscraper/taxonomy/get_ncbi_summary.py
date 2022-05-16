@@ -57,7 +57,12 @@ from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper, closing_message
 from cazy_webscraper.expand import get_chunks_list
-from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_api_data
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_api_data, get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data.get_records import get_taxonomies
+from cazy_webscraper.sql.sql_interface.get_data.get_records import (
+    get_user_genbank_sequences,
+    get_user_uniprot_sequences
+)
 from cazy_webscraper.utilities.parsers.tax_ncbi import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
@@ -95,8 +100,27 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_dir = cache_dir / "uniprot_data_retrieval"
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
+    # get config data
+    (
+        config_dict,
+        class_filters,
+        family_filters,
+        kingdom_filters,
+        taxonomy_filter_dict,
+        ec_filters,
+    ) = get_expansion_configuration(args)
+
     # retrieve the species matching the user specified criteria
-    organisms = {}
+    genbank_accessions = get_gbk_accessions(
+        class_filters,
+        family_filters,
+        taxonomy_filter_dict,
+        kingdom_filters,
+        ec_filters,
+        connection,
+        args,
+    )
+    organisms = get_taxonomies(genbank_accessions, connection)
 
     # parse kingdom table into dict
     kingdom_db_dict = {}  # {kingdom_id: kingdom}
@@ -115,6 +139,56 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     closing_message("NCBI taxonomy summary", start_time, args)
 
 
+def get_gbk_accessions(
+    class_filters,
+    family_filters,
+    taxonomy_filter_dict,
+    kingdom_filters,
+    ec_filters,
+    connection,
+    args,
+):
+    """Retrieve the genbank accessions of proteins matching the user's specified criteria
+    
+    :param connection: open connection to local sql database
+    :param args: cmd-line args parser
+    
+    Return list of genbank_accessions
+    """
+    logger = logging.getLogger(__name__)
+
+    # retrieve genbank accessions of the proteins of interest
+
+    if args.genbank_accessions is not None or args.uniprot_accessions is not None:
+        gbk_dict = {}  # {gbk_acc: gbk_id}
+
+        # retrieve GenBank accessions of proteins defined by user
+        gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
+        # {genbank_accession: 'taxa_id': str, 'gbk_id': int}
+
+        if args.genbank_accessions is not None:
+            logger.warning(f"Retrieving PDB structures for GenBank accessions listed in {args.genbank_accessions}")
+            gbk_dict.update(get_user_genbank_sequences(gbk_table_dict, args))
+
+        if args.uniprot_accessions is not None:
+            logger.warning(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
+            uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+            gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
+
+    else:
+        gbk_dict = get_selected_gbks.get_genbank_accessions(
+            class_filters,
+            family_filters,
+            taxonomy_filter_dict,
+            kingdom_filters,
+            ec_filters,
+            connection,
+        )
+
+    return list(gbk_dict.keys())
+
+
+
 def build_genus_dict(organisms, db_kingdom_dict):
     """Build a dict of {genus: {species: {strains}}} from list of organisms
     
@@ -122,36 +196,31 @@ def build_genus_dict(organisms, db_kingdom_dict):
     
     Return dict
     """
-    db_tax_dict = {}  # {kingdom: {genus: {species}}}
+    db_tax_dict = {}  # {genus: {species: {strain}}}
 
-    for record in tqdm(organisms, desc="Compiling tax dict"):
-        # retrieve kingdom
-        kingdom = db_kingdom_dict[str(record.kingdom_id).strip()]
+    for organism in tqdm(organisms, desc="Compiling tax dict"):
+        genus = organism.split(" ")[0]
+
+        species_strain = organism.split(" ")[1]
         
-        if record.species.split(" ")[0] == 'sp.':
-            species = record.species
+        if species_strain.split(" ")[0] == 'sp.':
+            species = species_strain
             strain = ""
         else:
-            species = record.species.split(" ")[0]
-            strain = record.species.replace(species, "").strip()
+            species = species_strain.split(" ")[0]
+            strain = species_strain.replace(species, "").strip()
         
         try:
-            db_tax_dict[kingdom]
+            db_tax_dict[genus]
             
             try:
-                db_tax_dict[kingdom][record.genus]
-                
-                try:
-                    db_tax_dict[kingdom][record.genus][species].add(strain)
-                
-                except KeyError:
-                    db_tax_dict[kingdom][record.genus][species] = {strain}
+                db_tax_dict[genus][species].add(strain)
             
             except KeyError:
-                db_tax_dict[kingdom][record.genus] = {species: {strain}}
+                db_tax_dict[genus][species] = {strain}
         
         except KeyError:
-            db_tax_dict[kingdom] = {record.genus: {species: {strain}}}
+            db_tax_dict[genus] = {species: {strain}}
     
     return db_tax_dict
 
