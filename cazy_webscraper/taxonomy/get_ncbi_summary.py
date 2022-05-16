@@ -110,6 +110,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     lineage_df = build_lineage_df(lineage_dict, genus_dict)
 
+    lineage_df.to_csv(args.output)
 
     closing_message("NCBI taxonomy summary", start_time, args)
 
