@@ -48,6 +48,12 @@ import sys
 
 from tqdm import tqdm
 
+from cazy_webscraper.sql.sql_orm import (
+    Genbank,
+    Session,
+    Taxonomy,
+)
+
 
 def get_user_genbank_sequences(gbk_table_dict, args):
     """Extract protein sequences for GenBank accessions listed in a file
@@ -133,3 +139,28 @@ def get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args):
         gbk_dict[gbk_accession] = gbk_id
     
     return gbk_dict
+
+
+def get_taxonomies(genbank_accessions, connection):
+    """Retrieve the taxonomy data for a set of GenBank protein accessions]
+    
+    :param genbank_accessions: list of GenBank protein accessions
+    :param connection: connection to local sql db
+    
+    Return list of source organisms
+    """
+    with Session(bind=connection) as session:
+        query_results = session.query(Genbank, Taxonomy).\
+            join(Genbank, (Genbank.taxonomy_id == Taxonomy.taxonomy_id)).\
+            all()
+    
+    organisms = set()
+
+    for result in tqdm(query_results, desc="Extracting relevant taxonomy data from the local db"):
+        if result[0].genbank_accession in genbank_accessions:
+            tax_record = result[1]
+            organism = f"{tax_record.genus} {tax_record.species}"
+            
+            organisms.add(organism)
+
+    return organisms
