@@ -106,6 +106,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     Entrez.email = args.email
 
+    lineage_dict = build_lineage_dict(genera, args)
+
+    lineage_df = build_lineage_df(lineage_dict, genus_dict)
+
 
     closing_message("NCBI taxonomy summary", start_time, args)
 
@@ -151,11 +155,10 @@ def build_genus_dict(organisms, db_kingdom_dict):
     return db_tax_dict
 
 
-def build_lineage_dict(genera, genus_dict, args):
+def build_lineage_dict(genera, args):
     """Retrieve full lineage for each organism from the NCBI Taxonomy database
     
     :param genera: set of genera from the local CAZyme database
-    :param genus_dict: dict of {genus: {species: {strain}}}
     :param args: cmd-line args parser
     
     Return dataframe of lineages, one unique organism per row.
@@ -191,6 +194,10 @@ def build_lineage_dict(genera, genus_dict, args):
 
         if success is False:
             failed_batches.add(batch)
+    
+    # handled failed batches
+
+    return lineage_dict
         
 
 def get_tax_record_ids(genera, args):
@@ -350,3 +357,47 @@ def get_lineage(genera, lineage_dict, query_key, web_env, args):
             lineage_dict[superkingdom] = {phylum: {family: {order: {family: {genus}}}}}
     
     return lineage_dict, True
+
+
+def build_lineage_df(lineage_dict, genus_dict):
+    """Combine two tax dicts into a single dataframe
+    
+    :param lineage_dict: {superkingdom: {phylum: {class: {order: {family: {genus}}}}}}
+    :param genus_dict: {genus: {species: {strain}}}
+    
+    Return pandas df
+    """
+    df_data = []
+
+    for kingdom in lineage_dict:
+        kingdom_data = lineage_dict[kingdom]
+
+        for phylum in kingdom_data:
+            phylum_data = kingdom_data[phylum]
+
+            for tax_class in phylum_data:
+                class_data = phylum_data[tax_class]
+
+                for order in class_data:
+                    order_data = class_data[order]
+
+                    for family in order_data:
+                        family_data = order_data[family]
+
+                        for genus in family_data:
+                            genus_data = genus_dict[genus]
+
+                            for species in genus_data:
+                                if len(genus_data[species]) == 0:
+                                    data = [kingdom, phylum, tax_class, order, genus, species, None]
+                                    df_data.append(data)
+
+                                else:
+                                    species_data = genus_data[species]
+                                    for strain in species_data:
+                                        data = [kingdom, phylum, tax_class, order, genus, species, strain]
+                                        df_data.append(data)
+    
+    df = pd.DataFrame(df_data, ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', ' Genus', 'Species', 'Strain'])
+
+    return df
