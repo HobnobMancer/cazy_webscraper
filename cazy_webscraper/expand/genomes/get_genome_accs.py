@@ -43,6 +43,7 @@
 """Retrieve the accessions for proteins of interest, and store accessions in the local db"""
 
 
+from cmath import log
 import logging
 import sys
 
@@ -53,6 +54,7 @@ from typing import List, Optional
 
 from Bio import Entrez
 from tqdm import tqdm
+from saintBioutils.genbank import entrez_retry
 from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger
 
@@ -185,15 +187,14 @@ def get_gbks_of_interest(
 
     return list(gbk_dict.keys())
 
-    
 
-def get_genomic_accessions(protein_ids, args):
+def get_genomic_accessions(protein_accessions, args):
     """Retrieve genomic accessions for a set of proteins from NCBI.
     
-    :param protein_ids: list, GenBank protein IDs
+    :param protein_accessions: list, GenBank protein verion accessions
     :param args: cmd-line args parser
     
-    Return dict {protein_id: {'genbank': str, 'refseq': str}}
+    Return dict {assembly_name: {'genbank': str, 'refseq': str, 'gbk_url': str, 'ref_url': str}}
     """
     logger = logging.getLogger(__name__)
 
@@ -204,13 +205,93 @@ def get_genomic_accessions(protein_ids, args):
     genome_dict = {}  # used for storing retrieved genomic accessions
 
     # break up long list into smaller batches
-    batches = get_chunks_list(protein_ids, args.batch_size)
+    batches = get_chunks_list(protein_accessions, args.batch_size)
 
     for batch in tqdm(batches, desc="Batch quering NCBI"):
-        try:
-            #
-            logger.info()
-        except RuntimeError:
-            failed_batches.append(batch)
+        # post portein accessions
 
+        try:
+            query_key, web_env = post_ids(batch, "Protein", args)
+
+            if query_key is None:
+                failed_batches.append(batch)
+                continue
+        except RuntimeError:
+            logger.warning("Batch contains invalid NCBI Protein db accessions")
+            failed_batches.append(batch)
+            continue
+        
+
+        # link protein records to nuccore records
+        nuccore_ids = get_linked_nuccore_ids(query_key, web_env, args)
+
+        if nuccore_ids is None:
+            failed_batches.append(batch)
+            continue
+
+
+
+
+def post_ids(ids, database, args):
+    """Post protein IDs to Entrez
     
+    :param ids: list, GenBank protein accession numbers
+    :param database: str, Name of database from which IDs are sourced
+    :param args: cmd-line args parser
+    
+    Return None (x2) if fails
+    Else return query_key and web_env
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.epost,
+            db=database,
+            id=",".join(ids),
+        ) as handle:
+            posted_records = Entrez.read(handle, validate=False)
+
+    # if no record is returned from call to Entrez
+    except (TypeError, AttributeError) as err:
+        logger.warning(
+            f"Failed to post IDs to Entrez {database} db"
+        )
+        return None, None
+
+    query_key = posted_records['QueryKey']
+    web_env = posted_records['WebEnv']
+
+    return query_key, web_env
+
+
+def get_linked_nuccore_ids(query_key, web_env, args):
+    """Retrieve the IDs of nuccore records linkded to posted protein version accessions
+    
+    :param query_key: str, query key from Entrez epost
+    :param web_env: str, web env from Entrez epost
+    :param args: cmd-line args parser
+    
+    Return set of nuccore db IDs
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        with entrez_retry(
+            10,
+            Entrez.elink,
+            query_key=query_key,
+            WebEnv=web_env,
+            dbfrom="Protein",
+            db="Nuccore",
+            linkname="protein_nuccore",
+        ) as handle:
+            nuccore_records = Entrez.read(handle, validate=False)
+
+    except (TypeError, AttributeError, RuntimeError) as error:
+        logger.warning(
+            f"Entrez failed to link Protein records to nuccore records numbers\n",
+            error
+        )
+        return None
