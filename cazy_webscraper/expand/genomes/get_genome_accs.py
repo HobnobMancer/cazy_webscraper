@@ -280,9 +280,16 @@ def get_genomic_accessions(protein_accessions, args):
             logger.warning(f"Failed to link nuccore ids to protein accessions")
             failed_batches.append(batch)
             continue
+
+        # link nuccore IDs to the Assembly db and get assembly IDs
+
+        # post assembly IDs
+
+        # retrieve version accessions and urls of assemblies
+
+    if len(failed_batches) != 0:
+        genome_dict = retry_failed_batches()
         
-
-
 
 def post_ids(ids, database, args):
     """Post protein IDs to Entrez
