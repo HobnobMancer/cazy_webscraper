@@ -43,6 +43,7 @@
 """Retrieve the accessions for proteins of interest, and store accessions in the local db"""
 
 
+from asyncio.log import logger
 from cmath import log
 import logging
 import sys
@@ -241,6 +242,13 @@ def get_genomic_accessions(protein_accessions, args):
             continue
 
         # fetch nuccore records
+        nuccore_id_protein_acc, records_with_unknown_id = link_nuccore_ids_to_gbk_accs(
+            query_key,
+            web_env,
+            nuccore_ids,
+            batch,
+            args,
+        )
 
 
 def post_ids(ids, database, args):
@@ -318,3 +326,62 @@ def get_linked_nuccore_ids(query_key, web_env, args):
         return
     
     return nuccore_records
+
+
+def link_nuccore_ids_to_gbk_accs(query_key, web_env, nuccore_ids, protein_accs, args):
+    """Retrieve the IDs of nuccore records and associated with Protein accession versions
+    
+    :param query_key: str, query key from Entrez epost
+    :param web_env: str, web env from Entrez epost
+    :param nuccore_ids: list of nuccore db IDs
+    :param protein_accs: list of GenBank Protein db version accessions
+    :param args: cmd-line args parser
+    
+    Return dict {nuccore_id: protein_acc}
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.efetch,
+            db="Nucleotide",
+            query_key=query_key,
+            WebEnv=web_env,
+            retmode="xml",
+        ) as handle:
+            nuccore_records = Entrez.read(handle, validate=False)
+    except (TypeError, AttributeError, RuntimeError) as err:
+        logger.warning(f"Failed to fetch nuccore records:\n{err}")
+    
+    records_with_unknown_id = set()
+    nuccore_id_protein_acc = {}  # {nuccore id: protein acc}
+
+    # retrieve the protein sequence accession
+    for record in nuccore_records:
+        nuccore_acc = record['GBSeq_accession-version']
+        
+        # find id in the record
+        record_id = None
+        for nuccore_id in nuccore_ids:
+            if str(record).find(nuccore_id) != -1:
+                record_id = nuccore_id
+        
+        # get the protein accession
+        protein_acc = None
+        
+        for feature in record['GBSeq_feature-table']:
+            if feature['GBFeature_key'] == 'CDS':
+                for qual in feature['GBFeature_quals']:
+                    if qual['GBQualifier_name'] == 'protein_id':
+                        if qual['GBQualifier_value'] in protein_accs:
+                            protein_acc = qual['GBQualifier_value']
+        
+        if protein_acc is not None:
+            if record_id is None:
+                records_with_unknown_id.add(nuccore_acc)
+                nuccore_id_protein_acc[nuccore_acc] = protein_acc
+            else:
+                nuccore_id_protein_acc[record_id] = protein_acc
+    
+    return nuccore_id_protein_acc, records_with_unknown_id
