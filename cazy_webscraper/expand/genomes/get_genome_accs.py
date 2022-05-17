@@ -282,10 +282,27 @@ def get_genomic_accessions(protein_accessions, args):
             continue
 
         # link nuccore IDs to the Assembly db and get assembly IDs
+        assembly_ids = get_assembly_ids(query_key, web_env, args)
+
+        if assembly_ids is None:
+            failed_batches.append(batch)
+            continue
 
         # post assembly IDs
+        try:
+            query_key, web_env = post_ids(assembly_ids, "Assembly", args)
+
+            if query_key is None:
+                failed_batches.append(batch)
+                continue
+        except RuntimeError:
+            logger.warning("Batch contains invalid NCBI Assembly IDs")
+            failed_batches.append(batch)
+            continue
 
         # retrieve version accessions and urls of assemblies
+        genome_dict.update(get_assembly_data(query_key, web_env, genome_dict, args))
+
 
     if len(failed_batches) != 0:
         genome_dict = retry_failed_batches()
@@ -490,3 +507,40 @@ def get_nuccore_acc(nuccore_id_protein_acc, records_with_unknown_id, args):
             del nuccore_id_protein_acc[nuccore_acc]
     
     return nuccore_id_protein_acc, True
+
+
+def get_assembly_ids(query_key, web_env, args):
+    """Retrieve IDs of Assembly records linked to nuccore records
+
+    :param query_key: str, query key from Entrez epost
+    :param web_env: str, web env from Entrez epost
+    :param args: cmd-line args parser
+    
+    Return set of assemblies IDs
+    """
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.elink,
+            query_key=query_key,
+            WebEnv=web_env,
+            dbfrom="Nuccore",
+            db="Assembly",
+            linkname="nuccore_assembly",
+        ) as handle:
+            linked_records = Entrez.read(handle, validate=False)
+    except (TypeError, AttributeError, RuntimeError) as err:
+        logger.warning(f"Failed to link nuccore records to assembly records:\n{err}")
+        return
+    
+    assembly_ids = set()
+
+    for record in tqdm(linked_records, desc="Getting assembly ids"):
+        for index in range(len(record['LinkSetDb'][0]['Link'])):
+            assembly_id = record['LinkSetDb'][0]['Link'][index]['Id']
+            assembly_ids.add(assembly_id)
+    
+    if len(assembly_ids) == 0:
+        return
+    
+    return assembly_ids
