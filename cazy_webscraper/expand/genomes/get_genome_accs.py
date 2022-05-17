@@ -47,6 +47,7 @@ from asyncio.log import logger
 from cmath import log
 import logging
 import sys
+from numpy import False_
 
 import pandas as pd
 
@@ -250,6 +251,10 @@ def get_genomic_accessions(protein_accessions, args):
             args,
         )
 
+        # replace nuccore version acc if could not retrieve from record
+        if len(records_with_unknown_id) != 0:
+            nuccore_id_protein_acc = get_nuccore_acc(nuccore_id_protein_acc, records_with_unknown_id, args)
+
 
 def post_ids(ids, database, args):
     """Post protein IDs to Entrez
@@ -385,3 +390,68 @@ def link_nuccore_ids_to_gbk_accs(query_key, web_env, nuccore_ids, protein_accs, 
                 nuccore_id_protein_acc[record_id] = protein_acc
     
     return nuccore_id_protein_acc, records_with_unknown_id
+
+
+def get_nuccore_acc(nuccore_id_protein_acc, records_with_unknown_id, args):
+    """Replace nuccore version acc with nuccore ID retrieved from record summary
+    
+    :param nuccore_id_protein_acc: dict, {nuccore_acc or ID: protein_acc}
+    :param records_with_unknown_ids: xxx
+    :param args: cmd-line args parser
+    
+    Return dict {nuccore_id: protein_acc}, and bool to represent if process completed successfully
+    """
+    logger = logging.getLogger(__name__)
+
+    # post accessions
+    try:
+        query_key, web_env = post_ids(records_with_unknown_id, "Nuccore", args)
+    except RuntimeError as err:
+        logger.warning(f"Failed to post nuccore accessions:\n{err}")
+        return nuccore_id_protein_acc, False
+    
+    if query_key is None:
+        return nuccore_id_protein_acc, False
+    
+    # get nuccore esummaries
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.esummary,
+            db="Nucleotide",
+            query_key=query_key,
+            WebEnv=web_env,
+            retmode="xml",
+        ) as handle:
+            nuccore_summaries = Entrez.read(handle, validate=False)
+    except (TypeError, AttributeError, RuntimeError) as err:
+        logger.warning(f"Failed to retrieve nuccore records\n:{err}")
+        return nuccore_id_protein_acc, False
+    
+    for record in tqdm(nuccore_summaries, desc="Retrieving nuccore IDs"):
+        nuccore_id = record['Id']
+        nuccore_acc = record['AccessionVersion']
+        # replace nuccore acc with nuccore id as key in dict
+        try:
+            nuccore_id_protein_acc[nuccore_id] = nuccore_id_protein_acc.pop(nuccore_acc)
+        except KeyError:
+            pass
+    
+    # check if failed to replace any accessions with IDs
+    failed_replacements = set()
+    for nuccore_id in nuccore_id_protein_acc:
+        try:
+            int(nuccore_id)
+        except ValueError:
+            failed_replacements.add(nuccore_id)
+    
+    if len(failed_replacements) != 0:
+        logger.warning(
+            "Failed to retrieve nuccore IDs for the following version accs:\n"
+            f"{failed_replacements}\n"
+            "Will no retrieve genomic accessions for these nuccore accessions"
+        )
+        for nuccore_acc in failed_replacements:
+            del nuccore_id_protein_acc[nuccore_acc]
+    
+    return nuccore_id_protein_acc
