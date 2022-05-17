@@ -253,7 +253,35 @@ def get_genomic_accessions(protein_accessions, args):
 
         # replace nuccore version acc if could not retrieve from record
         if len(records_with_unknown_id) != 0:
-            nuccore_id_protein_acc = get_nuccore_acc(nuccore_id_protein_acc, records_with_unknown_id, args)
+            nuccore_id_protein_acc, success = get_nuccore_acc(
+                nuccore_id_protein_acc,
+                records_with_unknown_id,
+                args,
+            )
+            
+            if success is False:
+                failed_replacements = set()
+                for nuccore_id in nuccore_id_protein_acc:
+                    try:
+                        int(nuccore_id)
+                    except ValueError:
+                        failed_replacements.add(nuccore_id)
+                
+                if len(failed_replacements) != 0:
+                    logger.warning(
+                        "Failed to retrieve nuccore IDs for the following version accs:\n"
+                        f"{failed_replacements}\n"
+                        "Will no retrieve genomic accessions for these nuccore accessions"
+                    )
+                    for nuccore_acc in failed_replacements:
+                        del nuccore_id_protein_acc[nuccore_acc]
+        
+        if len(list(nuccore_id_protein_acc.keys())) == 0:
+            logger.warning(f"Failed to link nuccore ids to protein accessions")
+            failed_batches.append(batch)
+            continue
+        
+
 
 
 def post_ids(ids, database, args):
@@ -454,4 +482,4 @@ def get_nuccore_acc(nuccore_id_protein_acc, records_with_unknown_id, args):
         for nuccore_acc in failed_replacements:
             del nuccore_id_protein_acc[nuccore_acc]
     
-    return nuccore_id_protein_acc
+    return nuccore_id_protein_acc, True
