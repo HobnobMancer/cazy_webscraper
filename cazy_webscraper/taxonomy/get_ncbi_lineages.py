@@ -57,12 +57,8 @@ from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper, closing_message
 from cazy_webscraper.expand import get_chunks_list
-from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_api_data, get_table_dicts
-from cazy_webscraper.sql.sql_interface.get_data.get_records import get_taxonomies
-from cazy_webscraper.sql.sql_interface.get_data.get_records import (
-    get_user_genbank_sequences,
-    get_user_uniprot_sequences
-)
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data.get_taxonomies import get_taxonomies
 from cazy_webscraper.utilities.parsers.tax_ncbi import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
@@ -110,8 +106,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         ec_filters,
     ) = get_expansion_configuration(args)
 
-    # retrieve the species matching the user specified criteria
-    genbank_accessions = get_gbk_accessions(
+    organisms = get_taxonomies(
         class_filters,
         family_filters,
         taxonomy_filter_dict,
@@ -120,9 +115,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         connection,
         args,
     )
-    logger.info(f"Retrieved {len(genbank_accessions)} matching the provided criteria")
-
-    organisms = get_taxonomies(genbank_accessions, connection)
     logger.info(f"Identified {len(organisms)} matching the provided criteria")
 
     # convert list of organisms into dict {genus: {species: {strain}}}
