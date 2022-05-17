@@ -131,9 +131,46 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info(f"Retrieved {len(genbank_accessions)} from the local db")
 
     # get assembly accessions, URLs and IDs from NCBI
+    failed_batches = []  # store lists that causes issues
+
+    genome_dict = {}  # used for storing retrieved genomic accessions
+
+    parsed_nuccore_ids = set()
+    parsed_assembly_ids = set()
+
+    # break up long list into smaller batches
+    batches = get_chunks_list(genbank_accessions, args.batch_size)
+
+    logger.info("Starting retrieval of genomic accessions")
+
+    for batch in tqdm(batches, desc="Batch quering NCBI"):
+        new_assembly_data, failed_batches, parsed_nuccore_ids, parsed_assembly_ids = get_genome_data(
+            batch,
+            failed_batches,
+            parsed_nuccore_ids,
+            parsed_assembly_ids,
+            args,
+        )
+
+        genome_dict.update(new_assembly_data)
+
+    if len(failed_batches) != 0:
+        for batch in tqdm(failed_batches, desc="Retrying failed batches"):
+            for protein in batch:
+                new_assembly_data, failed_batches, parsed_nuccore_ids, parsed_assembly_ids = get_genome_data(
+                    [protein],
+                    failed_batches,
+                    parsed_nuccore_ids,
+                    parsed_assembly_ids,
+                    args,
+                )
+
+                genome_dict.update(new_assembly_data)
+    # genome_dict = {assembly_name: {gbk and refseq accessions and uids, and urls to download feature tables}}
 
     # download assemblies and associate with protein accessions
-    
+    genome_protein_relationships = get_relationships(genome_dict, cache_dir, args)
+
     # add data to the local db
 
     closing_message("extract_sequences", start_time, args)
@@ -190,139 +227,138 @@ def get_gbks_of_interest(
     return list(gbk_dict.keys())
 
 
-def get_genomic_accessions(protein_accessions, args):
+def get_genome_data(
+    batch,
+    failed_batches,
+    parsed_nuccore_ids,
+    parsed_assembly_ids,
+    args,
+):
     """Retrieve genomic accessions for a set of proteins from NCBI.
     
-    :param protein_accessions: list, GenBank protein verion accessions
+    :param batch: list of GenBank protein accessions
+    :param failed_batches: list of nested lists, listing batches for which data was not retrieved
+    :param parsed_nuccore_ids: set of nuccore ids that have already been parsed
+    :param parsed assembly_ids: set of assembly ids that have already been parsed
     :param args: cmd-line args parser
     
     Return dict {assembly_name: {'genbank': str, 'refseq': str, 'gbk_url': str, 'ref_url': str}}
     """
     logger = logging.getLogger(__name__)
 
-    logger.info("Starting retrieval of genomic accessions")
+    genome_dict = {}
 
-    failed_batches = []  # store lists that causes issues
+    # post portein accessions
+    try:
+        query_key, web_env = post_ids(batch, "Protein", args)
 
-    genome_dict = {}  # used for storing retrieved genomic accessions
-
-    parsed_nuccore_ids = set()
-    parsed_assembly_ids = set()
-
-    # break up long list into smaller batches
-    batches = get_chunks_list(protein_accessions, args.batch_size)
-
-    for batch in tqdm(batches, desc="Batch quering NCBI"):
-        # post portein accessions
-
-        try:
-            query_key, web_env = post_ids(batch, "Protein", args)
-
-            if query_key is None:
-                failed_batches.append(batch)
-                continue
-        except RuntimeError:
+        if query_key is None:
+            failed_batches.append(batch)
+            return genome_dict, failed_batches, parsed_nuccore_ids, parsed_assembly_ids
+    except RuntimeError:
+        if len(batch) == 1:
+            logger.warning(f"{batch[0]} is not listed in NCBI")
+        else:
             logger.warning("Batch contains invalid NCBI Protein db accessions")
+        failed_batches.append(batch)
+        return genome_dict, failed_batches, parsed_nuccore_ids, parsed_assembly_ids
+
+    # link protein records to nuccore records
+    nuccore_ids = get_linked_nuccore_ids(query_key, web_env, args)
+
+    if nuccore_ids is None:
+        failed_batches.append(batch)
+        return genome_dict, failed_batches, parsed_nuccore_ids, parsed_assembly_ids
+
+    nuccore_ids_to_fetch = [_ for _ in nuccore_ids if _ not in parsed_nuccore_ids]
+
+    if len(nuccore_ids_to_fetch) == 0:
+        return genome_dict, failed_batches, parsed_nuccore_ids, parsed_assembly_ids
+
+    # post nuccore IDs
+    try:
+        query_key, web_env = post_ids(nuccore_ids_to_fetch, "Nuccore", args)
+
+        if query_key is None:
             failed_batches.append(batch)
-            continue
+            return genome_dict, failed_batches, parsed_nuccore_ids, parsed_assembly_ids
+    except RuntimeError:
+        logger.warning("Batch contains invalid NCBI Nuccore IDs")
+        failed_batches.append(batch)
+        return genome_dict, failed_batches, parsed_nuccore_ids, parsed_assembly_ids
 
-        # link protein records to nuccore records
-        nuccore_ids = get_linked_nuccore_ids(query_key, web_env, args)
+    # fetch nuccore records
+    nuccore_id_protein_acc, records_with_unknown_id = link_nuccore_ids_to_gbk_accs(
+        query_key,
+        web_env,
+        nuccore_ids,
+        batch,
+        args,
+    )
 
-        if nuccore_ids is None:
-            failed_batches.append(batch)
-            continue
-
-        nuccore_ids_to_fetch = [_ for _ in nuccore_ids if _ not in parsed_nuccore_ids]
-
-        if len(nuccore_ids_to_fetch) == 0:
-            continue
-
-        # post nuccore IDs
-        try:
-            query_key, web_env = post_ids(nuccore_ids_to_fetch, "Nuccore", args)
-
-            if query_key is None:
-                failed_batches.append(batch)
-                continue
-        except RuntimeError:
-            logger.warning("Batch contains invalid NCBI Nuccore IDs")
-            failed_batches.append(batch)
-            continue
-
-        # fetch nuccore records
-        nuccore_id_protein_acc, records_with_unknown_id = link_nuccore_ids_to_gbk_accs(
-            query_key,
-            web_env,
-            nuccore_ids,
-            batch,
+    # replace nuccore version acc if could not retrieve from record
+    if len(records_with_unknown_id) != 0:
+        nuccore_id_protein_acc, success = get_nuccore_acc(
+            nuccore_id_protein_acc,
+            records_with_unknown_id,
             args,
         )
-
-        # replace nuccore version acc if could not retrieve from record
-        if len(records_with_unknown_id) != 0:
-            nuccore_id_protein_acc, success = get_nuccore_acc(
-                nuccore_id_protein_acc,
-                records_with_unknown_id,
-                args,
-            )
             
-            if success is False:
-                failed_replacements = set()
-                for nuccore_id in nuccore_id_protein_acc:
-                    try:
-                        int(nuccore_id)
-                    except ValueError:
-                        failed_replacements.add(nuccore_id)
-                
-                if len(failed_replacements) != 0:
-                    logger.warning(
-                        "Failed to retrieve nuccore IDs for the following version accs:\n"
-                        f"{failed_replacements}\n"
-                        "Will no retrieve genomic accessions for these nuccore accessions"
-                    )
-                    for nuccore_acc in failed_replacements:
-                        del nuccore_id_protein_acc[nuccore_acc]
-        
-        if len(list(nuccore_id_protein_acc.keys())) == 0:
-            logger.warning(f"Failed to link nuccore ids to protein accessions")
+        if success is False:
+            failed_replacements = set()
+            for nuccore_id in nuccore_id_protein_acc:
+                try:
+                    int(nuccore_id)
+                except ValueError:
+                    failed_replacements.add(nuccore_id)
+            
+            if len(failed_replacements) != 0:
+                logger.warning(
+                    "Failed to retrieve nuccore IDs for the following version accs:\n"
+                    f"{failed_replacements}\n"
+                    "Will no retrieve genomic accessions for these nuccore accessions"
+                )
+                for nuccore_acc in failed_replacements:
+                    del nuccore_id_protein_acc[nuccore_acc]
+    
+    if len(list(nuccore_id_protein_acc.keys())) == 0:
+        logger.warning(f"Failed to link nuccore ids to protein accessions")
+        failed_batches.append(batch)
+        return genome_dict, failed_batches, parsed_nuccore_ids, parsed_assembly_ids
+
+    # link nuccore IDs to the Assembly db and get assembly IDs
+    assembly_ids = get_assembly_ids(query_key, web_env, args)
+
+    if assembly_ids is None:
+        failed_batches.append(batch)
+        return genome_dict, failed_batches, parsed_nuccore_ids, parsed_assembly_ids
+
+    # check which, if any, of the assemblies have no already have data retrieved for them
+    assemblies_to_fetch = [_ for _ in assembly_ids if _ not in parsed_assembly_ids]
+
+    if len(assemblies_to_fetch) == 0:
+        return genome_dict, failed_batches, parsed_nuccore_ids, parsed_assembly_ids
+
+    # post assembly IDs
+    try:
+        query_key, web_env = post_ids(assembly_ids, "Assembly", args)
+
+        if query_key is None:
             failed_batches.append(batch)
-            continue
+            return genome_dict, failed_batches, parsed_nuccore_ids, parsed_assembly_ids
+    except RuntimeError:
+        logger.warning("Batch contains invalid NCBI Assembly IDs")
+        failed_batches.append(batch)
+        return genome_dict, failed_batches, parsed_nuccore_ids, parsed_assembly_ids
 
-        # link nuccore IDs to the Assembly db and get assembly IDs
-        assembly_ids = get_assembly_ids(query_key, web_env, args)
+    # retrieve version accessions and urls of assemblies
+    new_assemblies, parsed_assembly_ids = get_assembly_data(query_key, web_env, parsed_assembly_ids, args)
+    genome_dict.update(new_assemblies)
 
-        if assembly_ids is None:
-            failed_batches.append(batch)
-            continue
-
-        # check which, if any, of the assemblies have no already have data retrieved for them
-        assemblies_to_fetch = [_ for _ in assembly_ids if _ not in parsed_assembly_ids]
-
-        if len(assemblies_to_fetch) == 0:
-            continue
-
-        # post assembly IDs
-        try:
-            query_key, web_env = post_ids(assembly_ids, "Assembly", args)
-
-            if query_key is None:
-                failed_batches.append(batch)
-                continue
-        except RuntimeError:
-            logger.warning("Batch contains invalid NCBI Assembly IDs")
-            failed_batches.append(batch)
-            continue
-
-        # retrieve version accessions and urls of assemblies
-        new_assemblies, parsed_assembly_ids = get_assembly_data(query_key, web_env, parsed_assembly_ids, args)
-        genome_dict.update(new_assemblies)
-
-        for nuccore_id in nuccore_id_protein_acc:
-            parsed_nuccore_ids.add(nuccore_id)
-
-    if len(failed_batches) != 0:
-        genome_dict = retry_failed_batches()
+    for nuccore_id in nuccore_id_protein_acc:
+        parsed_nuccore_ids.add(nuccore_id)
+    
+    return genome_dict
         
 
 def post_ids(ids, database, args):
@@ -643,3 +679,4 @@ def get_assembly_data(query_key, web_env, parsed_assembly_ids, args):
         parsed_assembly_ids.add(ref_uid)
 
     return genome_dict, parsed_assembly_ids
+
