@@ -279,7 +279,7 @@ def get_linked_nuccore_ids(query_key, web_env, args):
 
     try:
         with entrez_retry(
-            10,
+            args.retries,
             Entrez.elink,
             query_key=query_key,
             WebEnv=web_env,
@@ -294,4 +294,16 @@ def get_linked_nuccore_ids(query_key, web_env, args):
             f"Entrez failed to link Protein records to nuccore records numbers\n",
             error
         )
-        return None
+        return
+    
+    nuccore_ids = set()
+
+    for record in tqdm(nuccore_records, desc="Get Nuccore record IDs"):
+        if len(record['LinkSetDb']) != 0:
+            for nuc_id in record['LinkSetDb'][0]['Link']:
+                nuccore_ids.add(nuc_id['Id'])
+    
+    if len(nuccore_records) == 0:
+        return
+    
+    return nuccore_records
