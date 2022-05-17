@@ -119,12 +119,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # convert list of organisms into dict {genus: {species: {strain}}}
     genus_dict = build_genus_dict(organisms)
-    genera = list(genus_dict).keys()
+    genera = list(genus_dict.keys())
     logger.info(f"Retrievied {len(genera)} matching the provided criteria")
 
     Entrez.email = args.email
 
-    lineage_dict = build_lineage_dict(genera, args)
+    lineage_dict = build_lineage_dict(genera, cache_dir, args)
 
     lineage_df = build_lineage_df(lineage_dict, genus_dict)
     logger.info(f"Compiled {len(lineage_df)} lineages")
@@ -132,55 +132,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     lineage_df.to_csv(args.output)
 
     closing_message("NCBI taxonomy summary", start_time, args)
-
-
-def get_gbk_accessions(
-    class_filters,
-    family_filters,
-    taxonomy_filter_dict,
-    kingdom_filters,
-    ec_filters,
-    connection,
-    args,
-):
-    """Retrieve the genbank accessions of proteins matching the user's specified criteria
-    
-    :param connection: open connection to local sql database
-    :param args: cmd-line args parser
-    
-    Return list of genbank_accessions
-    """
-    logger = logging.getLogger(__name__)
-
-    # retrieve genbank accessions of the proteins of interest
-
-    if args.genbank_accessions is not None or args.uniprot_accessions is not None:
-        gbk_dict = {}  # {gbk_acc: gbk_id}
-
-        # retrieve GenBank accessions of proteins defined by user
-        gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
-        # {genbank_accession: 'taxa_id': str, 'gbk_id': int}
-
-        if args.genbank_accessions is not None:
-            logger.warning(f"Retrieving PDB structures for GenBank accessions listed in {args.genbank_accessions}")
-            gbk_dict.update(get_user_genbank_sequences(gbk_table_dict, args))
-
-        if args.uniprot_accessions is not None:
-            logger.warning(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
-            uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
-            gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
-
-    else:
-        gbk_dict = get_selected_gbks.get_genbank_accessions(
-            class_filters,
-            family_filters,
-            taxonomy_filter_dict,
-            kingdom_filters,
-            ec_filters,
-            connection,
-        )
-
-    return list(gbk_dict.keys())
 
 
 def build_genus_dict(organisms):
@@ -219,7 +170,7 @@ def build_genus_dict(organisms):
         
         except KeyError:
             db_tax_dict[genus] = {species: {strain}}
-    
+
     return db_tax_dict
 
 
