@@ -250,12 +250,13 @@ def get_filtered_taxs(
         taxonomy_filter_dict,
         kingdom_filters,
     )
-
-    filtered_records = apply_ec_filters(
-        filtered_records,
-        ec_filters,
-        connection
-    )
+    
+    if len(ec_filters) != 0:
+        filtered_records = apply_ec_filters(
+            filtered_records,
+            ec_filters,
+            connection
+        )
 
     organisms = set()
 
