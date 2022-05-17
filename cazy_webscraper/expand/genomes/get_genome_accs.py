@@ -206,6 +206,8 @@ def get_genomic_accessions(protein_accessions, args):
 
     genome_dict = {}  # used for storing retrieved genomic accessions
 
+    parsed_nuccore_ids = set()
+
     # break up long list into smaller batches
     batches = get_chunks_list(protein_accessions, args.batch_size)
 
@@ -230,9 +232,14 @@ def get_genomic_accessions(protein_accessions, args):
             failed_batches.append(batch)
             continue
 
+        nuccore_ids_to_fetch = [_ for _ in nuccore_ids if _ not in parsed_nuccore_ids]
+
+        if len(nuccore_ids_to_fetch) == 0:
+            continue
+
         # post nuccore IDs
         try:
-            query_key, web_env = post_ids(nuccore_ids, "Nuccore", args)
+            query_key, web_env = post_ids(nuccore_ids_to_fetch, "Nuccore", args)
 
             if query_key is None:
                 failed_batches.append(batch)
@@ -288,6 +295,17 @@ def get_genomic_accessions(protein_accessions, args):
             failed_batches.append(batch)
             continue
 
+        # check which, if any, of the assemblies have no already have data retrieved for them
+        assemblies_to_fetch = set()
+        for assembly_id in assembly_ids:
+            try:
+                genome_dict[assembly_id]
+            except KeyError:
+                assemblies_to_fetch.add(assembly_id)
+
+        if len(assemblies_to_fetch) == 0:
+            continue
+
         # post assembly IDs
         try:
             query_key, web_env = post_ids(assembly_ids, "Assembly", args)
@@ -302,6 +320,9 @@ def get_genomic_accessions(protein_accessions, args):
 
         # retrieve version accessions and urls of assemblies
         genome_dict.update(get_assembly_data(query_key, web_env, genome_dict, args))
+
+        for nuccore_id in nuccore_id_protein_acc:
+            parsed_nuccore_ids.add(nuccore_id)
 
 
     if len(failed_batches) != 0:
@@ -518,6 +539,8 @@ def get_assembly_ids(query_key, web_env, args):
     
     Return set of assemblies IDs
     """
+    logger = logging.getLogger(__name__)
+
     try:
         with entrez_retry(
             args.retries,
@@ -544,3 +567,36 @@ def get_assembly_ids(query_key, web_env, args):
         return
     
     return assembly_ids
+
+
+def get_assembly_data(query_key, web_env, genome_dict, args):
+    """Retrieve Assembly data (accessions, and urls)
+
+    :param query_key: str, query key from Entrez epost
+    :param web_env: str, web env from Entrez epost
+    :param genome_dict: {assembly name: {gbk: str, refseq: str, gbk_url: str, ref_url: str}}
+    :param args: cmd-line args parser
+    
+    Return set of assemblies IDs
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        with entrez_retry(
+            10,
+            Entrez.esummary,
+            db="Assembly",
+            query_key=query_key,
+            WebEnv=web_env,
+            rettype="docsum",
+            retmode="xml",
+        ) as record_handle:
+            assembly_records = Entrez.read(record_handle, validate=False)
+    except (TypeError, AttributeError, RuntimeError) as err:
+        logger.warning(f"Failed to retrieve Assembly records:\n{err}")
+
+    for genome in assembly_records['DocumentSummarySet']['DocumentSummary']:
+        assembly_name = genome['AssemblyName']
+
+        try:
+            genome_dict
