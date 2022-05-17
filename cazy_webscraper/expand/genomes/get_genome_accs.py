@@ -43,8 +43,6 @@
 """Retrieve the accessions for proteins of interest, and store accessions in the local db"""
 
 
-from asyncio.log import logger
-from cmath import log
 import logging
 import sys
 from numpy import False_
@@ -168,8 +166,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 genome_dict.update(new_assembly_data)
     # genome_dict = {assembly_name: {gbk and refseq accessions and uids, and urls to download feature tables}}
 
+    logger.info(f"Identfied {len(genome_dict.keys())} assembly names")
+
     # download assemblies and associate with protein accessions
-    genome_protein_relationships = get_relationships(genome_dict, cache_dir, args)
+    genome_protein_relationships = get_relationships(genome_dict, genbank_accessions, cache_dir, args)
 
     # add data to the local db
 
@@ -680,3 +680,34 @@ def get_assembly_data(query_key, web_env, parsed_assembly_ids, args):
 
     return genome_dict, parsed_assembly_ids
 
+
+def get_relationships(genome_dict, protein_accessions, cache_dir, args):
+    """Download genomes and track which proteins come from which genomes.
+    
+    :param genome_dict: 
+    :param protein_accessions: list of protein accessions of interest
+    :param cache_dir: path to cache directory
+    :param args: cmd-line args parser
+    
+    Return dict {assembly_name: {protein accessions}}
+    """
+    relationship_dict = {}  # {assembly name: {protein accs}}
+
+    for assembly_name in tqdm(genome_dict, desc="Associating genomes with protein accessions"):
+        gbk_feature_table_url = genome_dict[assembly_name]['gbk_url']
+
+        # download file
+
+        # open
+
+        # get protein id column
+
+        # get all ids that are in proteins of interest
+
+        # add key:value to relationships dict
+
+    # if any proteins of interest left
+    
+    # download refseq feature tables as well
+
+    return relationship_dict
