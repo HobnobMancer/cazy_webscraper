@@ -207,6 +207,7 @@ def get_genomic_accessions(protein_accessions, args):
     genome_dict = {}  # used for storing retrieved genomic accessions
 
     parsed_nuccore_ids = set()
+    parsed_assembly_ids = set()
 
     # break up long list into smaller batches
     batches = get_chunks_list(protein_accessions, args.batch_size)
@@ -296,12 +297,7 @@ def get_genomic_accessions(protein_accessions, args):
             continue
 
         # check which, if any, of the assemblies have no already have data retrieved for them
-        assemblies_to_fetch = set()
-        for assembly_id in assembly_ids:
-            try:
-                genome_dict[assembly_id]
-            except KeyError:
-                assemblies_to_fetch.add(assembly_id)
+        assemblies_to_fetch = [_ for _ in assembly_ids if _ not in parsed_assembly_ids]
 
         if len(assemblies_to_fetch) == 0:
             continue
@@ -319,11 +315,11 @@ def get_genomic_accessions(protein_accessions, args):
             continue
 
         # retrieve version accessions and urls of assemblies
-        genome_dict.update(get_assembly_data(query_key, web_env, genome_dict, args))
+        new_assemblies, parsed_assembly_ids = get_assembly_data(query_key, web_env, parsed_assembly_ids, args)
+        genome_dict.update(new_assemblies)
 
         for nuccore_id in nuccore_id_protein_acc:
             parsed_nuccore_ids.add(nuccore_id)
-
 
     if len(failed_batches) != 0:
         genome_dict = retry_failed_batches()
@@ -569,17 +565,20 @@ def get_assembly_ids(query_key, web_env, args):
     return assembly_ids
 
 
-def get_assembly_data(query_key, web_env, genome_dict, args):
+def get_assembly_data(query_key, web_env, parsed_assembly_ids, args):
     """Retrieve Assembly data (accessions, and urls)
 
     :param query_key: str, query key from Entrez epost
     :param web_env: str, web env from Entrez epost
-    :param genome_dict: {assembly name: {gbk: str, refseq: str, gbk_url: str, ref_url: str}}
+    :param parsed_assembly_ids: str, gbk and ref seq uids of assemblies already parsed
     :param args: cmd-line args parser
     
-    Return set of assemblies IDs
+    Return set of assemblies IDs and updated set of parsed assembly ids
+    genome_dict: {assembly name: {gbk: str, refseq: str, gbk_url: str, ref_url: str, gbk_uid: str, ref_uid: str}}
     """
     logger = logging.getLogger(__name__)
+
+    genome_dict = {}
 
     try:
         with entrez_retry(
@@ -599,4 +598,48 @@ def get_assembly_data(query_key, web_env, genome_dict, args):
         assembly_name = genome['AssemblyName']
 
         try:
-            genome_dict
+            genome_dict[assembly_name]
+            continue
+        except KeyError:
+            pass
+
+        gbk_uid = genome['GbUid']
+        ref_uid = genome['RsUid']
+
+        try:
+            gbk_acc = genome['Synonym']['Genbank']
+        except KeyError:
+            gbk_acc = None
+        
+        try:
+            refseq_acc = genome['Synonym']['RefSeq']
+        except KeyError:
+            refseq_acc = None
+
+        try:
+            gbk_ftp_path = genome['FtpPath_GenBank']
+            file_stem = gbk_ftp_path.split("/")[-1]
+            gbk_url = f"{gbk_ftp_path}/{file_stem}_feature_table.txt.gz"
+        except KeyError:
+            gbk_url = None
+        
+        try:
+            ref_ftp_path = genome['FtpPath_RefSeq']
+            file_stem = ref_ftp_path.split("/")[-1]
+            ref_url = f"{ref_ftp_path}/{file_stem}_feature_table.txt.gz"
+        except KeyError:
+            ref_url = None
+
+        genome_dict[assembly_name] = {
+            "gbk_acc": gbk_acc,
+            "refseq_acc": refseq_acc,
+            "gbk_uid": gbk_uid,
+            "refseq_uid": ref_uid,
+            "gbk_url": gbk_url,
+            "refseq_url": ref_url,
+        }
+
+        parsed_assembly_ids.add(gbk_uid)
+        parsed_assembly_ids.add(ref_uid)
+
+    return genome_dict, parsed_assembly_ids
