@@ -220,7 +220,6 @@ def get_genomic_accessions(protein_accessions, args):
             logger.warning("Batch contains invalid NCBI Protein db accessions")
             failed_batches.append(batch)
             continue
-        
 
         # link protein records to nuccore records
         nuccore_ids = get_linked_nuccore_ids(query_key, web_env, args)
@@ -229,7 +228,19 @@ def get_genomic_accessions(protein_accessions, args):
             failed_batches.append(batch)
             continue
 
+        # post nuccore IDs
+        try:
+            query_key, web_env = post_ids(nuccore_ids, "Nuccore", args)
 
+            if query_key is None:
+                failed_batches.append(batch)
+                continue
+        except RuntimeError:
+            logger.warning("Batch contains invalid NCBI Nuccore IDs")
+            failed_batches.append(batch)
+            continue
+
+        # fetch nuccore records
 
 
 def post_ids(ids, database, args):
