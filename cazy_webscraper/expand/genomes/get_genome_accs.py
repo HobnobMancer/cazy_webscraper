@@ -110,7 +110,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         ec_filters,
     ) = parse_configuration.get_expansion_configuration(args)
 
-    logger.info("Retrieving Genbank records from the local db")
+    logger.info(f"Retrieving Genbank records from the local db:\n{str(args.database)}")
 
     genbank_accessions = get_gbks_of_interest(
         class_filters,
@@ -167,6 +167,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # genome_dict = {assembly_name: {gbk and refseq accessions and uids, and urls to download feature tables}}
 
     logger.info(f"Identfied {len(genome_dict.keys())} assembly names")
+
+    print(genome_dict)
+    sys.exit(1)
 
     # download assemblies and associate with protein accessions
     genome_protein_relationships = get_relationships(genome_dict, genbank_accessions, cache_dir, args)
@@ -711,3 +714,7 @@ def get_relationships(genome_dict, protein_accessions, cache_dir, args):
     # download refseq feature tables as well
 
     return relationship_dict
+
+
+if __name__ == "__main__":
+    main()
