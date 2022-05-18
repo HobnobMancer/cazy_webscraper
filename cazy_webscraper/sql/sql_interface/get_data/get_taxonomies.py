@@ -73,7 +73,7 @@ def get_taxonomies(
     :param connection: connection to local sql db
     :param args: cmd-line args parser
     
-    Return list of source organisms
+    Return dict {genus: {species: {strain}}}
     """
     logger = logging.getLogger(__name__)
 
@@ -91,7 +91,7 @@ def get_taxonomies(
             organisms += get_taxs_for_uniprots(uniprt_tax_dict, args)
     
     else:
-        organisms += get_filtered_taxs(
+        organisms = get_filtered_taxs(
             class_filters,
             family_filters,
             taxonomy_filter_dict,
@@ -275,8 +275,17 @@ def get_filtered_taxs(
             strain = species_strain.replace(species, "").strip()
 
         # add organism to dict of organisms {genus: {species: {strain}}}
-        if record[-1].kingdom == 'Viruse':
+        if record[-1].kingdom == 'Viruses':
             organism = f"{record[1].genus} {record[1].species}"
+            organism = organism.split("(")[0].strip()
+            organism = " ".join([_.strip() for _ in organism.split(" ") if _.find("/") == -1 and _.find("]") == -1 and _.find("[") == -1]).strip()
+
+            if organism.startswith("Influenza A virus"):
+                organism = "Influenza A virus"
+                
+            elif organism.startswith("Influenza B virus"):
+                organism = "Influenza B virus"
+
             organisms[organism] = None
 
         else:
