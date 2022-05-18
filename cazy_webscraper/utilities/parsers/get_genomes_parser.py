@@ -141,6 +141,15 @@ def build_parser(argv: Optional[List] = None):
         help="Classes from which all families are to be scraped. Separate classes by ','"
     )
 
+    parser.add_argument(
+        "-f",
+        "--force",
+        dest="force",
+        action="store_true",
+        default=False,
+        help="Force writing to existing cache dir",
+    )
+
     # Add option to specify families to retrieve protein sequences for
     parser.add_argument(
         "--families",
@@ -196,6 +205,14 @@ def build_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help="Do not delete content in existing cache dir",
+    )
+
+    parser.add_argument(
+        "-r",
+        "--retries",
+        type=int,
+        default=10,
+        help="Number of times to retry failed connections",
     )
 
     # Add option to force file over writting
