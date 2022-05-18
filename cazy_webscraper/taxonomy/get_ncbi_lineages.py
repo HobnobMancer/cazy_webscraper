@@ -378,16 +378,24 @@ def build_lineage_df(lineage_dict, genus_dict):
                         for genus in family_data:
                             genus_data = genus_dict[genus]
 
-                            for species in genus_data:
-                                if len(genus_data[species]) == 0:
-                                    data = [kingdom, phylum, tax_class, order, genus, species, None]
-                                    df_data.append(data)
+                            if genus_data is None:
+                                species = None
+                                strain = None
 
-                                else:
-                                    species_data = genus_data[species]
-                                    for strain in species_data:
-                                        data = [kingdom, phylum, tax_class, order, genus, species, strain]
+                                data = [kingdom, phylum, tax_class, order, genus, species, strain]
+                                df_data.append(data)
+
+                            else:
+                                for species in genus_data:
+                                    if len(genus_data[species]) == 0:
+                                        data = [kingdom, phylum, tax_class, order, genus, species, None]
                                         df_data.append(data)
+
+                                    else:
+                                        species_data = genus_data[species]
+                                        for strain in species_data:
+                                            data = [kingdom, phylum, tax_class, order, genus, species, strain]
+                                            df_data.append(data)
     
     df = pd.DataFrame(df_data, ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', ' Genus', 'Species', 'Strain'])
 
