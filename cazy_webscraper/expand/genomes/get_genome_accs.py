@@ -83,8 +83,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         args = build_parser(argv).parse_args()
 
     if logger is None:
-        logger = logging.getLogger(__package__)
-        config_logger(args)
+        logger = logging.getLogger(__name__)
+        config_logger(args, logger_name=__name__)
 
     Entrez.email = args.email
 
