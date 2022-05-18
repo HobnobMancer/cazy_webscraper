@@ -59,7 +59,7 @@ from cazy_webscraper import cazy_scraper, closing_message
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
 from cazy_webscraper.sql.sql_interface.get_data.get_taxonomies import get_taxonomies
-from cazy_webscraper.utilities.parsers.tax_ncbi import build_parser
+from cazy_webscraper.utilities.parsers.tax_ncbi_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
 
@@ -196,7 +196,7 @@ def build_lineage_dict(genera, cache_dir, args):
         tax_id_dict, failed_genera = get_tax_record_ids(batch, args)
         
         if len(list(tax_id_dict.keys())) == 0:
-            failed_batches.add(batch)
+            failed_batches.add(set(batch))
             continue
         
         if len(failed_genera) != 0:
@@ -206,14 +206,14 @@ def build_lineage_dict(genera, cache_dir, args):
         query_key, web_env = post_to_entrez(batch, args)
 
         if query_key is None:
-            failed_batches.add(batch)
+            failed_batches.add(set(batch))
             continue
             
         # fetch lineage from tax records
         lineage_dict, success = get_lineage(genera, lineage_dict, query_key, web_env, args)
 
         if success is False:
-            failed_batches.add(batch)
+            failed_batches.add(set(batch))
     
     # handled failed batches
     if len(failed_batches) != 0:
@@ -253,8 +253,19 @@ def get_tax_record_ids(genera, args):
             logger.warning(f"Could not retrieve record from NCBI Tax db\n{err}")
             continue
 
-        term = tax_record['TranslationStack'][0]['Term'].split("[")[0]
-        tax_id = tax_record['IdList'][0]
+        try:
+            term = tax_record['TranslationStack'][0]['Term'].split("[")[0]
+            tax_id = tax_record['IdList'][0]
+        except KeyError:
+            print(tax_record, "****")
+            # 
+            #
+            # how to handle virus names
+            # add bool to dict, if true genus = organism 
+            #
+            #
+            #
+            
 
         tax_id_dict[tax_id] = term
 
