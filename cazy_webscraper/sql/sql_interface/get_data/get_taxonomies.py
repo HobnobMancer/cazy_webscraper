@@ -221,7 +221,7 @@ def get_filtered_taxs(
     :param ec_filters: set of EC numbers to limit the retrieval of data to
     :param connection: open sqlaclchemy connection for an SQLite db
     
-    Return lsit of organisms
+    Return dict of organisms 
     """
     logger = logging.getLogger(__name__)
 
@@ -258,12 +258,41 @@ def get_filtered_taxs(
             connection
         )
 
-    organisms = set()
+    logger.info(f"Identified {len(filtered_records)} organisms of interest")
 
-    for record in filtered_records:
-        organisms.add(f"{record[1].genus} {record[1].species}")
+    organisms = {}  # {genus: {species: {strain}}} or {genus: None if virus}
 
-    return list(organisms)
+    for record in tqdm(filtered_records, desc="Compiling dict of db taxonomies"):
+        genus = record[1].genus
+        species = record[1].species
+
+        species_strain = record[1].species
+        if species_strain.split(" ")[0] == 'sp.':
+            species = species_strain
+            strain = ""
+        else:
+            species = species_strain.split(" ")[0]
+            strain = species_strain.replace(species, "").strip()
+
+        # add organism to dict of organisms {genus: {species: {strain}}}
+        if record[-1].kingdom == 'Viruse':
+            organism = f"{record[1].genus} {record[1].species}"
+            organisms[organism] = None
+
+        else:
+            try:
+                organisms[genus]
+                
+                try:
+                    organisms[genus][species].add(strain)
+                
+                except KeyError:
+                    organisms[genus][species] = {strain}
+            
+            except KeyError:
+                organisms[genus] = {species: {strain}}
+
+    return organisms
 
 
 def apply_tax_filters(initially_selected_records, taxonomy_filters, kingdom_filters):

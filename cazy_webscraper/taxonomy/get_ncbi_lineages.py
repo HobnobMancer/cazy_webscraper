@@ -115,12 +115,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         connection,
         args,
     )
-    logger.info(f"Identified {len(organisms)} matching the provided criteria")
 
     # convert list of organisms into dict {genus: {species: {strain}}}
-    genus_dict = build_genus_dict(organisms)
-    genera = list(genus_dict.keys())
-    logger.info(f"Retrievied {len(genera)} matching the provided criteria")
+    genera = list(organisms.keys())
+    logger.info(f"Retrievied {len(genera)} genera matching the provided criteria")
 
     Entrez.email = args.email
 
@@ -132,46 +130,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     lineage_df.to_csv(args.output)
 
     closing_message("NCBI taxonomy summary", start_time, args)
-
-
-def build_genus_dict(organisms):
-    """Build a dict of {genus: {species: {strains}}} from list of organisms
-    
-    :param organisms: list, scientific names of organisms from a local cazyme database
-    
-    Return dict
-    """
-    logger = logging.getLogger(__name__)
-
-    logger.info("Building dict of organisms of interest")
-
-    db_tax_dict = {}  # {genus: {species: {strain}}}
-
-    for organism in tqdm(organisms, desc="Compiling tax dict"):
-        genus = organism.split(" ")[0]
-
-        species_strain = organism.split(" ")[1]
-        
-        if species_strain.split(" ")[0] == 'sp.':
-            species = species_strain
-            strain = ""
-        else:
-            species = species_strain.split(" ")[0]
-            strain = species_strain.replace(species, "").strip()
-        
-        try:
-            db_tax_dict[genus]
-            
-            try:
-                db_tax_dict[genus][species].add(strain)
-            
-            except KeyError:
-                db_tax_dict[genus][species] = {strain}
-        
-        except KeyError:
-            db_tax_dict[genus] = {species: {strain}}
-
-    return db_tax_dict
 
 
 def build_lineage_dict(genera, cache_dir, args):
