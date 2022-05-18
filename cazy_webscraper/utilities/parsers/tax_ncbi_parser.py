@@ -209,6 +209,14 @@ def build_parser(argv: Optional[List] = None):
         help="Path to output directory to which downloaded structures are retrieved",
     )
 
+    parser.add_argument(
+        "-r",
+        "--retries",
+        type=int,
+        default=10,
+        help="Number of times to retry failed connections",
+    )
+
     # Add option to force file over writting
     parser.add_argument(
         "--sql_echo",
