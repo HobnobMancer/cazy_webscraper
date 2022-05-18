@@ -272,6 +272,8 @@ def get_genome_data(
     if nuccore_ids is None:
         failed_batches.append(batch)
         return genome_dict, failed_batches, parsed_nuccore_ids, parsed_assembly_ids
+    
+    print("*", nuccore_ids, '*')
 
     nuccore_ids_to_fetch = [_ for _ in nuccore_ids if _ not in parsed_nuccore_ids]
 
@@ -388,7 +390,7 @@ def post_ids(ids, database, args):
     # if no record is returned from call to Entrez
     except (TypeError, AttributeError) as err:
         logger.warning(
-            f"Failed to post IDs to Entrez {database} db"
+            f"Failed to post IDs to Entrez {database} db:\n{err}"
         )
         return None, None
 
@@ -435,10 +437,10 @@ def get_linked_nuccore_ids(query_key, web_env, args):
             for nuc_id in record['LinkSetDb'][0]['Link']:
                 nuccore_ids.add(nuc_id['Id'])
     
-    if len(nuccore_records) == 0:
+    if len(nuccore_ids) == 0:
         return
     
-    return nuccore_records
+    return nuccore_ids
 
 
 def link_nuccore_ids_to_gbk_accs(query_key, web_env, nuccore_ids, protein_accs, args):
