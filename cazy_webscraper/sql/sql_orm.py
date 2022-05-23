@@ -45,6 +45,7 @@ import logging
 import re
 
 import sqlite3
+from turtle import back
 
 from sqlalchemy import (
     Column,
@@ -199,6 +200,11 @@ class Genbank(Base):
         back_populates="genbanks",
     )
     
+    genomes = relationship(
+        "Genome",
+        back_populates="genbanks",
+    )
+    
     families = relationship(
         "CazyFamily",
         secondary=genbanks_families,
@@ -277,6 +283,34 @@ class Kingdom(Base):
 
     def __repr__(self):
         return f"<Class Kingdom, kingdom={self.kingdom}, kingdom_id={self.kingdom_id}>"
+
+
+class Genomes(Base):
+    """Represent the genomic assembly from which a protein is sourced."""
+    __tablename__ = "Genomes"
+    
+    __table_args__ = (
+        UniqueConstraint("assembly_name"),
+        Index("genome_options", "assembly_name", "gbk_version_accession", "refseq_version_accession")
+    )
+    
+    genome_id = Column(Integer, primary_key=True)
+    genbank_id = Column(Integer, ForeignKey("Genbanks.genbank_id"))
+    assembly_name = Column(String)
+    gkb_version_accession = Column(String)
+    gbk_ncbi_id = Column(Integer)
+    refseq_version_accession = Column(String)
+    refseq_ncbi_id = Column(Integer)
+    
+    genbanks = relationship("Genbank", back_populates="genomes")
+    
+    def __str__(self):
+        return f"-Genome, Gbk={self.gkb_version_accession}, RefSeq={self.refseq_version_accession}-"
+
+    def __repr__(self):
+        return (
+            f"<Class Genome: Gbk={self.gkb_version_accession}, RefSeq={self.refseq_version_accession}>"
+        )
 
 
 class CazyFamily(Base):
