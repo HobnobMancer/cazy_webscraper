@@ -206,6 +206,53 @@ def get_ncbi_assembly_data(sequence_accessions, cache_dir, args, refseq=False):
 
         product_accessions = set(feature_table['product_accession'])
 
+        for product_accession in tqdm(product_accessions, f"Parsing {assembly_name} feature table"):
+            if product_accession in sequence_accessions:
+                try:
+                    assembly_dict[assembly_name].add(product_accession)
+                except KeyError:
+                    assembly_dict[assembly_name] = {product_accession}
+
+    if len(list(failed_feature_tables.keys())) != 0:
+        logger.info("Retrying failed downloads of feaure tables")
+        done_urls = set()
+
+        while len(done_urls) < list(failed_feature_tables.keys()):
+            for feature_table_url in failed_feature_tables:
+                if feature_table_url in done_urls:
+                    continue
+
+                # retrieve assembly name from url
+                assembly_name = feature_table_url.split("/")[-2].split("_")[-1]
+
+                file_name = feature_table_url.split('/')[-1]
+                out_file_path = cache_dir / file_name
+            
+                successful = download_feature_table(assembly_name, feature_table_url, out_file_path, args)
+
+                if successful is False:
+                    failed_feature_tables[feature_table_url] += 1
+                    logger.warning(
+                        f"Failed to download feature table from {feature_table_url}\n"
+                        f"on the {failed_feature_tables[feature_table_url]} true"
+                    )
+                    if failed_feature_tables[feature_table_url] > args.retries:
+                        done_urls.add(feature_table_url)
+                        with open(no_urls, 'a') as fh:
+                            fh.write(f"{assembly_name}\n")
+            
+                feature_table = pd.read_csv(out_file_path, sep="\t")
+
+                product_accessions = set(feature_table['product_accession'])
+
+                for product_accession in tqdm(product_accessions, f"Parsing {assembly_name} feature table"):
+                    if product_accession in sequence_accessions:
+                        try:
+                            assembly_dict[assembly_name].add(product_accession)
+                        except KeyError:
+                            assembly_dict[assembly_name] = {product_accession}
+
+                done_urls.add(feature_table_url)
 
     return assembly_dict, genome_dict
 
