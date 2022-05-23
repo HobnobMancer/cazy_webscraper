@@ -130,43 +130,16 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.info(f"Retrieved {len(genbank_accessions)} from the local db")
 
-    genome_dict, failed_batches = get_genomic_assembly_data(genbank_accessions, args)
+    genome_dict, failed_batches, parsed_assembly_ids = get_genomic_assembly_data(genbank_accessions, args)
 
-    if len(failed_batches['proteins']) != 0:
-        logger.warning("Retrying failed batches of protein version accessions")
-        # Parse protein version accessions individually to find those that are causing the previous issues
-        for batch in tqdm(failed_batches['proteins'], desc="Retrying failed protein version acc batches"):
-            for prot_ver_acc in batch:
-                new_genome_dict, new_failed_batches = get_genomic_assembly_data([prot_ver_acc], args)
-
-                if len(new_failed_batches['proteins']) != 0:
-                    logger.error(
-                        "Could not retrieve genomic assembly accessions for the "
-                        f"for protein {prot_ver_acc}"
-                    )
-                    continue
-                
-                genome_dict.update(new_genome_dict)
-
-    if len(failed_batches['nuccores']) != 0:
-        logger.warning("Retrying failed batches of NCBI Nuccore db IDs")
-
-    if len(failed_batches['assemblies']) != 0:
-        logger.warning("Retrying failed batches of NCBI Assembly db IDs")
-
-    # genome_dict = {assembly_name: {gbk and refseq accessions and uids, and urls to download feature tables}}
-
-    logger.info(f"Identfied {len(genome_dict.keys())} assembly names")
-
-    print(genome_dict)
-    sys.exit(1)
-
-    # download assemblies and associate with protein accessions
-    genome_protein_relationships = get_relationships(genome_dict, genbank_accessions, cache_dir, args)
-
-    # add data to the local db
-
-    closing_message("extract_sequences", start_time, args)
+    if len(failed_batches['proteins']) != 0 or len(failed_batches['nuccores']) != 0 or len(failed_batches['assemlbies']) != 0:
+        genome_dict.update(retry_failed_batches(
+            genome_dict,
+            failed_batches,
+            parsed_assembly_ids,
+            cache_dir,
+            args,
+        ))
 
 
 def get_gbks_of_interest(
@@ -220,12 +193,11 @@ def get_gbks_of_interest(
     return list(gbk_dict.keys())
 
 
-def get_genomic_assembly_data(genbank_accessions, args, retry=False):
+def get_genomic_assembly_data(genbank_accessions, args):
     """Retrieve the meta data for genomic assemblies in NCBI linked to a list of protein version accessions
     
     :param genbank_accessions: list of Protein GenBank version accessions
     :param args: cmd-line args parser
-    :param retry: bool, is this a retry of a previously failed attempt?
     
     Return dict of assembly names, ids, version accessions and urls to download feature tables,
         and dict of failed protein, nuccore and assembly IDs -- ids for which no data was retrieved
@@ -259,9 +231,9 @@ def get_genomic_assembly_data(genbank_accessions, args, retry=False):
             continue
 
         # get assembly IDs linked to the nuccore IDs
-        aseembly_ids, failed_batches = get_assembly_ids(nuccore_ids_to_fetch)
+        assembly_ids, failed_batches = get_assembly_ids(nuccore_ids_to_fetch, failed_batches, args)
 
-        assembly_ids_to_fetch = [_ for _ in aseembly_ids if _ not in parsed_assembly_ids]
+        assembly_ids_to_fetch = [_ for _ in assembly_ids if _ not in parsed_assembly_ids]
 
         if len(assembly_ids_to_fetch == 0):
             continue
@@ -279,7 +251,7 @@ def get_genomic_assembly_data(genbank_accessions, args, retry=False):
         for nuccore_id in nuccore_ids:
             parsed_nuccore_ids.add(nuccore_id)
 
-    return genbank_accessions, failed_batches
+    return genbank_accessions, failed_batches, parsed_assembly_ids
 
 
 def post_ids(ids, database, args):
@@ -526,6 +498,135 @@ def get_assembly_data(assembly_ids, failed_batches, parsed_assembly_ids, args, r
 
     return genome_dict, failed_batches, parsed_assembly_ids
 
+
+
+def retry_failed_batches(genome_dict, failed_batches, parsed_assembly_ids, cache_dir, args):
+    """Retry failed batches of protein, nuccore and assembly ids.
+
+    :param genome_dict: dict of assembly meta data (assembly name, ids, version accs, urls)
+    :param failed_batches: dict, dict of failed protein, nuccore and assembly ids
+    :param parsed_assembly_ids: set of ncbi assembly IDs for which data has already been retrieved
+    :param cache_dir: path to cache dir
+    :param args: cmd-line args parser
+    
+    Return genome_dict (dict of assembly meta data from NCBI)
+    """
+    logger = logging.getLogger(__name__)
+
+    if len(failed_batches['proteins']) != 0:
+
+        failed_proteins_cache = cache_dir / "failed_protein_accessions.txt"
+
+        logger.warning("Retrying failed batches of protein version accessions")
+
+        # Parse protein version accessions individually to find those that are causing the previous issues
+        for batch in tqdm(failed_batches['proteins'], desc="Retrying failed protein version acc batches"):
+            for prot_ver_acc in batch:
+                new_genome_dict, new_failed_batches, new_parsed_assembly_ids = get_genomic_assembly_data([prot_ver_acc], args)
+
+                if len(new_failed_batches['proteins']) != 0:
+                    logger.error(
+                        "Could not retrieve genomic assembly accessions for the "
+                        f"for protein {prot_ver_acc}"
+                    )
+                    with open(failed_proteins_cache, "a") as fh:
+                        fh.write(f"{prot_ver_acc}\n")
+                    continue
+                
+                genome_dict.update(new_genome_dict)
+
+                for assembly_id in new_parsed_assembly_ids:
+                    parsed_assembly_ids.add(assembly_id)
+
+    if len(failed_batches['nuccores']) != 0:
+        failed_nuccore_cache = cache_dir / "failed_nuccore_ids.txt"
+        logger.warning("Retrying failed batches of NCBI Nuccore db IDs")
+        for batch in tqdm(failed_batches['nuccores'], desc="Retrying failed nuccore db IDs"):
+            # parse nuccore IDs individually to find those that caused issues
+            for nuccore_id in batch:
+                new_failed_batches = {'nuccores': [], 'assemblies': []}
+
+                # get assembly ids
+                assembly_ids, new_failed_batches = get_assembly_ids([nuccore_id], failed_batches, args, retry=True)
+
+                if len(new_failed_batches['nuccores']) != 0:
+                    logger.error(
+                        "Could not retrieve genomic assembly accessions for the "
+                        f"for nuccore ID {nuccore_id}"
+                    )
+                    with open(failed_nuccore_cache, "a") as fh:
+                        fh.write(f"{nuccore_id}\n")
+                    continue
+
+                assembly_ids_to_fetch = [_ for _ in assembly_ids if _ not in parsed_assembly_ids]
+
+                if len(assembly_ids_to_fetch) == 0:
+                    continue
+
+            new_assembly_data, new_failed_batches, new_parsed_assembly_ids = get_assembly_data(
+                assembly_ids_to_fetch,
+                failed_batches,
+                parsed_assembly_ids,
+                args,
+            )
+
+            if len(new_failed_batches['nuccores']) != 0 or len(new_failed_batches['assemblies']) != 0:
+                logger.error(
+                    "Could not retrieve genomic assembly accessions for the "
+                    f"for nuccore ID {nuccore_id}"
+                )
+                continue
+
+            genome_dict.update(new_assembly_data)
+
+            for assembly_id in new_parsed_assembly_ids:
+                parsed_assembly_ids.add(assembly_id)
+
+    if len(failed_batches['assemblies']) != 0:
+        failed_assembly_cache = cache_dir / "failed_assembly_ids.txt"
+        logger.warning("Retrying failed batches of NCBI Assembly db IDs")
+        for batch in failed_batches['assemblies']:
+            # parse assembly IDs individually to find those that are causing issues
+            for assembly_id in batch:
+                new_failed_batches = {'nuccores': [], 'assemblies': []}
+
+                new_assembly_data, new_failed_batches, new_parsed_assembly_ids = get_assembly_data(
+                    assembly_ids_to_fetch,
+                    failed_batches,
+                    parsed_assembly_ids,
+                    args,
+                )
+
+                if len(new_failed_batches['nuccores']) != 0 or len(new_failed_batches['assemblies']) != 0:
+                    logger.error(
+                        "Could not retrieve genomic assembly accessions for the "
+                        f"for assembly ID {nuccore_id}"
+                    )
+                    with open(failed_assembly_cache, "a") as fh:
+                        fh.write(f"{assembly_id}\n")
+                    continue
+
+                genome_dict.update(new_assembly_data)
+
+                for assembly_id in new_parsed_assembly_ids:
+                    parsed_assembly_ids.add(assembly_id)
+    
+    return genome_dict
+
+
+    # genome_dict = {assembly_name: {gbk and refseq accessions and uids, and urls to download feature tables}}
+
+    logger.info(f"Identfied {len(genome_dict.keys())} assembly names")
+
+    print(genome_dict)
+    sys.exit(1)
+
+    # download assemblies and associate with protein accessions
+    genome_protein_relationships = get_relationships(genome_dict, genbank_accessions, cache_dir, args)
+
+    # add data to the local db
+
+    closing_message("extract_sequences", start_time, args)
 
 
 
