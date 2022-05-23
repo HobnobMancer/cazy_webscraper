@@ -147,15 +147,20 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info(f"Retrieved {len(gbk_accessions)} GenBank accessions from the local db")
     logger.info(f"Retrieved {len(refseq_accessions)} RefSeq accessions from the local db")
 
+    genome_dict = {}
     assembly_dict = {}
 
     # get data for genbank accessions
     if len(gbk_accessions) != 0:
-        assembly_dict.update(get_ncbi_assembly_data(gbk_accessions, cache_dir, args))
+        new_assembly_dict, new_genome_dict = get_ncbi_assembly_data(gbk_accessions, cache_dir, args)
+        assembly_dict.update(new_assembly_dict)
+        genome_dict.update(new_genome_dict)
 
     # get data for refseq accessions
     if len(refseq_accessions) != 0:
-        assembly_dict.update(get_ncbi_assembly_data(refseq_accessions, cache_dir, args))
+        new_assembly_dict, new_genome_dict = get_ncbi_assembly_data(refseq_accessions, cache_dir, args)
+        assembly_dict.update(new_assembly_dict)
+        genome_dict.update(new_genome_dict)
 
 
 def get_ncbi_assembly_data(sequence_accessions, cache_dir, args, refseq=False):
