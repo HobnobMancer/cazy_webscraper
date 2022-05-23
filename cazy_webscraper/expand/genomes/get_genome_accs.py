@@ -130,51 +130,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.info(f"Retrieved {len(genbank_accessions)} from the local db")
 
-    failed_batches = {'proteins': [], 'nuccores': []}  # store lists of IDs that cause issues
-
-    genome_dict = {}  # used for storing retrieved genomic accessions
-
-    parsed_nuccore_ids = set()
-    parsed_assembly_ids = set()
-
-    # break up long list into smaller batches
-    batches = get_chunks_list(genbank_accessions, args.batch_size)
-
-    logger.info("Starting retrieval of genomic accessions")
-
-    for protein_accs in tqdm(batches, desc="Batch quering NCBI"):
-        # get nuccore IDs for the set of protein accessions
-        nuccore_ids, failed_batches = get_nuccore_ids(protein_accs, failed_batches, args)
-
-        if len(nuccore_ids) == 0:
-            failed_batches['proteins'].append(protein_accs)
-
-        # check nuccore IDs have laredy been parsed because multiple proteins are linked to the same nuccore record
-        nuccore_ids_to_fetch = [_ for _ in nuccore_ids if _ not in parsed_nuccore_ids]
-
-        if len(nuccore_ids_to_fetch) == 0:
-            continue
-
-        # get assembly IDs linked to the nuccore IDs
-        aseembly_ids, failed_batches = get_assembly_ids(nuccore_ids_to_fetch)
-
-        assembly_ids_to_fetch = [_ for _ in aseembly_ids if _ not in parsed_assembly_ids]
-
-        if len(assembly_ids_to_fetch == 0):
-            continue
-
-        new_assembly_data, failed_batches, parsed_assembly_ids = get_assembly_data(
-            assembly_ids_to_fetch,
-            failed_batches,
-            parsed_assembly_ids,
-            args,
-        )
-
-        genome_dict.update(new_assembly_data)
-
-        # update parsed nuccore and assembly ids
-        for nuccore_id in nuccore_ids:
-            parsed_nuccore_ids.add(nuccore_id)
+    genome_dict, failed_batches = get_genomic_assembly_data(genbank_accessions, args)
 
     if len(failed_batches) != 0:
         logger.warning("Retrying failed batches")
@@ -254,6 +210,67 @@ def get_gbks_of_interest(
     )
 
     return list(gbk_dict.keys())
+
+
+def get_genomic_assembly_data(genbank_accessions, args):
+    """Retrieve the meta data for genomic assemblies in NCBI linked to a list of protein version accessions
+    
+    :param genbank_accessions: list of Protein GenBank version accessions
+    :param args: cmd-line args parser
+    
+    Return dict of assembly names, ids, version accessions and urls to download feature tables,
+        and dict of failed protein, nuccore and assembly IDs -- ids for which no data was retrieved
+        from NCBI
+    """
+    logger = logging.getLogger(__name__)
+
+    failed_batches = {'proteins': [], 'nuccores': [], 'assemblies': []}  # store lists of IDs that cause issues
+
+    genome_dict = {}  # used for storing retrieved genomic accessions
+
+    parsed_nuccore_ids = set()
+    parsed_assembly_ids = set()
+
+    # break up long list into smaller batches
+    batches = get_chunks_list(genbank_accessions, args.batch_size)
+
+    logger.info("Starting retrieval of genomic accessions")
+
+    for protein_accs in tqdm(batches, desc="Batch quering NCBI"):
+        # get nuccore IDs for the set of protein accessions
+        nuccore_ids, failed_batches = get_nuccore_ids(protein_accs, failed_batches, args)
+
+        if len(nuccore_ids) == 0:
+            failed_batches['proteins'].append(protein_accs)
+
+        # check nuccore IDs have laredy been parsed because multiple proteins are linked to the same nuccore record
+        nuccore_ids_to_fetch = [_ for _ in nuccore_ids if _ not in parsed_nuccore_ids]
+
+        if len(nuccore_ids_to_fetch) == 0:
+            continue
+
+        # get assembly IDs linked to the nuccore IDs
+        aseembly_ids, failed_batches = get_assembly_ids(nuccore_ids_to_fetch)
+
+        assembly_ids_to_fetch = [_ for _ in aseembly_ids if _ not in parsed_assembly_ids]
+
+        if len(assembly_ids_to_fetch == 0):
+            continue
+
+        new_assembly_data, failed_batches, parsed_assembly_ids = get_assembly_data(
+            assembly_ids_to_fetch,
+            failed_batches,
+            parsed_assembly_ids,
+            args,
+        )
+
+        genome_dict.update(new_assembly_data)
+
+        # update parsed nuccore and assembly ids
+        for nuccore_id in nuccore_ids:
+            parsed_nuccore_ids.add(nuccore_id)
+
+    return genbank_accessions, failed_batches
 
 
 def post_ids(ids, database, args):
