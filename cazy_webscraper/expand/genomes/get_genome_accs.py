@@ -132,20 +132,28 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     genome_dict, failed_batches = get_genomic_assembly_data(genbank_accessions, args)
 
-    if len(failed_batches) != 0:
-        logger.warning("Retrying failed batches")
-        for batch in tqdm(failed_batches, desc="Retrying failed batches"):
+    if len(failed_batches['proteins']) != 0:
+        logger.warning("Retrying failed batches of protein version accessions")
+        # Parse protein version accessions individually to find those that are causing the previous issues
+        for batch in tqdm(failed_batches['proteins'], desc="Retrying failed protein version acc batches"):
+            for prot_ver_acc in batch:
+                new_genome_dict, new_failed_batches = get_genomic_assembly_data([prot_ver_acc], args)
 
-            for protein in batch:
-                new_assembly_data, failed_batches, parsed_nuccore_ids, parsed_assembly_ids = get_genome_data(
-                    [protein],
-                    failed_batches,
-                    parsed_nuccore_ids,
-                    parsed_assembly_ids,
-                    args,
-                )
+                if len(new_failed_batches['proteins']) != 0:
+                    logger.error(
+                        "Could not retrieve genomic assembly accessions for the "
+                        f"for protein {prot_ver_acc}"
+                    )
+                    continue
+                
+                genome_dict.update(new_genome_dict)
 
-                genome_dict.update(new_assembly_data)
+    if len(failed_batches['nuccores']) != 0:
+        logger.warning("Retrying failed batches of NCBI Nuccore db IDs")
+
+    if len(failed_batches['assemblies']) != 0:
+        logger.warning("Retrying failed batches of NCBI Assembly db IDs")
+
     # genome_dict = {assembly_name: {gbk and refseq accessions and uids, and urls to download feature tables}}
 
     logger.info(f"Identfied {len(genome_dict.keys())} assembly names")
@@ -212,11 +220,12 @@ def get_gbks_of_interest(
     return list(gbk_dict.keys())
 
 
-def get_genomic_assembly_data(genbank_accessions, args):
+def get_genomic_assembly_data(genbank_accessions, args, retry=False):
     """Retrieve the meta data for genomic assemblies in NCBI linked to a list of protein version accessions
     
     :param genbank_accessions: list of Protein GenBank version accessions
     :param args: cmd-line args parser
+    :param retry: bool, is this a retry of a previously failed attempt?
     
     Return dict of assembly names, ids, version accessions and urls to download feature tables,
         and dict of failed protein, nuccore and assembly IDs -- ids for which no data was retrieved
