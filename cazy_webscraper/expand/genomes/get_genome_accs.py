@@ -162,6 +162,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         assembly_dict.update(new_assembly_dict)
         genome_dict.update(new_genome_dict)
 
+    # insert data in to the db
+
 
 def get_ncbi_assembly_data(sequence_accessions, cache_dir, args, refseq=False):
     """Param retrieve assembly data for list of proteins
