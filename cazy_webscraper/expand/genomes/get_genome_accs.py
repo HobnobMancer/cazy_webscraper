@@ -50,6 +50,10 @@ import pandas as pd
 
 from datetime import datetime
 from typing import List, Optional
+from socket import timeout
+from typing import List, Optional
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen
 
 from Bio import Entrez
 from tqdm import tqdm
@@ -130,7 +134,43 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.info(f"Retrieved {len(genbank_accessions)} from the local db")
 
-    genome_dict, failed_batches, parsed_assembly_ids = get_genomic_assembly_data(genbank_accessions, args)
+    # separate GenBank and RefSeq accessions
+    gbk_accessions = set()
+    refseq_accessions = set()
+
+    for accession in tqdm(genbank_accessions, desc="Separting GenBank and RefSeq accessions"):
+        if accession[2] == '_':
+            refseq_accessions.add(accession)
+        else:
+            gbk_accessions.add(accession)
+
+    logger.info(f"Retrieved {len(gbk_accessions)} GenBank accessions from the local db")
+    logger.info(f"Retrieved {len(refseq_accessions)} RefSeq accessions from the local db")
+
+    assembly_dict = {}
+
+    # get data for genbank accessions
+    if len(gbk_accessions) != 0:
+        assembly_dict.update(get_ncbi_assembly_data(gbk_accessions, cache_dir, args))
+
+    # get data for refseq accessions
+    if len(refseq_accessions) != 0:
+        assembly_dict.update(get_ncbi_assembly_data(refseq_accessions, cache_dir, args))
+
+
+def get_ncbi_assembly_data(sequence_accessions, cache_dir, args, refseq=False):
+    """Param retrieve assembly data for list of proteins
+    
+    :param sequence_accessions: list of protien accessions
+    :param cache_dir: path to cache directory
+    :param args: cmd-line args parser
+    :param refseq: bool, are the protein accessions from the NCBI RefSeq db?
+    
+    Return dict of {ass_name: {protein_accessions} and genome_dict, listing assembly meta data
+    """
+    logger = logging.getLogger(__name__)
+
+    genome_dict, failed_batches, parsed_assembly_ids = get_genomic_assembly_data(sequence_accessions, args)
 
     if len(failed_batches['proteins']) != 0 or len(failed_batches['nuccores']) != 0 or len(failed_batches['assemlbies']) != 0:
         genome_dict.update(retry_failed_batches(
@@ -140,6 +180,34 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             cache_dir,
             args,
         ))
+
+    assembly_dict = {}
+
+    no_urls = cache_dir / "no_assembly_urls.txt"
+
+    failed_feature_tables = {}
+
+    # download assembly feature tables and link assemblies to protein accessions
+    for assembly_name in tqdm(genome_dict, desc="Linking proteins to genomic assemblies"):
+        feature_table_url = get_feature_table_url(assembly_name, genome_dict[assembly_name], refseq, no_urls)
+        if feature_table_url is None:
+            continue
+
+        file_name = feature_table_url.split('/')[-1]
+        out_file_path = cache_dir / file_name
+
+        successful = download_feature_table(assembly_name, feature_table_url, out_file_path, args)
+
+        if successful is False:
+            failed_feature_tables[feature_table_url] = 1
+            continue
+
+        feature_table = pd.read_csv(out_file_path, sep="\t")
+
+        product_accessions = set(feature_table['product_accession'])
+
+
+    return assembly_dict, genome_dict
 
 
 def get_gbks_of_interest(
@@ -614,56 +682,96 @@ def retry_failed_batches(genome_dict, failed_batches, parsed_assembly_ids, cache
     return genome_dict
 
 
-    # genome_dict = {assembly_name: {gbk and refseq accessions and uids, and urls to download feature tables}}
-
-    logger.info(f"Identfied {len(genome_dict.keys())} assembly names")
-
-    print(genome_dict)
-    sys.exit(1)
-
-    # download assemblies and associate with protein accessions
-    genome_protein_relationships = get_relationships(genome_dict, genbank_accessions, cache_dir, args)
-
-    # add data to the local db
-
-    closing_message("extract_sequences", start_time, args)
-
-
-
-
-
-
-
-def get_relationships(genome_dict, protein_accessions, cache_dir, args):
-    """Download genomes and track which proteins come from which genomes.
+def get_feature_table_url(assembly_name, assembly_data, refseq, cache_path):
+    """Retrieve the url for downloading the feature table from the ncbi ftp server
     
-    :param genome_dict: 
-    :param protein_accessions: list of protein accessions of interest
-    :param cache_dir: path to cache directory
+    :param assembly_name: str, name of genomic assembly
+    :param assembly_data: dict, contains ids, urls and other meta data for the assembly
+    :param refseq: bool, is the assembly associated with refseq sequence accessions?
+    :param cache_path: path to write out cache
+    
+    Return url (str), or none if none retrieved
+    """
+    logger = logging.getLogger(__name__)
+
+    if refseq:
+        feature_table_url = assembly_data['refseq_url']
+        if len(feature_table_url) == 0:
+            logger.warning(
+                f"Did not retrieve RefSeq url for assembly {assembly_name}\n"
+                "Will use the Gbk feature table instead"
+            )
+            feature_table_url = assembly_data['gbk_url']
+            if len(feature_table_url) == 0:
+                logger.warning(
+                    f"Did not retrieve RefSeq or Gbk url for assembly {assembly_name}\n"
+                    "Cannot retrieve feature table and linke proteins to this assembly"
+                )
+                with open(cache_path, "a") as fh:
+                    fh.write(f"{assembly_name}\n")
+    else:
+        feature_table_url = assembly_data['gbk_url']
+        if len(feature_table_url) == 0:
+            logger.warning(
+                f"Did not retrieve Gbk url for assembly {assembly_name}\n"
+                "Will use the Gbk feature table instead"
+            )
+            feature_table_url = assembly_data['refseq_url']
+            if len(feature_table_url) == 0:
+                logger.warning(
+                    f"Did not retrieve RefSeq or Gbk url for assembly {assembly_name}\n"
+                    "Cannot retrieve feature table and linke proteins to this assembly"
+                )
+                with open(cache_path, "a") as fh:
+                    fh.write(f"{assembly_name}\n")
+
+    if len(feature_table_url) == 0:
+        return
+    else:
+        return feature_table_url
+
+
+def download_feature_table(assembly_name, feature_table_url, out_file_path, args):
+    """Download feature table from the ftp server
+    
+    :param assembly_name: str, name of assembly in NCBI
+    :param feature_table_url: str, url to feature table to be downloaded
+    :param out_file_path: path to write out downloaded file to disk
     :param args: cmd-line args parser
     
-    Return dict {assembly_name: {protein accessions}}
+    Return bool, marking if successful or not
     """
-    relationship_dict = {}  # {assembly name: {protein accs}}
+    logger = logging.getLogger(__name__)
 
-    for assembly_name in tqdm(genome_dict, desc="Associating genomes with protein accessions"):
-        gbk_feature_table_url = genome_dict[assembly_name]['gbk_url']
-
-        # download file
-
-        # open
-
-        # get protein id column
-
-        # get all ids that are in proteins of interest
-
-        # add key:value to relationships dict
-
-    # if any proteins of interest left
+    try:
+        response = urlopen(feature_table_url, timeout=args.timeout)
+    except (HTTPError, URLError, timeout) as e:
+        logger.error(
+            f"Failed to download the feature table for {assembly_name}:\n{feature_table_url}", exc_info=1,
+        )
+        return False
     
-    # download refseq feature tables as well
+    file_size = int(response.info().get("Content-length"))
+    bsize = 1_048_576
+    logger.info("Opened URL and parsed metadata")
 
-    return relationship_dict
+    try:
+        with open(out_file_path, "wb") as out_handle:
+            while True:
+                buffer = response.read(bsize)
+                if not buffer:
+                    break
+                out_handle.write(buffer)
+    except IOError:
+        logger.error(f"Download feature table failed for {assembly_name}", exc_info=1)
+        return False
+    
+    # check file size is correct
+    if out_file_path.stat().st_size != file_size:
+        logger.error(f"Don't not compelte download for {assembly_name}")
+        return False
+    
+    return True
 
 
 if __name__ == "__main__":
