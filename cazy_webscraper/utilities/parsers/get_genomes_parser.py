@@ -255,6 +255,13 @@ def build_parser(argv: Optional[List] = None):
         ),
     )
 
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=45,
+        help="Connection timeout threshold (s)"
+    )
+
     # Add option for more detail (verbose) logging
     parser.add_argument(
         "-v",
