@@ -297,7 +297,7 @@ class Genome(Base):
     genome_id = Column(Integer, primary_key=True)
     genbank_id = Column(Integer, ForeignKey("Genbanks.genbank_id"))
     assembly_name = Column(String)
-    gkb_version_accession = Column(String)
+    gbk_version_accession = Column(String)
     gbk_ncbi_id = Column(Integer)
     refseq_version_accession = Column(String)
     refseq_ncbi_id = Column(Integer)

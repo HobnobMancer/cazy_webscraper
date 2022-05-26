@@ -77,7 +77,7 @@ def add_genomic_data(genome_dict, assembly_dict, gbk_dict, connection):
         insert_data(
             connection,
             'Genomes',
-            ['genbank_id', 'assembly_name', 'gkb_version_accession', 'gbk_ncbi_id', 'refseq_version_accession', 'refseq_ncbi_id'],
+            ['genbank_id', 'assembly_name', 'gbk_version_accession', 'gbk_ncbi_id', 'refseq_version_accession', 'refseq_ncbi_id'],
             list(records_to_add),
         )
     
@@ -114,7 +114,7 @@ def update_genomic_data(update_gbk_dict, assembly_dict, genome_dict, connection)
                     text(
                         "UPDATE Genomes "
                         f"SET assembly_name = {assembly_name} AND "
-                        f"gkb_version_accession = {gbk_ver_acc} AND "
+                        f"gbk_version_accession = {gbk_ver_acc} AND "
                         f"gbk_ncbi_id = {gbk_ncbi_id} AND "
                         f"refseq_version_accession = {ref_ver_acc} AND "
                         f"refseq_ncbi_id = {ref_ncbi_id} AND "
