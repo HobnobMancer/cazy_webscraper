@@ -244,6 +244,17 @@ def build_parser(argv: Optional[List] = None):
         ),
     )
 
+    parser.add_argument(
+        "--update",
+        dest="update",
+        action="store_true",
+        default=False,
+        help=(
+            "Update assembly data in the database.\n"
+            "Warning: updating records will overwrite existing data in the db/."
+        ),
+    )
+
     # Add option for more detail (verbose) logging
     parser.add_argument(
         "-v",
