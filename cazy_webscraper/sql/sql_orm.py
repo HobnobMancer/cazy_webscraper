@@ -285,7 +285,7 @@ class Kingdom(Base):
         return f"<Class Kingdom, kingdom={self.kingdom}, kingdom_id={self.kingdom_id}>"
 
 
-class Genomes(Base):
+class Genome(Base):
     """Represent the genomic assembly from which a protein is sourced."""
     __tablename__ = "Genomes"
     
