@@ -63,7 +63,8 @@ from saintBioutils.utilities.logger import config_logger
 
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
-from cazy_webscraper.sql.sql_interface.get_data.get_no_assemblies import get_no_assembly_proteins
+from cazy_webscraper.sql.sql_interface.get_data.get_no_assemblies import get_no_assembly_proteins, get_records_to_update
+from cazy_webscraper.sql.sql_interface.add_data.add_genome_data import add_genomic_data, update_genomic_data
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.ncbi.genomes import (
     get_nuccore_ids,
@@ -171,6 +172,19 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         genome_dict.update(new_genome_dict)
 
     # insert data in to the db
+    if args.update:
+        update_gbk_dict, add_gbk_dict = get_records_to_update(gbk_dict, connection)
+
+        if len(list(update_gbk_dict.keys())) != 0:
+            update_genomic_data(update_gbk_dict, assembly_dict, gbk_dict, connection)
+    
+        if len(list(add_gbk_dict.keys())) != 0:
+            add_genomic_data(add_gbk_dict, assembly_dict, gbk_dict, connection)
+
+    else:
+        add_genomic_data(genome_dict, assembly_dict, gbk_dict, connection)
+
+    closing_message("Get genomic data", start_time, args)
 
 
 def get_gbks_of_interest(
