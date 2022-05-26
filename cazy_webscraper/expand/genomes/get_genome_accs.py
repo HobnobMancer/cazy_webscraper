@@ -403,7 +403,7 @@ def get_genomic_assembly_data(genbank_accessions, args):
         for nuccore_id in nuccore_ids:
             parsed_nuccore_ids.add(nuccore_id)
 
-    return genbank_accessions, failed_batches, parsed_assembly_ids
+    return genome_dict, failed_batches, parsed_assembly_ids
 
 
 def retry_failed_batches(genome_dict, failed_batches, parsed_assembly_ids, cache_dir, args):
