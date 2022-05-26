@@ -137,7 +137,7 @@ def get_assembly_ids(nuccore_ids, failed_batches, args, retry=False):
             logger.warning("Batch contains invalid NCBI Nuccore db IDs")
             failed_batches.append(nuccore_ids)
 
-        return nuccore_ids, failed_batches
+        return assembly_ids, failed_batches
 
     logger.info("Getting linked assembly IDs")
     try:
