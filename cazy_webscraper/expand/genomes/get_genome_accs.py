@@ -138,9 +138,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         closing_message("get_genomic_accessions", start_time, args)
         sys.exit(1)
 
-    with open('genbank_accessions.txt', 'r') as fh:
-        genbank_accessions = fh.read().splitlines()
-
     logger.info(f"Retrieved {len(genbank_accessions)} from the local db")
 
     # separate GenBank and RefSeq accessions
@@ -161,13 +158,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # get data for genbank accessions
     if len(gbk_accessions) != 0:
-        new_assembly_dict, new_genome_dict = get_ncbi_assembly_data(gbk_accessions, cache_dir, args)
+        new_assembly_dict, new_genome_dict = get_ncbi_assembly_data(list(gbk_accessions), cache_dir, args)
         assembly_dict.update(new_assembly_dict)
         genome_dict.update(new_genome_dict)
 
     # get data for refseq accessions
     if len(refseq_accessions) != 0:
-        new_assembly_dict, new_genome_dict = get_ncbi_assembly_data(refseq_accessions, cache_dir, args)
+        new_assembly_dict, new_genome_dict = get_ncbi_assembly_data(list(refseq_accessions), cache_dir, args)
         assembly_dict.update(new_assembly_dict)
         genome_dict.update(new_genome_dict)
 
