@@ -256,7 +256,7 @@ def get_ncbi_assembly_data(sequence_accessions, cache_dir, args, refseq=False):
 
     genome_dict, failed_batches, parsed_assembly_ids = get_genomic_assembly_data(sequence_accessions, args)
 
-    if len(failed_batches['proteins']) != 0 or len(failed_batches['nuccores']) != 0 or len(failed_batches['assemlbies']) != 0:
+    if len(failed_batches['proteins']) != 0 or len(failed_batches['nuccores']) != 0 or len(failed_batches['assemblies']) != 0:
         genome_dict.update(retry_failed_batches(
             genome_dict,
             failed_batches,
