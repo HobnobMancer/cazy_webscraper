@@ -133,6 +133,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
     genbank_accessions = list(gbk_dict.keys())
 
+    print(gbk_dict)
+    sys.exit(1)
+
     if len(genbank_accessions) == 0:
         logger.warning(f"No records matching the given criteria found in the local CAZyme database:\n{args.database}")
         closing_message("get_genomic_accessions", start_time, args)
@@ -237,6 +240,7 @@ def get_gbks_of_interest(
     else:
         # only retrieve data for proteins with no assembly data in the local db
         gbk_dict = get_no_assembly_proteins(gbk_dict, connection)
+    return gbk_dict
 
 
 def get_ncbi_assembly_data(sequence_accessions, cache_dir, args, refseq=False):
