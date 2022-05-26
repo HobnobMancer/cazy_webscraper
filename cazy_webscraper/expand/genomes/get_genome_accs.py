@@ -64,7 +64,6 @@ from saintBioutils.utilities.logger import config_logger
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
 from cazy_webscraper.expand import get_chunks_list
-from cazy_webscraper.ncbi import post_ids
 from cazy_webscraper.ncbi.genomes import (
     get_nuccore_ids,
     get_assembly_ids,
@@ -171,6 +170,57 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # insert data in to the db
 
 
+def get_gbks_of_interest(
+    class_filters,
+    family_filters,
+    kingdom_filters,
+    taxonomy_filter_dict,
+    ec_filters,
+    connection,
+    args,
+):
+    """Retrieve the Gbk protein accessions of proteins matching the user criteria
+    
+    :param class_filters: set of CAZy classes of interest
+    :param family_filters: set of CAZy families and subfamilies of interest
+    :param kingdom_filters: set of taxonomic kingdoms of interest
+    :param taxonomy_filter_dict: dict of genera, species and strains of interst
+    :param ec_filters: set of EC numbers of interest
+    :param connection: connection to local SQL db
+    :param args: cmd-line args parser
+    
+    Return list of genbank protein accessions
+    """
+    logger = logging.getLogger(__name__)
+
+    gbk_dict = {}  # {gbk_acc: db_id}
+
+    if args.genbank_accessions is not None or args.uniprot_accessions is not None:
+        gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
+
+        if args.genbank_accessions is not None:
+            logger.info(f"Retrieving PDB structures for GenBank accessions listed in {args.genbank_accessions}")
+            gbk_dict.update(get_user_genbank_sequences(gbk_table_dict, args))
+
+        if args.uniprot_accessions is not None:
+            logger.info(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
+            uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+            gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
+
+        return list(gbk_dict.keys())
+    
+    gbk_dict = get_selected_gbks.get_genbank_accessions(
+        class_filters,
+        family_filters,
+        taxonomy_filter_dict,
+        kingdom_filters,
+        ec_filters,
+        connection,
+    )
+
+    return list(gbk_dict.keys())
+
+
 def get_ncbi_assembly_data(sequence_accessions, cache_dir, args, refseq=False):
     """Param retrieve assembly data for list of proteins
     
@@ -270,57 +320,6 @@ def get_ncbi_assembly_data(sequence_accessions, cache_dir, args, refseq=False):
     return assembly_dict, genome_dict
 
 
-def get_gbks_of_interest(
-    class_filters,
-    family_filters,
-    kingdom_filters,
-    taxonomy_filter_dict,
-    ec_filters,
-    connection,
-    args,
-):
-    """Retrieve the Gbk protein accessions of proteins matching the user criteria
-    
-    :param class_filters: set of CAZy classes of interest
-    :param family_filters: set of CAZy families and subfamilies of interest
-    :param kingdom_filters: set of taxonomic kingdoms of interest
-    :param taxonomy_filter_dict: dict of genera, species and strains of interst
-    :param ec_filters: set of EC numbers of interest
-    :param connection: connection to local SQL db
-    :param args: cmd-line args parser
-    
-    Return list of genbank protein accessions
-    """
-    logger = logging.getLogger(__name__)
-
-    gbk_dict = {}  # {gbk_acc: db_id}
-
-    if args.genbank_accessions is not None or args.uniprot_accessions is not None:
-        gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
-
-        if args.genbank_accessions is not None:
-            logger.info(f"Retrieving PDB structures for GenBank accessions listed in {args.genbank_accessions}")
-            gbk_dict.update(get_user_genbank_sequences(gbk_table_dict, args))
-
-        if args.uniprot_accessions is not None:
-            logger.info(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
-            uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
-            gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
-
-        return list(gbk_dict.keys())
-    
-    gbk_dict = get_selected_gbks.get_genbank_accessions(
-        class_filters,
-        family_filters,
-        taxonomy_filter_dict,
-        kingdom_filters,
-        ec_filters,
-        connection,
-    )
-
-    return list(gbk_dict.keys())
-
-
 def get_genomic_assembly_data(genbank_accessions, args):
     """Retrieve the meta data for genomic assemblies in NCBI linked to a list of protein version accessions
     
@@ -380,7 +379,6 @@ def get_genomic_assembly_data(genbank_accessions, args):
             parsed_nuccore_ids.add(nuccore_id)
 
     return genbank_accessions, failed_batches, parsed_assembly_ids
-
 
 
 def retry_failed_batches(genome_dict, failed_batches, parsed_assembly_ids, cache_dir, args):
