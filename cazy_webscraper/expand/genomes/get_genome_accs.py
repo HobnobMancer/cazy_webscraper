@@ -122,19 +122,17 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.info(f"Retrieving Genbank records from the local db:\n{str(args.database)}")
 
-    gbk_dict = get_gbks_of_interest(
-        class_filters,
-        family_filters,
-        kingdom_filters,
-        taxonomy_filter_dict,
-        ec_filters,
-        connection,
-        args,
-    )
+    # # gbk_dict = get_gbks_of_interest(
+    # #     class_filters,
+    # #     family_filters,
+    # #     kingdom_filters,
+    # #     taxonomy_filter_dict,
+    # #     ec_filters,
+    # #     connection,
+    # #     args,
+    # # )
+    gbk_dict = {'QRD83804.1': 334756, 'AEM85530.1': 1361827, 'BBN07178.1': 2179448, 'CEI60154.1': 459028, 'AGC46986.1': 848376, 'QMW32345.1': 1423549, 'ADI06003.1': 538878, 'BAG80639.1': 1800474, 'QPC63028.1': 1267918, 'EDP51830.1': 548903, 'QSQ14196.1': 1381888, 'QMW48503.1': 2188354, 'AQV02155.1': 824257, 'BAE62212.1': 978925, 'QLE00955.1': 1301998, 'CEF86689.1': 602105, 'QKX60547.1': 1383373, 'APR88566.1': 1518275, 'AFE05479.1': 997399, 'AEO59473.1': 1533848, 'EAQ84327.1': 1382223, 'EAA30607.1': 1200760, 'QAT85270.1': 6112, 'BAV32165.1': 261028, 'QRD92525.1': 748852, 'CDR14528.1': 651985, 'ATB39166.1': 2107541, 'EAA65331.1': 324365, 'QRK11148.1': 614047, 'AKF87377.1': 1220026, 'ASL68493.1': 943013, 'XP_391536.1': 1804353, 'QBZ56606.1': 440218, 'QKW93669.1': 626248, 'AGP59822.1': 200331, 'QPC80349.1': 67319, 'QLI63502.1': 2066166, 'ATB33621.1': 565283, 'ADO69935.1': 820445, 'CZS86028.1': 1598692, 'EDK04511.1': 2092229, 'EAA58894.1': 1504420, 'SHH38060.1': 1334173, 'ATY61441.1': 1850551, 'QYS97804.1': 450160, 'BAE66289.1': 356484, 'QGA19188.1': 983472, 'QSQ27087.1': 1638798, 'AOY60013.1': 313787, 'QYT01447.1': 649892, 'EAU63955.1': 1356119, 'QMW36448.1': 1508733, 'QRO00947.1': 680938, 'QMW44377.1': 815274}
     genbank_accessions = list(gbk_dict.keys())
-
-    print(gbk_dict)
-    sys.exit(1)
 
     if len(genbank_accessions) == 0:
         logger.warning(f"No records matching the given criteria found in the local CAZyme database:\n{args.database}")
@@ -380,13 +378,17 @@ def get_genomic_assembly_data(genbank_accessions, args):
         if len(nuccore_ids_to_fetch) == 0:
             continue
 
+        logger.info(f"Fetching data for {len(nuccore_ids_to_fetch)} nuccore IDs")
+
         # get assembly IDs linked to the nuccore IDs
         assembly_ids, failed_batches = get_assembly_ids(nuccore_ids_to_fetch, failed_batches, args)
 
         assembly_ids_to_fetch = [_ for _ in assembly_ids if _ not in parsed_assembly_ids]
 
-        if len(assembly_ids_to_fetch == 0):
+        if len(assembly_ids_to_fetch) == 0:
             continue
+
+        logger.info(f"Fetching data for {len(assembly_ids_to_fetch)} assembly IDs")
 
         new_assembly_data, failed_batches, parsed_assembly_ids = get_assembly_data(
             assembly_ids_to_fetch,
