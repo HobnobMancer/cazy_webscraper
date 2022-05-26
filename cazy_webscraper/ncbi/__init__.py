@@ -37,3 +37,43 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 """Module for interacting with the NCBI databases."""
+
+
+import logging
+
+from Bio import Entrez
+from saintBioutils.genbank import entrez_retry
+
+
+def post_ids(ids, database, args):
+    """Post protein IDs to Entrez
+    
+    :param ids: list, GenBank protein accession numbers
+    :param database: str, Name of database from which IDs are sourced
+    :param args: cmd-line args parser
+    
+    Return None (x2) if fails
+    Else return query_key and web_env
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.epost,
+            db=database,
+            id=",".join(ids),
+        ) as handle:
+            posted_records = Entrez.read(handle, validate=False)
+
+    # if no record is returned from call to Entrez
+    except (TypeError, AttributeError) as err:
+        logger.warning(
+            f"Failed to post IDs to Entrez {database} db:\n{err}"
+        )
+        return None, None
+
+    query_key = posted_records['QueryKey']
+    web_env = posted_records['WebEnv']
+
+    return query_key, web_env
