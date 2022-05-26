@@ -120,19 +120,21 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.info(f"Retrieving Genbank records from the local db:\n{str(args.database)}")
 
-    # # genbank_accessions = get_gbks_of_interest(
-    # #     class_filters,
-    # #     family_filters,
-    # #     kingdom_filters,
-    # #     taxonomy_filter_dict,
-    # #     ec_filters,
-    # #     connection,
-    # #     args,
-    # # )
-    # # if len(genbank_accessions) == 0:
-    # #     logger.warning(f"No records matching the given criteria found in the local CAZyme database:\n{args.database}")
-    # #     closing_message("get_genomic_accessions", start_time, args)
-    # #     sys.exit(1)
+    gbk_dict = get_gbks_of_interest(
+        class_filters,
+        family_filters,
+        kingdom_filters,
+        taxonomy_filter_dict,
+        ec_filters,
+        connection,
+        args,
+    )
+    genbank_accessions = list(gbk_dict.keys())
+    
+    if len(genbank_accessions) == 0:
+        logger.warning(f"No records matching the given criteria found in the local CAZyme database:\n{args.database}")
+        closing_message("get_genomic_accessions", start_time, args)
+        sys.exit(1)
 
     with open('genbank_accessions.txt', 'r') as fh:
         genbank_accessions = fh.read().splitlines()
@@ -189,7 +191,7 @@ def get_gbks_of_interest(
     :param connection: connection to local SQL db
     :param args: cmd-line args parser
     
-    Return list of genbank protein accessions
+    Return dict {gbk_acc: db_id}
     """
     logger = logging.getLogger(__name__)
 
@@ -207,7 +209,7 @@ def get_gbks_of_interest(
             uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
             gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
 
-        return list(gbk_dict.keys())
+        return gbk_dict
     
     gbk_dict = get_selected_gbks.get_genbank_accessions(
         class_filters,
@@ -218,7 +220,7 @@ def get_gbks_of_interest(
         connection,
     )
 
-    return list(gbk_dict.keys())
+    return gbk_dict
 
 
 def get_ncbi_assembly_data(sequence_accessions, cache_dir, args, refseq=False):
