@@ -63,6 +63,7 @@ from saintBioutils.utilities.logger import config_logger
 
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data.get_no_assemblies import get_no_assembly_proteins
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.ncbi.genomes import (
     get_nuccore_ids,
@@ -130,7 +131,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         args,
     )
     genbank_accessions = list(gbk_dict.keys())
-    
+
     if len(genbank_accessions) == 0:
         logger.warning(f"No records matching the given criteria found in the local CAZyme database:\n{args.database}")
         closing_message("get_genomic_accessions", start_time, args)
@@ -209,18 +210,22 @@ def get_gbks_of_interest(
             uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
             gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
 
-        return gbk_dict
-    
-    gbk_dict = get_selected_gbks.get_genbank_accessions(
-        class_filters,
-        family_filters,
-        taxonomy_filter_dict,
-        kingdom_filters,
-        ec_filters,
-        connection,
-    )
+    else:
+        gbk_dict = get_selected_gbks.get_genbank_accessions(
+            class_filters,
+            family_filters,
+            taxonomy_filter_dict,
+            kingdom_filters,
+            ec_filters,
+            connection,
+        )
 
-    return gbk_dict
+    if args.update:
+        return gbk_dict
+
+    else:
+        # only retrieve data for proteins with no assembly data in the local db
+        gbk_dict = get_no_assembly_proteins(gbk_dict, connection)
 
 
 def get_ncbi_assembly_data(sequence_accessions, cache_dir, args, refseq=False):
