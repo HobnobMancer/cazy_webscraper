@@ -134,7 +134,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             connection,
         ))
 
-    tax_data_dict = get_ncbi_tax_data(list(gbk_dict.keys()), args)
+    tax_ids, prot_id_dict = get_ncbi_tax_prot_ids(list(gbk_dict.keys()), cache_dir, args)
 
 
 def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
@@ -144,7 +144,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
     :param cache_dir: Path, path to cache directory
     :param args: cmd-line args parser
     
-    Return set of NCBI Tax ids and set of NCBI Prot ids
+    Return set of NCBI Tax ids and dict {ncbi prot id: prot acc}
     """
     logger = logging.getLogger(__name__)
 
@@ -155,13 +155,13 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
 
     tax_ids = set()
 
-    protein_ncbi_ids = set()
+    protein_ncbi_ids = {}
 
     for batch in tqdm(batches, desc="Getting NCBI Tax IDs"):
         new_tax_ids, new_prot_ids, failed_batches = get_ncbi_ids(batch, args, failed_batches)
         
         tax_ids = tax_ids.union(new_tax_ids)
-        protein_ncbi_ids = protein_ncbi_ids.union(new_prot_ids)
+        protein_ncbi_ids.update(new_prot_ids)
     
     failed_individuals = {}  # prot_acc: tries
 
@@ -171,7 +171,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
                 new_tax_ids, new_prot_ids, failed_individuals = get_ncbi_ids([prot], args, failed_individuals)
 
                 tax_ids = tax_ids.union(new_tax_ids)
-                protein_ncbi_ids = protein_ncbi_ids.union(new_prot_ids)
+                protein_ncbi_ids.update(new_prot_ids)
     
     failed_proteins = set()
 
@@ -188,7 +188,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
                 new_tax_ids, new_prot_ids, failed_individuals = get_ncbi_ids([prot], args, failed_individuals)
 
                 tax_ids = tax_ids.union(new_tax_ids)
-                protein_ncbi_ids = protein_ncbi_ids.union(new_prot_ids)
+                protein_ncbi_ids.update(new_prot_ids)
 
                 if failed_individuals[prot] >= args.retries:
                     del failed_individuals[prot]
@@ -214,7 +214,7 @@ def get_ncbi_ids(prots, args, failed_batches):
     """
     logger = logging.getLogger(__name__)
 
-    new_tax_ids, new_protein_ids = set(), set()
+    new_tax_ids, new_protein_ids = set(), {}
 
     # post protein accessions
     try:
@@ -239,7 +239,7 @@ def get_ncbi_ids(prots, args, failed_batches):
         return new_tax_ids, new_protein_ids, failed_batches
     
     # elink proteins to tax records
-    new_tax_ids, new_protein_ids, success = link_prot_taxs(query_key, web_env, args)
+    new_tax_ids, new_protein_ids_list, success = link_prot_taxs(query_key, web_env, args)
 
     if success is False:
         logger.warning(
@@ -252,6 +252,11 @@ def get_ncbi_ids(prots, args, failed_batches):
             failed_batches[prots] = 1
 
         return new_tax_ids, new_protein_ids, failed_batches
+
+    for i in range(len(new_protein_ids)):
+        prot_acc = prots[i]
+        prot_id = new_protein_ids_list[i]
+        new_protein_ids[prot_id] = prot_acc
 
     return new_tax_ids, new_protein_ids, failed_batches
 
@@ -293,7 +298,7 @@ def link_prot_taxs(query_key, web_env, args):
             for link in links:
                 tax_ids.add(link['Id'])
     
-    return tax_ids, protein_ids, True
+    return tax_ids, list(protein_ids), True
             
 
     
