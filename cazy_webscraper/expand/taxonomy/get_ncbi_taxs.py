@@ -136,6 +136,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     tax_ids, prot_id_dict = get_ncbi_tax_prot_ids(list(gbk_dict.keys()), cache_dir, args)
 
+    for tax_id in tqdm(tax_ids, desc="Retrieving lineages"):
+
+
 
 def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
     """Retrieve NCBI Taxonomy and Protein database IDs
@@ -301,180 +304,42 @@ def link_prot_taxs(query_key, web_env, args):
     return tax_ids, list(protein_ids), True
             
 
-    
-
-
-
-def build_lineage_dict(genera, cache_dir, args):
-    """Retrieve full lineage for each organism from the NCBI Taxonomy database
-    
-    :param genera: set of genera from the local CAZyme database
-    :param cache_dir: path to cache dir
-    :param args: cmd-line args parser
-    
-    Return dataframe of lineages, one unique organism per row.
-    """
-    logger = logging.getLogger(__name__)
-
-    failed_batches = []
-
-    batches = get_chunks_list(genera, args.batch_size)
-
-    lineage_dict = {}
-
-    for batch in tqdm(batches, desc="Batch retrieving lineages from NCBI"):
-        # search NCBI Taxonomy to retrieve tax record ids
-        tax_ids, failed_genera = get_tax_record_ids(batch, args)
-        
-        if len(tax_ids) == 0:
-            failed_batches.append(set(batch))
-            continue
-        
-        if len(failed_genera) != 0:
-            failed_batches.append(list(failed_genera))
-            continue
-        
-        # post tax IDS
-        try:
-            query_key, web_env = post_to_entrez(tax_ids, args)
-        except RuntimeError as err:
-            logger.warning(f"Failed to post tax IDs for {len(tax_ids)} IDs:\n{err}")
-            failed_batches.append(list(failed_genera))
-            continue
-
-        if query_key is None:
-            failed_batches.append(set(batch))
-            continue
-            
-        # fetch lineage from tax records
-        lineage_dict, success = get_lineage(genera, lineage_dict, query_key, web_env, args)
-
-        if success is False:
-            failed_batches.append(set(batch))
-    
-    # handled failed batches
-    if len(failed_batches) != 0:
-        lineage_dict = parse_failed_batches(batches, args, lineage_dict, cache_dir)
-
-    return lineage_dict
-        
-
-def get_tax_record_ids(genera, args):
-    """Retrieve the NCBI Taxonomy db record IDs.
-    
-    :param genera: list of genera of interest
-    :param query_key: str, query key from Entrez.epost
-    :param web_env: str, web_env from Entrez.epost
-    :param args: cmd-line args parser
-    
-    Return dict {scientific_name: record-id}
-    """
-    logger = logging.getLogger(__name__)
-
-    tax_ids = set()
-
-    failed_genera = set()
-
-    # Entrez does not support posting scientific names to NCBI.Taxonomy
-    for genus in genera:
-        try:
-            with entrez_retry(
-                args.retries,
-                Entrez.esearch,
-                db="Taxonomy",
-                term=genus,
-            ) as handle:
-                tax_record = Entrez.read(handle, validate=False)
-
-        except (TypeError, AttributeError) as err:
-            logger.warning(f"Entrez.esearch could not retrieve record from NCBI Tax db\n{err}")
-            continue
-
-        try:
-            tax_id = tax_record['IdList'][0]
-            tax_ids.add(tax_id)
-        except (KeyError, IndexError) as err:
-            logger.warning(f"Could not extract tax_id for '{genus}' from:\n{tax_record}\n{err}")
-
-        time.sleep(0.25)  # to prevent bombarding Entrez
-
-    logger.info(f"Retrieved {len(tax_ids)} Tax ids for {len(genera)} genera")
-
-    return list(tax_ids), failed_genera
-
-
-def post_to_entrez(data, args):
-    """Post data to NCBI entrez for batch query.
-    
-    :param data: list, data to be posted
-    :param args: cmd-line args parser
-    
-    Return query key and web env, or None x2 if fails
-    """
-    logger = logging.getLogger(__name__)
-
-    try:
-        with entrez_retry(
-            args.retries,
-            Entrez.epost,
-            db="Taxonomy",
-            id=",".join(data),
-        ) as handle:
-            posted_record = Entrez.read(handle, validate=False)
-    
-    # if not recrd is returned
-    except (TypeError, AttributeError) as err:
-        logger.warning(f"Failed to post data to Entrez:\n{err}")
-        return None, None
-    
-    query_key = posted_record['QueryKey']
-    web_env = posted_record['WebEnv']
-
-    return query_key, web_env
-
-
-def get_lineage(genera, lineage_dict, query_key, web_env, args):
+def get_lineage(tax_id, args):
     """Retrieve lineage from NCBI taxonomy record, and add to lineage dict
     
-    :param genera: str, list of genera
-    :param lineage_dict: {superkingdom: {phylum: {class: {order: {genus}}}}}
-    :param query_key: str, query key from Entrez.epost
-    :param web_env: str, web_env from Entrez.epost
+    :param tax_id: str, ncbi tax db id
     :param args: cmd-line args parser
 
-    Return lineage_dict and boolean to reflect successful or failed retrieval of records from NCBI
+    Return dict of lineage data
     """
     logger = logging.getLogger(__name__)
+
+    tax_dict = {}
 
     try:
         with entrez_retry(
             args.retries,
             Entrez.efetch,
             db="Taxonomy",
-            query_key=query_key,
-            WebEnv=web_env,
+            id=tax_id,
         ) as handle:
             tax_records = Entrez.read(handle, validate=False)
     
     except (TypeError, AttributeError) as err:
-        logger.warning(f"Failed to fetch tax records from NCBI for {genera}:\n{err}")
-        return lineage_dict, False
+        logger.warning(f"Failed to fetch tax record from NCBI tax for id '{tax_id}'':\n{err}")
+        return
     
-    for record in tqdm(tax_records, desc="Extracing lineages from NCBI Tax records"):
+    for record in tax_records:
+        record_id = record['TaxId']
+
         # set lineage data to None
-        superkingdom, phylum, tax_class, order, family = None, None, None, None, None
-
-        # collect the lineage data
-        genus = record['ScientificName']
-
-        if genus not in genera:
-            continue
+        kingdom, phylum, tax_class, order, family, genus, species, strain = None, None, None, None, None, None, None, None
 
         for i in record['LineageEx']:
             rank = i['Rank']
 
             if rank == 'superkingdom':
-                superkingdom = i['ScientificName']
+                kingdom = i['ScientificName']
 
             elif rank == 'phylum':
                 phylum = i['ScientificName']
@@ -488,38 +353,36 @@ def get_lineage(genera, lineage_dict, query_key, web_env, args):
             elif rank == 'family':
                 family = i['ScientificName']
 
-        # add lineage to lineage dict
-        try:
-            lineage_dict[superkingdom]
+            elif rank == 'genus':
+                genus = i['ScientificName']
 
-            try:
-                lineage_dict[superkingdom][phylum]
+            elif rank == 'species' or 'species group':
+                species = i['ScientificName']
 
-                try:
-                    lineage_dict[superkingdom][phylum][tax_class]
+            elif rank == 'serotype' or 'strain':
+                strain = i['ScientificName']
 
-                    try:
-                        lineage_dict[superkingdom][phylum][tax_class][order]
+        scientific_name = record['ScientificName']
 
-                        try:
-                            lineage_dict[superkingdom][phylum][tax_class][order][family].add(genus)
+        if genus is not None and species is not None and strain is not None:
+            strain = scientific_name.replace(f"{genus} {species}", "").strip()
 
-                        except KeyError:
-                            lineage_dict[superkingdom][phylum][tax_class][order][family] = {genus}
+        elif genus is not None and species is None:
+            species = scientific_name.repace(genus, "").strip()
 
-                    except KeyError:
-                        lineage_dict[superkingdom][phylum][tax_class][order] = {family: {genus}}
+        tax_dict[record_id] = {record_id: {
+                'kingdom': kingdom,
+                'phylum': phylum,
+                'class': tax_class,
+                'order': order,
+                'family': family,
+                'genus': genus,
+                'species': species,
+                'strain': strain,
+            }
+        }
 
-                except KeyError:
-                    lineage_dict[superkingdom][phylum][tax_class] = {order: {family: {genus}}}
-
-            except KeyError:
-                lineage_dict[superkingdom][phylum] = {family: {order: {family: {genus}}}}
-
-        except KeyError:
-            lineage_dict[superkingdom] = {phylum: {family: {order: {family: {genus}}}}}
-    
-    return lineage_dict, True
+    return tax_dict
 
 
 def build_lineage_df(lineage_dict, genus_dict):
