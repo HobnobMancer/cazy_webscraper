@@ -63,14 +63,32 @@ def add_assembly_data(assembly_dict, genome_dict, gbk_dict, connection, args):
     """
     logger = logging.getLogger(__name__)
 
-    if args.update:
-        add_genomic_data(genome_dict, connection)
-
-    else:
-        update_genomic_data(genome_dict, connection)
-
-    # load assembly table {ass_name: db id}
     db_genome_table_dict = get_assembly_table(genome_dict, connection)
+
+    genomes_to_add = {}
+    new_genome_table = {}
+    genomes_to_update = {}
+    updated_genome_table = {}
+
+    for assembly_name in genome_dict:
+        try:
+            db_genome_table_dict[assembly_name]
+            genomes_to_update[assembly_name] = db_genome_table_dict[assembly_name]
+
+        except KeyError:
+            genomes_to_add[assembly_name] = db_genome_table_dict[assembly_name]
+
+    if args.update:
+        update_genomic_data(genomes_to_update, connection)
+        updated_genome_table = get_assembly_table(genomes_to_update, connection)
+
+    add_genomic_data(genomes_to_add, connection)
+    new_genome_table = get_assembly_table(genomes_to_add, connection)
+
+    # combine dicts
+    modified_genome_dict = new_genome_table.update(updated_genome_table)
+
+    db_genome_table_dict = get_assembly_table(modified_genome_dict, connection)
 
     # identify protein records to update
     gbk_genome_dict = {}  # assembly db id: protein db id
@@ -84,7 +102,9 @@ def add_assembly_data(assembly_dict, genome_dict, gbk_dict, connection, args):
             gbk_genome_dict[protein_id] = assembly_id
 
     # update protein records
+    update_protein_genomic_data(gbk_genome_dict, connection)
 
+    return
 
 
 def add_genomic_data(genome_dict, connection):
