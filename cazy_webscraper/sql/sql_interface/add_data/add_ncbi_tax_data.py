@@ -124,3 +124,29 @@ def update_ncbi_tax_records(records_to_update, connection):
                         f"WHERE ncbi_tax_id = '{record[0]}'"
                     )
                 )
+
+
+def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
+    """Update tax information in the Genbanks table
+    
+    :param tax_prot_dict: dict {tax_id: lineage and protein data}
+    :param connection: open connection to a sql db
+    :param args: cmd-line args parser
+    
+    Return nothing
+    """
+    if args.update_gbk:
+        for tax_id in tqdm(tax_prot_dict, desc="Updating Genbanks table"):
+            proteins = tax_prot_dict[tax_id]['proteins']
+            for prot_db_id in proteins:
+                connection.execute(
+                    text(
+                        "UPDATE Genbanks "
+                        f"SET ncbi_tax_id = {tax_id} AND "
+                        f"WHERE genbank_id = '{prot_db_id}'"
+                    )
+                )
+
+    # else: filter for protein records with no tax data, and only add new tax data, do no overwrite existing data
+    
+    return
