@@ -73,10 +73,10 @@ def add_assembly_data(assembly_dict, genome_dict, gbk_dict, connection, args):
     for assembly_name in genome_dict:
         try:
             db_genome_table_dict[assembly_name]
-            genomes_to_update[assembly_name] = db_genome_table_dict[assembly_name]
+            genomes_to_update[assembly_name] = genome_dict[assembly_name]
 
         except KeyError:
-            genomes_to_add[assembly_name] = db_genome_table_dict[assembly_name]
+            genomes_to_add[assembly_name] = genome_dict[assembly_name]
 
     if args.update:
         update_genomic_data(genomes_to_update, connection)
