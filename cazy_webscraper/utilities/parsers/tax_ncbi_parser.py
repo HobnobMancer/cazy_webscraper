@@ -246,6 +246,22 @@ def build_parser(argv: Optional[List] = None):
         ),
     )
 
+    parser.add_argument(
+        "--update_gbk",
+        dest="update_gbk",
+        action="store_true",
+        default=False,
+        help="Update existing NCBI tax data in Genbank table records",
+    )
+
+    parser.add_argument(
+        "--update_taxs",
+        dest="update_taxs",
+        action="store_true",
+        default=False,
+        help="Update existing records in the NcbiTaxs table",
+    )
+
     # Add option for more detail (verbose) logging
     parser.add_argument(
         "-v",
