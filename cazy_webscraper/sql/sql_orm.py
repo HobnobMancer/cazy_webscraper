@@ -194,6 +194,11 @@ class Genbank(Base):
     seq_update_date = Column(ReString)
     taxonomy_id = Column(Integer, ForeignKey("Taxs.taxonomy_id"))
     
+    ncbi_taxs = relationship(
+        "NcbiTax",
+        back_populates="genbanks",
+    )
+
     organism = relationship(
         "Taxonomy",
         back_populates="genbanks",
@@ -311,6 +316,42 @@ class CazyFamily(Base):
         """Return string representation of source organism."""
         return(
             f"<Class Family, family={self.family}, subfamily={self.subfamily}, id={self.family_id}>"
+        )
+
+
+class NcbiTax(Base):
+    """Describes a NCBI Taxonomy lineage."""
+    __tablename__ = "NcbiTaxs"
+    
+    # define columns before table_args so subfam column can be called
+    ncbi_id = Column(Integer, primary_key=True)
+    ncbi_tax_id = Column(Integer)  # make this an ReString later
+    genus = Column(ReString)
+    species = Column(ReString)
+    kingdom = Column(ReString)
+    phylum = Column(ReString)
+    tax_class = Column(ReString)
+    order = Column(ReString)
+    family = Column(ReString)
+    
+    __table_args__ = (
+        UniqueConstraint("ncbi_tax_id"),
+        Index("ncbi_index", "ncbi_tax_id", "genus", "species"),
+    )
+    
+    genbanks = relationship(
+        "Genbank",
+        back_populates="ncbi_taxs",
+        lazy="dynamic",
+    )
+
+    def __str__(self):
+        return f"-Ncbi Tax, Kingdom={self.kingdom}, genus={self.genus}, species={self.species}-"
+
+    def __repr__(self):
+        """Return string representation of NCBI Tax record."""
+        return(
+            f"<Class NcbiTax, Kingdom={self.kingdom}, genus={self.genus}, species={self.species}>"
         )
     
     
