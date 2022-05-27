@@ -86,9 +86,9 @@ def add_assembly_data(assembly_dict, genome_dict, gbk_dict, connection, args):
     new_genome_table = get_assembly_table(genomes_to_add, connection)
 
     # combine dicts
-    modified_genome_dict = new_genome_table.update(updated_genome_table)
+    new_genome_table.update(updated_genome_table)
 
-    db_genome_table_dict = get_assembly_table(modified_genome_dict, connection)
+    db_genome_table_dict = get_assembly_table(new_genome_table, connection)
 
     # identify protein records to update
     gbk_genome_dict = {}  # assembly db id: protein db id
