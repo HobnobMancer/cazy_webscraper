@@ -156,7 +156,7 @@ def get_assembly_ids(nuccore_ids, failed_batches, args, retry=False):
         logger.warning(f"Failed to link nuccore records to assembly records:\n{err}")
         return assembly_ids, failed_batches
 
-    for record in tqdm(linked_records, desc="Getting assembly ids"):
+    for record in linked_records:
         for index in range(len(record['LinkSetDb'][0]['Link'])):
             assembly_id = record['LinkSetDb'][0]['Link'][index]['Id']
             assembly_ids.add(assembly_id)
