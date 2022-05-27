@@ -80,7 +80,7 @@ setuptools.setup(
             "cw_extract_db_seqs = cazy_webscraper.expand.extract_seqs.extract_db_seqs:main",
             "cw_get_pdb_structures = cazy_webscraper.expand.pdb.get_pdb_structures:main",
             "cw_query_database = cazy_webscraper.api.cw_query_database:main",
-            "cw_cazy_genbank_coverage = cazy_webscraper.genomes.cazy_genbank_coverage:main",
+            "cw_get_ncbi_taxs = cazy_webscraper.expand.taxonomy.get_ncbi_taxs:main",
         ]
     },
     install_requires=[
