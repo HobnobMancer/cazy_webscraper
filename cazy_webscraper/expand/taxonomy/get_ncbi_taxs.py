@@ -473,10 +473,5 @@ def get_tax_proteins(tax_id, prot_id_dict, gbk_dict, args):
     return tax_prot_dict
 
 
-
-
-
-
-
 if __name__ == "__main__":
     main()
