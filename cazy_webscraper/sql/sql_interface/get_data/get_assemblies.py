@@ -97,11 +97,11 @@ def get_records_to_update(gbk_dict, connection):
     return update_gbk_dict, add_gbk_dict
 
 
-def get_assembly_table(genome_dict, connection):
+def get_assembly_table(genomes_of_interest, connection):
     """Load assembly table into a dict
     
+    :param genomes_of_interest: list of assmebly names
     :param connection: open sql db connection
-    :param genome_dict: dict {listing assembly meta data}
     
     Return dict {assembly name: db id}
     """
@@ -114,10 +114,7 @@ def get_assembly_table(genome_dict, connection):
         assembly_name = record.assembly_name
         db_id = record.genome_id
 
-        try:
-            genome_dict[assembly_name]
+        if assembly_name in genomes_of_interest:
             db_genome_dict[assembly_name] = db_id
-        except KeyError:
-            pass
         
     return db_genome_dict
