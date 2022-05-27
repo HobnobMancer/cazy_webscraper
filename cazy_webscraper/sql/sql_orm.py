@@ -194,6 +194,7 @@ class Genbank(Base):
     sequence = Column(ReString)
     seq_update_date = Column(ReString)
     taxonomy_id = Column(Integer, ForeignKey("Taxs.taxonomy_id"))
+    genome_id = Column(Integer, ForeignKey("Genomes.genome_id"))
     
     organism = relationship(
         "Taxonomy",
@@ -290,12 +291,11 @@ class Genome(Base):
     __tablename__ = "Genomes"
     
     __table_args__ = (
-        UniqueConstraint("assembly_name"),
+        UniqueConstraint("assembly_name", "gbk_version_accession", "refseq_version_accession"),
         Index("genome_options", "assembly_name", "gbk_version_accession", "refseq_version_accession")
     )
     
     genome_id = Column(Integer, primary_key=True)
-    genbank_id = Column(Integer, ForeignKey("Genbanks.genbank_id"))
     assembly_name = Column(String)
     gbk_version_accession = Column(String)
     gbk_ncbi_id = Column(Integer)
