@@ -41,13 +41,11 @@
 
 
 import logging
-import time
 
 import pandas as pd
 
 from datetime import datetime
-from pathlib import Path
-from typing import List, Optional, Type
+from typing import List, Optional
 
 from Bio import Entrez
 from saintBioutils.utilities.logger import config_logger
@@ -59,7 +57,6 @@ from cazy_webscraper import cazy_scraper, closing_message
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
 from cazy_webscraper.sql.sql_interface.get_data.get_records import (
-    get_user_genbank_sequences,
     get_user_uniprot_sequences
 )
 from cazy_webscraper.utilities.parsers.tax_ncbi_parser import build_parser
@@ -135,6 +132,17 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         ))
 
     tax_ids, prot_id_dict = get_ncbi_tax_prot_ids(list(gbk_dict.keys()), cache_dir, args)
+
+    tax_prot_dict = get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args)
+    # {tax_id: {linaege info, 'proteins' {local db protein ids}}
+
+    # add data to the local CAZyme database
+
+    # add lineage data
+
+    # update gbk records
+
+    closing_message("Get NCBI Taxonomy data", start_time, args)
 
 
 def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
@@ -301,7 +309,7 @@ def link_prot_taxs(query_key, web_env, args):
     return tax_ids, list(protein_ids), True
 
 
-def get_lineage_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
+def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
     """Retrieve lineage data from NCBI Taxonomy and associated tax ids with protein ids
     
     :param tax_ids: set of ncbi tax record ids
