@@ -63,6 +63,7 @@ from saintBioutils.utilities.logger import config_logger
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
 from cazy_webscraper.sql.sql_interface.get_data.get_assemblies import get_no_assembly_proteins
+from cazy_webscraper.sql.sql_interface.add_data.add_genome_data import add_assembly_data
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.ncbi.genomes import (
     get_nuccore_ids,
@@ -168,7 +169,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         genome_dict.update(new_genome_dict)
 
     # insert data in to the db
-
+    add_assembly_data(assembly_dict, genome_dict, gbk_dict, connection, args)
 
     closing_message("Get genomic data", start_time, args)
 
