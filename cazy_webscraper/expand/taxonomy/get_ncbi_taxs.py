@@ -61,6 +61,7 @@ from cazy_webscraper.sql.sql_interface.get_data.get_records import (
 )
 from cazy_webscraper.utilities.parsers.tax_ncbi_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
+from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import get_no_tax_gbk_table_dict
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -130,6 +131,18 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             ec_filters,
             connection,
         ))
+    
+    if args.update_gbk is False:
+        # filter gbk accessions to those proteins with no ncbi tax data
+        gbk_db_ids = get_no_tax_gbk_table_dict(connection)
+
+        filtered_gbk_dict = {}
+
+        for gbk_acc in gbk_dict:
+            if gbk_dict[gbk_acc] in gbk_db_ids:
+                filtered_gbk_dict[gbk_acc] = gbk_dict[gbk_acc]
+        
+        gbk_dict = filtered_gbk_dict
 
     tax_ids, prot_id_dict = get_ncbi_tax_prot_ids(list(gbk_dict.keys()), cache_dir, args)
 

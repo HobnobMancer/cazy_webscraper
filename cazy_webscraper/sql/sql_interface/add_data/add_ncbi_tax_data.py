@@ -45,6 +45,7 @@ from sqlalchemy import text
 from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_interface import insert_data
+from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import get_ncbi_tax_table, get_no_tax_gbk_table_dict
 
 
 def add_ncbi_taxonomies(tax_dict, connection, args):
@@ -57,7 +58,7 @@ def add_ncbi_taxonomies(tax_dict, connection, args):
     Return nothing
     """
     # load ncbiTax table into dict
-    db_ncbi_tax_table = get_ncbi_tax_table(connection, args)  # {ncbi_tax_id: local db id}
+    db_ncbi_tax_table = get_ncbi_tax_table(connection)  # {ncbi_tax_id: local db id}
 
     records_to_add = set()
     records_to_update = set()
@@ -146,7 +147,21 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
                         f"WHERE genbank_id = '{prot_db_id}'"
                     )
                 )
+    
+    else:
+        # filter for protein records with no tax data, and only add new tax data, do no overwrite existing data
+        gbk_db_ids = get_no_tax_gbk_table_dict(connection)
 
-    # else: filter for protein records with no tax data, and only add new tax data, do no overwrite existing data
+        for tax_id in tqdm(tax_prot_dict, desc="Updating Genbanks table"):
+            proteins = tax_prot_dict[tax_id]['proteins']
+            for prot_db_id in proteins:
+                if prot_db_id in gbk_db_ids:
+                    connection.execute(
+                        text(
+                            "UPDATE Genbanks "
+                            f"SET ncbi_tax_id = {tax_id} AND "
+                            f"WHERE genbank_id = '{prot_db_id}'"
+                        )
+                    )
     
     return
