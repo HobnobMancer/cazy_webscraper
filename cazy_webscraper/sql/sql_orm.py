@@ -149,6 +149,14 @@ SQLITE_REGEX_FUNCTIONS = {
             lambda value, regex: not re.match(regex, value, re.IGNORECASE)),
 }
 
+genbanks_genomes = Table(
+    'Genbanks_Genomes',
+    Base.metadata,
+    Column("genbank_id", Integer, ForeignKey("Genbanks.genbank_id")),
+    Column("genome_ids", Integer, ForeignKey("Genomes.genome_id")),
+    PrimaryKeyConstraint("genbank_id", "genome_id"),
+)
+
 
 # define linker/relationship tables
 genbanks_families = Table(
@@ -203,7 +211,9 @@ class Genbank(Base):
     
     genomes = relationship(
         "Genome",
+        secondary=genbanks_genomes,
         back_populates="genbanks",
+        lazy="dynamic",
     )
     
     families = relationship(
@@ -301,8 +311,13 @@ class Genome(Base):
     gbk_ncbi_id = Column(Integer)
     refseq_version_accession = Column(String)
     refseq_ncbi_id = Column(Integer)
-    
-    genbanks = relationship("Genbank", back_populates="genomes")
+
+    genbanks = relationship(
+        "Genbank",
+        secondary=genbanks_genomes,
+        back_populates="genomes",
+        lazy="dynamic",
+    )
     
     def __str__(self):
         return f"-Genome, Gbk={self.gkb_version_accession}, RefSeq={self.refseq_version_accession}-"
