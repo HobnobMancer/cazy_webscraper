@@ -179,6 +179,26 @@ def get_gbk_table_dict(connection):
     return db_gbk_dict
 
 
+def get_no_tax_gbk_table_dict(connection):
+    """Compile a dict of the data in the Genbanks table containing records only of proteins with no 
+    NCBI tax data
+    
+    :param connection: open connection to an SQLite3 database
+    
+    Return dict {genbank_accession: 'taxa_id': int, 'gbk_id': int}
+    """
+    with Session(bind=connection) as session:
+        all_genbank = session.query(Genbank).all()
+
+    db_gbk_dict = {}  # {genbank_accession: 'taxa_id': str, 'id': int}
+    
+    for gbk in all_genbank:
+        if gbk.ncbi_id is None:
+            db_gbk_dict[f"{gbk.genbank_accession}"] = {gbk.genbank_id}
+    
+    return db_gbk_dict
+
+
 def get_gbk_table_seq_dict(connection):
     """Compile a dict of the data in the Genbanks table
     
