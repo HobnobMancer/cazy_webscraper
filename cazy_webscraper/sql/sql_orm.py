@@ -193,11 +193,7 @@ class Genbank(Base):
     sequence = Column(ReString)
     seq_update_date = Column(ReString)
     taxonomy_id = Column(Integer, ForeignKey("Taxs.taxonomy_id"))
-    
-    ncbi_taxs = relationship(
-        "NcbiTax",
-        back_populates="genbanks",
-    )
+    ncbi_tax_id = Column(Integer, ForeignKey("NcbiTaxs.ncbi_tax_id"))
 
     organism = relationship(
         "Taxonomy",
@@ -326,13 +322,14 @@ class NcbiTax(Base):
     # define columns before table_args so subfam column can be called
     ncbi_id = Column(Integer, primary_key=True)
     ncbi_tax_id = Column(Integer)  # make this an ReString later
-    genus = Column(ReString)
-    species = Column(ReString)
     kingdom = Column(ReString)
     phylum = Column(ReString)
     tax_class = Column(ReString)
     order = Column(ReString)
     family = Column(ReString)
+    genus = Column(ReString)
+    species = Column(ReString)
+    strain = Column(ReString)
     
     __table_args__ = (
         UniqueConstraint("ncbi_tax_id"),
