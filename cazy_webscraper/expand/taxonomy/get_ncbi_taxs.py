@@ -137,13 +137,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     tax_data_dict = get_ncbi_tax_data(list(gbk_dict.keys()), args)
 
 
-def get_ncbi_tax_data(protein_accessions, args):
-    """Retrieve taxonomy data from the NCBI Taxonomy db
-    
+def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
+    """Retrieve NCBI Taxonomy and Protein database IDs
+
     :param protein_accessions: list of NCBI protein version accessions
+    :param cache_dir: Path, path to cache directory
     :param args: cmd-line args parser
     
-    Return dict {ncbi tax id: kingdom: str, phylum: str, etc... proteins: {protein accessions}}
+    Return set of NCBI Tax ids and set of NCBI Prot ids
     """
     logger = logging.getLogger(__name__)
 
@@ -152,29 +153,110 @@ def get_ncbi_tax_data(protein_accessions, args):
 
     failed_batches = {}  # {batch: # of tries}
 
-    tax_data_dict = {'proteins': {}, 'tax_ids': {}}
-
     tax_ids = set()
 
     protein_ncbi_ids = set()
 
     for batch in tqdm(batches, desc="Getting NCBI Tax IDs"):
-        # post protein accessions
+        new_tax_ids, new_prot_ids, failed_batches = get_ncbi_ids(batch, args, failed_batches)
+        
+        tax_ids = tax_ids.union(new_tax_ids)
+        protein_ncbi_ids = protein_ncbi_ids.union(new_prot_ids)
+    
+    failed_individuals = {}  # prot_acc: tries
+
+    if len(failed_batches.keys()) != 0:
+        for batch in failed_batches:
+            for prot in batch:
+                new_tax_ids, new_prot_ids, failed_individuals = get_ncbi_ids([prot], args, failed_individuals)
+
+                tax_ids = tax_ids.union(new_tax_ids)
+                protein_ncbi_ids = protein_ncbi_ids.union(new_prot_ids)
+    
+    failed_proteins = set()
+
+    if len(list(failed_individuals.keys())) != 0:
+        prots_to_retry = list(failed_individuals.keys())
+
+        while len(list(failed_individuals.keys())) > 0:
+            for prot in prots_to_retry:
+                try:
+                    failed_individuals[prot]
+                except KeyError:
+                    continue
+
+                new_tax_ids, new_prot_ids, failed_individuals = get_ncbi_ids([prot], args, failed_individuals)
+
+                tax_ids = tax_ids.union(new_tax_ids)
+                protein_ncbi_ids = protein_ncbi_ids.union(new_prot_ids)
+
+                if failed_individuals[prot] >= args.retries:
+                    del failed_individuals[prot]
+                    failed_proteins.add(prot)
+    
+    if len(failed_proteins) != 0:
+        with open((cache_dir / "failed_protein_accs.txt"), "a") as fh:
+            for prot in failed_proteins:
+                fh.write(f"{prot}\n")
+
+    return tax_ids, protein_ncbi_ids
+
+
+def get_ncbi_ids(prots, args, failed_batches):
+    """Retrieve NCBI Taxonomy and Protein database IDs, for first time or retried attempts.
+
+    :param protein_accessions: list of NCBI protein version accessions
+    :param args: cmd-line args parser
+    :param round: int, (1) first time, (2) second, (3) continued until reach retry limit
+    :param failed_batches: dict {batch/prots: #ofTries}
+    
+    Return set of NCBI Tax ids and set of NCBI Prot ids, and failed_batches dict
+    """
+    logger = logging.getLogger(__name__)
+
+    new_tax_ids, new_protein_ids = set(), set()
+
+    # post protein accessions
+    try:
+        query_key, web_env = post_ids(prots, 'Protein', args)
+    except RuntimeError:
+        logger.warning(
+            "Batch contained invalid protein version accession"
+        )
         try:
-            query_key, web_env = post_ids(batch, 'Protein', args)
-        except RuntimeError:
-            logger.warning(
-                "Batch contained invalid protein version accession.\n"
-                "Will try to find invalid version accessions later"
-            )
-            failed_batches['proteins'][batch] = 1
-            continue
+            failed_batches[prots] += 1
+        except KeyError:
+            failed_batches[prots] = 1
 
-        # elink proteins to taxs
-        tax_ids, protein_ids = get_ncbi_ids(query_key, web_env, args)
+        return new_tax_ids, new_protein_ids, failed_batches
+
+    if query_key is None:
+        try:
+            failed_batches[prots] += 1
+        except KeyError:
+            failed_batches[prots] = 1
+
+        return new_tax_ids, new_protein_ids, failed_batches
+    
+    # elink proteins to tax records
+    new_tax_ids, new_protein_ids, success = link_prot_taxs(query_key, web_env, args)
+
+    if success is False:
+        logger.warning(
+            f"Could not retrieve tax link for {','.join(prots)}."
+        )
+
+        try:
+            failed_batches[prots] += 1
+        except KeyError:
+            failed_batches[prots] = 1
+
+        return new_tax_ids, new_protein_ids, failed_batches
+
+    return new_tax_ids, new_protein_ids, failed_batches
 
 
-def get_ncbi_ids(query_key, web_env, args):
+def link_prot_taxs(query_key, web_env, args):
     """Get NCBI tax and protein IDs from elinking protein accs to tax records
     
     :param query_key: str, from Entrez epost
