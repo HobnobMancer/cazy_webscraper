@@ -65,30 +65,27 @@ def add_assembly_data(assembly_dict, genome_dict, gbk_dict, connection, args):
 
     db_genome_table_dict = get_assembly_table(genome_dict, connection)
 
-    genomes_to_add = {}
-    new_genome_table = {}
-    genomes_to_update = {}
-    updated_genome_table = {}
+    genomes_to_add = []
+    genomes_to_update = []
 
     for assembly_name in genome_dict:
         try:
             db_genome_table_dict[assembly_name]
-            genomes_to_update[assembly_name] = genome_dict[assembly_name]
+            genomes_to_update.append(assembly_name)
 
         except KeyError:
-            genomes_to_add[assembly_name] = genome_dict[assembly_name]
+            genomes_to_add.append(assembly_name)
 
     if args.update:
-        update_genomic_data(genomes_to_update, connection)
-        updated_genome_table = get_assembly_table(genomes_to_update, connection)
+        update_genomic_data(genome_dict, genomes_to_update, connection)
 
-    add_genomic_data(genomes_to_add, connection)
-    new_genome_table = get_assembly_table(genomes_to_add, connection)
+    add_genomic_data(genome_dict, genomes_to_add, connection)
 
-    # combine dicts
-    new_genome_table.update(updated_genome_table)
+    genomes_of_interst = genomes_to_add +genomes_to_update
 
-    db_genome_table_dict = get_assembly_table(new_genome_table, connection)
+    updated_genome_table = get_assembly_table(genomes_of_interst, connection)
+
+    db_genome_table_dict = get_assembly_table(updated_genome_table, connection)
 
     # identify protein records to update
     gbk_genome_dict = {}  # assembly db id: protein db id
@@ -107,10 +104,11 @@ def add_assembly_data(assembly_dict, genome_dict, gbk_dict, connection, args):
     return
 
 
-def add_genomic_data(genome_dict, connection):
+def add_genomic_data(genome_dict, genomes_of_interst, connection):
     """Add new genomic assembly data to the local CAZyme database
     
     :param genome_dict: dict, listing assembly meta data
+    :param genomes_of_interst: list, assembly names of new assemblies to add to the db
     :param connection: open sqlite db connection
 
     Return nothing
@@ -120,6 +118,8 @@ def add_genomic_data(genome_dict, connection):
     records_to_add = set()
 
     for assembly_name in tqdm(genome_dict, desc="Compiling data to add to db"):
+        if assembly_name not in genomes_of_interst:
+            continue
         gbk_ver_acc = genome_dict[assembly_name]['gbk_acc']
         gbk_ncbi_id = genome_dict[assembly_name]['gbk_uid']
         ref_ver_acc = genome_dict[assembly_name]['refseq_acc']
@@ -138,11 +138,11 @@ def add_genomic_data(genome_dict, connection):
     return
 
 
-def update_genomic_data(update_gbk_dict, assembly_dict, genome_dict, connection):
+def update_genomic_data(genomes_of_interest, genome_table_dict, genome_dict, connection):
     """Update existing genomic assembly data in the local CAZyme database
 
-    :param update_gbk_dict: dict, {gbk_accession: local db id}
-    :param assembly_dict: dict, {assembly_name: {protein_accessions}}
+    :param genomes_of_interest: list, assembly names of records to update in the local db
+    :param genome_table_dict: dict, assembly_name: db_dib
     :param genome_dict: dict, listing assembly meta data
     :param connection: open sqlite db connection
     
@@ -150,31 +150,29 @@ def update_genomic_data(update_gbk_dict, assembly_dict, genome_dict, connection)
     """
     logger = logging.getLogger(__name__)
 
-    for assembly_name in tqdm(assembly_dict, desc="Updating data in the db"):
-        assembly_proteins = assembly_dict[assembly_name]
+    for assembly_name in tqdm(genome_dict, desc="Updating data in the db"):
+        if assembly_name not in genomes_of_interest:
+            continue
+        
+        db_id = genome_table_dict[assembly_name]
+        
         gbk_ver_acc = genome_dict[assembly_name]['gbk_acc']
         gbk_ncbi_id = genome_dict[assembly_name]['gbk_uid']
         ref_ver_acc = genome_dict[assembly_name]['refseq_acc']
         ref_ncbi_id = genome_dict[assembly_name]['refseq_uid']
 
-        for protein_acc in assembly_proteins:
-            try:
-                db_id = update_gbk_dict[protein_acc]
-            except KeyError:
-                continue  # protein not to be updated
-
-            with connection.begin():
-                connection.execute(
-                    text(
-                        "UPDATE Genomes "
-                        f"SET assembly_name = {assembly_name} AND "
-                        f"gbk_version_accession = {gbk_ver_acc} AND "
-                        f"gbk_ncbi_id = {gbk_ncbi_id} AND "
-                        f"refseq_version_accession = {ref_ver_acc} AND "
-                        f"refseq_ncbi_id = {ref_ncbi_id} AND "
-                        f"WHERE genbank_id = '{db_id}'"
-                    )
+        with connection.begin():
+            connection.execute(
+                text(
+                    "UPDATE Genomes "
+                    f"SET assembly_name = {assembly_name} AND "
+                    f"gbk_version_accession = {gbk_ver_acc} AND "
+                    f"gbk_ncbi_id = {gbk_ncbi_id} AND "
+                    f"refseq_version_accession = {ref_ver_acc} AND "
+                    f"refseq_ncbi_id = {ref_ncbi_id} AND "
+                    f"WHERE genome_id = '{db_id}'"
                 )
+            )
     
     return
 
