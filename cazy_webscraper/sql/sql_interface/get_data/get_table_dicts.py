@@ -185,18 +185,18 @@ def get_no_tax_gbk_table_dict(connection):
     
     :param connection: open connection to an SQLite3 database
     
-    Return dict {genbank_accession: 'taxa_id': int, 'gbk_id': int}
+    Return list of gbk table ids
     """
     with Session(bind=connection) as session:
         all_genbank = session.query(Genbank).all()
 
-    db_gbk_dict = {}  # {genbank_accession: 'taxa_id': str, 'id': int}
+    gbk_db_ids = set()
     
     for gbk in all_genbank:
         if gbk.ncbi_id is None:
-            db_gbk_dict[f"{gbk.genbank_accession}"] = {gbk.genbank_id}
+            gbk_db_ids.add(gbk.genbank_id)
     
-    return db_gbk_dict
+    return gbk_db_ids
 
 
 def get_gbk_table_seq_dict(connection):
