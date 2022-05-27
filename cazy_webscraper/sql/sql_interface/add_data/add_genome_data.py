@@ -61,7 +61,7 @@ def add_genomic_data(genome_dict, assembly_dict, gbk_dict, connection):
     """
     logger = logging.getLogger(__name__)
 
-    records_to_add = []
+    records_to_add = set()
 
     for assembly_name in tqdm(assembly_dict, desc="Compiling data to add to db"):
         assembly_proteins = assembly_dict[assembly_name]
@@ -71,7 +71,7 @@ def add_genomic_data(genome_dict, assembly_dict, gbk_dict, connection):
         ref_ncbi_id = genome_dict[assembly_name]['refseq_uid']
         for protein_acc in assembly_proteins:
             db_id = gbk_dict[protein_acc]
-            records_to_add.append([db_id, assembly_name, gbk_ver_acc, gbk_ncbi_id, ref_ver_acc, ref_ncbi_id])
+            records_to_add.add((db_id, assembly_name, gbk_ver_acc, gbk_ncbi_id, ref_ver_acc, ref_ncbi_id))
 
     if len(records_to_add) != 0:
         insert_data(
