@@ -301,12 +301,13 @@ def link_prot_taxs(query_key, web_env, args):
     return tax_ids, list(protein_ids), True
 
 
-def get_lineage_data(tax_ids, prot_id_dict, gbk_dict, args):
+def get_lineage_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
     """Retrieve lineage data from NCBI Taxonomy and associated tax ids with protein ids
     
     :param tax_ids: set of ncbi tax record ids
     :param prot_id_dict: dict {prot_id: prot_acc}
     :param gbk_dict: dict {protein acc: local db id}
+    :param cache_dir: path to cache directory
     :param args: cmd-line args parser
     
     Return dict {tax_id: {linaege info, 'proteins' {local db protein ids}}
@@ -339,9 +340,50 @@ def get_lineage_data(tax_ids, prot_id_dict, gbk_dict, args):
 
         tax_prot_dict[tax_id] = lineage_dict[tax_id]
 
-    
+    failed_tax_ids = set()
 
+    if len(failed_ids) != 0:
+        tax_ids_to_parse = list(failed_ids.keys())
 
+        while len(failed_ids) > 0:
+            for tax_id in tqdm(tax_ids_to_parse, desc="Retry failed tax ids"):
+                try:
+                    failed_ids[tax_id]
+                except KeyError:
+                    continue
+
+                if type(failed_ids[tax_id]['lineage']) is int:
+                    lineage_dict = get_lineage(tax_id, args)
+
+                    if lineage_dict is None:
+                        failed_ids[tax_id]['lineage'] += 1
+
+                    if failed_ids[tax_id]['lineage'] > args.retries:
+                        logger.warning(f"Run out of reattempts to get NCBI tax id {tax_id} linage data")
+                        del failed_ids[tax_id]
+                        failed_tax_ids.add(tax_id)
+                        continue
+            
+                if type(failed_ids[tax_id]['proteins']) is int:
+                    if tax_prot_dict is None:
+                        failed_ids[tax_id]['proteins'] += 1
+
+                if failed_ids[tax_id]['proteins'] > args.retries:
+                    logger.warning(f"Run out of reattempts to get NCBI tax id {tax_id} linage data")
+                    del failed_ids[tax_id]
+                    failed_tax_ids.add(tax_id)
+                    continue
+
+                lineage_dict[tax_id]['proteins'] = tax_prot_dict[tax_id]
+
+                tax_prot_dict[tax_id] = lineage_dict[tax_id]
+
+    if len(failed_tax_ids) != 0:
+        with open((cache_dir / "failed_tax_ids.txt"), "a") as fh:
+            for tax_id in failed_tax_ids:
+                fh.write(f"{tax_id}\n")
+
+    return tax_prot_dict
 
 
 def get_lineage(tax_id, args):
