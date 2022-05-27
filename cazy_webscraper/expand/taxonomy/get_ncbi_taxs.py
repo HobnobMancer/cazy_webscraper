@@ -136,9 +136,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     tax_ids, prot_id_dict = get_ncbi_tax_prot_ids(list(gbk_dict.keys()), cache_dir, args)
 
-    for tax_id in tqdm(tax_ids, desc="Retrieving lineages"):
-
-
 
 def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
     """Retrieve NCBI Taxonomy and Protein database IDs
@@ -302,7 +299,50 @@ def link_prot_taxs(query_key, web_env, args):
                 tax_ids.add(link['Id'])
     
     return tax_ids, list(protein_ids), True
-            
+
+
+def get_lineage_data(tax_ids, prot_id_dict, gbk_dict, args):
+    """Retrieve lineage data from NCBI Taxonomy and associated tax ids with protein ids
+    
+    :param tax_ids: set of ncbi tax record ids
+    :param prot_id_dict: dict {prot_id: prot_acc}
+    :param gbk_dict: dict {protein acc: local db id}
+    :param args: cmd-line args parser
+    
+    Return dict {tax_id: {linaege info, 'proteins' {local db protein ids}}
+    """
+    logger = logging.getLogger(__name__)
+
+    tax_prot_dict = {}
+
+    failed_ids = {}
+
+    for tax_id in tqdm(tax_ids, desc="Retrieving lineages"):
+        # get lineage information
+        lineage_dict = get_lineage(tax_id, args)
+
+        if lineage_dict is None:
+            failed_ids[tax_id] = {'lineage': 1}
+        
+        # for ncbi db ids for proteins from local db that are linked to the tax record
+        tax_prot_dict = get_tax_proteins(tax_id, prot_id_dict, gbk_dict, args)
+        # {tax_id: {local db protein ids}}
+
+        if tax_prot_dict is None:
+            try:
+                failed_ids[tax_id]['proteins'] = 1
+            except KeyError:
+                failed_ids[tax_id] = {'lineage': lineage_dict, 'proteins': 1}
+                continue
+
+        lineage_dict[tax_id]['proteins'] = tax_prot_dict[tax_id]
+
+        tax_prot_dict[tax_id] = lineage_dict[tax_id]
+
+    
+
+
+
 
 def get_lineage(tax_id, args):
     """Retrieve lineage from NCBI taxonomy record, and add to lineage dict
@@ -385,109 +425,57 @@ def get_lineage(tax_id, args):
     return tax_dict
 
 
-def build_lineage_df(lineage_dict, genus_dict):
-    """Combine two tax dicts into a single dataframe
+def get_tax_proteins(tax_id, prot_id_dict, gbk_dict, args):
+    """Get the proteins linked to a tax id in NCBI, and link the tax id with the local db protein ids
     
-    :param lineage_dict: {superkingdom: {phylum: {class: {order: {family: {genus}}}}}}
-    :param genus_dict: {genus: {species: {strain}}}
-    
-    Return pandas df
-    """
-    df_data = []
-
-    for kingdom in lineage_dict:
-        kingdom_data = lineage_dict[kingdom]
-
-        for phylum in kingdom_data:
-            phylum_data = kingdom_data[phylum]
-
-            for tax_class in phylum_data:
-                class_data = phylum_data[tax_class]
-
-                for order in class_data:
-                    order_data = class_data[order]
-
-                    for family in order_data:
-                        family_data = order_data[family]
-
-                        for genus in family_data:
-                            genus_data = genus_dict[genus]
-
-                            if genus_data is None:
-                                species = None
-                                strain = None
-
-                                data = [kingdom, phylum, tax_class, order, family, genus, species, strain]
-                                df_data.append(data)
-
-                            else:
-                                for species in genus_data:
-                                    if len(genus_data[species]) == 0:
-                                        data = [kingdom, phylum, tax_class, order, family, genus, species, None]
-                                        df_data.append(data)
-
-                                    else:
-                                        species_data = genus_data[species]
-                                        for strain in species_data:
-                                            data = [kingdom, phylum, tax_class, order, family, genus, species, strain]
-                                            df_data.append(data)
-    
-    df = pd.DataFrame(df_data, columns=['Kingdom', 'Phylum', 'Class', 'Order', 'Family', ' Genus', 'Species', 'Strain'])
-
-    return df
-
-
-def parse_failed_batches(batches, args, lineage_dict, cache_dir):
-    """Rerun failed batches.
-    
-    :param bataches: set of batches, each batch is a list of genera
+    :param tax_id: str, NCBI tax db id
+    :param prot_id_dict: dict {protein ncbi id: prot acc}
+    :param gbk_dict: dict, {prot acc: local db id}
     :param args: cmd-line args parser
-    :param lineage_dict: 
-    :param cache_dir: path to cache directory
     
-    Return lineage dict
+    Return dict {tax_id: {local db protein ids}}, or None if fails
     """
     logger = logging.getLogger(__name__)
 
-    failed_log = cache_dir / "failed_organisms.txt"
-    failed_organisms = set()
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.elink,
+            id=tax_id,
+            db="Protein",
+            dbfrom="Taxonomy",
+            linkname="taxonomy_protein",
+        ) as handle:
+            tax_links = Entrez.read(handle, validate=False)
 
-    for batch in tqdm(batches, desc="Rerunning failed batches"):
-        for genus in batch:
-            tax_ids, failed_genera = get_tax_record_ids([genus], args)
+    except (AttributeError, TypeError, RuntimeError) as err:
+        logger.warning(f"Failed to link NCBI tax id to NCBI Protein db for tax id {tax_id}\n{err}")
+        return
 
-            if len(failed_genera) != 0:
-                logger.warning(f"Could not retrieve tax data from NCBI for {genus}")
-                failed_organisms.add(genus)
-                continue
-
-            if len(tax_ids) == 0:
-                logger.warning(f"Could not retrieve tax data from NCBI for {genus}")
-                failed_organisms.add(genus)
-                continue
-
-            try:
-                query_key, web_env = post_to_entrez(tax_ids, args)
-            except RuntimeError as err:
-                logger.warning(f"Could not retrieve tax record for '{genus}':\n{err}")
-                continue
-
-            if query_key is None:
-                failed_organisms.add(genus)
-                continue
-
-            lineage_dict, success = get_lineage([genus], lineage_dict, query_key, web_env, args)
-
-            if success is False:
-                failed_organisms.add(genus)
-                continue
-
-    if len(failed_organisms) != 0:
-        with open(failed_log, "w") as fh:
-            for genus in failed_organisms:
-                fh.write(f"{genus}\n")
+    tax_prot_dict = {tax_id: set()}
     
-    return lineage_dict
+    for result in tax_links:
+        for item in result['LinkSetDb']:
+            links = item['Link']
+            for link in links:
+                linked_prot_id = link['Id']
+
+                # check if from the local database
+                try:
+                    prot_ver_acc = prot_id_dict[linked_prot_id]
+                except KeyError:
+                    continue
+
+                prot_local_db_id = gbk_dict[prot_ver_acc]
+
+                tax_prot_dict[tax_id].add([prot_local_db_id])
+
+    return tax_prot_dict
+
+
+
+
+
 
 
 if __name__ == "__main__":
