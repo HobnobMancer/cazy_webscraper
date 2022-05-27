@@ -77,7 +77,7 @@ def add_assembly_data(assembly_dict, genome_dict, gbk_dict, connection, args):
             genomes_to_add.append(assembly_name)
 
     if args.update:
-        update_genomic_data(genome_dict, genomes_to_update, connection)
+        update_genomic_data(genomes_to_update, db_genome_table_dict, genome_dict, connection)
 
     add_genomic_data(genome_dict, genomes_to_add, connection)
 
