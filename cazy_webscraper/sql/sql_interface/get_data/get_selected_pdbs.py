@@ -43,7 +43,7 @@
 """Retrieve PDB accessions matching user criteria from the local CAZyme db"""
 
 
-from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
 
 
 def get_pdb_accessions(
