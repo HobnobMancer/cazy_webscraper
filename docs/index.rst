@@ -74,6 +74,7 @@ Build Information
 * Write out protein sequences retrieved from UniProt and NCBI in FASTA format, and build a local BLAST database.
 * Retrieve protein structures from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank, `PDB <https://www.rcsb.org/>`_, for CAZymes in the local database.
 * Be configured to scrape the entire CAZy database, or recover only CAZymes filtered by user-supplied criteria, such as CAZy classes, CAZy (sub)family, or taxonomy. 
+* Retrieve the latest taxonomic classifications (including the complete lineage) from the NCBI Taxonomy database
 
 ----------
 Quickstart
@@ -126,6 +127,10 @@ To extract GenBank and/or UniProt protein sequences from a local CAZyme database
 
 To protein structure files from PDB use the ``cw_get_pdb_structures`` command.
 
+**NCBI taxonomies**
+
+Retrieve the latest taxonomic classifications (including the complete lineage from kingdom to strain) using the ``cw_get_ncbi_taxs`` command.
+
 **Interrogate the database**
 
 To interrogate the database, use the ``cw_query_database`` command.
@@ -167,6 +172,7 @@ For details and updates on development, please consult the `GitHub repository <h
    sequencetutorial
    pdb
    pdbtutorial
+   ncbitax
    api
    apitutorial
    cache
