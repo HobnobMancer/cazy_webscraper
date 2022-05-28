@@ -195,6 +195,11 @@ class Genbank(Base):
     taxonomy_id = Column(Integer, ForeignKey("Taxs.taxonomy_id"))
     ncbi_id = Column(Integer, ForeignKey("NcbiTaxs.ncbi_id"))
 
+    ncbi_taxs = relationship(
+        "NcbiTax",
+        back_populates="genbanks",
+    )
+
     organism = relationship(
         "Taxonomy",
         back_populates="genbanks",
