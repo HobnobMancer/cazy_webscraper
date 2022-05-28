@@ -60,13 +60,12 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 	- Improved default name of cache dirs and subdirs
 - **Unit tests:** Started rewrite of unit tests to match the new program architecture
 
-## Future work for version 2:
-- Calculate the coverage of the NCBI GenBank assembly database by CAZy (i.e. how many genomic assemblies from the Assembly database are included in the CAZy dataset)
+## Features in the pipeline:
+- Retrieve the genomic IDs and version accessions from NCBI for proteins in a local CAZyme database, and add them to the local database
+- Retrieve and stored PubMed IDs in the local CAZyme database
 - Fix any remaining bugs we can find (if you find a bug, please report it and provide as detailed bug report as possible!)
 - Update the unit tests to work with the new `cazy_webscraper` architecture
 - Update the documentation
-- Create video tutorials
-- Add a GUI for use, packaging and distribution
 
 ## Citation
 
@@ -94,6 +93,8 @@ If you use `cazy_webscraper`, please cite the following publication:
     - [Configuring extracting sequences from a local CAZyme db](#configuring-extracting-sequences-from-a-local-cazyme-db)
 - [Retrieving protein structure files from PDB](#retrieving-protein-structure-files-from-pdb)
     - [Configuring PDB protein structure file retrieval](#configuring-pdb-protein-structure-file-retrieval)
+- [Retrieving NCBI taxonomies](#retrieving-ncbi-taxonomies)
+    - [Configuring retrieving NCBI taxonomies](#configuring-retrieving-ncbi-taxonomies)
 - [The `cazy_webscraper` API or Interrogating the local CAZyme database](#the_cazy_webscraper_api_or_interrogating_the_local_cazyme_database)
 - [Configuring `cazy_webscraper` using a YAML file](#configuring-using-a-yaml-file)
 - [CAZy coverage of GenBank](#cazy-coverage-of-genbank)
@@ -595,6 +596,64 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--timeout`, `-t` - Connection timout limit (seconds). Default: 45.
 
 `--uniprot_accessions` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
+
+`--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
+
+
+## Retrieving NCBI taxonomies
+
+
+
+### Configuring retrieving NCBI taxonomies
+
+Below are listed the command-line flags for configuring the retrieval of taxonomic classifications from the NCBI Taxonomy database, and adding them to the local CAZyme database.
+
+`database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
+
+`email` - \[REQUIRED\] User email address (required by Entrez)
+
+`--batch_size` - Size of an individual batch query of NCBI sequence version accessions to NCBI. Default is 150.
+
+`--cache_dir` - Path to cache dir to be used instead of default cache dir path.
+
+`--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
+
+`--config`, `-c` - Path to a configuration YAML file. Default: None.
+
+`--classes` - List of classes from which all families are to be scrape.
+
+`--ec_filter` - Limist retrieval of protein data to proteins annotated with a provided list of EC numbers. Separate the EC numbers bu single commas without spaces. Recommend to wrap the entire str in quotation marks, for example:
+```bash
+cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
+```
+
+`--families` - List of CAZy (sub)families to scrape.
+
+`--force` - Force writing to exiting cache directory.
+
+`--genbank_accessions` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+
+`--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
+
+`--kingdoms` - List of taxonomy kingdoms to retrieve UniProt data for.
+
+`--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+`--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
+
+`--retries`, `-r` - Define the number of times to retry making a connection to NCBI if the connection should fail. Default: 10.
+
+`--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
+
+`--species` - List of species written as Genus Species) to restrict the scraping of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
+
+`--strains` - List of specific species strains to restrict the scraping of CAZymes to.
+
+`--uniprot_accessions` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
+
+`--update_gbk` - Update the existing NCBI taxonomy data in records in the `Genbanks` table already with NCBI taxonomy data. By default, NCBI tax data is only added to records in the `Genbanks` table if NCBI taxonomy data is not already presented in the record.
+
+`--update_taxs` - Update existing NCBI taxonomy data in the `NcbiTaxs` table. By default onlt add new NCBI taxonomy data, do not update (and thus overwrite) existing data.
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 

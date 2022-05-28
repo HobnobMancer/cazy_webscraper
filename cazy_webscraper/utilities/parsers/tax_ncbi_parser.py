@@ -52,8 +52,8 @@ def build_parser(argv: Optional[List] = None):
     """Return ArgumentParser parser for the script 'expand.genbank_sequences.py'."""
     # Create parser object
     parser = argparse.ArgumentParser(
-        prog="get_ncbi_lineages.py",
-        description="Retrieve lineage data from NCBI",
+        prog="get_ncbi_taxs.py",
+        description="Retrieve lineage data from NCBI Taxonomy",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
@@ -71,27 +71,7 @@ def build_parser(argv: Optional[List] = None):
         help="User email address -- required by NCBI",
     )
 
-    parser.add_argument(
-        "output",
-        type=Path,
-        help="Path to write out csv file listing lineages",
-    )
-
     # Add optional arguments to parser
-
-    # Add optional arguments to parser
-    parser.add_argument(
-        "--genbank_accessions",
-        type=Path,
-        default=None,
-        help="Path to text file contining GenBank accessions",
-    )
-    parser.add_argument(
-        "--uniprot_accessions",
-        type=Path,
-        default=None,
-        help="Path to text file contining UniProt accessions",
-    )
 
     parser.add_argument(
         "--batch_size",
@@ -151,6 +131,21 @@ def build_parser(argv: Optional[List] = None):
         help="Families to scrape. Separate families by commas 'GH1,GH2'"
     )
 
+    parser.add_argument(
+        "--genbank_accessions",
+        type=Path,
+        default=None,
+        help="Path to text file contining GenBank accessions",
+    )
+
+    # Add option to restrict scrape to specific genera
+    parser.add_argument(
+        "--genera",
+        type=str,
+        default=None,
+        help="Genera to restrict the scrape to"
+    )
+
     # Add option to restrict the scrape to specific kingdoms
     parser.add_argument(
         "--kingdoms",
@@ -160,14 +155,6 @@ def build_parser(argv: Optional[List] = None):
             "Kingdoms to scrape. Separate by a single comma.\n"
             "Options= archaea, bacteria, eukaryota, viruses, unclassified (not case sensitive)"
         ),
-    )
-
-    # Add option to restrict scrape to specific genera
-    parser.add_argument(
-        "--genera",
-        type=str,
-        default=None,
-        help="Genera to restrict the scrape to"
     )
 
     # Add log file name option
@@ -181,32 +168,12 @@ def build_parser(argv: Optional[List] = None):
         help="Defines log file name and/or path",
     )
 
-    # Add option to prevent over writing of existing files
-    # and cause addition of files to output directory
-    parser.add_argument(
-        "-n",
-        "--nodelete",
-        dest="nodelete",
-        action="store_true",
-        default=False,
-        help="enable/disable deletion of exisiting files",
-    )
-
     parser.add_argument(
         "--nodelete_cache",
         dest="nodelete_cache",
         action="store_true",
         default=False,
         help="Do not delete content in existing cache dir",
-    )
-
-    # enable specifying an output directory
-    parser.add_argument(
-        "-o",
-        "--outdir",
-        type=Path,
-        metavar="output directory path",
-        help="Path to output directory to which downloaded structures are retrieved",
     )
 
     parser.add_argument(
@@ -244,6 +211,13 @@ def build_parser(argv: Optional[List] = None):
             "Specific strains of organisms to restrict the scrape to "
             "(written as Genus Species Strain)"
         ),
+    )
+
+    parser.add_argument(
+        "--uniprot_accessions",
+        type=Path,
+        default=None,
+        help="Path to text file contining UniProt accessions",
     )
 
     parser.add_argument(
