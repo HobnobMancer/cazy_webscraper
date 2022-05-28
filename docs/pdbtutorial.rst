@@ -229,7 +229,7 @@ EC1.2.3.4, because this annotation is not within its database.
 Combining all filters
 ---------------------
 
-The ``--classes``, ``--families``, ``--ec_filter``, ``--kingdoms``, ``--genera``, ``--species``, ``--strains`` and ``--ec_filter`` flags can 
+The ``--classes``, ``--families``, ``--ec_filter``, ``--kingdoms``, ``--genera``, ``--species``, and ``--strains`` flags can 
 be used in any combination to define a specific subset of proteins in the local CAZyme database for whom
 protein structure files will be retrieved from PDB.
 
