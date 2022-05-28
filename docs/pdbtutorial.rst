@@ -21,7 +21,7 @@ the retrieval of protein structured from PDB. These tutorials are designed for t
   If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/expand/uniprot/get_uniprot_data.py``.
 
 From this point on, we will be discussed the ``cw_get_pdb_structures``, which is the entry point for 
-retrieving data from UniProt. We also presume you are comfortable configuring ``cazy_webscraper`` for the 
+retrieving data from PDB. We also presume you are comfortable configuring ``cazy_webscraper`` for the 
 scraping of data from CAZy.
 
 ----------------------------------
