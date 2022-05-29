@@ -423,11 +423,11 @@ class Log(Base):
         )
 
 
-def get_db_connection(db_path, args, new):
+def get_db_connection(db_path, sql_echo, new=False):
     """Create open connection to local CAZy SQL database.
 
     :param db_path: cmd args parser
-    :param args: cmd-line args parser
+    :param sql_echo: bool, value to set to sql_echo to
     :param new: bool, whether it is a new or an existing database being connected to
 
     Return an open database session.
@@ -439,7 +439,7 @@ def get_db_connection(db_path, args, new):
     else:
         logger.info("Opening session to an existing local database")
 
-    engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=args.sql_echo, future=True)
+    engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=sql_echo, future=True)
     Base.metadata.create_all(engine)
     Session.configure(bind=engine)  # allows for calls to session later on when required
     connection = engine.connect()
