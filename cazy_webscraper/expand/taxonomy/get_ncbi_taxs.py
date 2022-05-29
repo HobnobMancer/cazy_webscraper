@@ -61,6 +61,7 @@ from cazy_webscraper.sql.sql_interface.get_data.get_records import (
 )
 from cazy_webscraper.utilities.parsers.tax_ncbi_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
+from cazy_webscraper.sql.sql_interface.add_data.add_ncbi_tax_data import add_ncbi_taxonomies
 from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import get_no_tax_gbk_table_dict
 
 
@@ -149,11 +150,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     tax_prot_dict = get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args)
     # {tax_id: {linaege info, 'proteins' {local db protein ids}}
 
-    # add data to the local CAZyme database
-
-    # add lineage data
-
-    # update gbk records
+    add_ncbi_taxonomies(tax_dict, connection, args)
 
     closing_message("Get NCBI Taxonomy data", start_time, args)
 
