@@ -84,6 +84,7 @@ def add_ncbi_taxonomies(tax_dict, connection, args):
         try:
             db_ncbi_tax_table[int(ncbi_tax_id)]
             if args.update_taxs:
+                print("*-*-*-*-*-")
                 records_to_update.add(tax_data)
             
         except KeyError:
@@ -148,7 +149,7 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
                 connection.execute(
                     text(
                         "UPDATE Genbanks "
-                        f"SET ncbi_tax_id = {tax_id} AND "
+                        f"SET ncbi_tax_id = {tax_id} "
                         f"WHERE genbank_id = '{prot_db_id}'"
                     )
                 )
