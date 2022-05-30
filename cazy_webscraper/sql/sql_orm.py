@@ -203,7 +203,6 @@ class Genbank(Base):
     seq_update_date = Column(ReString)
     taxonomy_id = Column(Integer, ForeignKey("Taxs.taxonomy_id"))
     ncbi_id = Column(Integer, ForeignKey("NcbiTaxs.ncbi_id"))
-    genome_id = Column(Integer, ForeignKey("Genomes.genome_id"))
 
     ncbi_taxs = relationship(
         "NcbiTax",
