@@ -198,7 +198,8 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
 
     if len(failed_batches.keys()) != 0:
         for batch in failed_batches:
-            for prot in batch:
+            batch_proteins = failed_batches[batch]['proteins']
+            for prot in batch_proteins:
                 new_tax_ids, new_prot_ids, failed_individuals = get_ncbi_ids([prot], args, failed_individuals)
 
                 tax_ids = tax_ids.union(new_tax_ids)
@@ -254,18 +255,20 @@ def get_ncbi_ids(prots, args, failed_batches):
         logger.warning(
             "Batch contained invalid protein version accession"
         )
+        key = str(prots)
         try:
-            failed_batches[prots] += 1
+            failed_batches[key]['tries'] += 1
         except KeyError:
-            failed_batches[prots] = 1
+            failed_batches[key] = {'proteins': prots, 'tries': 1}
 
         return new_tax_ids, new_protein_ids, failed_batches
 
     if query_key is None:
+        key = str(prots)
         try:
-            failed_batches[prots] += 1
+            failed_batches[key]['tries'] += 1
         except KeyError:
-            failed_batches[prots] = 1
+            failed_batches[key] = {'proteins': prots, 'tries': 1}
 
         return new_tax_ids, new_protein_ids, failed_batches
     
@@ -276,11 +279,11 @@ def get_ncbi_ids(prots, args, failed_batches):
         logger.warning(
             f"Could not retrieve tax link for {','.join(prots)}."
         )
-
+        key = str(prots)
         try:
-            failed_batches[prots] += 1
+            failed_batches[key]['tries'] += 1
         except KeyError:
-            failed_batches[prots] = 1
+            failed_batches[key] = {'proteins': prots, 'tries': 1}
 
         return new_tax_ids, new_protein_ids, failed_batches
 
