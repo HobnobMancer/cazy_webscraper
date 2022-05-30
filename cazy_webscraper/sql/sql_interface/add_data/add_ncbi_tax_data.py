@@ -63,8 +63,6 @@ def add_ncbi_taxonomies(tax_dict, connection, args):
     # load ncbiTax table into dict
     db_ncbi_tax_table = get_ncbi_tax_table(connection)  # {ncbi_tax_id: local db id}
 
-    print("***", db_ncbi_tax_table)
-
     records_to_add = set()
     records_to_update = set()
 
@@ -84,7 +82,6 @@ def add_ncbi_taxonomies(tax_dict, connection, args):
         try:
             db_ncbi_tax_table[int(ncbi_tax_id)]
             if args.update_taxs:
-                print("*-*-*-*-*-")
                 records_to_update.add(tax_data)
             
         except KeyError:
@@ -142,14 +139,17 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
     
     Return nothing
     """
+    db_ncbi_tax_table = get_ncbi_tax_table(connection)  # {ncbi_tax_id: local db id}
+
     if args.update_gbk:
         for tax_id in tqdm(tax_prot_dict, desc="Updating Genbanks table"):
             proteins = tax_prot_dict[tax_id]['proteins']
+            tax_db_id = db_ncbi_tax_table[tax_id]
             for prot_db_id in proteins:
                 connection.execute(
                     text(
                         "UPDATE Genbanks "
-                        f"SET ncbi_tax_id = {tax_id} "
+                        f"SET ncbi_tax_id = {tax_db_id} "
                         f"WHERE genbank_id = '{prot_db_id}'"
                     )
                 )
@@ -159,14 +159,15 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
         gbk_db_ids = get_no_tax_gbk_table_dict(connection)
 
         for tax_id in tqdm(tax_prot_dict, desc="Updating Genbanks table"):
+            tax_db_id = db_ncbi_tax_table[tax_id]
             proteins = tax_prot_dict[tax_id]['proteins']
             for prot_db_id in proteins:
                 if prot_db_id in gbk_db_ids:
                     connection.execute(
                         text(
                             "UPDATE Genbanks "
-                            f"SET ncbi_tax_id = {tax_id} "
-                            f"WHERE genbank_id = '{prot_db_id}'"
+                            f"SET ncbi_tax_id = {tax_db_id} "
+                            f"WHERE genbank_id = {prot_db_id}"
                         )
                     )
     
