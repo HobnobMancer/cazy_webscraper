@@ -152,7 +152,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     tax_prot_dict = get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args)
     # {tax_id: {linaege info, 'proteins' {local db protein ids}}
 
-    add_ncbi_taxonomies(tax_dict, connection, args)
+    add_ncbi_taxonomies(tax_prot_dict, connection, args)
 
     closing_message("Get NCBI Taxonomy data", start_time, args)
 
