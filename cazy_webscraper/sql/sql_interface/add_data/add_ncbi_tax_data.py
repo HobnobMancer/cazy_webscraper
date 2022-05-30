@@ -143,32 +143,34 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
 
     if args.update_gbk:
         for tax_id in tqdm(tax_prot_dict, desc="Updating Genbanks table"):
-            proteins = tax_prot_dict[tax_id]['proteins']
+            proteins = tax_prot_dict[int(tax_id)]['proteins']
             tax_db_id = db_ncbi_tax_table[tax_id]
             for prot_db_id in proteins:
-                connection.execute(
-                    text(
-                        "UPDATE Genbanks "
-                        f"SET ncbi_tax_id = {tax_db_id} "
-                        f"WHERE genbank_id = '{prot_db_id}'"
+                with connection.begin():
+                    connection.execute(
+                        text(
+                            "UPDATE Genbanks "
+                            f"SET ncbi_tax_id = {tax_db_id} "
+                            f"WHERE genbank_id = '{prot_db_id}'"
+                        )
                     )
-                )
     
     else:
         # filter for protein records with no tax data, and only add new tax data, do no overwrite existing data
         gbk_db_ids = get_no_tax_gbk_table_dict(connection)
 
         for tax_id in tqdm(tax_prot_dict, desc="Updating Genbanks table"):
-            tax_db_id = db_ncbi_tax_table[tax_id]
+            tax_db_id = db_ncbi_tax_table[int(tax_id)]
             proteins = tax_prot_dict[tax_id]['proteins']
             for prot_db_id in proteins:
                 if prot_db_id in gbk_db_ids:
-                    connection.execute(
-                        text(
-                            "UPDATE Genbanks "
-                            f"SET ncbi_tax_id = {tax_db_id} "
-                            f"WHERE genbank_id = {prot_db_id}"
+                    with connection.begin():
+                        connection.execute(
+                            text(
+                                "UPDATE Genbanks "
+                                f"SET ncbi_tax_id = {tax_db_id} "
+                                f"WHERE genbank_id = {prot_db_id}"
+                            )
                         )
-                    )
     
     return
