@@ -558,7 +558,7 @@ def get_tax_proteins(tax_id, prot_id_dict, gbk_dict, args):
 
                 prot_local_db_id = gbk_dict[prot_ver_acc]
 
-                tax_prot_dict[tax_id].add([prot_local_db_id])
+                tax_prot_dict[tax_id].add(prot_local_db_id)
 
     return tax_prot_dict
 
