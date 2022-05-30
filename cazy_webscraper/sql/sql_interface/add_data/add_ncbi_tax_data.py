@@ -165,7 +165,7 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
                     connection.execute(
                         text(
                             "UPDATE Genbanks "
-                            f"SET ncbi_tax_id = {tax_id} AND "
+                            f"SET ncbi_tax_id = {tax_id} "
                             f"WHERE genbank_id = '{prot_db_id}'"
                         )
                     )
