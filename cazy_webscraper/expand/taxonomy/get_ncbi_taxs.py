@@ -55,14 +55,14 @@ from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper, closing_message
 from cazy_webscraper.expand import get_chunks_list
+from cazy_webscraper.ncbi import post_ids
+
+from cazy_webscraper.sql.sql_interface.add_data.add_ncbi_tax_data import add_ncbi_taxonomies
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
-from cazy_webscraper.sql.sql_interface.get_data.get_records import (
-    get_user_uniprot_sequences
-)
+from cazy_webscraper.sql.sql_interface.get_data.get_records import get_user_uniprot_sequences
+from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import get_no_tax_gbk_table_dict
 from cazy_webscraper.utilities.parsers.tax_ncbi_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
-from cazy_webscraper.sql.sql_interface.add_data.add_ncbi_tax_data import add_ncbi_taxonomies
-from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import get_no_tax_gbk_table_dict
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
