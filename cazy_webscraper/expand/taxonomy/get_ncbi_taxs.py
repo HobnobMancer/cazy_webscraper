@@ -197,7 +197,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
     failed_individuals = {}  # prot_acc: tries
 
     if len(failed_batches.keys()) != 0:
-        for batch in failed_batches:
+        for batch in tqdm(failed_batches, "Retrying failed batches"):
             batch_proteins = failed_batches[batch]['proteins']
             for prot in batch_proteins:
                 new_tax_ids, new_prot_ids, failed_individuals = get_ncbi_ids([prot], args, failed_individuals)
@@ -209,6 +209,8 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
 
     if len(list(failed_individuals.keys())) != 0:
         prots_to_retry = list(failed_individuals.keys())
+
+        logger.warning(f"Retrying individual failed protein IDs")
 
         while len(list(failed_individuals.keys())) > 0:
             for prot in prots_to_retry:
@@ -227,6 +229,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
                     failed_proteins.add(prot)
     
     if len(failed_proteins) != 0:
+        logger.warning(f"Failed to retrieve lineage data for {len(failed_proteins)} proteins")
         with open((cache_dir / "failed_protein_accs.txt"), "a") as fh:
             for prot in failed_proteins:
                 fh.write(f"{prot}\n")
