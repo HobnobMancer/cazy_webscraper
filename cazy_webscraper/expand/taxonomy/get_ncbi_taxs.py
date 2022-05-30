@@ -295,6 +295,7 @@ def link_prot_taxs(query_key, web_env, args):
     try:
         with entrez_retry(
             args.retries,
+            Entrez.elink,
             query_key=query_key,
             WebEnv=web_env,
             dbfrom="Protein",
