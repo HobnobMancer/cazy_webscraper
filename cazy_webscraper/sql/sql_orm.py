@@ -330,7 +330,7 @@ class NcbiTax(Base):
     kingdom = Column(ReString)
     phylum = Column(ReString)
     tax_class = Column(ReString)
-    order = Column(ReString)
+    tax_order = Column(ReString)
     family = Column(ReString)
     genus = Column(ReString)
     species = Column(ReString)
