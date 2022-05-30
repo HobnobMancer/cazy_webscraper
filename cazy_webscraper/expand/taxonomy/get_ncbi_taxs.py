@@ -83,6 +83,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger = logging.getLogger(__name__)
         config_logger(args, logger_name=__name__)
 
+    Entrez.email = args.email
+
     connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp, start_time)
     logger.info(f"Open connection to local cazyme database: {str(args.database)}")
 
