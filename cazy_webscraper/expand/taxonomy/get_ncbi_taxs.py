@@ -162,6 +162,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     with open((cache_dir/"lineage_data.json"), "w") as fh:
         json.dump(cache_tax_dict, fh)
+    logger.info(f"Cached lineage data")
 
     add_ncbi_taxonomies(tax_prot_dict, connection, args)
 
