@@ -193,7 +193,7 @@ def get_no_tax_gbk_table_dict(connection):
     gbk_db_ids = set()
     
     for gbk in all_genbank:
-        if gbk.ncbi_id is None:
+        if gbk.ncbi_tax_id is None:
             gbk_db_ids.add(gbk.genbank_id)
     
     return gbk_db_ids
