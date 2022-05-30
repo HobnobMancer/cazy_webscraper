@@ -155,10 +155,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # {tax_id: {linaege info, 'proteins' {local db protein ids}}
 
     # cache taxonomy
-    cache_tax_dict = copy.deepcopy(tax_prot_dict)
+    cache_tax_dict = {}
 
-    for tax_id in cache_tax_dict:
-        cache_tax_dict[tax_id]['proteins'] = list(cache_tax_dict[tax_id]['proteins'])
+    for tax_id in tax_prot_dict:
+        cache_tax_dict[tax_id] = {}
+        for key in tax_prot_dict[tax_id]:
+            if key == 'proteins':
+                cache_tax_dict[tax_id]['proteins'] = list(tax_prot_dict[tax_id]['proteins'])
+            else:
+                cache_tax_dict[tax_id][key] = tax_prot_dict[tax_id][key]
 
     with open((cache_dir/"lineage_data.json"), "w") as fh:
         json.dump(cache_tax_dict, fh)
@@ -190,6 +195,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
     protein_ncbi_ids = {}
 
     for batch in tqdm(batches, desc="Getting NCBI Tax IDs"):
+        
         new_tax_ids, new_prot_ids, failed_batches = get_ncbi_ids(batch, args, failed_batches)
         
         tax_ids = tax_ids.union(new_tax_ids)
@@ -252,7 +258,7 @@ def get_ncbi_ids(prots, args, failed_batches):
     """
     logger = logging.getLogger(__name__)
 
-    new_tax_ids, new_protein_ids = set(), {}
+    new_tax_ids, new_protein_ids = set(), set()
 
     # post protein accessions
     try:
@@ -279,7 +285,7 @@ def get_ncbi_ids(prots, args, failed_batches):
         return new_tax_ids, new_protein_ids, failed_batches
     
     # elink proteins to tax records
-    new_tax_ids, new_protein_ids_list, success = link_prot_taxs(query_key, web_env, args)
+    new_tax_ids, new_protein_ids, success = link_prot_taxs(query_key, web_env, args)
 
     if success is False:
         logger.warning(
@@ -293,12 +299,14 @@ def get_ncbi_ids(prots, args, failed_batches):
 
         return new_tax_ids, new_protein_ids, failed_batches
 
+    new_prots_id_dict = {}  # protein ID: protein ACC
+
     for i in range(len(new_protein_ids)):
         prot_acc = prots[i]
-        prot_id = new_protein_ids_list[i]
-        new_protein_ids[prot_id] = prot_acc
+        prot_id = new_protein_ids[i]
+        new_prots_id_dict[prot_id] = prot_acc
 
-    return new_tax_ids, new_protein_ids, failed_batches
+    return new_tax_ids, new_prots_id_dict, failed_batches
 
 
 def link_prot_taxs(query_key, web_env, args):
@@ -493,16 +501,15 @@ def get_lineage(tax_id, args):
         elif genus is not None and species is None:
             species = scientific_name.repace(genus, "").strip()
 
-        tax_dict[record_id] = {record_id: {
-                'kingdom': kingdom,
-                'phylum': phylum,
-                'class': tax_class,
-                'order': order,
-                'family': family,
-                'genus': genus,
-                'species': species,
-                'strain': strain,
-            }
+        tax_dict[record_id] = {
+            'kingdom': kingdom,
+            'phylum': phylum,
+            'class': tax_class,
+            'order': order,
+            'family': family,
+            'genus': genus,
+            'species': species,
+            'strain': strain,
         }
 
     return tax_dict
