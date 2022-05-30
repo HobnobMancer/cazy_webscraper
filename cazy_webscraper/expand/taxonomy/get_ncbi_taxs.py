@@ -40,6 +40,8 @@
 """Produce dataframe listing NCBI species listed in a local CAZyme database, including their full lineage"""
 
 
+import copy
+import json
 import logging
 
 import pandas as pd
@@ -151,6 +153,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     tax_prot_dict = get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args)
     # {tax_id: {linaege info, 'proteins' {local db protein ids}}
+
+    # cache taxonomy
+    cache_tax_dict = copy.deepcopy(tax_prot_dict)
+
+    for tax_id in cache_tax_dict:
+        cache_tax_dict[tax_id]['proteins'] = list(cache_tax_dict[tax_id]['proteins'])
+
+    with open((cache_dir/"lineage_data.json"), "w") as fh:
+        json.dump(cache_tax_dict, fh)
 
     add_ncbi_taxonomies(tax_prot_dict, connection, args)
 
