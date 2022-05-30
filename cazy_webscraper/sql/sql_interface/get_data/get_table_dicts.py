@@ -448,4 +448,4 @@ def get_ncbi_tax_table(connection):
         ncbi_tax_id = record.ncbi_tax_id
         ncbi_tax_dict[ncbi_tax_id] = db_id
     
-    return
+    return ncbi_tax_dict
