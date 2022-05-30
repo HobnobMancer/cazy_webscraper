@@ -41,6 +41,7 @@
 """Add NCBI Taxonomy data to a local SQLite database"""
 
 
+import logging
 from sqlalchemy import text
 from tqdm import tqdm
 
@@ -57,6 +58,8 @@ def add_ncbi_taxonomies(tax_dict, connection, args):
     
     Return nothing
     """
+    logger = logging.getLogger(__name__)
+
     # load ncbiTax table into dict
     db_ncbi_tax_table = get_ncbi_tax_table(connection)  # {ncbi_tax_id: local db id}
 
@@ -93,7 +96,7 @@ def add_ncbi_taxonomies(tax_dict, connection, args):
         insert_data(
             connection,
             'NcbiTaxs',
-            ['ncbi_tax_id', 'kingdom', 'phylum', 'tax_class', 'order', 'family', 'genus', 'species',' strain'],
+            ['ncbi_tax_id', 'kingdom', 'phylum', 'tax_class', 'tax_order', 'family', 'genus', 'species',' strain'],
             list(records_to_add),
         )
     
