@@ -235,6 +235,8 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
             for prot in failed_proteins:
                 fh.write(f"{prot}\n")
 
+    logger.info(f"Retrieved {len(tax_ids)} NCBI Taxonomy IDs")
+
     return tax_ids, protein_ncbi_ids
 
 
