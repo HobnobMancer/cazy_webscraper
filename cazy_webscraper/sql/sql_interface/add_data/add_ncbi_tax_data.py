@@ -63,6 +63,8 @@ def add_ncbi_taxonomies(tax_dict, connection, args):
     # load ncbiTax table into dict
     db_ncbi_tax_table = get_ncbi_tax_table(connection)  # {ncbi_tax_id: local db id}
 
+    print("***", db_ncbi_tax_table)
+
     records_to_add = set()
     records_to_update = set()
 
@@ -80,7 +82,7 @@ def add_ncbi_taxonomies(tax_dict, connection, args):
         )
 
         try:
-            db_ncbi_tax_table[ncbi_tax_id]
+            db_ncbi_tax_table[int(ncbi_tax_id)]
             if args.update_taxs:
                 records_to_update.add(tax_data)
             
