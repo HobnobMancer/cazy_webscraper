@@ -55,14 +55,19 @@ from saintBioutils.utilities import file_io
 from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
 
-from cazy_webscraper import cazy_scraper, closing_message
+from cazy_webscraper import closing_message
+from cazy_webscraper.cazy_scraper import connect_existing_db
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.ncbi import post_ids
 
 from cazy_webscraper.sql.sql_interface.add_data.add_ncbi_tax_data import add_ncbi_taxonomies, update_genbank_ncbi_tax
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
 from cazy_webscraper.sql.sql_interface.get_data.get_records import get_user_uniprot_sequences
-from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import get_no_tax_gbk_table_dict
+from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
+    get_no_tax_gbk_table_dict,
+    get_gbk_table_dict,
+    get_uniprot_table_dict,
+)
 from cazy_webscraper.utilities.parsers.tax_ncbi_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
@@ -87,7 +92,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     Entrez.email = args.email
 
-    connection, logger_name, cache_dir = cazy_scraper.connect_existing_db(args, time_stamp, start_time)
+    connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
     logger.info(f"Open connection to local cazyme database: {str(args.database)}")
 
     if args.cache_dir is not None:  # use user defined cache dir
@@ -123,8 +128,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     if args.uniprot_accessions is not None:
         logger.warning(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
-        gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
-        uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+        gbk_table_dict = get_gbk_table_dict(connection)
+        uniprot_table_dict = get_uniprot_table_dict(connection)
         gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
 
     else:
