@@ -155,6 +155,16 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         gbk_dict = filtered_gbk_dict
 
     tax_ids, prot_id_dict = get_ncbi_tax_prot_ids(list(gbk_dict.keys()), cache_dir, args)
+    # Returns a set of NCBI Tax ids and dict {ncbi prot id: prot acc}
+
+    logger.info("Logging retrieved NCBI Taxonomy and Protein IDs")
+    with open((cache_dir/"tax_ids.out"), "a") as fh:
+        for tax_id in tax_ids:
+            fh.write(f"{tax_id}\n")
+
+    with open((cache_dir/"protein_ncbi_ids.out"), "a") as fh:
+        for ncbi_prot_id in prot_id_dict:
+            fh.write(f"{ncbi_prot_id}\t{prot_id_dict[ncbi_prot_id]}\n")
 
     tax_prot_dict = get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args)
     # {tax_id: {linaege info, 'proteins' {local db protein ids}}
