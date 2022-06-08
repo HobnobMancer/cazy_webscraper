@@ -240,9 +240,21 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
                 tax_ids = tax_ids.union(new_tax_ids)
                 protein_ncbi_ids.update(new_prot_ids)
 
-                if failed_individuals[prot] >= args.retries:
-                    del failed_individuals[prot]
-                    failed_proteins.add(prot)
+                num_of_tries = 0
+                try:
+                    num_of_tries = failed_individuals[prot]
+                
+                except KeyError:
+                    num_of_tries = failed_individuals[str(prot)]
+                
+                try:
+                    if failed_individuals[prot] >= args.retries:
+                        del failed_individuals[prot]
+                        failed_proteins.add(prot)
+                except TypeError:
+                    if failed_individuals[str(prot)]['tries'] >= args.retries:
+                        del failed_individuals[str(prot)]
+                        failed_proteins.add(str(prot))
     
     if len(failed_proteins) != 0:
         logger.warning(f"Failed to retrieve lineage data for {len(failed_proteins)} proteins")
