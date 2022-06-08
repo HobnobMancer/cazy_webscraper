@@ -121,7 +121,7 @@ def connect_existing_db(args, time_stamp, start_time):
         sys.exit(1)
 
     try:
-        connection = sql_orm.get_db_connection(args.database, args, new=False)
+        connection = sql_orm.get_db_connection(args.database, args.sql_echo, new=False)
         logger.info("Opened connection to local CAZyme database")
     except Exception:
         logger.error(
