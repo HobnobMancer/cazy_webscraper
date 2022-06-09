@@ -250,7 +250,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
                     except KeyError:
                         continue
 
-                new_tax_ids, new_prot_ids, failed_individuals = get_ncbi_ids([prot], args, failed_individuals)
+                new_tax_ids, new_prot_ids, failed_individuals = get_ncbi_ids(prot, args, failed_individuals)
 
                 tax_ids = tax_ids.union(new_tax_ids)
                 protein_ncbi_ids.update(new_prot_ids)
