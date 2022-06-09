@@ -57,6 +57,9 @@ def post_ids(ids, database, args):
     """
     logger = logging.getLogger(__name__)
 
+    if type(ids) is str:
+        ids = [ids]
+
     try:
         with entrez_retry(
             args.retries,
@@ -69,7 +72,7 @@ def post_ids(ids, database, args):
     # if no record is returned from call to Entrez
     except (TypeError, AttributeError) as err:
         logger.warning(
-            f"Failed to post IDs to Entrez {database} db:\n{err}"
+            f"Failed to post IDs to Entrez {database} db:\nError messaage\n{err}\nIds:\n{ids}"
         )
         return None, None
 
