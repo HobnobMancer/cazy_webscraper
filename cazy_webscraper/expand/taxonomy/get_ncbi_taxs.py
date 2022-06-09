@@ -390,7 +390,7 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
     """
     logger = logging.getLogger(__name__)
 
-    tax_prot_dict = {}
+    tax_prot_dict = {}  # {ncbi tax id: {phylo_rank: str, proteins: [NCBI protein IDs]}}
 
     failed_ids = {}
 
@@ -522,11 +522,15 @@ def get_lineage(tax_id, args):
 
         scientific_name = record['ScientificName']
 
-        if genus is not None and species is not None and strain is not None:
-            strain = scientific_name.replace(f"{genus} {species}", "").strip()
+        scientific_name = record['ScientificName']
 
+        # extract strain from scientific name if not retrieved as rank
+        if genus is not None and species is not None and strain is None:
+            strain = scientific_name.replace(f"{genus} {species}", "").strip()
+            
+        # extract species from the scientific name if not retrieved as rank
         elif genus is not None and species is None:
-            species = scientific_name.repace(genus, "").strip()
+            species = scientific_name.replace(genus, "").strip()
 
         tax_dict[record_id] = {
             'kingdom': kingdom,
