@@ -234,7 +234,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
     failed_proteins = set()
 
     if len(list(failed_individuals.keys())) != 0:
-        prots_to_retry = list(failed_individuals.keys())
+        prots_to_retry = [failed_individuals[_]['proteins'] for _ in failed_individuals]
 
         logger.warning(f"Retrying individual failed protein IDs")
 
@@ -249,13 +249,6 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
 
                 tax_ids = tax_ids.union(new_tax_ids)
                 protein_ncbi_ids.update(new_prot_ids)
-
-                num_of_tries = 0
-                try:
-                    num_of_tries = failed_individuals[prot]
-                
-                except KeyError:
-                    num_of_tries = failed_individuals[str(prot)]
                 
                 try:
                     if failed_individuals[prot] >= args.retries:
@@ -269,7 +262,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
     if len(failed_proteins) != 0:
         logger.warning(f"Failed to retrieve lineage data for {len(failed_proteins)} proteins")
         with open((cache_dir / "failed_protein_accs.txt"), "a") as fh:
-            for prot in failed_proteins:
+            for prot in failed_proteins['proteins']:
                 fh.write(f"{prot}\n")
 
     logger.info(f"Retrieved {len(tax_ids)} NCBI Taxonomy IDs")
@@ -295,9 +288,7 @@ def get_ncbi_ids(prots, args, failed_batches):
     try:
         query_key, web_env = post_ids(prots, 'Protein', args)
     except RuntimeError:
-        logger.warning(
-            "Batch contained invalid protein version accession"
-        )
+        logger.warning(f"Batch contained invalid protein version accession.\nBatch:\n{prots}")
         key = str(prots)
         try:
             failed_batches[key]['tries'] += 1
