@@ -244,6 +244,11 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
                     failed_individuals[prot]
                 except KeyError:
                     continue
+                except TypeError:
+                    try:
+                        failed_individuals[str(prot)]
+                    except KeyError:
+                        continue
 
                 new_tax_ids, new_prot_ids, failed_individuals = get_ncbi_ids([prot], args, failed_individuals)
 
