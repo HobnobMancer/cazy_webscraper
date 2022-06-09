@@ -522,7 +522,9 @@ def get_lineage(tax_id, args):
 
         scientific_name = record['ScientificName']
 
-        scientific_name = record['ScientificName']
+        # drop genus from species name
+        if species is not None:
+            species = species.replace(genus, "").strip()
 
         # extract strain from scientific name if not retrieved as rank
         if genus is not None and species is not None and strain is None:
