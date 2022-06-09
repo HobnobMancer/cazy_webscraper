@@ -267,7 +267,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
     if len(failed_proteins) != 0:
         logger.warning(f"Failed to retrieve lineage data for {len(failed_proteins)} proteins")
         with open((cache_dir / "failed_protein_accs.txt"), "a") as fh:
-            for prot in failed_proteins['proteins']:
+            for prot in failed_proteins:
                 fh.write(f"{prot}\n")
 
     logger.info(f"Retrieved {len(tax_ids)} NCBI Taxonomy IDs")
