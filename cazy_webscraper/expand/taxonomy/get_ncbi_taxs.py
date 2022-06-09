@@ -389,90 +389,90 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
     Return dict {tax_id: {linaege info, 'proteins' {local db protein ids}}
     """
     logger = logging.getLogger(__name__)
-
     tax_prot_dict = {}  # {ncbi tax id: {phylo_rank: str, proteins: [NCBI protein IDs]}}
 
-    failed_ids = {}
+    # retrieve lineage data from the NCBI Taxonomy database
 
-    for tax_id in tqdm(tax_ids, desc="Retrieving lineages"):
+    failed_lineage_ids = {}
+    lineage_dict = {}  # {ncbi tax id: {rank: str}}
+    completely_failed_tax_ids = set()
+
+    for tax_id in tqdm(tax_ids, desc="Retrieving lineages from NCBI"):
         # get lineage information
-        lineage_dict = get_lineage(tax_id, args)
+        lineage_dict, success = get_lineage(tax_id, lineage_dict, args)
 
-        if lineage_dict is None:
-            failed_ids[tax_id] = {'lineage': 1}
-        
-        # for ncbi db ids for proteins from local db that are linked to the tax record
-        tax_prot_dict = get_tax_proteins(tax_id, prot_id_dict, gbk_dict, args)
+        if success is False:
+            failed_lineage_ids[tax_id] = 1  # marks the one failed attempt has been retried
+
+    if len(failed_lineage_ids) != 0:
+        logger.info(f"Retrying retrieving lineage data for failed NCBI Tax IDs")
+        while len(list(failed_lineage_ids.keys())) > 0:
+            for tax_id in tqdm(failed_lineage_ids, desc="Retrying retrieving NCBI lineages"):
+                lineage_dict, success = get_lineage(tax_id, lineage_dict, args)
+
+                if success is False:
+                    failed_lineage_ids[tax_id] += 1  # number of attempts that have failed
+                
+                if failed_lineage_ids[tax_id] > args.retries:
+                    logger.warning(f"Ran out of reattempts to get lineage data for ncbi tax {tax_id}")
+                    del failed_lineage_ids[tax_id]
+                    completely_failed_tax_ids.add(f"{tax_id}\tCould not retrieve lineage data")
+    
+    # retrieve proteins linked to taxon record in NCBI
+    tax_prot_dict = {}
+    failed_linked_ids = {}
+
+    for tax_id in tqdm(tax_ids, desc="Link proteins to NCBI Tax record"):
+        if tax_id in completely_failed_tax_ids:
+            logger.warning(f"Could not retrieved lineage for ncbi tax id {tax_id} so not retrieving linked proteins for tax id")
+            continue
+        tax_prot_dict, success = get_tax_proteins(tax_id, tax_prot_dict, prot_id_dict, gbk_dict, args)
         # {tax_id: {local db protein ids}}
 
-        if tax_prot_dict is None:
-            try:
-                failed_ids[tax_id]['proteins'] = 1
-            except KeyError:
-                failed_ids[tax_id] = {'lineage': lineage_dict, 'proteins': 1}
-                continue
+        if success is False:
+            failed_linked_ids[tax_id] = 1  # first attempt to conenct failed
 
-        lineage_dict[tax_id]['proteins'] = tax_prot_dict[tax_id]
+    if len(failed_linked_ids) != 0:
+        logger.info(f"Retrying retrieving linked proteins for failed NCBI Tax IDs")
+        while len(list(failed_linked_ids.keys())) > 0:
+            for tax_id in tqdm(failed_linked_ids, desc="Retrying retrieving linked proteins"):
+                lineage_dict, success = get_tax_proteins(tax_id, tax_prot_dict, prot_id_dict, gbk_dict, args)
 
-        tax_prot_dict[tax_id] = lineage_dict[tax_id]
+                if success is False:
+                    failed_linked_ids[tax_id] += 1  # number of attempts that have failed
+                
+                if failed_linked_ids[tax_id] > args.retries:
+                    logger.warning(f"Ran out of reattempts to get linked proteins data for ncbi tax {tax_id}")
+                    del failed_linked_ids[tax_id]
+                    completely_failed_tax_ids.add(f"{tax_id}\tCould not retrieve linked proteins")
 
-    failed_tax_ids = set()
+    # combine lineage data and proteins into a single dict
+    for tax_id in tax_ids:
+        try:
+            lineage_dict[tax_id]['proteins'] = tax_prot_dict[tax_id]
+        except KeyError:
+            logger.error(f"Did not retrieve lineage and/or linked proteins for ncbi tax id {tax_id}")
+            if tax_id not in completely_failed_tax_ids:
+                completely_failed_tax_ids.add(f"{tax_id}\tCould not lineage data and/or retrieve linked proteins")
 
-    if len(failed_ids) != 0:
-        tax_ids_to_parse = list(failed_ids.keys())
-
-        while len(failed_ids) > 0:
-            for tax_id in tqdm(tax_ids_to_parse, desc="Retry failed tax ids"):
-                try:
-                    failed_ids[tax_id]
-                except KeyError:
-                    continue
-
-                if type(failed_ids[tax_id]['lineage']) is int:
-                    lineage_dict = get_lineage(tax_id, args)
-
-                    if lineage_dict is None:
-                        failed_ids[tax_id]['lineage'] += 1
-
-                    if failed_ids[tax_id]['lineage'] > args.retries:
-                        logger.warning(f"Run out of reattempts to get NCBI tax id {tax_id} linage data")
-                        del failed_ids[tax_id]
-                        failed_tax_ids.add(tax_id)
-                        continue
-            
-                if type(failed_ids[tax_id]['proteins']) is int:
-                    if tax_prot_dict is None:
-                        failed_ids[tax_id]['proteins'] += 1
-
-                if failed_ids[tax_id]['proteins'] > args.retries:
-                    logger.warning(f"Run out of reattempts to get NCBI tax id {tax_id} linage data")
-                    del failed_ids[tax_id]
-                    failed_tax_ids.add(tax_id)
-                    continue
-
-                lineage_dict[tax_id]['proteins'] = tax_prot_dict[tax_id]
-
-                tax_prot_dict[tax_id] = lineage_dict[tax_id]
-
-    if len(failed_tax_ids) != 0:
+    if len(completely_failed_tax_ids) != 0:
         with open((cache_dir / "failed_tax_ids.txt"), "a") as fh:
-            for tax_id in failed_tax_ids:
+            for tax_id in completely_failed_tax_ids:
                 fh.write(f"{tax_id}\n")
 
-    return tax_prot_dict
+    return lineage_dict
 
 
-def get_lineage(tax_id, args):
+def get_lineage(tax_id, lineage_dict, args):
     """Retrieve lineage from NCBI taxonomy record, and add to lineage dict
     
     :param tax_id: str, ncbi tax db id
+    :param lineage_dict: dict, {ncbi tax ID: {rank: str}}
     :param args: cmd-line args parser
 
-    Return dict of lineage data
+    Return dict of lineage data and bool representing if eFetch was performed successfully
     """
     logger = logging.getLogger(__name__)
-
-    tax_dict = {}
 
     try:
         with entrez_retry(
@@ -485,7 +485,7 @@ def get_lineage(tax_id, args):
     
     except (TypeError, AttributeError) as err:
         logger.warning(f"Failed to fetch tax record from NCBI tax for id '{tax_id}'':\n{err}")
-        return
+        return lineage_dict, False
     
     for record in tax_records:
         record_id = record['TaxId']
@@ -534,7 +534,7 @@ def get_lineage(tax_id, args):
         elif genus is not None and species is None:
             species = scientific_name.replace(genus, "").strip()
 
-        tax_dict[record_id] = {
+        lineage_dict[record_id] = {
             'kingdom': kingdom,
             'phylum': phylum,
             'class': tax_class,
@@ -545,18 +545,19 @@ def get_lineage(tax_id, args):
             'strain': strain,
         }
 
-    return tax_dict
+    return lineage_dict, True
 
 
-def get_tax_proteins(tax_id, prot_id_dict, gbk_dict, args):
+def get_tax_proteins(tax_id, tax_prot_dict, prot_id_dict, gbk_dict, args):
     """Get the proteins linked to a tax id in NCBI, and link the tax id with the local db protein ids
     
     :param tax_id: str, NCBI tax db id
+    :param tax_prot_dict: {ncbi tax id: {local db protein ids}}
     :param prot_id_dict: dict {protein ncbi id: prot acc}
     :param gbk_dict: dict, {prot acc: local db id}
     :param args: cmd-line args parser
     
-    Return dict {tax_id: {local db protein ids}}, or None if fails
+    Return dict {tax_id: {local db protein ids}} and bool (True=success, False=failed)
     """
     logger = logging.getLogger(__name__)
 
@@ -573,9 +574,12 @@ def get_tax_proteins(tax_id, prot_id_dict, gbk_dict, args):
 
     except (AttributeError, TypeError, RuntimeError) as err:
         logger.warning(f"Failed to link NCBI tax id to NCBI Protein db for tax id {tax_id}\n{err}")
-        return
+        return tax_prot_dict, False
 
-    tax_prot_dict = {tax_id: set()}
+    try:
+        tax_prot_dict[tax_id]
+    except KeyError:
+        tax_prot_dict[tax_id] = set()
     
     for result in tax_links:
         for item in result['LinkSetDb']:
@@ -593,7 +597,7 @@ def get_tax_proteins(tax_id, prot_id_dict, gbk_dict, args):
 
                 tax_prot_dict[tax_id].add(prot_local_db_id)
 
-    return tax_prot_dict
+    return tax_prot_dict, True
 
 
 if __name__ == "__main__":
