@@ -142,18 +142,18 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
     db_ncbi_tax_table = get_ncbi_tax_table(connection)  # {ncbi_tax_id: local db id}
 
     if args.update_gbk:
-        for tax_id in tqdm(tax_prot_dict, desc="Updating Genbanks table"):
-            proteins = tax_prot_dict[int(tax_id)]['proteins']
-            tax_db_id = db_ncbi_tax_table[tax_id]
-            for prot_db_id in proteins:
-                with connection.begin():
-                    connection.execute(
-                        text(
-                            "UPDATE Genbanks "
-                            f"SET ncbi_tax_id = {tax_db_id} "
-                            f"WHERE genbank_id = '{prot_db_id}'"
+        with connection.begin():
+            for tax_id in tqdm(tax_prot_dict, desc="Updating Genbanks table"):
+                proteins = tax_prot_dict[int(tax_id)]['proteins']
+                tax_db_id = db_ncbi_tax_table[tax_id]
+                for prot_db_id in proteins:
+                        connection.execute(
+                            text(
+                                "UPDATE Genbanks "
+                                f"SET ncbi_id = {tax_db_id} "
+                                f"WHERE genbank_id = '{prot_db_id}'"
+                            )
                         )
-                    )
     
     else:
         # filter for protein records with no tax data, and only add new tax data, do no overwrite existing data
