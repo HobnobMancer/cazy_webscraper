@@ -40,9 +40,9 @@
 """Produce dataframe listing NCBI species listed in a local CAZyme database, including their full lineage"""
 
 
-import copy
 import json
 import logging
+import sys
 
 import pandas as pd
 
@@ -103,86 +103,100 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger.info("Building cache dir")
         cache_dir = cache_dir / "ncbi_tax_retrieval"
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
-
-    # get config data
-    (
-        config_dict,
-        class_filters,
-        family_filters,
-        kingdom_filters,
-        taxonomy_filter_dict,
-        ec_filters,
-    ) = get_expansion_configuration(args)
-
-    gbk_dict = {}
-
-    if args.genbank_accessions is not None:
-        logger.warning(f"Getting GenBank accessions from file: {args.genbank_accessions}")
-        with open(args.genbank_accessions, "r") as fh:
-            lines = fh.read().splitlines()
-        
-        accessions = [line.strip() for line in lines]
-        accessions = set(accessions)
-
-        gbk_dict = get_selected_gbks.get_ids(accessions, connection)
-
-    if args.uniprot_accessions is not None:
-        logger.warning(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
-        gbk_table_dict = get_gbk_table_dict(connection)
-        uniprot_table_dict = get_uniprot_table_dict(connection)
-        gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
-
+    
+    if args.lineage_cache is not None:
+        try:
+            with open(args.lineage_cache, "r") as fh:
+                tax_prot_dict = json.load(fh)
+        except FileNotFoundError:
+            logger.error(
+                "Could not find lineage cache at \n"
+                f"{str(args.lineage_cache)}\n"
+                "Check path is correct\n"
+                "Terminating program"
+            )
+            sys.exit(1)
+    
     else:
-        gbk_dict.update(get_selected_gbks.get_genbank_accessions(
+        # get config data
+        (
+            config_dict,
             class_filters,
             family_filters,
-            taxonomy_filter_dict,
             kingdom_filters,
+            taxonomy_filter_dict,
             ec_filters,
-            connection,
-        ))
-    
-    if args.update_gbk is False:
-        # filter gbk accessions to those proteins with no ncbi tax data
-        gbk_db_ids = get_no_tax_gbk_table_dict(connection)
+        ) = get_expansion_configuration(args)
 
-        filtered_gbk_dict = {}
+        gbk_dict = {}
 
-        for gbk_acc in gbk_dict:
-            if gbk_dict[gbk_acc] in gbk_db_ids:
-                filtered_gbk_dict[gbk_acc] = gbk_dict[gbk_acc]
+        if args.genbank_accessions is not None:
+            logger.warning(f"Getting GenBank accessions from file: {args.genbank_accessions}")
+            with open(args.genbank_accessions, "r") as fh:
+                lines = fh.read().splitlines()
+            
+            accessions = [line.strip() for line in lines]
+            accessions = set(accessions)
+
+            gbk_dict = get_selected_gbks.get_ids(accessions, connection)
+
+        if args.uniprot_accessions is not None:
+            logger.warning(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
+            gbk_table_dict = get_gbk_table_dict(connection)
+            uniprot_table_dict = get_uniprot_table_dict(connection)
+            gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
+
+        else:
+            gbk_dict.update(get_selected_gbks.get_genbank_accessions(
+                class_filters,
+                family_filters,
+                taxonomy_filter_dict,
+                kingdom_filters,
+                ec_filters,
+                connection,
+            ))
         
-        gbk_dict = filtered_gbk_dict
+        if args.update_gbk is False:
+            # filter gbk accessions to those proteins with no ncbi tax data
+            gbk_db_ids = get_no_tax_gbk_table_dict(connection)
 
-    tax_ids, prot_id_dict = get_ncbi_tax_prot_ids(list(gbk_dict.keys()), cache_dir, args)
-    # Returns a set of NCBI Tax ids and dict {ncbi prot id: prot acc}
+            filtered_gbk_dict = {}
 
-    logger.info("Logging retrieved NCBI Taxonomy and Protein IDs")
-    with open((cache_dir/"tax_ids.out"), "a") as fh:
-        for tax_id in tax_ids:
-            fh.write(f"{tax_id}\n")
+            for gbk_acc in gbk_dict:
+                if gbk_dict[gbk_acc] in gbk_db_ids:
+                    filtered_gbk_dict[gbk_acc] = gbk_dict[gbk_acc]
+            
+            gbk_dict = filtered_gbk_dict
 
-    with open((cache_dir/"protein_ncbi_ids.out"), "a") as fh:
-        for ncbi_prot_id in prot_id_dict:
-            fh.write(f"{ncbi_prot_id}\t{prot_id_dict[ncbi_prot_id]}\n")
+        tax_ids, prot_id_dict = get_ncbi_tax_prot_ids(list(gbk_dict.keys()), cache_dir, args)
+        # Returns a set of NCBI Tax ids and dict {ncbi prot id: prot acc}
 
-    tax_prot_dict = get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args)
-    # {tax_id: {linaege info, 'proteins' {local db protein ids}}
+        logger.info("Logging retrieved NCBI Taxonomy and Protein IDs")
+        with open((cache_dir/"tax_ids.out"), "a") as fh:
+            for tax_id in tax_ids:
+                fh.write(f"{tax_id}\n")
 
-    # cache taxonomy
-    cache_tax_dict = {}
+        with open((cache_dir/"protein_ncbi_ids.out"), "a") as fh:
+            for ncbi_prot_id in prot_id_dict:
+                fh.write(f"{ncbi_prot_id}\t{prot_id_dict[ncbi_prot_id]}\n")
 
-    for tax_id in tax_prot_dict:
-        cache_tax_dict[tax_id] = {}
-        for key in tax_prot_dict[tax_id]:
-            if key == 'proteins':
-                cache_tax_dict[tax_id]['proteins'] = list(tax_prot_dict[tax_id]['proteins'])
-            else:
-                cache_tax_dict[tax_id][key] = tax_prot_dict[tax_id][key]
+        tax_prot_dict = get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args)
+        # {tax_id: {linaege info, 'proteins' {local db protein ids}}
 
-    with open((cache_dir/"lineage_data.json"), "w") as fh:
-        json.dump(cache_tax_dict, fh)
-    logger.info(f"Cached lineage data")
+        # cache taxonomy
+        cache_tax_dict = {}
+
+        for tax_id in tax_prot_dict:
+            cache_tax_dict[tax_id] = {}
+            for key in tax_prot_dict[tax_id]:
+                if key == 'proteins':
+                    cache_tax_dict[tax_id]['proteins'] = list(tax_prot_dict[tax_id]['proteins'])
+                else:
+                    cache_tax_dict[tax_id][key] = tax_prot_dict[tax_id][key]
+
+        with open((cache_dir/"lineage_data.json"), "w") as fh:
+            json.dump(cache_tax_dict, fh)
+        logger.info(f"Cached lineage data")
 
     add_ncbi_taxonomies(tax_prot_dict, connection, args)
     logger.info("Added lineage data to db")
@@ -522,17 +536,18 @@ def get_lineage(tax_id, lineage_dict, args):
 
         scientific_name = record['ScientificName']
 
-        # drop genus from species name
-        if species is not None:
-            species = species.replace(genus, "").strip()
+        if genus is not None:
+            # drop genus from species name
+            if species is not None:
+                species = species.replace(genus, "").strip()
 
-        # extract strain from scientific name if not retrieved as rank
-        if genus is not None and species is not None and strain is None:
-            strain = scientific_name.replace(f"{genus} {species}", "").strip()
+            # extract strain from scientific name if not retrieved as rank
+            if species is not None and strain is None:
+                strain = scientific_name.replace(f"{genus} {species}", "").strip()
             
-        # extract species from the scientific name if not retrieved as rank
-        elif genus is not None and species is None:
-            species = scientific_name.replace(genus, "").strip()
+            # extract species from the scientific name if not retrieved as rank
+            elif species is None:
+                species = scientific_name.replace(genus, "").strip()
 
         lineage_dict[record_id] = {
             'kingdom': kingdom,

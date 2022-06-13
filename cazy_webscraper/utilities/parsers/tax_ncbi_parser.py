@@ -169,6 +169,13 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
+        "--lineage_cache",
+        type=Path,
+        default=None,
+        help="Path to previously cached lineage dict",
+    )
+
+    parser.add_argument(
         "--nodelete_cache",
         dest="nodelete_cache",
         action="store_true",
