@@ -59,7 +59,7 @@ from cazy_webscraper import closing_message
 from cazy_webscraper.cazy_scraper import connect_existing_db
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.ncbi import post_ids
-
+from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface.add_data.add_ncbi_tax_data import (
     add_ncbi_taxonomies,
     update_genbank_ncbi_tax,
@@ -98,6 +98,29 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
     logger.info(f"Open connection to local cazyme database: {str(args.database)}")
 
+    logger.info("Adding log of scrape to the local CAZyme database")
+    (
+        config_dict,
+        class_filters,
+        family_filters,
+        kingdom_filters,
+        taxonomy_filter_dict,
+        ec_filters,
+    ) = get_expansion_configuration(args)
+
+    with sql_orm.Session(bind=connection) as session:
+        sql_interface.log_scrape_in_db(
+            time_stamp,
+            config_dict,
+            kingdom_filters,
+            taxonomy_filter_dict,
+            set(),  # ec_filters not applied when scraping CAZy
+            'NCBI Taxonomy',
+            'NCBI taxonomc lineages',
+            session,
+            args,
+        )
+
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
         logger.info("Building cache dir")
@@ -122,7 +145,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             sys.exit(1)
 
     else:
-        gbk_dict = get_db_proteins(connection, args)
+        gbk_dict = get_db_proteins(
+            class_filters,
+            family_filters,
+            kingdom_filters,
+            taxonomy_filter_dict,
+            ec_filters,
+            connection,
+            args,
+        )
 
         tax_ids, prot_id_dict = get_ncbi_ids(gbk_dict, cache_dir, args)
 
@@ -153,7 +184,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     closing_message("Get NCBI Taxonomy data", start_time, args)
 
 
-def get_db_proteins(connection, args):
+def get_db_proteins(
+    class_filters,
+    family_filters,
+    kingdom_filters,
+    taxonomy_filter_dict,
+    ec_filters,
+    connection,
+    args,
+):
     """Retrieve proteins from local CAZyme database matching user criteria.
 
     :param connection: open connection to SQLite db engine
@@ -187,15 +226,6 @@ def get_db_proteins(connection, args):
 
     if args.genbank_accessions is None and args.uniprot_accessions is None:
         # get user config data
-        (
-            config_dict,
-            class_filters,
-            family_filters,
-            kingdom_filters,
-            taxonomy_filter_dict,
-            ec_filters,
-        ) = get_expansion_configuration(args)
-
         gbk_dict.update(get_selected_gbks.get_genbank_accessions(
             class_filters,
             family_filters,
