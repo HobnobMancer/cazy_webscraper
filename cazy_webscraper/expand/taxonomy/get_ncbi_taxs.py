@@ -105,6 +105,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
     
     if args.lineage_cache is not None:
+        logger.info("Adding cached lineages to local CAZyme db")
         try:
             with open(args.lineage_cache, "r") as fh:
                 tax_prot_dict = json.load(fh)
@@ -118,56 +119,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             sys.exit(1)
     
     else:
-        # get config data
-        (
-            config_dict,
-            class_filters,
-            family_filters,
-            kingdom_filters,
-            taxonomy_filter_dict,
-            ec_filters,
-        ) = get_expansion_configuration(args)
-
-        gbk_dict = {}
-
-        if args.genbank_accessions is not None:
-            logger.warning(f"Getting GenBank accessions from file: {args.genbank_accessions}")
-            with open(args.genbank_accessions, "r") as fh:
-                lines = fh.read().splitlines()
-            
-            accessions = [line.strip() for line in lines]
-            accessions = set(accessions)
-
-            gbk_dict = get_selected_gbks.get_ids(accessions, connection)
-
-        if args.uniprot_accessions is not None:
-            logger.warning(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
-            gbk_table_dict = get_gbk_table_dict(connection)
-            uniprot_table_dict = get_uniprot_table_dict(connection)
-            gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
-
-        else:
-            gbk_dict.update(get_selected_gbks.get_genbank_accessions(
-                class_filters,
-                family_filters,
-                taxonomy_filter_dict,
-                kingdom_filters,
-                ec_filters,
-                connection,
-            ))
-        
-        if args.update_gbk is False:
-            # filter gbk accessions to those proteins with no ncbi tax data
-            gbk_db_ids = get_no_tax_gbk_table_dict(connection)
-
-            filtered_gbk_dict = {}
-
-            for gbk_acc in gbk_dict:
-                if gbk_dict[gbk_acc] in gbk_db_ids:
-                    filtered_gbk_dict[gbk_acc] = gbk_dict[gbk_acc]
-            
-            gbk_dict = filtered_gbk_dict
-
+        gbk_dict = get_proteins(connection, args)
+    
         tax_ids, prot_id_dict = get_ncbi_tax_prot_ids(list(gbk_dict.keys()), cache_dir, args)
         # Returns a set of NCBI Tax ids and dict {ncbi prot id: prot acc}
 
@@ -205,6 +158,70 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info("Added lineage data to protein records in db")
 
     closing_message("Get NCBI Taxonomy data", start_time, args)
+
+
+def get_proteins(connection, args):
+    """Retrieve proteins from local CAZyme database matching user criteria.
+    
+    :param connection: open connection to SQLite db engine
+    :param args: cmd-line args parser
+    
+    Return dict {}
+    """
+    logger = logging.getLogger(__name__)
+
+    gbk_dict = {}
+
+    if args.genbank_accessions is not None:
+        logger.warning(f"Getting GenBank accessions from file: {args.genbank_accessions}")
+        with open(args.genbank_accessions, "r") as fh:
+            lines = fh.read().splitlines()
+        
+        accessions = [line.strip() for line in lines]
+        accessions = set(accessions)
+
+        gbk_dict = get_selected_gbks.get_ids(accessions, connection)
+
+    if args.uniprot_accessions is not None:
+        logger.warning(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
+        gbk_table_dict = get_gbk_table_dict(connection)
+        uniprot_table_dict = get_uniprot_table_dict(connection)
+
+        gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
+
+    if args.genbank_accessions is None and args.uniprot_accessions is None:
+        # get user config data
+        (
+            config_dict,
+            class_filters,
+            family_filters,
+            kingdom_filters,
+            taxonomy_filter_dict,
+            ec_filters,
+        ) = get_expansion_configuration(args)
+
+        gbk_dict.update(get_selected_gbks.get_genbank_accessions(
+            class_filters,
+            family_filters,
+            taxonomy_filter_dict,
+            kingdom_filters,
+            ec_filters,
+            connection,
+        ))
+
+    if args.update_gbk is False:
+        # filter gbk accessions to those proteins with no ncbi tax data
+        gbk_db_ids = get_no_tax_gbk_table_dict(connection)
+
+        filtered_gbk_dict = {}
+
+        for gbk_acc in gbk_dict:
+            if gbk_dict[gbk_acc] in gbk_db_ids:
+                filtered_gbk_dict[gbk_acc] = gbk_dict[gbk_acc]
+        
+        gbk_dict = filtered_gbk_dict
+
+    return gbk_dict
 
 
 def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
