@@ -169,13 +169,6 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--lineage_cache",
-        type=Path,
-        default=None,
-        help="Path to previously cached lineage dict",
-    )
-
-    parser.add_argument(
         "--nodelete_cache",
         dest="nodelete_cache",
         action="store_true",
@@ -241,6 +234,13 @@ def build_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help="Update existing records in the NcbiTaxs table",
+    )
+
+    parser.add_argument(
+        "--use_lineage_cache",
+        type=Path,
+        default=None,
+        help="Path to previously cached lineage dict",
     )
 
     parser.add_argument(
