@@ -162,20 +162,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         tax_prot_dict = get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args)
         # {tax_id: {linaege info, 'proteins' {local db protein ids}}
 
-        # cache taxonomy
-        cache_tax_dict = {}
-
-        for tax_id in tax_prot_dict:
-            cache_tax_dict[tax_id] = {}
-            for key in tax_prot_dict[tax_id]:
-                if key == 'proteins':
-                    cache_tax_dict[tax_id]['proteins'] = list(tax_prot_dict[tax_id]['proteins'])
-                else:
-                    cache_tax_dict[tax_id][key] = tax_prot_dict[tax_id][key]
-
-        with open((cache_dir/"lineage_data.json"), "w") as fh:
-            json.dump(cache_tax_dict, fh)
-        logger.info(f"Cached lineage data")
+        cache_taxonomy(tax_prot_dict, cache_dir)
 
     add_ncbi_taxonomies(tax_prot_dict, connection, args)
     logger.info("Added lineage data to db")
@@ -184,6 +171,31 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info("Added lineage data to protein records in db")
 
     closing_message("Get NCBI Taxonomy data", start_time, args)
+
+
+def cache_taxonomy(tax_prot_dict, cache_dir):
+    """Cache retrieved taxonomy data
+    
+    :param tax_prot_dict: dict, {tax_id: {linaege info, 'proteins' {local db protein ids}}}
+    :param cache_dir: Path, path to cache dir
+    
+    Return nothing
+    """
+    logger = logging.getLogger(__name__)
+
+    cache_tax_dict = {}
+
+    for tax_id in tax_prot_dict:
+        cache_tax_dict[tax_id] = {}
+        for key in tax_prot_dict[tax_id]:
+            if key == 'proteins':
+                cache_tax_dict[tax_id]['proteins'] = list(tax_prot_dict[tax_id]['proteins'])
+            else:
+                cache_tax_dict[tax_id][key] = tax_prot_dict[tax_id][key]
+
+    with open((cache_dir/"lineage_data.json"), "w") as fh:
+        json.dump(cache_tax_dict, fh)
+    logger.info(f"Cached lineage data")
 
 
 def get_db_proteins(
