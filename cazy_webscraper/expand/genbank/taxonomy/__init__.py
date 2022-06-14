@@ -38,4 +38,3 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 """Retrieve NCBI Taxonomy data and add to the local CAZyme database to expand the dataset"""
-
