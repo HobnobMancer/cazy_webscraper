@@ -243,6 +243,23 @@ def build_parser(argv: Optional[List] = None):
         help="Update existing records in the NcbiTaxs table",
     )
 
+    parser.add_argument(
+        "--use_protein_ids",
+        type=Path,
+        default=None,
+        help=(
+            "Skip retrieving NCBI proteins IDs and use IDs from\n"
+            "tab delimited list 'NCBI_Prot_Id\tProt_Acc'"
+        ),
+    )
+
+    parser.add_argument(
+        "--use_tax_ids",
+        type=Path,
+        default=None,
+        help="Skip retrieving NCBI Tax IDs and use IDs in plain text file",
+    )
+
     # Add option for more detail (verbose) logging
     parser.add_argument(
         "-v",
