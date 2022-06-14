@@ -40,7 +40,6 @@
 """Get lineage database from NCBI"""
 
 
-from functools import cache
 import json
 import logging
 import sys
