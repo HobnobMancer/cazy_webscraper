@@ -40,6 +40,7 @@
 """Get lineage database from NCBI"""
 
 
+from functools import cache
 import json
 import logging
 import sys
@@ -577,6 +578,9 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
                     )
                     del failed_lineage_ids[tax_id]
                     completely_failed_tax_ids.add(f"{tax_id}\tCould not retrieve lineage data")
+    
+    with open((cache_dir/"ncbi_lineages.json"), "w") as fh:
+        json.dump(lineage_dict, fh)
 
     # retrieve proteins linked to taxon record in NCBI
     tax_prot_dict = {}
@@ -594,6 +598,7 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
             tax_prot_dict,
             prot_id_dict,
             gbk_dict,
+            cache_dir,
             args,
         )
         # {tax_id: {local db protein ids}}
@@ -610,6 +615,7 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
                     tax_prot_dict,
                     prot_id_dict,
                     gbk_dict,
+                    cache_dir,
                     args,
                 )
 
@@ -730,13 +736,14 @@ def get_lineage(tax_id, lineage_dict, args):
     return lineage_dict, True
 
 
-def get_tax_proteins(tax_id, tax_prot_dict, prot_id_dict, gbk_dict, args):
+def get_tax_proteins(tax_id, tax_prot_dict, prot_id_dict, gbk_dict, cache_dir, args):
     """Get the proteins linked to a tax id in NCBI, and link the tax id with the local db protein ids
 
     :param tax_id: str, NCBI tax db id
     :param tax_prot_dict: {ncbi tax id: {local db protein ids}}
     :param prot_id_dict: dict {protein ncbi id: prot acc}
     :param gbk_dict: dict, {prot acc: local db id}
+    :param cache_dir: Path, path to cache dir
     :param args: cmd-line args parser
 
     Return dict {tax_id: {local db protein ids}} and bool (True=success, False=failed)
@@ -775,7 +782,17 @@ def get_tax_proteins(tax_id, tax_prot_dict, prot_id_dict, gbk_dict, args):
                 except KeyError:
                     continue
 
-                prot_local_db_id = gbk_dict[prot_ver_acc]
+                try:
+                    prot_local_db_id = gbk_dict[prot_ver_acc]
+                except KeyError:
+                    logger.error(
+                        "Did not previously retrieved data from the local "
+                        f"db for {prot_local_db_id}\n"
+                        "Caching and skipping protein"
+                    )
+                    with open((cache_dir/"failed_local_db_retrieval.out"), "a") as fh:
+                        fh.write(f"{prot_local_db_id}\n")
+                    continue
 
                 tax_prot_dict[tax_id].add(prot_local_db_id)
 
