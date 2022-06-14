@@ -223,6 +223,9 @@ def test_main_using_lineage_cache(
             {1, 2, 3},
         )
 
+    def mock_get_lineage(*args, **kwards):
+        return {'tax_id': {'linaege info': 'kingdom', 'proteins': {'local db protein ids'}}}
+
     monkeypatch.setattr(tax_ncbi_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(saint_logger, "config_logger", mock_return_logger)
@@ -306,6 +309,9 @@ def test_main_using_lineage_cache_fails(
             },
             {1, 2, 3},
         )
+
+    def mock_get_lineage(*args, **kwards):
+        return {'tax_id': {'linaege info': 'kingdom', 'proteins': {'local db protein ids'}}}
 
     monkeypatch.setattr(tax_ncbi_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
