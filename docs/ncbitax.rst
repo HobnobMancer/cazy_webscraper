@@ -33,8 +33,8 @@ The NCBI taxonomy classifications retrieved from the NCBI Taxonomy database are 
 Each unique organism strain retrieved from NCBI is stored as a unique record in the ``NcbiTaxs`` table, which lists for each record the:
 * Superkingdom (referred to as the kingdom)
 * Phylum
-* Class (called tax_class in the database)
-* Order
+* Class (called tax_class in the database due to keyword clash with Python)
+* Order (called tax_order in the database due to keyword clash with SLQ)
 * Family
 * Genus
 * Species
