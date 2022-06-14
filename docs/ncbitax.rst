@@ -89,6 +89,12 @@ Command line options
 
 ``--update_taxs`` - Update existing NCBI taxonomy data in the ``NcbiTaxs`` table. By default onlt add new NCBI taxonomy data, do not update (and thus overwrite) existing data.
 
+``--use_lineage_cache`` - Use cached lineage data previously compliled by ``cazy_webscraper`` - skips retrieving NCBI Tax and Protein IDs and lineage data from NCBI
+
+``--use_protein_ids`` - Path to plain text file containing a tab delimited list of (1) NCBI Protein ID and (2) NCBI sequence version accession. Used cached NCBI Protein IDs.
+
+``--use_tax_ids`` - Path to plain text file listing a unique NCBI Taxonomy ID per line. Get lineages for cached NCBI Tax IDs.
+
 ``--verbose``, ``-v`` - Enable verbose logging. This does **not** set the SQLite engine ``echo`` parameter to True. Default: False.
 
 
