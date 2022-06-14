@@ -85,7 +85,7 @@ def test_main(
 
     def mock_parser(*args, **kwargs):
         parser = Namespace(
-            cache_dir=(test_dir / "test_outputs" / "test_outputs_uniprot"),
+            cache_dir=(test_dir / "test_outputs" / "test_outputs_ncbi"),
             email="dummyemail",
             nodelete_cache=False,
             batch_size=150,
@@ -93,14 +93,14 @@ def test_main(
             classes=None,
             database="fake_database_path",
             ec_filter=None,
-            force=False,
+            force=True,
             families=None,
             genbank_accessions=None,
             genera=None,
             get_pages=True,
             kingdoms=None,
             log=None,
-            nodelete=False,
+            nodelete=True,
             output=None,
             retries=10,
             sequence=True,
@@ -169,7 +169,7 @@ def test_main_using_lineage_cache(
 
     def mock_parser(*args, **kwargs):
         parser = Namespace(
-            cache_dir=(test_dir / "test_outputs" / "test_outputs_uniprot"),
+            cache_dir=(test_dir / "test_outputs" / "test_outputs_ncbi"),
             email="dummyemail",
             nodelete_cache=False,
             batch_size=150,
@@ -177,14 +177,14 @@ def test_main_using_lineage_cache(
             classes=None,
             database="fake_database_path",
             ec_filter=None,
-            force=False,
+            force=True,
             families=None,
             genbank_accessions=None,
             genera=None,
             get_pages=True,
             kingdoms=None,
             log=None,
-            nodelete=False,
+            nodelete=True,
             output=None,
             retries=10,
             sequence=True,
@@ -253,7 +253,7 @@ def test_main_using_lineage_cache_fails(
 
     def mock_parser(*args, **kwargs):
         parser = Namespace(
-            cache_dir=(test_dir / "test_outputs" / "test_outputs_uniprot"),
+            cache_dir=(test_dir / "test_outputs" / "test_outputs_ncbi"),
             email="dummyemail",
             nodelete_cache=False,
             batch_size=150,
@@ -261,14 +261,14 @@ def test_main_using_lineage_cache_fails(
             classes=None,
             database="fake_database_path",
             ec_filter=None,
-            force=False,
+            force=True,
             families=None,
             genbank_accessions=None,
             genera=None,
             get_pages=True,
             kingdoms=None,
             log=None,
-            nodelete=False,
+            nodelete=True,
             output=None,
             retries=10,
             sequence=True,
