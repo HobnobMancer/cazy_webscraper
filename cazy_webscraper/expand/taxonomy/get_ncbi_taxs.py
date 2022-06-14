@@ -260,7 +260,7 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
         for line in cached_prot_data:
             if line == "\n":
                 continue
-            prot_id_dict[line.split("\t")[0].strip()] = line.split("\t")[1].strip().replaced("\n")
+            prot_id_dict[line.split("\t")[0].strip()] = line.split("\t")[1].strip().replace("\n")
 
         return tax_ids, prot_id_dict
 
@@ -297,7 +297,7 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
             for line in cached_prot_data:
                 if line == "\n":
                     continue
-                prot_id_dict[line.split("\t")[0].strip()] = line.split("\t")[1].strip().replaced("\n")
+                prot_id_dict[line.split("\t")[0].strip()] = line.split("\t")[1].strip().replace("\n")
 
     # Returns a set of NCBI Tax ids and dict {ncbi prot id: prot acc}
 
