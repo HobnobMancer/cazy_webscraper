@@ -21,7 +21,7 @@ the retrieval of taxonomic classifications from NCBI. These tutorials are design
 
 .. NOTE::
   If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cw_get_ncbi_taxs`` - this is the method used in this tutorial.  
-  If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/expand/taxonomy/get_ncbi_taxs.py``.
+  If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/expand/genbank/taxonomy/get_ncbi_taxs.py``.
 
 From this point on, we will be discussed the ``cw_get_ncbi_taxs``, which is the entry point for 
 retrieving data from NCBI Taxonomy. We also presume you are comfortable configuring ``cazy_webscraper`` for the 
