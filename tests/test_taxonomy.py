@@ -48,21 +48,7 @@ pytest -v
 import logging
 import pytest
 
-from argparse import ArgumentParser
-
 from cazy_webscraper import taxonomy
-
-
-@pytest.fixture
-def mock_building_parser(*args, **kwargs):
-    parser_args = ArgumentParser(
-        prog="get_ncbi_taxonomy.py",
-        usage=None,
-        description="Get lineages from NCBI",
-        conflict_handler="error",
-        add_help=True,
-    )
-    return parser_args
 
 
 @pytest.fixture

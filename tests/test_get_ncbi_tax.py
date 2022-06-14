@@ -61,6 +61,18 @@ from cazy_webscraper.sql.sql_interface.add_data import add_ncbi_tax_data
 from cazy_webscraper.utilities.parsers import tax_ncbi_parser
 
 
+@pytest.fixture
+def mock_building_parser(*args, **kwargs):
+    parser_args = ArgumentParser(
+        prog="get_ncbi_taxonomy.py",
+        usage=None,
+        description="Get lineages from NCBI",
+        conflict_handler="error",
+        add_help=True,
+    )
+    return parser_args
+
+
 def test_main(
     mock_building_parser,
     mock_return_logger,
