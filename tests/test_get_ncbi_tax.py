@@ -86,6 +86,7 @@ def test_main(
     def mock_parser(*args, **kwargs):
         parser = Namespace(
             cache_dir=(test_dir / "test_outputs" / "test_outputs_uniprot"),
+            email="dummyemail",
             nodelete_cache=False,
             batch_size=150,
             config=None,
@@ -169,6 +170,7 @@ def test_main_using_lineage_cache(
     def mock_parser(*args, **kwargs):
         parser = Namespace(
             cache_dir=(test_dir / "test_outputs" / "test_outputs_uniprot"),
+            email="dummyemail",
             nodelete_cache=False,
             batch_size=150,
             config=None,
@@ -252,6 +254,7 @@ def test_main_using_lineage_cache_fails(
     def mock_parser(*args, **kwargs):
         parser = Namespace(
             cache_dir=(test_dir / "test_outputs" / "test_outputs_uniprot"),
+            email="dummyemail",
             nodelete_cache=False,
             batch_size=150,
             config=None,
