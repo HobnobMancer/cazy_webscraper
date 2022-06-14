@@ -307,4 +307,6 @@ def test_main_using_lineage_cache_fails(
     monkeypatch.setattr(add_ncbi_tax_data, "update_genbank_ncbi_tax", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "closing_message", mock_return_none)
 
-    get_ncbi_taxs.main()
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        get_ncbi_taxs.main()
+    assert pytest_wrapped_e.type == SystemExit
