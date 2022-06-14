@@ -126,6 +126,9 @@ def test_main(
     def mock_get_genbank_accessions(*args, **kwards):
         return {1: 1, 2: 2, 3: 3}
 
+    def mock_get_lineage(*args, **kwards):
+        return {'tax_id': {'linaege info': 'kingdom', 'proteins': {'local db protein ids'}}}
+
     def mock_get_ncbi_data(*args, **kwards):
         return (
             {
@@ -146,7 +149,7 @@ def test_main(
     # not using cached lineages
     monkeypatch.setattr(get_ncbi_taxs, "get_db_proteins", mock_get_genbank_accessions)
     monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_ids", mock_get_ncbi_data)
-    monkeypatch.setattr(get_ncbi_taxs, "get_lineage_protein_data", mock_get_genbank_accessions)
+    monkeypatch.setattr(get_ncbi_taxs, "get_lineage_protein_data", mock_get_lineage)
     # mock adding data to the local CAZyme database
     monkeypatch.setattr(get_ncbi_taxs, "add_ncbi_taxonomies", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "update_genbank_ncbi_tax", mock_return_none)
@@ -230,7 +233,7 @@ def test_main_using_lineage_cache(
     # not using cached lineages
     monkeypatch.setattr(get_ncbi_taxs, "get_db_proteins", mock_get_genbank_accessions)
     monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_ids", mock_get_ncbi_data)
-    monkeypatch.setattr(get_ncbi_taxs, "get_lineage_protein_data", mock_get_genbank_accessions)
+    monkeypatch.setattr(get_ncbi_taxs, "get_lineage_protein_data", mock_get_lineage)
     # mock adding data to the local CAZyme database
     monkeypatch.setattr(get_ncbi_taxs, "add_ncbi_taxonomies", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "update_genbank_ncbi_tax", mock_return_none)
@@ -314,7 +317,7 @@ def test_main_using_lineage_cache_fails(
     # not using cached lineages
     monkeypatch.setattr(get_ncbi_taxs, "get_db_proteins", mock_get_genbank_accessions)
     monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_ids", mock_get_ncbi_data)
-    monkeypatch.setattr(get_ncbi_taxs, "get_lineage_protein_data", mock_get_genbank_accessions)
+    monkeypatch.setattr(get_ncbi_taxs, "get_lineage_protein_data", mock_get_lineage)
     # mock adding data to the local CAZyme database
     monkeypatch.setattr(get_ncbi_taxs, "add_ncbi_taxonomies", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "update_genbank_ncbi_tax", mock_return_none)
