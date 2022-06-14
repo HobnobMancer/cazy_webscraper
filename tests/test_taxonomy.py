@@ -85,7 +85,7 @@ def test_multi_taxa_invalid(cazy_data, monkeypatch):
 
     def mock_replace_multiple(*args, **kwards):
         return cazy_data, False
-    
+
     monkeypatch.setattr(taxonomy, "replace_multiple_tax", mock_replace_multiple)
 
     taxonomy.replace_multiple_tax_with_invalid_ids(cazy_data, gbk_accs, logger, "args")
@@ -98,8 +98,7 @@ def test_multi_taxa(cazy_data, monkeypatch):
 
     def mock_replace_multiple(*args, **kwards):
         return cazy_data, True
-    
+
     monkeypatch.setattr(taxonomy, "replace_multiple_tax", mock_replace_multiple)
 
     taxonomy.replace_multiple_tax_with_invalid_ids(cazy_data, gbk_accs, logger, "args")
-    
