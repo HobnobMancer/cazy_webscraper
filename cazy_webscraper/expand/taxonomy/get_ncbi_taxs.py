@@ -107,15 +107,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_dir = cache_dir / "ncbi_tax_retrieval"
         file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
-    if args.lineage_cache is not None:
+    if args.use_lineage_cache is not None:
         logger.info("Adding cached lineages to local CAZyme db")
         try:
-            with open(args.lineage_cache, "r") as fh:
+            with open(args.use_lineage_cache, "r") as fh:
                 tax_prot_dict = json.load(fh)
         except FileNotFoundError:
             logger.error(
                 "Could not find lineage cache at \n"
-                f"{str(args.lineage_cache)}\n"
+                f"{str(args.use_lineage_cache)}\n"
                 "Check path is correct\n"
                 "Terminating program"
             )
@@ -123,8 +123,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     else:
         gbk_dict = get_db_proteins(connection, args)
-        
-        tax_ids, prot_id_dict = get_ids(gbk_dict, cache_dir, args)
+
+        tax_ids, prot_id_dict = get_ncbi_ids(gbk_dict, cache_dir, args)
 
         tax_prot_dict = get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args)
         # {tax_id: {linaege info, 'proteins' {local db protein ids}}
@@ -231,11 +231,12 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
     """
     logger = logging.getLogger(__name__)
 
-    if args.use_tax_ids is not None and args.use_protein_ids is not None:
+    if (args.use_tax_ids is not None) and (args.use_protein_ids is not None):
+        print("USING CACHE")
         logger.info("Using only cached NCBI Tax and Protein IDs")
         try:
             with open(args.use_tax_ids, "r") as fh:
-                tax_ids = [_.replaced("\n","") for _ in fh.read().splitlines() if _ != "\n"]
+                tax_ids = [_.replace("\n", "") for _ in fh.read().splitlines() if _ != "\n"]
         except FileNotFoundError:
             logger.error(
                 f"Could not find Tax ID cache at:\n{str(args.use_tax_ids)}\n"
@@ -246,7 +247,7 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
 
         try:
             with open(args.use_protein_ids, "r") as fh:
-                cached_prot_data = fh.read().splitlines
+                cached_prot_data = fh.read().splitlines()
         except FileNotFoundError:
             logger.error(
                 f"Could not find NCBI Protein ID cache at:\n{str(args.use_protein_ids)}\n"
@@ -270,7 +271,7 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
             logger.info("Using cached NCBI Tax IDs")
             try:
                 with open(args.use_tax_ids, "r") as fh:
-                    tax_ids = [_.replaced("\n","") for _ in fh.read().splitlines() if _ != "\n"]
+                    tax_ids = [_.replace("\n", "") for _ in fh.read().splitlines() if _ != "\n"]
             except FileNotFoundError:
                 logger.error(
                     f"Could not find Tax ID cache at:\n{str(args.use_tax_ids)}\n"
@@ -283,7 +284,7 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
             logger.info("Using cached NCBI Protein IDs")
             try:
                 with open(args.use_protein_ids, "r") as fh:
-                    cached_prot_data = fh.read().splitlines
+                    cached_prot_data = fh.read().splitlines()
             except FileNotFoundError:
                 logger.error(
                     f"Could not find NCBI Protein ID cache at:\n{str(args.use_protein_ids)}\n"
@@ -334,7 +335,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
 
     for batch in tqdm(batches, desc="Getting NCBI Tax IDs"):
 
-        new_tax_ids, new_prot_ids, failed_batches = get_ncbi_ids(batch, args, failed_batches)
+        new_tax_ids, new_prot_ids, failed_batches = get_ids_from_ncbi(batch, args, failed_batches)
 
         tax_ids = tax_ids.union(new_tax_ids)
         protein_ncbi_ids.update(new_prot_ids)
@@ -345,7 +346,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
         for batch in tqdm(failed_batches, "Retrying failed batches"):
             batch_proteins = failed_batches[batch]['proteins']
             for prot in batch_proteins:
-                new_tax_ids, new_prot_ids, failed_individuals = get_ncbi_ids(
+                new_tax_ids, new_prot_ids, failed_individuals = get_ids_from_ncbi(
                     [prot],
                     args,
                     failed_individuals,
@@ -373,7 +374,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
                     except KeyError:
                         continue
 
-                new_tax_ids, new_prot_ids, failed_individuals = get_ncbi_ids(
+                new_tax_ids, new_prot_ids, failed_individuals = get_ids_from_ncbi(
                     prot,
                     args,
                     failed_individuals,
@@ -402,7 +403,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
     return tax_ids, protein_ncbi_ids
 
 
-def get_ncbi_ids(prots, args, failed_batches):
+def get_ids_from_ncbi(prots, args, failed_batches):
     """Retrieve NCBI Taxonomy and Protein database IDs, for first time or retried attempts.
 
     :param protein_accessions: list of NCBI protein version accessions
