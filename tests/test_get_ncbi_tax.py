@@ -156,6 +156,7 @@ def test_main(
     monkeypatch.setattr(add_ncbi_tax_data, "add_ncbi_taxonomies", mock_return_none)
     monkeypatch.setattr(add_ncbi_tax_data, "update_genbank_ncbi_tax", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "closing_message", mock_return_none)
+    monkeypatch.setattr(get_ncbi_taxs, "cache_taxonomy", mock_return_none)
 
     get_ncbi_taxs.main()
 
@@ -243,6 +244,7 @@ def test_main_using_lineage_cache(
     monkeypatch.setattr(add_ncbi_tax_data, "add_ncbi_taxonomies", mock_return_none)
     monkeypatch.setattr(add_ncbi_tax_data, "update_genbank_ncbi_tax", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "closing_message", mock_return_none)
+    monkeypatch.setattr(get_ncbi_taxs, "cache_taxonomy", mock_return_none)
 
     get_ncbi_taxs.main()
 
@@ -320,6 +322,7 @@ def test_main_using_lineage_cache_fails(
     monkeypatch.setattr("cazy_webscraper.expand.genbank.taxonomy.get_ncbi_taxs.make_output_directory", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "get_expansion_configuration", mock_get_expansion_configuration)
     monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
+    monkeypatch.setattr(get_ncbi_taxs, "cache_taxonomy", mock_return_none)
     # not using cached lineages
     monkeypatch.setattr(get_ncbi_taxs, "get_db_proteins", mock_get_genbank_accessions)
     monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_ids", mock_get_ncbi_data)
