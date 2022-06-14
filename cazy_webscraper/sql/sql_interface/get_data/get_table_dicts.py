@@ -41,6 +41,8 @@
 """Retrieve all objects from a db table and parse the data to build a dict, repr the current table state."""
 
 
+import logging
+
 from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_orm import (
@@ -187,6 +189,8 @@ def get_no_tax_gbk_table_dict(connection):
     
     Return list of gbk table ids
     """
+    logger = logging.getLogger(__name__)
+
     with Session(bind=connection) as session:
         all_genbank = session.query(Genbank).all()
 
@@ -196,6 +200,8 @@ def get_no_tax_gbk_table_dict(connection):
         if gbk.ncbi_id is None:
             gbk_db_ids.add(gbk.genbank_id)
     
+    logger.info(f"{len(gbk_db_ids)} Gbk records in db do not have a NCBI Tax ID")
+
     return gbk_db_ids
 
 
