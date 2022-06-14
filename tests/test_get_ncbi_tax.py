@@ -140,7 +140,7 @@ def test_main(
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(saint_logger, "config_logger", mock_return_logger)
     monkeypatch.setattr(get_ncbi_taxs, "connect_existing_db", mock_connect_existing_db)
-    monkeypatch.setattr("cazy_webscraper.expand.uniprot.get_uniprot_data.make_output_directory", mock_return_none)
+    monkeypatch.setattr("cazy_webscraper.expand.genbank.taxonomy.get_ncbi_taxs.make_output_directory", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "get_expansion_configuration", mock_get_expansion_configuration)
     monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
     # not using cached lineages
@@ -224,7 +224,7 @@ def test_main_using_lineage_cache(
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(saint_logger, "config_logger", mock_return_logger)
     monkeypatch.setattr(get_ncbi_taxs, "connect_existing_db", mock_connect_existing_db)
-    monkeypatch.setattr("cazy_webscraper.expand.uniprot.get_uniprot_data.make_output_directory", mock_return_none)
+    monkeypatch.setattr("cazy_webscraper.expand.genbank.taxonomy.get_ncbi_taxs.make_output_directory", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "get_expansion_configuration", mock_get_expansion_configuration)
     monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
     # not using cached lineages
@@ -308,7 +308,7 @@ def test_main_using_lineage_cache_fails(
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(saint_logger, "config_logger", mock_return_logger)
     monkeypatch.setattr(get_ncbi_taxs, "connect_existing_db", mock_connect_existing_db)
-    monkeypatch.setattr("cazy_webscraper.expand.uniprot.get_uniprot_data.make_output_directory", mock_return_none)
+    monkeypatch.setattr("cazy_webscraper.expand.genbank.taxonomy.get_ncbi_taxs.make_output_directory", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "get_expansion_configuration", mock_get_expansion_configuration)
     monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
     # not using cached lineages
