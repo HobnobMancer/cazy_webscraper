@@ -56,6 +56,7 @@ from sqlalchemy.exc import IntegrityError
 from cazy_webscraper.expand.genbank.taxonomy import get_ncbi_taxs
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
+from cazy_webscraper.sql.sql_interface.add_data import add_ncbi_tax_data
 from cazy_webscraper.utilities.parsers import tax_ncbi_parser
 
 
@@ -94,6 +95,7 @@ def test_main(
             species=None,
             strains=None,
             uniprot_accessions=None,
+            use_lineage_cache=None,
             verbose=False,
         )
         return parser
@@ -108,10 +110,17 @@ def test_main(
         return config_dict, set(), set(), set(), dict(), set()
 
     def mock_get_genbank_accessions(*args, **kwards):
-        return {1: 1, 2:2, 3:3}
-    
-    def mock_get_uniprot_data(*args, **kwards):
-        return {1: {'ec': {1,2,3}, 'pdb': {1,2,3}}, 2: {'ec': {1,2,3}, 'pdb': {1,2,3}}, 3: {'ec': {1,2,3}, 'pdb': {1,2,3}}}, {1, 2, 3}
+        return {1: 1, 2: 2, 3: 3}
+
+    def mock_get_ncbi_data(*args, **kwards):
+        return (
+            {
+                1: {'ec': {1, 2, 3}, 'pdb': {1, 2, 3}},
+                2: {'ec': {1, 2, 3}, 'pdb': {1, 2, 3}},
+                3: {'ec': {1, 2, 3}, 'pdb': {1, 2, 3}}
+            },
+            {1, 2, 3},
+        )
 
     monkeypatch.setattr(tax_ncbi_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
@@ -120,17 +129,14 @@ def test_main(
     monkeypatch.setattr("cazy_webscraper.expand.uniprot.get_uniprot_data.make_output_directory", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "get_expansion_configuration", mock_get_expansion_configuration)
     monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
-    monkeypatch.setattr(get_selected_gbks, "get_genbank_accessions", mock_get_genbank_accessions)
-    monkeypatch.setattr(get_uniprot_data, "get_uniprot_accessions", mock_get_genbank_accessions)
-    monkeypatch.setattr(get_uniprot_data, "get_uniprot_data", mock_get_uniprot_data)
-    monkeypatch.setattr(get_uniprot_data, "add_uniprot_accessions", mock_return_none)
-    monkeypatch.setattr(get_uniprot_data, "add_ec_numbers", mock_return_none)
-    monkeypatch.setattr(get_uniprot_data, "add_pdb_accessions", mock_return_none)
-    monkeypatch.setattr(cazy_webscraper, "closing_message", mock_return_none)
-
-    output = test_dir / "test_outputs" / "test_outputs_uniprot"
-    output.mkdir(parents=True, exist_ok=True)
-    get_uniprot_data.main()
-    shutil.rmtree((test_dir / "test_outputs" / "test_outputs_uniprot"))
-    output.mkdir(parents=True, exist_ok=True)
-
+    # not using cached lineages
+    monkeypatch.setattr(get_ncbi_taxs, "get_db_proteins", mock_get_genbank_accessions)
+    monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_ids", mock_get_ncbi_data)
+    monkeypatch.setattr(get_ncbi_taxs, "get_lineage_protein_data", mock_get_genbank_accessions)
+    # mock adding data to the local CAZyme database
+    monkeypatch.setattr(get_ncbi_taxs, "add_ncbi_taxonomies", mock_return_none)
+    monkeypatch.setattr(get_ncbi_taxs, "update_genbank_ncbi_tax", mock_return_none)
+    monkeypatch.setattr(add_ncbi_tax_data, "add_ncbi_taxonomies", mock_return_none)
+    monkeypatch.setattr(add_ncbi_tax_data, "update_genbank_ncbi_tax", mock_return_none)
+    monkeypatch.setattr(get_ncbi_taxs, "closing_message", mock_return_none)
+    
