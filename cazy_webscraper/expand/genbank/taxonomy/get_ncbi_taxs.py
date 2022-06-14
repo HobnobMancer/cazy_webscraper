@@ -53,6 +53,7 @@ from typing import List, Optional
 from Bio import Entrez
 from saintBioutils.utilities.logger import config_logger
 from saintBioutils.utilities import file_io
+from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
 
@@ -125,11 +126,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
         logger.info("Building cache dir")
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
         logger.info("Building cache dir")
         cache_dir = cache_dir / "ncbi_tax_retrieval"
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     if args.use_lineage_cache is not None:
         logger.info("Adding cached lineages to local CAZyme db")
