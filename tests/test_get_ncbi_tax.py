@@ -423,3 +423,38 @@ def test_get_lineage(monkeypatch):
                 'kingdom': None, 'phylum': None, 'class': None, 'order': None, 'family': None, 'genus': None, 'species': 'cellular organisms', 'strain': None
             }},
             True)
+
+
+def test_get_linked_proteins(monkeypatch):
+    """Get mocked output at https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?db=protein&dbfrom=taxonomy&id=51453&linkname=taxonomy_protein"""
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    efetch_result = "tests/test_inputs/test_inputs_ncbi_tax/efetchLinkedProteins.xml"
+
+    with open(efetch_result, "rb") as fh:
+        result = fh
+
+        def mock_entrez_tax_call(*args, **kwargs):
+            """Mocks call to Entrez to retrieve taxonomy record."""
+            return result
+
+        monkeypatch.setattr(get_ncbi_taxs, "entrez_retry", mock_entrez_tax_call)
+
+        output = get_ncbi_taxs.get_lineage(
+            '51453',
+            {'51453': {}},
+            {
+                '2206269991': 'gbk_acc_1',
+                '2206269987': 'gbk_acc_2',
+            },
+            {'gbk_acc_1': 'db_id1', 'gbk_acc_2': 'db_id2'},
+            "tests/test_outputs/test_ncbi_tax",
+            argsdict['args'],
+        )
+        assert output == (
+            {'2': {
+                'kingdom': None, 'phylum': None, 'class': None, 'order': None, 'family': None, 'genus': None, 'species': 'cellular organisms', 'strain': None
+            }},
+            True)
