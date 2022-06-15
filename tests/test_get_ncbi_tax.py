@@ -396,7 +396,7 @@ def test_get_lineage_fails(monkeypatch):
 
     monkeypatch.setattr(get_ncbi_taxs, "entrez_retry", mock_entrez_tax_call)
 
-    output = get_ncbi_taxs.get_lineage('2', {}, argsdict['args'])
+    output = get_ncbi_taxs.get_lineage('2700054', {}, argsdict['args'])
     assert output == ({}, False)
 
 
@@ -417,7 +417,7 @@ def test_get_lineage(monkeypatch):
 
         monkeypatch.setattr(get_ncbi_taxs, "entrez_retry", mock_entrez_tax_call)
 
-        output = get_ncbi_taxs.get_lineage('2', {}, argsdict['args'])
+        output = get_ncbi_taxs.get_lineage('2700054', {}, argsdict['args'])
         assert output == (
             {'2': {
                 'kingdom': None, 'phylum': None, 'class': None, 'order': None, 'family': None, 'genus': None, 'species': 'cellular organisms', 'strain': None
