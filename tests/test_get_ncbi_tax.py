@@ -384,11 +384,42 @@ def test_get_db_proteins(monkeypatch):
 
     get_ncbi_taxs.get_db_proteins(set(), set(), set(), {}, set(), 'db_connection', argsdict['args'])
 
-    # with open(efetch_result, "rb") as fh:
-    #     result = fh
 
-    #     def mock_entrez_sci_call(*args, **kwargs):
-    #         """Mocks call to Entrez to retrieve scientific name."""
-    #         return result
+def test_get_lineage_fails(monkeypatch):
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
 
-    #     monkeypatch.setattr(get_ncbi_genomes, "entrez_retry", mock_entrez_sci_call)
+    def mock_entrez_tax_call(*args, **kwargs):
+        """Mocks call to Entrez to retrieve taxonomy record."""
+        return None
+
+    monkeypatch.setattr(get_ncbi_taxs, "entrez_retry", mock_entrez_tax_call)
+
+    output = get_ncbi_taxs.get_lineage('2', {}, argsdict['args'])
+    assert output == ({}, False)
+
+
+def test_get_lineage(monkeypatch):
+    """Retrieve mock result with https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=2"""
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    efetch_result = "tests/test_inputs/test_inputs_ncbi_tax/efetchTaxLineage.xml"
+
+    with open(efetch_result, "rb") as fh:
+        result = fh
+
+        def mock_entrez_tax_call(*args, **kwargs):
+            """Mocks call to Entrez to retrieve taxonomy record."""
+            return result
+
+        monkeypatch.setattr(get_ncbi_taxs, "entrez_retry", mock_entrez_tax_call)
+
+        output = get_ncbi_taxs.get_lineage('2', {}, argsdict['args'])
+        assert output == (
+            {'2': {
+                'kingdom': None, 'phylum': None, 'class': None, 'order': None, 'family': None, 'genus': None, 'species': 'cellular organisms', 'strain': None
+            }},
+            True)
