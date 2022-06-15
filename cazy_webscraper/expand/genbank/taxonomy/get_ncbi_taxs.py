@@ -66,6 +66,7 @@ from cazy_webscraper.sql.sql_interface.add_data.add_ncbi_tax_data import (
     update_genbank_ncbi_tax,
 )
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data.get_selected_gbks import get_ids
 from cazy_webscraper.sql.sql_interface.get_data.get_records import get_user_uniprot_sequences
 from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
     get_no_tax_gbk_table_dict,
@@ -225,7 +226,7 @@ def get_db_proteins(
         accessions = [line.strip() for line in lines]
         accessions = set(accessions)
 
-        gbk_dict = get_selected_gbks.get_ids(accessions, connection)
+        gbk_dict = get_ids(accessions, connection)
 
     if args.uniprot_accessions is not None:
         logger.warning(
