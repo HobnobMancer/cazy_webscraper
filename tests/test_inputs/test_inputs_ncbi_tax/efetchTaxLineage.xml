@@ -1,0 +1,40 @@
+<?xml version="1.0" ?>
+<!DOCTYPE TaxaSet PUBLIC "-//NLM//DTD Taxon, 14th January 2002//EN" "https://www.ncbi.nlm.nih.gov/entrez/query/DTD/taxon.dtd">
+<TaxaSet><Taxon>
+    <TaxId>2</TaxId>
+    <ScientificName>Bacteria</ScientificName>
+    <OtherNames>
+        <GenbankCommonName>eubacteria</GenbankCommonName>
+        <BlastName>bacteria</BlastName>
+        <Inpart>Monera</Inpart>
+        <Inpart>Procaryotae</Inpart>
+        <Inpart>Prokaryota</Inpart>
+        <Inpart>Prokaryotae</Inpart>
+        <Inpart>prokaryote</Inpart>
+        <Inpart>prokaryotes</Inpart>
+    </OtherNames>
+    <ParentTaxId>131567</ParentTaxId>
+    <Rank>superkingdom</Rank>
+    <Division>Bacteria</Division>
+    <GeneticCode>
+        <GCId>11</GCId>
+        <GCName>Bacterial, Archaeal and Plant Plastid</GCName>
+    </GeneticCode>
+    <MitoGeneticCode>
+        <MGCId>0</MGCId>
+        <MGCName>Unspecified</MGCName>
+    </MitoGeneticCode>
+    <Lineage>cellular organisms</Lineage>
+    <LineageEx>
+        <Taxon>
+            <TaxId>131567</TaxId>
+            <ScientificName>cellular organisms</ScientificName>
+            <Rank>no rank</Rank>
+        </Taxon>
+    </LineageEx>
+    <CreateDate>1995/02/27 09:24:00</CreateDate>
+    <UpdateDate>2018/06/04 18:19:32</UpdateDate>
+    <PubDate>1993/04/20 01:00:00</PubDate>
+</Taxon>
+
+</TaxaSet>
