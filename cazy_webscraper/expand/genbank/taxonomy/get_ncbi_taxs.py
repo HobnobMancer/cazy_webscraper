@@ -174,10 +174,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
 def cache_taxonomy(tax_prot_dict, cache_dir):
     """Cache retrieved taxonomy data
-    
+
     :param tax_prot_dict: dict, {tax_id: {linaege info, 'proteins' {local db protein ids}}}
     :param cache_dir: Path, path to cache dir
-    
+
     Return nothing
     """
     logger = logging.getLogger(__name__)

@@ -48,6 +48,8 @@ pytest -v
 import logging
 import pytest
 
+from argparse import Namespace
+
 from cazy_webscraper import taxonomy
 
 
@@ -102,3 +104,49 @@ def test_multi_taxa(cazy_data, monkeypatch):
     monkeypatch.setattr(taxonomy, "replace_multiple_tax", mock_replace_multiple)
 
     taxonomy.replace_multiple_tax_with_invalid_ids(cazy_data, gbk_accs, logger, "args")
+
+
+def test_get_ncbi_tax(monkeypatch):
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    entrez_result = "tests/test_inputs/test_inputs_ncbi_tax/entrezProt.xml"
+
+    with open(entrez_result, "rb") as fh:
+        result = fh
+
+        def mock_entrez_tax_call(*args, **kwargs):
+            """Mocks call to Entrez."""
+            return result
+
+        monkeypatch.setattr(taxonomy, "entrez_retry", mock_entrez_tax_call)
+
+        output = taxonomy.get_ncbi_tax(
+            {"WebEnv": 1, "QueryKey": 2},
+            {'CAA35997.1': {'kingdom': {'kingdom'}, 'organism': {'organism'}}},
+            logging.getLogger(__name__),
+            argsdict['args'],
+        )
+        assert output == {'CAA35997.1': {'kingdom': {'Eukaryota'}, 'organism': {'Bos taurus'}}}
+
+
+def test_get_ncbi_tax_fails(monkeypatch):
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    def mock_entrez_tax_call(*args, **kwargs):
+        """Mocks call to Entrez."""
+        return
+
+    monkeypatch.setattr(taxonomy, "entrez_retry", mock_entrez_tax_call)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        taxonomy.get_ncbi_tax(
+            {"WebEnv": 1, "QueryKey": 2},
+            {'CAA35997.1': {'kingdom': {'kingdom'}, 'organism': {'organism'}}},
+            logging.getLogger(__name__),
+            argsdict['args'],
+        )
+    assert pytest_wrapped_e.type == SystemExit
