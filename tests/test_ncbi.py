@@ -71,3 +71,40 @@ def test_epost(monkeypatch):
 
         output = ncbi.post_ids(['11237011', '12466850'], 'Pubmed', argsdict['args'])
         assert len(output) == 2
+
+
+def test_epost_str(monkeypatch):
+    """Get unit test input from https://eutils.ncbi.nlm.nih.gov/entrez/eutils/epost.fcgi?db=pubmed&id=11237011,12466850"""
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    efetch_result = "tests/test_inputs/test_inputs_ncbi_tax/epost.xml"
+
+    with open(efetch_result, "rb") as fh:
+        result = fh
+
+        def mock_entrez_tax_call(*args, **kwargs):
+            """Mocks call to Entrez."""
+            return result
+
+        monkeypatch.setattr(ncbi, "entrez_retry", mock_entrez_tax_call)
+
+        output = ncbi.post_ids('11237011', 'Pubmed', argsdict['args'])
+        assert len(output) == 2
+
+
+def test_epost_fail(monkeypatch):
+    """Get unit test input from https://eutils.ncbi.nlm.nih.gov/entrez/eutils/epost.fcgi?db=pubmed&id=11237011,12466850"""
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    def mock_entrez_tax_call(*args, **kwargs):
+        """Mocks call to Entrez."""
+        return
+
+    monkeypatch.setattr(ncbi, "entrez_retry", mock_entrez_tax_call)
+
+    output = ncbi.post_ids('11237011', 'Pubmed', argsdict['args'])
+    assert len(output) == 2
