@@ -419,10 +419,16 @@ def test_get_lineage(monkeypatch):
 
         output = get_ncbi_taxs.get_lineage('2700054', {}, argsdict['args'])
         assert output == (
-            {'2': {
-                'kingdom': None, 'phylum': None, 'class': None, 'order': None, 'family': None, 'genus': None, 'species': 'cellular organisms', 'strain': None
-            }},
-            True)
+            {'2700054': {'class': 'Sordariomycetes',
+                        'family': 'Hypocreaceae',
+                        'genus': 'Trichoderma',
+                        'kingdom': 'Eukaryota',
+                        'order': 'Hypocreales',
+                        'phylum': 'Ascomycota',
+                        'species': 'Hypocreomycetidae',
+                        'strain': 'Trichoderma achlamydosporum'}},
+            True,
+        )
 
 
 def test_get_linked_proteins(monkeypatch):
@@ -442,9 +448,9 @@ def test_get_linked_proteins(monkeypatch):
 
         monkeypatch.setattr(get_ncbi_taxs, "entrez_retry", mock_entrez_tax_call)
 
-        output = get_ncbi_taxs.get_lineage(
+        output = get_ncbi_taxs.get_tax_proteins(
             '51453',
-            {'51453': {}},
+            {'51453': {1}},
             {
                 '2206269991': 'gbk_acc_1',
                 '2206269987': 'gbk_acc_2',
@@ -454,7 +460,6 @@ def test_get_linked_proteins(monkeypatch):
             argsdict['args'],
         )
         assert output == (
-            {'2': {
-                'kingdom': None, 'phylum': None, 'class': None, 'order': None, 'family': None, 'genus': None, 'species': 'cellular organisms', 'strain': None
-            }},
-            True)
+                {'51453': {1, 'db_id1', 'db_id2'}},
+                True,
+            )
