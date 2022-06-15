@@ -51,7 +51,7 @@ from tqdm import tqdm
 
 def get_user_genbank_sequences(gbk_table_dict, args):
     """Extract protein sequences for GenBank accessions listed in a file
-    
+
     :param gbk_table_dict: dict {genbank_accession: 'taxa_id': int, 'gbk_id': int}
     :param args: cmd-line args parser
 
@@ -69,7 +69,7 @@ def get_user_genbank_sequences(gbk_table_dict, args):
             "Terminating program"
         )
         sys.exit(1)
-    
+
     gbk_accessions = [line.strip() for line in lines]
 
     gbk_dict = {}  # {accession: id}
@@ -90,7 +90,7 @@ def get_user_genbank_sequences(gbk_table_dict, args):
 def get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args):
     """Extract protein sequences for UniProt accessions listed in a file, and get the corresponing
     GenBank accession and local db GenBank id
-    
+
     :param gbk_table_dict: dict {genbank_accession: 'taxa_id': int, 'gbk_id': int}
     :param uniprot_table_dict: dict {}
     :param args: cmd-line args parser
@@ -109,12 +109,13 @@ def get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args):
             "Terminating program"
         )
         sys.exit(1)
-    
+
     uniprot_accessions = [line.strip() for line in lines]
 
     gbk_dict = {}
 
     gbk_table_ids = list(gbk_table_dict.values())
+    gbk_table_accs = list(gbk_table_dict.keys())
 
     for uniprot_accession in tqdm(uniprot_accessions, desc="Getting database Ids for provided UniProt IDs"):
         try:
@@ -126,10 +127,10 @@ def get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args):
                 f"Not extracted protein sequences for {uniprot_accession}"
             )
             continue
-        
+
         position = gbk_table_ids.index(gbk_id)
-        gbk_accession = gbk_table_dict[position]
+        gbk_accession = gbk_table_accs[position]
 
         gbk_dict[gbk_accession] = gbk_id
-    
+
     return gbk_dict

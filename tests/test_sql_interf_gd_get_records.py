@@ -65,7 +65,6 @@ def test_get_user_gbk():
     get_records.get_user_genbank_sequences(gbk_table_dict, argsdict['args'])
 
 
-
 def test_get_user_gbk_fail():
     argsdict = {"args": Namespace(
         genbank_accessions="tests/test_inputs/test_inputs_sql_interface/test_FAIL_accs.txt",
@@ -73,7 +72,32 @@ def test_get_user_gbk_fail():
     # test_gbk
 
     gbk_table_dict = {'test_gbk': 1, 'gbk_acc': 2}
-    
+
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         get_records.get_user_genbank_sequences(gbk_table_dict, argsdict['args'])
     assert pytest_wrapped_e.type == SystemExit
+
+
+def test_get_user_uniprot_fail():
+    argsdict = {"args": Namespace(
+        uniprot_accessions="tests/test_inputs/test_inputs_sql_interface/test_FAIL_accs.txt",
+    )}
+    # test_gbk
+
+    gbk_table_dict = {'test_gbk': 1, 'gbk_acc': 2}
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        get_records.get_user_uniprot_sequences(gbk_table_dict, {}, argsdict['args'])
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_get_user_uniprot():
+    argsdict = {"args": Namespace(
+        uniprot_accessions="tests/test_inputs/test_inputs_sql_interface/test_accs.txt",
+    )}
+    # test_gbk
+
+    gbk_table_dict = {'test_gbk_': '1', 'gbk_acc_': '2'}
+    uni_table_dict = {'test_acc': {'genbank_id': '1'}, 'gbk_acc': {'genbank_id': '2'}}
+
+    get_records.get_user_uniprot_sequences(gbk_table_dict, uni_table_dict, argsdict['args'])
