@@ -76,11 +76,11 @@ setuptools.setup(
         "console_scripts": [
             "cazy_webscraper = cazy_webscraper.cazy_scraper:main",
             "cw_get_genbank_seqs = cazy_webscraper.expand.genbank.sequences.get_genbank_sequences:main",
+            "cw_get_ncbi_taxs = cazy_webscraper.expand.genbank.taxonomy.get_ncbi_taxs:main",
             "cw_get_uniprot_data = cazy_webscraper.expand.uniprot.get_uniprot_data:main",
             "cw_extract_db_seqs = cazy_webscraper.expand.extract_seqs.extract_db_seqs:main",
             "cw_get_pdb_structures = cazy_webscraper.expand.pdb.get_pdb_structures:main",
             "cw_query_database = cazy_webscraper.api.cw_query_database:main",
-            "cw_get_ncbi_taxs = cazy_webscraper.expand.genbank.taxonomy.get_ncbi_taxs:main",
         ]
     },
     install_requires=[
