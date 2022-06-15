@@ -51,7 +51,8 @@ from cazy_webscraper import expand
 
 
 def test_get_gen_chunks():
-    expand.get_chunks_gen([0, 0, 0, 0, 0, 0, 0, 0, 0], 1)
+    for i in expand.get_chunks_gen([0, 0, 0], 1):
+        assert i == [0]
 
 
 def test_get_lst_chunks():
