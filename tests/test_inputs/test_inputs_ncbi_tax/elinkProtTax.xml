@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE eLinkResult PUBLIC "-//NLM//DTD elink 20101123//EN" "https://eutils.ncbi.nlm.nih.gov/eutils/dtd/20101123/elink.dtd">
+<eLinkResult>
+
+  <LinkSet>
+    <DbFrom>protein</DbFrom>
+    <IdList>
+      <Id>1995578961</Id>
+    </IdList>
+    <LinkSetDb>
+      <DbTo>taxonomy</DbTo>
+      <LinkName>protein_taxonomy</LinkName>
+      
+        <Link>
+				<Id>2810347</Id>
+			</Link>
+      
+    </LinkSetDb>
+  </LinkSet>
+</eLinkResult>

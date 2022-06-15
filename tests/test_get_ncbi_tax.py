@@ -489,3 +489,28 @@ def test_get_linked_proteins_fail(monkeypatch):
         argsdict['args'],
     )
     assert output == ({'51453': {1}}, False)
+
+
+def test_link_prot_to_tax(monkeypatch):
+    """Get mock entrez output from https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=protein&db=taxonomy&id=1995578961&linkname=protein_taxonomy"""
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    entrez_result = "tests/test_inputs/test_inputs_ncbi_tax/elinkProtTax.xml"
+
+    with open(entrez_result, "rb") as fh:
+        result = fh
+
+        def mock_entrez_tax_call(*args, **kwargs):
+            """Mocks call to Entrez."""
+            return result
+
+        monkeypatch.setattr(get_ncbi_taxs, "entrez_retry", mock_entrez_tax_call)
+
+        output = get_ncbi_taxs.link_prot_taxs(
+            'query key',
+            'web env',
+            argsdict['args'],
+        )
+        assert output == ({'2810347'}, ['1995578961'], True)
