@@ -590,7 +590,7 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
                     )
                     del failed_lineage_ids[tax_id]
                     completely_failed_tax_ids.add(f"{tax_id}\tCould not retrieve lineage data")
-    
+
     with open((cache_dir/"ncbi_lineages.json"), "w") as fh:
         json.dump(lineage_dict, fh)
 
