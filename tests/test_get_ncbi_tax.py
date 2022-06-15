@@ -514,3 +514,14 @@ def test_link_prot_to_tax(monkeypatch):
             argsdict['args'],
         )
         assert output == ({'2810347'}, ['1995578961'], True)
+
+
+def test_get_ncbi_ids_both_no_files(monkeypatch):
+    argsdict = {"args": Namespace(
+        use_tax_ids="",
+        use_protein_ids="",
+    )}
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        get_ncbi_taxs.get_ncbi_ids({}, "cache", argsdict['args'])
+    assert pytest_wrapped_e.type == SystemExit
