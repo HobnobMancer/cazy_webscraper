@@ -101,6 +101,26 @@ def test_parsing_cazy_zip(monkeypatch):
     )
 
 
+def test_failed_download(monkeypatch):
+    argsdict = {"args": Namespace(
+        retries=2,
+        cazy_data=None,
+    )}
+
+    def mock_download(*args, **kwards):
+        return "error"
+
+    monkeypatch.setattr(cazy, "get_cazy_file", mock_download)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        cazy.get_cazy_txt_file_data(
+            Path("tests/test_inputs/test_inputs_cazy/"),
+            "time_stamp",
+            argsdict['args'],
+        )
+    assert pytest_wrapped_e.type == SystemExit
+
+
 def test_parse_all_cazy_data(cazy_file_path):
     with open(cazy_file_path, "r") as fh:
         cazy_lines = fh.read().splitlines()
@@ -120,3 +140,11 @@ def test_parse_cazy_data(cazy_file_path):
         {'Bacteroides', 'Aspergillus oryzae', 'Aspergillus flavus NRRL3357'},
         None,
     ) == {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}
+
+
+def test_build_tax_dict():
+    cazy_data = {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}
+    assert {
+        'Bacteria': {
+            'Bacteroides cellulosilyticus BFG-250', 'Bacteroides cellulosilyticus WH2',
+        }} == cazy.build_taxa_dict(cazy_data)
