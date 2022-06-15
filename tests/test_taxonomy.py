@@ -142,11 +142,9 @@ def test_get_ncbi_tax_fails(monkeypatch):
 
     monkeypatch.setattr(taxonomy, "entrez_retry", mock_entrez_tax_call)
 
-    with pytest.raises(SystemExit) as pytest_wrapped_e:
-        taxonomy.get_ncbi_tax(
-            {"WebEnv": 1, "QueryKey": 2},
-            {'CAA35997.1': {'kingdom': {'kingdom'}, 'organism': {'organism'}}},
-            logging.getLogger(__name__),
-            argsdict['args'],
-        )
-    assert pytest_wrapped_e.type == SystemExit
+    taxonomy.get_ncbi_tax(
+        {"WebEnv": 1, "QueryKey": 2},
+        {'CAA35997.1': {'kingdom': {'kingdom'}, 'organism': {'organism'}}},
+        logging.getLogger(__name__),
+        argsdict['args'],
+    )
