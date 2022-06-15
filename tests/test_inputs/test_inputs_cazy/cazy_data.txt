@@ -6,6 +6,7 @@ GH157	Bacteria	Polaribacter sp. KT25b	SDR68055.1
 GH157	Bacteria	Winogradskyella sp. HaHa_3_26	QXP79022.1
 GH157	Bacteria	Winogradskyella sp. PAMC22761	QNK77973.1
 AA5_2	Bacteria	Actinoplanes ianthinogenes NBRC 13996	BCJ46567.1
+GH1	Bacteria	Actinoplanes ianthinogenes NBRC 13996	BCJ46567.1
 AA5_2	Bacteria	Actinoplanes sp. SE50	ATO81963.1
 AA5_2	Bacteria	Actinoplanes sp. SE50/110	AEV83893.1
 AA5_2	Bacteria	Actinoplanes sp. SE50/110	SLL99371.1
