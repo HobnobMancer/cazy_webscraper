@@ -73,6 +73,11 @@ def mock_building_parser(*args, **kwargs):
     return parser_args
 
 
+@pytest.fixture
+def mock_gbk_dict(*args, **kwards):
+    return {'gbk_acc': 'id', 'gbk_acc_1': 'id'}
+
+
 def test_main(
     mock_building_parser,
     mock_return_logger,
@@ -337,3 +342,25 @@ def test_main_using_lineage_cache_fails(
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         get_ncbi_taxs.main()
     assert pytest_wrapped_e.type == SystemExit
+
+
+def test_get_db_proteins_usr_acc(mock_gbk_dict, monkeypatch):
+    argsdict = {"args": Namespace(
+        genbank_accessions="tests/test_inputs/test_inputs_ncbi_tax/test_accs.txt",
+        uniprot_accessions="tests/test_inputs/test_inputs_ncbi_tax/test_accs.txt",
+        update_gbk=False,
+    )}
+
+    monkeypatch.setattr(get_ncbi_taxs, "get_ids", mock_gbk_dict)
+    monkeypatch.setattr(get_ncbi_taxs, "get_gbk_table_dict", mock_gbk_dict)
+    monkeypatch.setattr(get_ncbi_taxs, "get_uniprot_table_dict", mock_gbk_dict)
+    monkeypatch.setattr(get_ncbi_taxs, "get_user_uniprot_sequences", mock_gbk_dict)
+    monkeypatch.setattr(get_ncbi_taxs, "get_no_tax_gbk_table_dict", mock_gbk_dict)
+
+
+def test_get_db_proteins():
+    argsdict = {"args": Namespace(
+        genbank_accessions=None,
+        uniprot_accessions=None,
+        update_gbk=True,
+    )}
