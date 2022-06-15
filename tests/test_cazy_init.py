@@ -182,3 +182,27 @@ def test_apply_tax_filters(cazy_data_dict):
         'Bacteroides cellulosilyticus BFG-250',
         'Bacteria',
     ) == ({'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}, True)
+
+
+def test_add_protein_to_dict(cazy_data_dict):
+
+    assert cazy.add_protein_to_dict(
+        cazy_data_dict,
+        'UBD70155.1',
+        'GH1',
+        'GH1_1',
+        'Bacteroides cellulosilyticus BFG-250',
+        'Bacteria',
+    ) == {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}, 'GH1': {'GH1_1'}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}
+
+
+def test_add_protein_to_dict_new_protein(cazy_data_dict):
+
+    assert cazy.add_protein_to_dict(
+        cazy_data_dict,
+        'UBD70155_new.1',
+        'GH1',
+        'GH1_1',
+        'Bacteroides cellulosilyticus BFG-250',
+        'Bacteria',
+    ) == {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'UBD70155_new.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH1': {'GH1_1'}}}}
