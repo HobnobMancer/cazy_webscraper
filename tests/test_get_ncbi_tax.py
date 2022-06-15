@@ -525,3 +525,18 @@ def test_get_ncbi_ids_both_no_files(monkeypatch):
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         get_ncbi_taxs.get_ncbi_ids({}, "cache", argsdict['args'])
     assert pytest_wrapped_e.type == SystemExit
+
+
+def test_get_ncbi_ids_both_success(monkeypatch):
+    argsdict = {"args": Namespace(
+        use_tax_ids="tests/test_inputs/test_inputs_ncbi_tax/test_accs.txt",
+        use_protein_ids="tests/test_inputs/test_inputs_ncbi_tax/prot_ids.out",
+    )}
+
+    output = get_ncbi_taxs.get_ncbi_ids({}, "cache", argsdict['args'])
+    assert output == (
+        ['test_gbk', 'test_gbk'],
+        {'112031978': 'ABH99468.1',
+        '1775560016': 'QPG76914.1',
+        '1939329944': 'NP_729979.1'},
+    )
