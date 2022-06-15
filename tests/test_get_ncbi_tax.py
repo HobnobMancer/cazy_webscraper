@@ -61,6 +61,18 @@ from cazy_webscraper.sql.sql_interface.add_data import add_ncbi_tax_data
 from cazy_webscraper.utilities.parsers import tax_ncbi_parser
 
 
+@pytest.fixture
+def mock_building_parser(*args, **kwargs):
+    parser_args = ArgumentParser(
+        prog="get_ncbi_taxonomy.py",
+        usage=None,
+        description="Get lineages from NCBI",
+        conflict_handler="error",
+        add_help=True,
+    )
+    return parser_args
+
+
 def test_main(
     mock_building_parser,
     mock_return_logger,
@@ -73,21 +85,22 @@ def test_main(
 
     def mock_parser(*args, **kwargs):
         parser = Namespace(
-            cache_dir=(test_dir / "test_outputs" / "test_outputs_uniprot"),
+            cache_dir=(test_dir / "test_outputs" / "test_outputs_ncbi"),
+            email="dummyemail",
             nodelete_cache=False,
             batch_size=150,
             config=None,
             classes=None,
             database="fake_database_path",
             ec_filter=None,
-            force=False,
+            force=True,
             families=None,
             genbank_accessions=None,
             genera=None,
             get_pages=True,
             kingdoms=None,
             log=None,
-            nodelete=False,
+            nodelete=True,
             output=None,
             retries=10,
             sequence=True,
@@ -113,6 +126,9 @@ def test_main(
     def mock_get_genbank_accessions(*args, **kwards):
         return {1: 1, 2: 2, 3: 3}
 
+    def mock_get_lineage(*args, **kwards):
+        return {'tax_id': {'linaege info': 'kingdom', 'proteins': {'local db protein ids'}}}
+
     def mock_get_ncbi_data(*args, **kwards):
         return (
             {
@@ -127,19 +143,20 @@ def test_main(
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(saint_logger, "config_logger", mock_return_logger)
     monkeypatch.setattr(get_ncbi_taxs, "connect_existing_db", mock_connect_existing_db)
-    monkeypatch.setattr("cazy_webscraper.expand.uniprot.get_uniprot_data.make_output_directory", mock_return_none)
+    monkeypatch.setattr("cazy_webscraper.expand.genbank.taxonomy.get_ncbi_taxs.make_output_directory", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "get_expansion_configuration", mock_get_expansion_configuration)
     monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
     # not using cached lineages
     monkeypatch.setattr(get_ncbi_taxs, "get_db_proteins", mock_get_genbank_accessions)
     monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_ids", mock_get_ncbi_data)
-    monkeypatch.setattr(get_ncbi_taxs, "get_lineage_protein_data", mock_get_genbank_accessions)
+    monkeypatch.setattr(get_ncbi_taxs, "get_lineage_protein_data", mock_get_lineage)
     # mock adding data to the local CAZyme database
     monkeypatch.setattr(get_ncbi_taxs, "add_ncbi_taxonomies", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "update_genbank_ncbi_tax", mock_return_none)
     monkeypatch.setattr(add_ncbi_tax_data, "add_ncbi_taxonomies", mock_return_none)
     monkeypatch.setattr(add_ncbi_tax_data, "update_genbank_ncbi_tax", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "closing_message", mock_return_none)
+    monkeypatch.setattr(get_ncbi_taxs, "cache_taxonomy", mock_return_none)
 
     get_ncbi_taxs.main()
 
@@ -156,21 +173,22 @@ def test_main_using_lineage_cache(
 
     def mock_parser(*args, **kwargs):
         parser = Namespace(
-            cache_dir=(test_dir / "test_outputs" / "test_outputs_uniprot"),
+            cache_dir=(test_dir / "test_outputs" / "test_outputs_ncbi"),
+            email="dummyemail",
             nodelete_cache=False,
             batch_size=150,
             config=None,
             classes=None,
             database="fake_database_path",
             ec_filter=None,
-            force=False,
+            force=True,
             families=None,
             genbank_accessions=None,
             genera=None,
             get_pages=True,
             kingdoms=None,
             log=None,
-            nodelete=False,
+            nodelete=True,
             output=None,
             retries=10,
             sequence=True,
@@ -206,23 +224,27 @@ def test_main_using_lineage_cache(
             {1, 2, 3},
         )
 
+    def mock_get_lineage(*args, **kwards):
+        return {'tax_id': {'linaege info': 'kingdom', 'proteins': {'local db protein ids'}}}
+
     monkeypatch.setattr(tax_ncbi_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(saint_logger, "config_logger", mock_return_logger)
     monkeypatch.setattr(get_ncbi_taxs, "connect_existing_db", mock_connect_existing_db)
-    monkeypatch.setattr("cazy_webscraper.expand.uniprot.get_uniprot_data.make_output_directory", mock_return_none)
+    monkeypatch.setattr("cazy_webscraper.expand.genbank.taxonomy.get_ncbi_taxs.make_output_directory", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "get_expansion_configuration", mock_get_expansion_configuration)
     monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
     # not using cached lineages
     monkeypatch.setattr(get_ncbi_taxs, "get_db_proteins", mock_get_genbank_accessions)
     monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_ids", mock_get_ncbi_data)
-    monkeypatch.setattr(get_ncbi_taxs, "get_lineage_protein_data", mock_get_genbank_accessions)
+    monkeypatch.setattr(get_ncbi_taxs, "get_lineage_protein_data", mock_get_lineage)
     # mock adding data to the local CAZyme database
     monkeypatch.setattr(get_ncbi_taxs, "add_ncbi_taxonomies", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "update_genbank_ncbi_tax", mock_return_none)
     monkeypatch.setattr(add_ncbi_tax_data, "add_ncbi_taxonomies", mock_return_none)
     monkeypatch.setattr(add_ncbi_tax_data, "update_genbank_ncbi_tax", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "closing_message", mock_return_none)
+    monkeypatch.setattr(get_ncbi_taxs, "cache_taxonomy", mock_return_none)
 
     get_ncbi_taxs.main()
 
@@ -239,21 +261,22 @@ def test_main_using_lineage_cache_fails(
 
     def mock_parser(*args, **kwargs):
         parser = Namespace(
-            cache_dir=(test_dir / "test_outputs" / "test_outputs_uniprot"),
+            cache_dir=(test_dir / "test_outputs" / "test_outputs_ncbi"),
+            email="dummyemail",
             nodelete_cache=False,
             batch_size=150,
             config=None,
             classes=None,
             database="fake_database_path",
             ec_filter=None,
-            force=False,
+            force=True,
             families=None,
             genbank_accessions=None,
             genera=None,
             get_pages=True,
             kingdoms=None,
             log=None,
-            nodelete=False,
+            nodelete=True,
             output=None,
             retries=10,
             sequence=True,
@@ -289,17 +312,21 @@ def test_main_using_lineage_cache_fails(
             {1, 2, 3},
         )
 
+    def mock_get_lineage(*args, **kwards):
+        return {'tax_id': {'linaege info': 'kingdom', 'proteins': {'local db protein ids'}}}
+
     monkeypatch.setattr(tax_ncbi_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(saint_logger, "config_logger", mock_return_logger)
     monkeypatch.setattr(get_ncbi_taxs, "connect_existing_db", mock_connect_existing_db)
-    monkeypatch.setattr("cazy_webscraper.expand.uniprot.get_uniprot_data.make_output_directory", mock_return_none)
+    monkeypatch.setattr("cazy_webscraper.expand.genbank.taxonomy.get_ncbi_taxs.make_output_directory", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "get_expansion_configuration", mock_get_expansion_configuration)
     monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
+    monkeypatch.setattr(get_ncbi_taxs, "cache_taxonomy", mock_return_none)
     # not using cached lineages
     monkeypatch.setattr(get_ncbi_taxs, "get_db_proteins", mock_get_genbank_accessions)
     monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_ids", mock_get_ncbi_data)
-    monkeypatch.setattr(get_ncbi_taxs, "get_lineage_protein_data", mock_get_genbank_accessions)
+    monkeypatch.setattr(get_ncbi_taxs, "get_lineage_protein_data", mock_get_lineage)
     # mock adding data to the local CAZyme database
     monkeypatch.setattr(get_ncbi_taxs, "add_ncbi_taxonomies", mock_return_none)
     monkeypatch.setattr(get_ncbi_taxs, "update_genbank_ncbi_tax", mock_return_none)

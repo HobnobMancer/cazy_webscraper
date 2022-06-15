@@ -53,6 +53,7 @@ from typing import List, Optional
 from Bio import Entrez
 from saintBioutils.utilities.logger import config_logger
 from saintBioutils.utilities import file_io
+from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
 
@@ -125,11 +126,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.cache_dir is not None:  # use user defined cache dir
         cache_dir = args.cache_dir
         logger.info("Building cache dir")
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
         logger.info("Building cache dir")
         cache_dir = cache_dir / "ncbi_tax_retrieval"
-        file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+        make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     if args.use_lineage_cache is not None:
         logger.info("Adding cached lineages to local CAZyme db")
@@ -161,20 +162,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         tax_prot_dict = get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args)
         # {tax_id: {linaege info, 'proteins' {local db protein ids}}
 
-        # cache taxonomy
-        cache_tax_dict = {}
-
-        for tax_id in tax_prot_dict:
-            cache_tax_dict[tax_id] = {}
-            for key in tax_prot_dict[tax_id]:
-                if key == 'proteins':
-                    cache_tax_dict[tax_id]['proteins'] = list(tax_prot_dict[tax_id]['proteins'])
-                else:
-                    cache_tax_dict[tax_id][key] = tax_prot_dict[tax_id][key]
-
-        with open((cache_dir/"lineage_data.json"), "w") as fh:
-            json.dump(cache_tax_dict, fh)
-        logger.info(f"Cached lineage data")
+        cache_taxonomy(tax_prot_dict, cache_dir)
 
     add_ncbi_taxonomies(tax_prot_dict, connection, args)
     logger.info("Added lineage data to db")
@@ -183,6 +171,31 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info("Added lineage data to protein records in db")
 
     closing_message("Get NCBI Taxonomy data", start_time, args)
+
+
+def cache_taxonomy(tax_prot_dict, cache_dir):
+    """Cache retrieved taxonomy data
+    
+    :param tax_prot_dict: dict, {tax_id: {linaege info, 'proteins' {local db protein ids}}}
+    :param cache_dir: Path, path to cache dir
+    
+    Return nothing
+    """
+    logger = logging.getLogger(__name__)
+
+    cache_tax_dict = {}
+
+    for tax_id in tax_prot_dict:
+        cache_tax_dict[tax_id] = {}
+        for key in tax_prot_dict[tax_id]:
+            if key == 'proteins':
+                cache_tax_dict[tax_id]['proteins'] = list(tax_prot_dict[tax_id]['proteins'])
+            else:
+                cache_tax_dict[tax_id][key] = tax_prot_dict[tax_id][key]
+
+    with open((cache_dir/"lineage_data.json"), "w") as fh:
+        json.dump(cache_tax_dict, fh)
+    logger.info(f"Cached lineage data")
 
 
 def get_db_proteins(
