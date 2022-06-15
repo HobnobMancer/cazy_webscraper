@@ -523,7 +523,7 @@ def test_get_ncbi_ids_both_no_files(monkeypatch):
     )}
 
     with pytest.raises(SystemExit) as pytest_wrapped_e:
-        get_ncbi_taxs.get_ncbi_ids({}, "cache", argsdict['args'])
+        get_ncbi_taxs.get_ncbi_ids({}, Path("tests/test_outputs/test_ncbi_tax"), argsdict['args'])
     assert pytest_wrapped_e.type == SystemExit
 
 
@@ -533,10 +533,80 @@ def test_get_ncbi_ids_both_success(monkeypatch):
         use_protein_ids="tests/test_inputs/test_inputs_ncbi_tax/prot_ids.out",
     )}
 
-    output = get_ncbi_taxs.get_ncbi_ids({}, "cache", argsdict['args'])
+    output = get_ncbi_taxs.get_ncbi_ids({}, Path("tests/test_outputs/test_ncbi_tax"), argsdict['args'])
     assert output == (
         ['test_gbk', 'test_gbk'],
         {'112031978': 'ABH99468.1',
         '1775560016': 'QPG76914.1',
         '1939329944': 'NP_729979.1'},
     )
+
+
+def test_get_ncbi_ids_only_tax(monkeypatch):
+    argsdict = {"args": Namespace(
+        use_tax_ids="tests/test_inputs/test_inputs_ncbi_tax/test_accs.txt",
+        use_protein_ids=None,
+    )}
+
+    def mock_get_ncbi_tax_prot_ids(*args, **kwards):
+        return ([], {})
+
+    monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_tax_prot_ids", mock_get_ncbi_tax_prot_ids)
+
+    output = get_ncbi_taxs.get_ncbi_ids({}, Path("tests/test_outputs/test_ncbi_tax"), argsdict['args'])
+    assert output == (
+        ['test_gbk', 'test_gbk'],
+        {},
+    )
+
+
+def test_get_ncbi_ids_only_tax_fails(monkeypatch):
+    argsdict = {"args": Namespace(
+        use_tax_ids="test_FAILs/test_inputs/test_inputs_ncbi_tax/test_accs_FAIL.txt",
+        use_protein_ids=None,
+    )}
+
+    def mock_get_ncbi_tax_prot_ids(*args, **kwards):
+        return ([], {})
+
+    monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_tax_prot_ids", mock_get_ncbi_tax_prot_ids)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        get_ncbi_taxs.get_ncbi_ids({}, Path("tests/test_outputs/test_ncbi_tax"), argsdict['args'])
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_get_ncbi_ids_only_prots(monkeypatch):
+    argsdict = {"args": Namespace(
+        use_tax_ids=None,
+        use_protein_ids="tests/test_inputs/test_inputs_ncbi_tax/prot_ids.out",
+    )}
+
+    def mock_get_ncbi_tax_prot_ids(*args, **kwards):
+        return ([], {})
+
+    monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_tax_prot_ids", mock_get_ncbi_tax_prot_ids)
+
+    output = get_ncbi_taxs.get_ncbi_ids({}, Path("tests/test_outputs/test_ncbi_tax"), argsdict['args'])
+    assert output == (
+        [],
+        {'112031978': 'ABH99468.1',
+        '1775560016': 'QPG76914.1',
+        '1939329944': 'NP_729979.1'},
+    )
+
+
+def test_get_ncbi_ids_only_prots_fails(monkeypatch):
+    argsdict = {"args": Namespace(
+        use_tax_ids=None,
+        use_protein_ids="tests/test_inputs/test_inputs_ncbi_tax/prot_ids_FAILS.out",
+    )}
+
+    def mock_get_ncbi_tax_prot_ids(*args, **kwards):
+        return ([], {})
+
+    monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_tax_prot_ids", mock_get_ncbi_tax_prot_ids)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        get_ncbi_taxs.get_ncbi_ids({}, Path("tests/test_outputs/test_ncbi_tax"), argsdict['args'])
+    assert pytest_wrapped_e.type == SystemExit

@@ -275,7 +275,6 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
     logger = logging.getLogger(__name__)
 
     if (args.use_tax_ids is not None) and (args.use_protein_ids is not None):
-        print("USING CACHE")
         logger.info("Using only cached NCBI Tax and Protein IDs")
         try:
             with open(args.use_tax_ids, "r") as fh:
@@ -323,7 +322,7 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
                 )
                 sys.exit(1)
 
-        if args.use_proteins_ids is not None:
+        if args.use_protein_ids is not None:
             logger.info("Using cached NCBI Protein IDs")
             try:
                 with open(args.use_protein_ids, "r") as fh:
