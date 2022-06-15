@@ -59,6 +59,8 @@ from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_data import add_ncbi_tax_data
 from cazy_webscraper.utilities.parsers import tax_ncbi_parser
+from cazy_webscraper.sql.sql_interface.get_data import get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data import get_records
 
 
 @pytest.fixture
@@ -71,11 +73,6 @@ def mock_building_parser(*args, **kwargs):
         add_help=True,
     )
     return parser_args
-
-
-@pytest.fixture
-def mock_gbk_dict(*args, **kwards):
-    return {'gbk_acc': 'id', 'gbk_acc_1': 'id'}
 
 
 def test_main(
@@ -344,23 +341,54 @@ def test_main_using_lineage_cache_fails(
     assert pytest_wrapped_e.type == SystemExit
 
 
-def test_get_db_proteins_usr_acc(mock_gbk_dict, monkeypatch):
+def test_get_db_proteins_usr_acc(monkeypatch):
     argsdict = {"args": Namespace(
         genbank_accessions="tests/test_inputs/test_inputs_ncbi_tax/test_accs.txt",
         uniprot_accessions="tests/test_inputs/test_inputs_ncbi_tax/test_accs.txt",
         update_gbk=False,
     )}
 
+    def mock_gbk_dict(*args, **kwards):
+        return {'gbk_acc': 'id', 'gbk_acc_1': 'id'}
+
     monkeypatch.setattr(get_ncbi_taxs, "get_ids", mock_gbk_dict)
+    monkeypatch.setattr(get_selected_gbks, "get_ids", mock_gbk_dict)
+
     monkeypatch.setattr(get_ncbi_taxs, "get_gbk_table_dict", mock_gbk_dict)
+    monkeypatch.setattr(get_table_dicts, "get_gbk_table_dict", mock_gbk_dict)
+
     monkeypatch.setattr(get_ncbi_taxs, "get_uniprot_table_dict", mock_gbk_dict)
+    monkeypatch.setattr(get_table_dicts, "get_uniprot_table_dict", mock_gbk_dict)
+
     monkeypatch.setattr(get_ncbi_taxs, "get_user_uniprot_sequences", mock_gbk_dict)
+    monkeypatch.setattr(get_records, "get_user_uniprot_sequences", mock_gbk_dict)
+
     monkeypatch.setattr(get_ncbi_taxs, "get_no_tax_gbk_table_dict", mock_gbk_dict)
+    monkeypatch.setattr(get_table_dicts, "get_no_tax_gbk_table_dict", mock_gbk_dict)
+
+    get_ncbi_taxs.get_db_proteins(set(), set(), set(), {}, set(), 'db_connection', argsdict['args'])
 
 
-def test_get_db_proteins():
+def test_get_db_proteins(monkeypatch):
     argsdict = {"args": Namespace(
         genbank_accessions=None,
         uniprot_accessions=None,
         update_gbk=True,
     )}
+
+    def mock_gbk_dict(*args, **kwards):
+        return {'gbk_acc': 'id', 'gbk_acc_1': 'id'}
+
+    monkeypatch.setattr(get_ncbi_taxs, "get_genbank_accessions", mock_gbk_dict)
+    monkeypatch.setattr(get_selected_gbks, "get_genbank_accessions", mock_gbk_dict)
+
+    get_ncbi_taxs.get_db_proteins(set(), set(), set(), {}, set(), 'db_connection', argsdict['args'])
+
+    # with open(efetch_result, "rb") as fh:
+    #     result = fh
+
+    #     def mock_entrez_sci_call(*args, **kwargs):
+    #         """Mocks call to Entrez to retrieve scientific name."""
+    #         return result
+
+    #     monkeypatch.setattr(get_ncbi_genomes, "entrez_retry", mock_entrez_sci_call)

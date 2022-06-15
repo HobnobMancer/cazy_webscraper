@@ -65,8 +65,7 @@ from cazy_webscraper.sql.sql_interface.add_data.add_ncbi_tax_data import (
     add_ncbi_taxonomies,
     update_genbank_ncbi_tax,
 )
-from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
-from cazy_webscraper.sql.sql_interface.get_data.get_selected_gbks import get_ids
+from cazy_webscraper.sql.sql_interface.get_data.get_selected_gbks import get_ids, get_genbank_accessions
 from cazy_webscraper.sql.sql_interface.get_data.get_records import get_user_uniprot_sequences
 from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
     get_no_tax_gbk_table_dict,
@@ -240,7 +239,7 @@ def get_db_proteins(
 
     if args.genbank_accessions is None and args.uniprot_accessions is None:
         # get user config data
-        gbk_dict.update(get_selected_gbks.get_genbank_accessions(
+        gbk_dict.update(get_genbank_accessions(
             class_filters,
             family_filters,
             taxonomy_filter_dict,
