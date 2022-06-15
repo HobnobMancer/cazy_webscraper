@@ -71,6 +71,12 @@ def cazy_zip_path():
     return _path
 
 
+@pytest.fixture
+def cazy_data_dict():
+    _dict = {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}
+    return _dict
+
+
 def test_get_cazy_file(cazy_file_path):
     argsdict = {"args": Namespace(
         retries=10,
@@ -148,3 +154,31 @@ def test_build_tax_dict():
         'Bacteria': {
             'Bacteroides cellulosilyticus BFG-250', 'Bacteroides cellulosilyticus WH2',
         }} == cazy.build_taxa_dict(cazy_data)
+
+
+def test_apply_filters_no_tax(cazy_data_dict):
+
+    assert cazy.apply_kingdom_tax_filters(
+        cazy_data_dict,
+        set(),
+        set(),
+        'UBD70155.1',
+        'GH157',
+        None,
+        'Bacteroides cellulosilyticus BFG-250',
+        'Bacteria',
+    ) == ({'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}, True)
+
+
+def test_apply_tax_filters(cazy_data_dict):
+
+    assert cazy.apply_kingdom_tax_filters(
+        cazy_data_dict,
+        {'Bacteria'},
+        {'Bacteroides'},
+        'UBD70155.1',
+        'GH157',
+        None,
+        'Bacteroides cellulosilyticus BFG-250',
+        'Bacteria',
+    ) == ({'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}, True)
