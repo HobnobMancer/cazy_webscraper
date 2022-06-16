@@ -179,15 +179,15 @@ genbanks_pdbs = Table(
 # Define class tables
 class Genbank(Base):
     """Represents a protein GenBank accession number and protein seq.
-    
+
     The GenBank accession is used to identify unique proteins in the database.
     """
     __tablename__ = 'Genbanks'
-    
+
     __table_args__ = (
         UniqueConstraint("genbank_accession"),
     )
-    
+
     genbank_id = Column(Integer, primary_key=True)
     genbank_accession = Column(String, index=True)
     sequence = Column(ReString)
@@ -204,34 +204,34 @@ class Genbank(Base):
         "Taxonomy",
         back_populates="genbanks",
     )
-    
+
     families = relationship(
         "CazyFamily",
         secondary=genbanks_families,
         back_populates="genbanks",
         lazy="dynamic",
     )
-    
+
     ecs = relationship(
         "Ec",
         secondary=genbanks_ecs,
         back_populates="genbanks",
         lazy="dynamic",
     )
-    
+
     pdbs = relationship(
         "Pdb",
         secondary=genbanks_pdbs,
         back_populates="genbank",
         lazy="dynamic",
     )
-    
+
     uniprot = relationship(
         "Uniprot",
         back_populates="genbank",
         # uselist=False,
-    ) # 1-1 relationship
-    
+    )  # 1-1 relationship
+
     def __str__(self):
         return f"-Genbank accession={self.genbank_accession}-"
 
@@ -242,37 +242,38 @@ class Genbank(Base):
 class Taxonomy(Base):
     """Represent the taxonomy of an organism."""
     __tablename__ = "Taxs"
-    
+
     __table_args__ = (
         UniqueConstraint("genus", "species"),
         Index("organism_option", "taxonomy_id", "genus", "species")
     )
-    
+
     taxonomy_id = Column(Integer, primary_key=True)
     genus = Column(String)
     species = Column(String)
     kingdom_id = Column(Integer, ForeignKey("Kingdoms.kingdom_id"))
-    
+
     genbanks = relationship("Genbank", back_populates="organism")
     tax_kingdom = relationship("Kingdom", back_populates="taxonomy")
-    
+
     def __str__(self):
         return f"-Source organism, Genus={self.genus}, Species={self.species}-"
 
     def __repr__(self):
         return (
-            f"<Class Taxonomy: genus={self.genus}, species={self.species}, id={self.taxonomy_id}, kndgm={self.kingdom_id}>"
+            f"<Class Taxonomy: genus={self.genus}, species={self.species}, "
+            f"id={self.taxonomy_id}, kndgm={self.kingdom_id}>"
         )
 
-    
+
 class Kingdom(Base):
     """Describes a taxonomy Kingdom. Data retrieved from NCBI"""
     __tablename__ = "Kingdoms"
-    
+
     __table_args__ = (
         UniqueConstraint("kingdom"),
     )
-    
+
     kingdom_id = Column(Integer, primary_key=True)
     kingdom = Column(String)
 
@@ -287,22 +288,22 @@ class Kingdom(Base):
 
 class CazyFamily(Base):
     """Describes a CAZy family, and subfamily if applicable.
-    
+
     Every unique CAZy family-subfamily pair is represented as a unique instance
     in the database.
     """
     __tablename__ = "CazyFamilies"
-    
+
     # define columns before table_args so subfam column can be called
     family_id = Column(Integer, primary_key=True)
     family = Column(ReString, nullable=False)  # make this an ReString later
     subfamily = Column(String, nullable=True)
-    
+
     __table_args__ = (
         UniqueConstraint("family", "subfamily"),
         Index("fam_index", "family", "subfamily"),
     )
-    
+
     genbanks = relationship(
         "Genbank",
         secondary=genbanks_families,
@@ -311,7 +312,9 @@ class CazyFamily(Base):
     )
 
     def __str__(self):
-        return f"-CAZy Family, Family={self.family}, Subfamily={self.subfamily}, id={self.family_id}-"
+        return (
+            f"-CAZy Family, Family={self.family}, Subfamily={self.subfamily}, id={self.family_id}-"
+        )
 
     def __repr__(self):
         """Return string representation of source organism."""
@@ -323,7 +326,7 @@ class CazyFamily(Base):
 class NcbiTax(Base):
     """Describes a NCBI Taxonomy lineage."""
     __tablename__ = "NcbiTaxs"
-    
+
     # define columns before table_args so subfam column can be called
     ncbi_id = Column(Integer, primary_key=True)
     ncbi_tax_id = Column(Integer)  # make this an ReString later
@@ -335,12 +338,12 @@ class NcbiTax(Base):
     genus = Column(ReString)
     species = Column(ReString)
     strain = Column(ReString)
-    
+
     __table_args__ = (
         UniqueConstraint("ncbi_tax_id"),
         Index("ncbi_index", "ncbi_tax_id", "genus", "species"),
     )
-    
+
     genbanks = relationship(
         "Genbank",
         back_populates="ncbi_taxs",
@@ -355,33 +358,37 @@ class NcbiTax(Base):
         return(
             f"<Class NcbiTax, Kingdom={self.kingdom}, genus={self.genus}, species={self.species}>"
         )
-    
-    
+
+
 class Uniprot(Base):
     """Table containing UniProt accessions and protein sequences retrieved from UniProtKB"""
     __tablename__ = "Uniprots"
-    
+
     __table_args__ = (
         UniqueConstraint("uniprot_accession",),
         Index("uniprot_option", "uniprot_id", "uniprot_accession")
     )
-    
+
     genbank_id = Column(Integer, ForeignKey('Genbanks.genbank_id'))
     uniprot_id = Column(Integer, primary_key=True)
     uniprot_accession = Column(String)
     uniprot_name = Column(ReString)
     sequence = Column(ReString)
     seq_update_date = Column(ReString)
-    
+
     genbank = relationship("Genbank", back_populates="uniprot")
-    
+
     def __str__(self):
-        return f"-Uniprot, accession={self.uniprot_accession}, name={self.uniprot_name}, id={self.uniprot_id}-"
+        return (
+            f"-Uniprot, accession={self.uniprot_accession}, name={self.uniprot_name}, "
+            f"id={self.uniprot_id}-"
+        )
 
     def __repr__(self):
         """Return string representation of source organism."""
         return(
-            f"<Uniprot, accession={self.uniprot_accession}, name={self.uniprot_name}, id={self.uniprot_id}>"
+            f"<Uniprot, accession={self.uniprot_accession}, "
+            f"name={self.uniprot_name}, id={self.uniprot_id}>"
         )
 
 
@@ -401,13 +408,13 @@ class Ec(Base):
         back_populates="ecs",
         lazy="dynamic",
     )
-    
+
     def __str__(self):
         return f"-EC{self.ec_number}-ec_id={self.ec_number}-"
 
     def __repr__(self):
         return f"<Class EC, EC{self.ec_number}, ec_id={self.ec_number}>"
-    
+
 
 class Pdb(Base):
     """Describe a PDB accession number of protein structure."""
@@ -418,7 +425,7 @@ class Pdb(Base):
 
     pdb_id = Column(Integer, primary_key=True)
     pdb_accession = Column(String)
-    
+
     Index('pdb_idx', pdb_accession)
 
     genbank = relationship(
@@ -427,7 +434,7 @@ class Pdb(Base):
         back_populates="pdbs",
         lazy="dynamic",
     )
-    
+
     def __str__(self):
         return f"-PDB accession={self.pdb_accession}, id={self.pdb_id}-"
 
@@ -486,5 +493,5 @@ def get_db_connection(db_path, args, new):
     Base.metadata.create_all(engine)
     Session.configure(bind=engine)  # allows for calls to session later on when required
     connection = engine.connect()
-    
+
     return connection

@@ -38,7 +38,7 @@
 # SOFTWARE.
 #
 # Bio.PDB reference:
-# Hamelryck, T., Manderick, B. (2003) PDB parser and structure class 
+# Hamelryck, T., Manderick, B. (2003) PDB parser and structure class
 # implemented in Python. Bioinformatics 19: 2308–2310
 """Retrieve taxonomy data for proteins matching user criteria"""
 
@@ -55,7 +55,9 @@ from cazy_webscraper.sql.sql_orm import (
     Taxonomy,
     Uniprot,
 )
-from cazy_webscraper.sql.sql_interface.get_data.get_selected_gbks import get_class_fam_genbank_accessions
+from cazy_webscraper.sql.sql_interface.get_data.get_selected_gbks import (
+    get_class_fam_genbank_accessions
+)
 
 
 def get_taxonomies(
@@ -83,11 +85,17 @@ def get_taxonomies(
         gbk_tax_dict, uniprt_tax_dict = get_uni_gbk_tax_dict(connection)
 
         if args.genbank_accessions is not None:
-            logger.info(f"Retrieving PDB structures for GenBank accessions listed in\n{args.genbank_accessions}")
+            logger.info(
+                "Retrieving PDB structures for GenBank accessions "
+                f"listed in\n{args.genbank_accessions}"
+            )
             organisms += get_taxs_for_user_gbks(gbk_tax_dict, args)
 
         if args.uniprot_accessions is not None:
-            logger.info(f"Extracting protein sequences for UniProt accessions listed in\n{args.uniprot_accessions}")
+            logger.info(
+                "Extracting protein sequences for UniProt accessions "
+                f"listed in\n{args.uniprot_accessions}"
+            )
             organisms += get_taxs_for_uniprots(uniprt_tax_dict, args)
 
     else:
@@ -112,8 +120,8 @@ def get_uni_gbk_tax_dict(connection):
     """
     with Session(bind=connection) as session:
         uniprt_gbk_tax_records = session.query(Uniprot, Genbank, Taxonomy).\
-            join(Uniprot, (Uniprot.genbank_id == Genbank.genbank_id)).\
-            join(Genbank, (Genbank.taxonomy_id == Taxonomy.taxonomy_id)).\
+            join(Genbank, (Taxonomy.taxonomy_id == Genbank.taxonomy_id)).\
+            join(Uniprot, (Genbank.genbank_id == Uniprot.genbank_id)).\
             all()
 
     gbk_tax_dict = {}  # {genbank_accession: organism}
@@ -190,7 +198,10 @@ def get_taxs_for_uniprots(uni_tax_dict, args):
 
     organisms = set()
 
-    for uniprot_accession in tqdm(uniprot_accessions, desc="Getting organisms for provided UniProt IDs"):
+    for uniprot_accession in tqdm(
+        uniprot_accessions,
+        desc="Getting organisms for provided UniProt IDs",
+    ):
         try:
             organisms.add(uni_tax_dict[uniprot_accession])
         except KeyError:
@@ -221,7 +232,7 @@ def get_filtered_taxs(
     :param ec_filters: set of EC numbers to limit the retrieval of data to
     :param connection: open sqlaclchemy connection for an SQLite db
 
-    Return dict of organisms 
+    Return dict of organisms
     """
     logger = logging.getLogger(__name__)
 
@@ -235,7 +246,8 @@ def get_filtered_taxs(
     if len(initially_selected_gbk) == 0:
         logger.error(
             "Retrieved NO proteins for the user selected CAZy classes and (sub)families\n"
-            "Ensure proteins belonging to these classes and (sub)families are catalouged into the local CAZyme db\n"
+            "Ensure proteins belonging to these classes and (sub)families are catalouged "
+            "into the local CAZyme db\n"
             "Terminating program"
         )
         sys.exit(1)
@@ -291,13 +303,13 @@ def get_filtered_taxs(
         else:
             try:
                 organisms[genus]
-                
+
                 try:
                     organisms[genus][species].add(strain)
-                
+
                 except KeyError:
                     organisms[genus][species] = {strain}
-            
+
             except KeyError:
                 organisms[genus] = {species: {strain}}
 
@@ -306,21 +318,21 @@ def get_filtered_taxs(
 
 def apply_tax_filters(initially_selected_records, taxonomy_filters, kingdom_filters):
     """Filter retrieved GenBank accessions by taxonomy filters.
-    
+
     :param initially_selected_records: list of db objs retrieved from the db
         including a Genbank, Taxonomy and Kingdom record
     :param taxonomy_filters: dict of taxonom filters to limit the retrieval of data to
     :param kingdom_filters: set of tax kingdoms to limit the retrieval of data to
     :param connection: open sqlaclchemy connection for an SQLite db
-    
+
     Return set of db objs, each containing the gbk obj and tax obj
     """
     logger = logging.getLogger(__name__)
-    
+
     if len(taxonomy_filters['genera']) == 0 and \
         len(taxonomy_filters['species']) == 0 and \
         len(taxonomy_filters['strains']) == 0 and \
-        len(kingdom_filters) == 0:
+            len(kingdom_filters) == 0:
         logger.warning("Applying no taxonomic filters")
         return list(set(initially_selected_records))
 
@@ -339,7 +351,7 @@ def apply_tax_filters(initially_selected_records, taxonomy_filters, kingdom_filt
         for obj in initially_selected_records:
             if genus == obj[1].genus:
                 filtered_records.add(obj)
-                
+
     if len(taxonomy_filters['species']) == 0:
         logger.warning("Not applying species filters")
     for species in taxonomy_filters['species']:
@@ -363,11 +375,11 @@ def apply_ec_filters(
     connection,
 ):
     """Apply EC number filter to the retrieved Genbank records.
-    
+
     :param current_gbk_objs: list of db Genbank objs retrieved from the db
     :param ec_filters: set of EC numbers to limit the retrieval of data to
     :param connection: open sqlaclchemy connection for an SQLite db
-    
+
     Return set of db Genbank objects including associated tax record
     """
     logger = logging.getLogger(__name__)
@@ -388,16 +400,16 @@ def apply_ec_filters(
 
     if len(ec_gbk_ids) == 0:
         logger.error(
-        "Retrieved NO proteins matching the provided EC numbers\n"
-        "Check the local CAZyme db contains the EC numbers provided\n"
-        "Terminating program"
-    )
+            "Retrieved NO proteins matching the provided EC numbers\n"
+            "Check the local CAZyme db contains the EC numbers provided\n"
+            "Terminating program"
+        )
         sys.exit(1)
-    
+
     ec_filtered_gbks = set()
 
     for record in tqdm(current_objs, desc="Checking gbk records against EC filters"):
         if (record[0].genbank_id,) in ec_gbk_ids:
             filtered_records.add(record)
-        
+
     return ec_filtered_gbks

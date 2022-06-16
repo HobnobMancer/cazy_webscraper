@@ -51,6 +51,7 @@ from pathlib import Path
 
 import pytest
 
+from cazy_webscraper.sql import sql_orm
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_taxonomies
 from cazy_webscraper.sql.sql_orm import (
     Ec,
@@ -69,7 +70,7 @@ def test_get_tax_user_acc(monkeypatch):
 
     def mock_get_tax(*args, **kwards):
         return [1, 2, 3]
-    
+
     def mock_get_table_dicts(*args, **kwards):
         return {}, {}
 
@@ -94,3 +95,13 @@ def test_get_tax_db_tax(monkeypatch):
     monkeypatch.setattr(get_taxonomies, "get_filtered_taxs", mock_get_tax)
 
     get_taxonomies.get_taxonomies(set(), set(), {}, set(), set(), 'connection', argsdict['args'])
+
+
+def test_get_uni_gbk_dict(db_path):
+    argsdict = {"args": Namespace(
+        sql_echo=True,
+        uniprot_accessions=None,
+    )}
+    db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
+
+    assert ({}, {}) == get_taxonomies.get_uni_gbk_tax_dict(db_connection)
