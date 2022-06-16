@@ -105,3 +105,29 @@ def test_get_uni_gbk_dict(db_path):
     db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
 
     assert ({}, {}) == get_taxonomies.get_uni_gbk_tax_dict(db_connection)
+
+
+def test_get_user_gbks_fail():
+    argsdict = {"args": Namespace(
+        sql_echo=True,
+        uniprot_accessions=None,
+        genbank_accessions="tests/test_inputs/test_inputs_sql_interface/test_accs_FAIL.txt",
+    )}
+
+    gbk_table_dict = {'test_gbk': 1, 'gbk_acc': 2}
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        get_taxonomies.get_taxs_for_user_gbks(gbk_table_dict, argsdict['args'])
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_get_user_gbks():
+    argsdict = {"args": Namespace(
+        sql_echo=True,
+        uniprot_accessions=None,
+        genbank_accessions="tests/test_inputs/test_inputs_sql_interface/test_accs.txt",
+    )}
+
+    gbk_table_dict = {'test_gbk': 1, 'gbk_acc': 2}
+
+    assert [2] == get_taxonomies.get_taxs_for_user_gbks(gbk_table_dict, argsdict['args'])
