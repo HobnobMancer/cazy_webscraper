@@ -131,3 +131,27 @@ def test_get_user_gbks():
     gbk_table_dict = {'test_gbk': 1, 'gbk_acc': 2}
 
     assert [2] == get_taxonomies.get_taxs_for_user_gbks(gbk_table_dict, argsdict['args'])
+
+
+def test_get_user_uniprot_fail():
+    argsdict = {"args": Namespace(
+        sql_echo=True,
+        uniprot_accessions="tests/test_inputs/test_inputs_sql_interface/test_accs_FAIL.txt",
+    )}
+
+    gbk_table_dict = {'test_gbk': 1, 'gbk_acc': 2}
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        get_taxonomies.get_taxs_for_uniprots(gbk_table_dict, argsdict['args'])
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_get_user_uniprot():
+    argsdict = {"args": Namespace(
+        sql_echo=True,
+        uniprot_accessions="tests/test_inputs/test_inputs_sql_interface/test_accs.txt",
+    )}
+
+    gbk_table_dict = {'test_gbk': 1, 'gbk_acc': 2}
+
+    assert [2] == get_taxonomies.get_taxs_for_uniprots(gbk_table_dict, argsdict['args'])
