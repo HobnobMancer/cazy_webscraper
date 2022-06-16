@@ -27,7 +27,7 @@
 
 **[GenBank](https://www.ncbi.nlm.nih.gov/genbank/):**  
 - Protein sequences 
-- Latest taxonomic classification - including complete lineage (including phylum, class, order and family)
+- Latest taxonomic classification - including complete lineage (including phylum, class, order and family) (version >=2.1.0)
 
 **[UniProt](https://www.uniprot.org/):**  
 - Protein name
@@ -39,10 +39,6 @@
 **[Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank (PDB)](https://www.rcsb.org/):**
 - Protein structure files
 - *Structure files are written to disk, **not** stored in the local CAZyme database*
-
-**[Genome Taxonomy Database (GTDB)](https://gtdb.ecogenomic.org/):**
-- Retrieve the latest taxonomic classification
-- Associates with genomic assemblies in the local CAZyme database
 
 **`cazy_webscraper` faciltates extracting information from the local CAZyme database.**
 
@@ -95,7 +91,7 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 
 - **Faster scraping:** The entirtity of CAZy can be scraped in 15 minutes
 - **Retrieval of UniProt data:** UniProt accessions, EC numbers, protein sequences, and PDB accessions can be retrieved from UniProt and added to the local CAZyme database
-- **Retrieve the latest taxonomic classifications:** Retrieve the latest taxonomic classifications from the NCBI Taxonomy and GTDB databases
+- **Retrieve the latest taxonomic classifications:** Retrieve the latest taxonomic classifications from the NCBI Taxonomy database (version >=2.1.0)
 - **Retrieve genomic data:** Retrieve the NCBI ID and version accession of the genomic assembly from CAZyme protein sequences were sourced
 - **Addition of an API:** As well as retrieving data from the local CAZyme database via an SQL interface, `cazy_webscraper` can retrieved user-specfied data (e.g. the GenBank protein accession and EC number annotations) for proteins matching user-specified critieria. The extracted data can be written to a `JSON` and/or `CSV` file, to facilitate inclusion in downstream analyses.
 - **Caching:** Data downloaded from CAZy is not only parsed and written to a local CAZyme database. The raw data files are written to cache. Data can be scraped directly from a cache (ideal if CAZy updates during the retrieval of multiple datasets from the CAZy database).
