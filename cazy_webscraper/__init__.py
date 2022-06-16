@@ -76,7 +76,7 @@ def closing_message(job, start_time, args):
 
     if args.verbose:
         logger.info(
-            "Finished scraping CAZy. Terminating program.\n"
+            f"====================={job}=====================\n"
             f"Scrape initated at {start_time}\n"
             f"Scrape finished at {end_time}\n"
             f"Total run time: {total_time}"
@@ -86,7 +86,6 @@ def closing_message(job, start_time, args):
     else:
         print(
             f"====================={job}=====================\n"
-            "Finished scraping CAZy\n"
             f"Scrape initated at {start_time}\n"
             f"Scrape finished at {end_time}\n"
             f"Total run time: {total_time}\n"

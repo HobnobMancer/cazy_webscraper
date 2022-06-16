@@ -100,7 +100,7 @@ def parse_configuration(args):
     config_dict, taxonomy_filter_dict, kingdom_filters = get_cmd_scrape_config(
         config_dict,
         cazy_class_synonym_dict,
-        taxonomy_filter_dict, 
+        taxonomy_filter_dict,
         kingdom_filters,
         args,
     )
@@ -161,7 +161,8 @@ def get_cazy_class_synonym_dict(args):
             cazy_class_synonym_dict = json.load(fh)
     except FileNotFoundError:
         logger.error(
-            "Could not open the CAZy synonym dictionary, required for translating CAZy class abbreviations.\n"
+            "Could not open the CAZy synonym dictionary, required for "
+            "translating CAZy class abbreviations.\n"
             "Check the file cazy_class_synonym_dictionary.json is located at:\n"
             f"{args.cazy_synonyms}\n"
             "Terminating programme"
@@ -210,12 +211,12 @@ def get_yaml_configuration(
             yaml_cazy_classes = get_yaml_cazy_classes(yaml_config_dict, cazy_class_synonym_dict)
             for cazy_class in yaml_cazy_classes:
                 config_dict["classes"].add(cazy_class)
-            
+
         elif key == "genera":
             if yaml_config_dict["genera"] is not None:
                 for genus in yaml_config_dict["genera"]:
                     taxonomy_filter_dict["genera"].add(genus)
-               
+
         elif key == "species":
             if yaml_config_dict["species"] is not None:
                 for organism in yaml_config_dict["species"]:
@@ -225,7 +226,7 @@ def get_yaml_configuration(
             if yaml_config_dict["strains"] is not None:
                 for organism_strain in yaml_config_dict["strains"]:
                     taxonomy_filter_dict["strains"].add(organism_strain)
-        
+
         elif key == "kingdoms":
             if yaml_config_dict["kingdoms"] is not None:
                 for kingdom in yaml_config_dict["kingdoms"]:
@@ -233,6 +234,8 @@ def get_yaml_configuration(
                         kingdom_filters.add(kingdom.lower())
                     else:
                         new_kingdom = kingdom[0].upper() + kingdom[1:].lower()
+                        if new_kingdom == 'Eukaryotes':
+                            new_kingdom = 'Eukaryota'
                         kingdom_filters.add(new_kingdom)
 
         elif key == 'ec':
@@ -340,13 +343,13 @@ def get_cmd_scrape_config(
     args,
 ):
     """Retrieve scraping configuration data from the cmd-line args parser
-    
+
     :param config_dict: dict of CAZy classes and families to be scrapped
     :param cazy_class_synonym_dict: dict of accepted CAZy class name synonyms
     :param taxonomy_filter: dict of genera, species and strains to restrict the scrape to
     :param kingdom_filters: set of tax kingdoms to restrict the scrape to
     :param args: cmd-line args parser
-    
+
     Return config_dict and taxonomy_filter (dict)
     """
     if args.classes is not None:
@@ -354,10 +357,10 @@ def get_cmd_scrape_config(
         cmd_cazy_classes = parse_user_cazy_classes(cmd_cazy_classes, cazy_class_synonym_dict)
         for cazy_class in cmd_cazy_classes:
             config_dict["classes"].add(cazy_class)
-    
+
     if args.families is not None:
         config_dict = get_cmd_defined_families(config_dict, args)
-    
+
     if args.genera is not None:
         cmd_genera = (args.genera).split(",")
         for cmd_genus in cmd_genera:
@@ -367,12 +370,12 @@ def get_cmd_scrape_config(
         cmd_species = (args.species).split(",")
         for species in cmd_species:
             taxonomy_filter["species"].add(species)
-    
+
     if args.strains is not None:
         cmd_strains = (args.strains).split(",")
         for strain in cmd_strains:
             taxonomy_filter["strains"].add(strain)
-    
+
     if args.kingdoms is not None:
         cmd_kingdoms = (args.kingdoms).split(",")
         for kingdom in cmd_kingdoms:
@@ -381,13 +384,13 @@ def get_cmd_scrape_config(
             else:
                 new_kingdom = kingdom[0].upper() + kingdom[1:].lower()
                 kingdom_filters.add(new_kingdom)
-    
+
     return config_dict, taxonomy_filter, kingdom_filters
 
 
 def get_cmd_defined_families(config_dict, args):
     """Retrieve CAZy families specified at the cmd-line for scraping
-    
+
     :param config_dict: dict of CAZy classes and families to scrape
     :param args: cmd-line args parser
 
@@ -449,7 +452,7 @@ def get_excluded_classes(config_dict, cazy_class_synonym_dict):
     Return list of CAZy classes not to be scraped.
     """
     cazy_classes_to_scrape = set()
-    
+
     # retrieve the names of classes for which specific families to be scraped HAVE BEEN named
     for key in config_dict:
         if (key != "classes") and (len(config_dict[key]) != 0):
@@ -545,13 +548,13 @@ def get_expansion_configuration(args):
     config_dict, taxonomy_filter_dict, kingdom_filters = get_cmd_scrape_config(
         config_dict,
         cazy_class_synonym_dict,
-        taxonomy_filter_dict, 
+        taxonomy_filter_dict,
         kingdom_filters,
         args,
     )
 
     ec_filters = get_ec_config(ec_filters, args)
-    
+
     class_filters = set(config_dict['classes'])
 
     family_filters = set()
@@ -572,12 +575,12 @@ def get_expansion_configuration(args):
 
 def get_ec_config(ec_filters, args):
     """Parse EC number configuration.
-    
+
     Standardise the EC numbers missing digits and remove 'EC' prefix.
-    
+
     :param ec_filters: set of EC numbers
     :param args: cmd line args parser
-    
+
     Return set of EC numbers.
     """
     logger = logging.getLogger(__name__)
@@ -605,10 +608,10 @@ def get_ec_config(ec_filters, args):
             ec_filters = ec_filters.union(set((args.ec_filter).split(",")))
         except AttributeError:
             pass
-        
-        ec_filters = [ec.replace("EC","") for ec in ec_filters]
-        ec_filters = [ec.replace("ec","") for ec in ec_filters]
-        ec_filters = [ec.replace("*","-") for ec in ec_filters]
+
+        ec_filters = [ec.replace("EC", "") for ec in ec_filters]
+        ec_filters = [ec.replace("ec", "") for ec in ec_filters]
+        ec_filters = [ec.replace("*", "-") for ec in ec_filters]
 
         ec_filters = set(ec_filters)
 

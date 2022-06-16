@@ -17,11 +17,11 @@ This page runs through examples of how to combine the various 'filters' that can
 the retrieval of protein structured from PDB. These tutorials are designed for those with less experience using command-line tools.
 
 .. NOTE::
-  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cw_get_pdb_structures`` - this is the method used in this tutorial.  
-  If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/expand/uniprot/get_uniprot_data.py``.
+  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve PDB data call it using ``cw_get_pdb_structures`` - this is the method used in this tutorial.  
+  If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/expand/pdb/get_pdb_structures.py``.
 
 From this point on, we will be discussed the ``cw_get_pdb_structures``, which is the entry point for 
-retrieving data from UniProt. We also presume you are comfortable configuring ``cazy_webscraper`` for the 
+retrieving data from PDB. We also presume you are comfortable configuring ``cazy_webscraper`` for the 
 scraping of data from CAZy.
 
 ----------------------------------
@@ -229,11 +229,9 @@ EC1.2.3.4, because this annotation is not within its database.
 Combining all filters
 ---------------------
 
-The ``--classes``, ``--families``, ``--ec_filter``, ``--kingdoms``, ``--genera``, ``--species`` and ``--strains`` flags can 
+The ``--classes``, ``--families``, ``--ec_filter``, ``--kingdoms``, ``--genera``, ``--species``, and ``--strains`` flags can 
 be used in any combination to define a specific subset of proteins in the local CAZyme database for whom
-protein structure files will be retrieved from PDB. These flags can be used with any combination of 
-``--ec``, ``--pdb``, ``--sequence``, ``--update_seq`` to customise what data is retrieved from UniProt and 
-added to the local CAZyme database.
+protein structure files will be retrieved from PDB.
 
 Below we run through 3 example commands of combining these flags, and the resulting behaviour.
 

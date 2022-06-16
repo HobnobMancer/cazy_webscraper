@@ -19,60 +19,44 @@
 
 `cazy_webscraper` is an application and Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. The code is distributed under the MIT license.
 
-`cazy_webscraper` retrieves protein data from the [CAZy database](https://www.cazy.org) and stored the data in a local SQLite3 database. This enables users to integrate the dataset into analytical pipelines, and interrogate the data in a manner unachievable through the CAZy website.
+**`cazy_webscraper` retrieves protein data from the [CAZy database](https://www.cazy.org) and stores the data in a local SQLite3 database.** This enables users to integrate the dataset into analytical pipelines, and interrogate the data in a manner unachievable through the CAZy website.
 
-Using the `expand` subcommand, a user can retrieve:
-- Protein name, UniProt accession, EC numbers, PDB accessions and protein sequences from [UniProt](https://www.uniprot.org/)
-- CAZyme protein sequence data from [GenBank](https://www.ncbi.nlm.nih.gov/genbank/)
-- Protein structure files from the Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank [(PDB)](https://www.rcsb.org/)
-- Extract GenBank and UniProt protein sequences stored in the local CAZyme database and write them to FASTA file and/or BLAST database
+**Data can be retrieved for user defined datasets of interest.** `cazy_webscraper` can recover specified CAZy Classes and/or CAZy families. These queries can be filtered by taxonomy at Kingdoms, genus, species or strain level. Successive CAZy queries can be collated into a single local database. A log of each query is recorded in the database for transparency, reproducibility and shareablity.
 
-`cazy_webscraper` can recover specified CAZy Classes and/or CAZy families. These queries can be filtered by taxonomy at Kingdoms, genus, species or strain level. Successive CAZy queries can be collated into a single local database. A log of each query is recorded in the database for transparency, reproducibility and shareablity.
+**Using the `expand` subcommand, a user can expand the core dataset.** Specifically, `cazy_webscraper` can be used to retrieve data from the following external databases for CAZymes in the local CAZyme database that meet user specified criteria, and adds the downloaded data to the local CAZyme database:
+
+**[GenBank](https://www.ncbi.nlm.nih.gov/genbank/):**  
+- Protein sequences 
+- Latest taxonomic classification - including complete lineage (including phylum, class, order and family)
+
+**[UniProt](https://www.uniprot.org/):**  
+- Protein name
+- UniProt accession
+- EC numbers
+- PDB accessions
+- Protein sequences
+
+**[Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank (PDB)](https://www.rcsb.org/):**
+- Protein structure files
+- *Structure files are written to disk, **not** stored in the local CAZyme database*
+
+**[Genome Taxonomy Database (GTDB)](https://gtdb.ecogenomic.org/):**
+- Retrieve the latest taxonomic classification
+- Associates with genomic assemblies in the local CAZyme database
+
+**`cazy_webscraper` faciltates extracting information from the local CAZyme database.**
+
+Protein sequences (retrieved from GenBank and/or UniProt) from the local CAZyme database for CAZymes matching the user specified criteria, and write to:
+- A single multisequence FASTA file
+- A FASTA file per extracted protein sequence
+- A local BLASTP database
+
+**The `cazy_webscraper` API facilitates interoggating the local CAZyme database.**
 
 Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest).
 
 **The `bioconda` installation method is not currently supported, but we are working on getting this fixed soon**. For now please install via pypi or from source.
 
-## New features in version 2:
-- **Faster scraping:** The entirtity of CAZy can be scraped in 15 minutes
-- **Retrieval of UniProt data:** UniProt accessions, EC numbers, protein sequences, and PDB accessions can be retrieved from UniProt and added to the local CAZyme database
-- **Addition of an API:** As well as retrieving data from the local CAZyme database via an SQL interface, `cazy_webscraper` can retrieved user-specfied data (e.g. the GenBank protein accession and EC number annotations) for proteins matching user-specified critieria. The extracted data can be written to a `JSON` and/or `CSV` file, to facilitate inclusion in downstream analyses.
-- **Caching:** Data downloaded from CAZy is not only parsed and written to a local CAZyme database. The raw data files are written to cache. Data can be scraped directly from a cache (ideal if CAZy updates during the retrieval of multiple datasets from the CAZy database).
-- **Handling multiple taxa:** It is possible for a single protein (identified by its unique GenBank accession) to be associated with multiple taxa in the CAZy data. For these instances, `cazy_webscraper` queries NCBI to retrieve the latest taxonomic source of the protein.
-
-## Recent updates in v2
-
-- Fixed failure to retrieve all proteins matching the specified criteria from the local CAZyme database
-- Faster retrieval of proteins matching the specified criteria from the local CAZyme database
-- New tutorials and comprehensive documentation added to [Read the Docs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest)
-- **UniProt:** `cazy_webscraper` can now be used successfully for retrieving data from UniProt and adding the data to the local CAZyme database. This includes retrieving:
-	- UniProt accessions
-	- Protein names
-	- Protein sequences
-	- EC number annotations
-	- PDB accessions
-- **GenBank:** `cazy_webscraper` can now be used to automate the retreival of protein sequences from GenBank for proteins in a local CAZyme database mathcing the users specified critieria. These protein sequences are stored in the local CAZyme database, and can be extracted to a FASTA file using `cazy_webscraper`
-- **Extract sequences from the db:** `cazy_webscraper` can be used to retrieve the GenBank and/or UniProt protein sequences stored in the database for user specified sets of CAZymes
-- **Accession lists:** As well as defining sets of CAZymes of interest for data retrieval by their class, family, EC number and/or taxonomy, `cazy_webscraper` can now accept lists of GenBank and/or UniProt accessions to define specific sets of CAZymes to additional protein data for
-- **Caching:** 
-	- More data is cached
-	- Cached data can be used to continue data retrievals from UniProt and GenBank, when a previous retrieval and/or addition of the data to the database fails
-	- Improved default name of cache dirs and subdirs
-- **Unit tests:** Started rewrite of unit tests to match the new program architecture
-
-## Future work for version 2:
-- Calculate the coverage of the NCBI GenBank assembly database by CAZy (i.e. how many genomic assemblies from the Assembly database are included in the CAZy dataset)
-- Fix any remaining bugs we can find (if you find a bug, please report it and provide as detailed bug report as possible!)
-- Update the unit tests to work with the new `cazy_webscraper` architecture
-- Update the documentation
-- Create video tutorials
-- Add a GUI for use, packaging and distribution
-
-## Citation
-
-If you use `cazy_webscraper`, please cite the following publication:
-
-> Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. [https://doi.org/10.6084/m9.figshare.14370860.v7](https://doi.org/10.6084/m9.figshare.14370860.v7)
 
 ## Table of Contents
 <!-- TOC -->
@@ -94,6 +78,8 @@ If you use `cazy_webscraper`, please cite the following publication:
     - [Configuring extracting sequences from a local CAZyme db](#configuring-extracting-sequences-from-a-local-cazyme-db)
 - [Retrieving protein structure files from PDB](#retrieving-protein-structure-files-from-pdb)
     - [Configuring PDB protein structure file retrieval](#configuring-pdb-protein-structure-file-retrieval)
+- [Retrieving NCBI taxonomies](#retrieving-ncbi-taxonomies)
+    - [Configuring retrieving NCBI taxonomies](#configuring-retrieving-ncbi-taxonomies)
 - [The `cazy_webscraper` API or Interrogating the local CAZyme database](#the_cazy_webscraper_api_or_interrogating_the_local_cazyme_database)
 - [Configuring `cazy_webscraper` using a YAML file](#configuring-using-a-yaml-file)
 - [CAZy coverage of GenBank](#cazy-coverage-of-genbank)
@@ -101,6 +87,33 @@ If you use `cazy_webscraper`, please cite the following publication:
 - [Contributions](#contributions)
 - [License and copyright](#license-and-copyright)
 <!-- /TOC -->
+
+
+## New features in version 2:
+
+`cazy_webscraper` version 1 is depracted due to updates of the CAZy website. In addition, several new features and improvements to performance have been added to version 2.
+
+- **Faster scraping:** The entirtity of CAZy can be scraped in 15 minutes
+- **Retrieval of UniProt data:** UniProt accessions, EC numbers, protein sequences, and PDB accessions can be retrieved from UniProt and added to the local CAZyme database
+- **Retrieve the latest taxonomic classifications:** Retrieve the latest taxonomic classifications from the NCBI Taxonomy and GTDB databases
+- **Retrieve genomic data:** Retrieve the NCBI ID and version accession of the genomic assembly from CAZyme protein sequences were sourced
+- **Addition of an API:** As well as retrieving data from the local CAZyme database via an SQL interface, `cazy_webscraper` can retrieved user-specfied data (e.g. the GenBank protein accession and EC number annotations) for proteins matching user-specified critieria. The extracted data can be written to a `JSON` and/or `CSV` file, to facilitate inclusion in downstream analyses.
+- **Caching:** Data downloaded from CAZy is not only parsed and written to a local CAZyme database. The raw data files are written to cache. Data can be scraped directly from a cache (ideal if CAZy updates during the retrieval of multiple datasets from the CAZy database).
+- **Handling multiple taxa:** It is possible for a single protein (identified by its unique GenBank accession) to be associated with multiple taxa in the CAZy data. For these instances, `cazy_webscraper` queries NCBI to retrieve the latest taxonomic source of the protein.
+
+## Features in the pipeline:
+- Retrieve the genomic IDs and version accessions from NCBI for proteins in a local CAZyme database, and add them to the local database
+- Retrieve and stored PubMed IDs in the local CAZyme database
+- Fix any remaining bugs we can find (if you find a bug, please report it and provide as detailed bug report as possible!)
+- Update the unit tests to work with the new `cazy_webscraper` architecture
+- Update the documentation
+- Automate analysing the taxonomic distribution across CAZy and datasets of interest, including generating a final report
+
+## Citation
+
+If you use `cazy_webscraper`, please cite the following publication:
+
+> Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. [https://doi.org/10.6084/m9.figshare.14370860.v7](https://doi.org/10.6084/m9.figshare.14370860.v7)
 
 ## Best practice
 
@@ -599,6 +612,80 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
 
+## Retrieving NCBI taxonomies
+
+Taxonomic opinions frequently change, and CAZy can fall out of sync with the latest taxonomic classifications with NCBI. To maintain an updated CAZyme database, `cazy_webscraper` can be used to retrieve the latest taxonomic classifications from NCBI for CAZymes in a local CAZyme database that meet the user's specified criteria. The downloaded taxonomic data is added to the local CAZyme database.
+
+The complete lineage data is retrieved from NCBI. Whereas CAZy lists only the kingdom, genus, species and strain, `cazy_webscraper` retrieves the full taxonomic lineage from NCBI and stores the complete lineage in the `NcbiTaxs` table in the local CAZyme database. This include:
+- Kingdom
+- Phylum
+- Class (stored as `tax_class` in the local CAZyme database due to keyword classes in Python)
+- Order(stored as `tax_order` in the local CAZyme database due to keyword classes in SQL)
+- Family
+- Genus
+- Species
+- Strain
+
+### Configuring retrieving NCBI taxonomies
+
+Below are listed the command-line flags for configuring the retrieval of taxonomic classifications from the NCBI Taxonomy database, and adding them to the local CAZyme database.
+
+`database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
+
+`email` - \[REQUIRED\] User email address (required by Entrez)
+
+`--batch_size` - Size of an individual batch query of NCBI sequence version accessions to NCBI. Default is 150.
+
+`--cache_dir` - Path to cache dir to be used instead of default cache dir path.
+
+`--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
+
+`--config`, `-c` - Path to a configuration YAML file. Default: None.
+
+`--classes` - List of classes from which all families are to be scrape.
+
+`--ec_filter` - Limist retrieval of protein data to proteins annotated with a provided list of EC numbers. Separate the EC numbers bu single commas without spaces. Recommend to wrap the entire str in quotation marks, for example:
+```bash
+cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
+```
+
+`--families` - List of CAZy (sub)families to scrape.
+
+`--force` - Force writing to exiting cache directory.
+
+`--genbank_accessions` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+
+`--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
+
+`--kingdoms` - List of taxonomy kingdoms to retrieve UniProt data for.
+
+`--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+`--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
+
+`--retries`, `-r` - Define the number of times to retry making a connection to NCBI if the connection should fail. Default: 10.
+
+`--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
+
+`--species` - List of species written as Genus Species) to restrict the scraping of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
+
+`--strains` - List of specific species strains to restrict the scraping of CAZymes to.
+
+`--uniprot_accessions` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
+
+`--update_gbk` - Update the existing NCBI taxonomy data in records in the `Genbanks` table already with NCBI taxonomy data. By default, NCBI tax data is only added to records in the `Genbanks` table if NCBI taxonomy data is not already presented in the record.
+
+`--update_taxs` - Update existing NCBI taxonomy data in the `NcbiTaxs` table. By default onlt add new NCBI taxonomy data, do not update (and thus overwrite) existing data.
+
+`--use_lineage_cache` - Use cached lineage data previously compliled by `cazy_webscraper` - skips retrieving NCBI Tax and Protein IDs and lineage data from NCBI
+
+`--use_protein_ids` - Path to plain text file containing a tab delimited list of (1) NCBI Protein ID and (2) NCBI sequence version accession. Used cached NCBI Protein IDs.
+
+`--use_tax_ids` - Path to plain text file listing a unique NCBI Taxonomy ID per line. Get lineages for cached NCBI Tax IDs.
+
+`--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
+
+
 ## The `cazy_webscraper` API or Interrogating the local CAZyme database
 
 The SQLite3 database compiled by `cazy_webscraper` can be interrogated in the native interface (i.e. queries written in SQL can be used to interrogate the database). This can be achieved via the command-line or via an SQL database browser (such as [DB Browser for SQLite](https://sqlitebrowser.org/)).
@@ -738,50 +825,6 @@ When listing EC numbers, the 'EC' prefix can be included or excluded. For exampl
 `cazy_webscraper` performs a direct EC number comparison. Therefore, supplying `cazy_webscraper` with the EC number EC1.2.3.- will only retrieve protein specifically annotated with EC1.2.3.-. `cazy_webscraper` will **not** retrieve proteins will all completed EC numbers under EC1.2.3.-, thus, `cazy_webscraper` will **not** retrieve data for proteins annotated with EC1.2.3.1, EC1.2.3.2, EC1.2.3.3, etc.
 
 Example configuration files, and an empty configuraiton file template are located in the [`config_files`]() directory of this repo.
-
-
-## CAZy coverage of GenBank
-
-The number of genomes represented by the local CAZyme database per taxonomy Kingdom can be compared to the number 
-GenBank genomic assemblies in NCBI. This done using the command `cw_cazy_genbank_coverage`, which requires two 
-positional arguments:
-1. Path to the local CAZyme database
-2. The users email address
-For example:
-```bash
-cw_cazy_genbank_coverage cazymes.db my_email@domain.com
-```
-
-This produces several output files (where time stamp is the date and time the command was invoked):
-1. `cazy_genomic_accessions_<time_stamp>.json`, a JSON file contained a multi-layer dictionary: {kingdom: {genus: {species: {genomic_accession: {proteins: {protein_accessions}, count=int(# of proteins)}}}}}
-2. `genomic_accessions_<time_stamp>.csv`, containing the columns 'Kingdom','Genus','Species','Genomic_accession','#ofProteins', where the number of proteins represents the number of proteins from the genome which are catalogued in CAZy
-3. `protein_genomic_accessions_<time_stamp>.csv`, containing the 'Kingdom', 'Genus', 'Species', 'Genomic_accession', 'Protein_accession'. A unique protein accession is listed on each row, and lists which protein accesison is derived from each genomic assembly.
-4. `cazy_genbank_genome_coverage_<time_stamp>.csv`, containing the columns 'Kingdom', 'NCBI_genomes', 'CAZy_genomes', 'Coverage_percent'. The dataframe lists the number of genomes catalogued in GenBank (NCBI) and the local CAZyme database per taxonomy Kingdom.
-5. `gbk_cazy_genomes_plot_<time_stamp>.png`, a plot of a stacked bar chart with the number of genomes in GenBank (NCBI) and CAZy (the local CAZyme database) per taxonomy Kingdom.
-
-### Configure calculating CAZy coverage of GenBank
-
-Optional cmd-line arguments for `cw_cazy_genbank_coverage` are listed below:
-
-`--batch_size` - The number of accessions posted to NCBI per epost, advice to be max 200. Default=150.
-
-``--force``, ``-f`` - Force writing in existing output directory.
-
-``--force_cache`` - Force writing in existing cache directory.
-
-`--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
-
-`--nodelete` - When called, content in the existing output dir will **not** be deleted. Default: False (existing content is deleted).
-
-`--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
-
-`--output_dir`, `-o` - Path to output directory.
-
-`--retries` - Number of times to retry connection to NCBI Entrez if connection fails.
-
-`--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
-
-`--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
 ## Contributions
 
