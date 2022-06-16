@@ -41,6 +41,8 @@
 """Retrieve all objects from a db table and parse the data to build a dict, repr the current table state."""
 
 
+import logging
+
 from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_orm import (
@@ -48,6 +50,7 @@ from cazy_webscraper.sql.sql_orm import (
     Ec,
     Genbank,
     Kingdom,
+    NcbiTax,
     Pdb,
     Session,
     Taxonomy,
@@ -176,6 +179,30 @@ def get_gbk_table_dict(connection):
         }
     
     return db_gbk_dict
+
+
+def get_no_tax_gbk_table_dict(connection):
+    """Compile a dict of the data in the Genbanks table containing records only of proteins with no 
+    NCBI tax data
+    
+    :param connection: open connection to an SQLite3 database
+    
+    Return list of gbk table ids
+    """
+    logger = logging.getLogger(__name__)
+
+    with Session(bind=connection) as session:
+        all_genbank = session.query(Genbank).all()
+
+    gbk_db_ids = set()
+    
+    for gbk in all_genbank:
+        if gbk.ncbi_id is None:
+            gbk_db_ids.add(gbk.genbank_id)
+    
+    logger.info(f"{len(gbk_db_ids)} Gbk records in db do not have a NCBI Tax ID")
+
+    return gbk_db_ids
 
 
 def get_gbk_table_seq_dict(connection):
@@ -407,3 +434,24 @@ def get_gbk_kingdom_dict(connection):
             }
 
     return genbank_kingdom_dict
+
+
+def get_ncbi_tax_table(connection):
+    """Load NCBITaxs table into a dict
+    
+    :param connection: open connection to an sql db
+    
+    Retur dict {ncbi tax id: local db id}
+    """
+    with Session(bind=connection) as session:
+        query_results = session.query(NcbiTax).\
+            all()
+    
+    ncbi_tax_dict = {}
+
+    for record in tqdm(query_results, desc="Loading NcbiTax table into dict"):
+        db_id = record.ncbi_id
+        ncbi_tax_id = record.ncbi_tax_id
+        ncbi_tax_dict[ncbi_tax_id] = db_id
+    
+    return ncbi_tax_dict

@@ -1,0 +1,28 @@
+GH157	Bacteria	Bacteroides cellulosilyticus BFG-250	UBD70155.1
+GH157	Bacteria	Bacteroides cellulosilyticus WH2	ALJ59177.1
+GH157	Bacteria	Bacteroides cellulosilyticus WH2	WP_029429093.1
+GH157	Bacteria	Labilibaculum antarcticum SPP2	BAX82587.1
+GH157	Bacteria	Polaribacter sp. KT25b	SDR68055.1
+GH157	Bacteria	Winogradskyella sp. HaHa_3_26	QXP79022.1
+GH157	Bacteria	Winogradskyella sp. PAMC22761	QNK77973.1
+AA5_2	Bacteria	Actinoplanes ianthinogenes NBRC 13996	BCJ46567.1
+GH1	Bacteria	Actinoplanes ianthinogenes NBRC 13996	BCJ46567.1
+AA5_2	Bacteria	Actinoplanes sp. SE50	ATO81963.1
+AA5_2	Bacteria	Actinoplanes sp. SE50/110	AEV83893.1
+AA5_2	Bacteria	Actinoplanes sp. SE50/110	SLL99371.1
+AA5_2	Bacteria	Alloactinosynnema sp. L-07	CRK61066.1
+AA5_2	Bacteria	Arthrobacter agilis UMCV2	AUZ88908.1
+AA5_2	Bacteria	Arthrobacter sp. FW305-BF8	UKA55327.1
+AA5_2	Eukaryota	Aspergillus flavus AF13	QMW46863.1
+AA5_2	Eukaryota	Aspergillus flavus AF13	QMW38907.1
+AA5_2	Eukaryota	Aspergillus flavus CA14	UCK59454.1
+AA5_2	Eukaryota	Aspergillus flavus CA14	UDD63818.1
+AA5_2	Eukaryota	Aspergillus flavus NRRL 3357	QRD87005.1
+AA5_2	Eukaryota	Aspergillus flavus NRRL 3357	QRD91111.1
+AA5_2	Eukaryota	Aspergillus flavus NRRL3357	QMW26827.1
+AA5_2	Eukaryota	Aspergillus flavus NRRL3357	QMW34793.1
+AA5_2	Eukaryota	Aspergillus oryzae RIB40	BAE64583.1
+AA5_2	Eukaryota	Aspergillus oryzae RIB40	BAE56565.1
+AA5_2	Eukaryota	Aspergillus puulaauensis MK2	BCS28434.1
+AA5_2	Eukaryota	Aspergillus puulaauensis MK2	BCS18659.1
+AA5_2	Eukaryota	Aspergillus stellatus NBRC 32302	BAW27603.1

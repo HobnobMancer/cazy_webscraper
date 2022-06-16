@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2022
-# (c) University of Strathclyde 2022
-# (c) Jame Hutton Institute 2022
+# (c) University of St Andrews 2020-2021
+# (c) University of Strathclyde 2020-2021
+# (c) James Hutton Institute 2020-2021
+#
 # Author:
 # Emma E. M. Hobbs
 #
@@ -37,8 +38,22 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-#
-# Bio.PDB reference:
-# Hamelryck, T., Manderick, B. (2003) PDB parser and structure class 
-# implemented in Python. Bioinformatics 19: 2308–2310
-"""Retrieve PDB structures from RSCB PDB and write to disk"""
+"""Tests the __init__.py from the expand module.
+
+These test are intened to be run from the root of the repository using:
+pytest -v
+"""
+
+
+import pytest
+
+from cazy_webscraper import expand
+
+
+def test_get_gen_chunks():
+    for i in expand.get_chunks_gen([0, 0, 0], 1):
+        assert i == [0]
+
+
+def test_get_lst_chunks():
+    assert [[0], [0], [0]] == expand.get_chunks_list([0, 0, 0], 1)

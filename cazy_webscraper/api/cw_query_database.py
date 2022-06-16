@@ -40,7 +40,6 @@
 """Interrogate the local CAZyme database"""
 
 
-from cmath import log
 import logging
 import json
 import re

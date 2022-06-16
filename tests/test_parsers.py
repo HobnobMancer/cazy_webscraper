@@ -54,9 +54,9 @@ from cazy_webscraper.utilities.parsers import (
     cazy_webscraper_parser,
     extract_seq_parser,
     gbk_seq_parser,
-    genbank_cov_parser,
     pdb_strctre_parser,
     uniprot_parser,
+    tax_ncbi_parser,
 )
 
 
@@ -147,11 +147,11 @@ def test_parser_arsv_uniprot():
     uniprot_parser.build_parser(["dummy_email"])
 
 
-def test_parser_cov():
+def test_parser_ncbi_tax():
     """Test building the parser when argsv is None"""
-    genbank_cov_parser.build_parser()
+    tax_ncbi_parser.build_parser()
 
 
-def test_parser_arsv_cov():
+def test_parser_arsv_ncbi_tax():
     """Test building the parser when argsv is not None"""
-    genbank_cov_parser.build_parser(["db", "dummy_email"])
+    tax_ncbi_parser.build_parser(["db", "dummy_email"])

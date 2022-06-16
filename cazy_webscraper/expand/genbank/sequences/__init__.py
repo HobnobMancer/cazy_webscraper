@@ -37,8 +37,4 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-#
-# Bio.PDB reference:
-# Hamelryck, T., Manderick, B. (2003) PDB parser and structure class 
-# implemented in Python. Bioinformatics 19: 2308–2310
-"""Retrieve PDB structures from RSCB PDB and write to disk"""
+"""Retrieve protein sequences from the NCBI GenBank database"""

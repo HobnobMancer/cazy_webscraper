@@ -45,7 +45,7 @@ import logging
 from sqlalchemy import text
 from tqdm import tqdm
 
-from cazy_webscraper.sql.sql_interface import get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data import get_table_dicts
 
 
 def add_gbk_seqs_to_db(seq_dict, retrieval_date, gbk_dict, connection, args):

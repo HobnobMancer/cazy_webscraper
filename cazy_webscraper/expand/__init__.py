@@ -36,7 +36,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""A module for expanding the the local CAZY database beyond what is provided within CAZy."""
+"""A module for expanding the the local CAZY database beyond what is provided within CAZy.
+
+Submodules are organised by databased from which data is sourced"""
 
 
 def get_chunks_gen(lst, chunk_length):

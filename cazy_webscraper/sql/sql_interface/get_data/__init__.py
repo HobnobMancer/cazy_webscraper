@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2022
-# (c) University of Strathclyde 2022
-# (c) Jame Hutton Institute 2022
+# (c) University of St Andrews 2020-2021
+# (c) University of Strathclyde 2020-2021
+# (c) James Hutton Institute 2020-2021
+#
 # Author:
 # Emma E. M. Hobbs
 #
@@ -37,8 +38,4 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-#
-# Bio.PDB reference:
-# Hamelryck, T., Manderick, B. (2003) PDB parser and structure class 
-# implemented in Python. Bioinformatics 19: 2308–2310
-"""Retrieve PDB structures from RSCB PDB and write to disk"""
+"""Submodule to interact with local SQLite database, and get data from the local db."""

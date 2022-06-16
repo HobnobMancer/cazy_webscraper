@@ -1,0 +1,123 @@
+<?xml version="1.0" ?>
+<!DOCTYPE TaxaSet PUBLIC "-//NLM//DTD Taxon, 14th January 2002//EN" "https://www.ncbi.nlm.nih.gov/entrez/query/DTD/taxon.dtd">
+<TaxaSet><Taxon>
+    <TaxId>2700054</TaxId>
+    <ScientificName>Trichoderma achlamydosporum</ScientificName>
+    <OtherNames>
+        <Includes>Trichoderma sp. YL-2020a</Includes>
+        <Name>
+            <ClassCDE>authority</ClassCDE>
+            <DispName>Trichoderma achlamydosporum Z.F. Yu &amp; Y.F. Lv, 2021</DispName>
+        </Name>
+        <Name>
+            <ClassCDE>type material</ClassCDE>
+            <DispName>CCTCC AF 2021065</DispName>
+        </Name>
+        <Name>
+            <ClassCDE>type material</ClassCDE>
+            <DispName>CCTCC:AF2021065</DispName>
+        </Name>
+        <Name>
+            <ClassCDE>type material</ClassCDE>
+            <DispName>YMF 1.06226</DispName>
+        </Name>
+        <Name>
+            <ClassCDE>type material</ClassCDE>
+            <DispName>YMF:1.06226</DispName>
+        </Name>
+    </OtherNames>
+    <ParentTaxId>5543</ParentTaxId>
+    <Rank>species</Rank>
+    <Division>Plants and Fungi</Division>
+    <GeneticCode>
+        <GCId>1</GCId>
+        <GCName>Standard</GCName>
+    </GeneticCode>
+    <MitoGeneticCode>
+        <MGCId>4</MGCId>
+        <MGCName>Mold Mitochondrial; Protozoan Mitochondrial; Coelenterate Mitochondrial; Mycoplasma; Spiroplasma</MGCName>
+    </MitoGeneticCode>
+    <Lineage>cellular organisms; Eukaryota; Opisthokonta; Fungi; Dikarya; Ascomycota; saccharomyceta; Pezizomycotina; leotiomyceta; sordariomyceta; Sordariomycetes; Hypocreomycetidae; Hypocreales; Hypocreaceae; Trichoderma</Lineage>
+    <LineageEx>
+        <Taxon>
+            <TaxId>131567</TaxId>
+            <ScientificName>cellular organisms</ScientificName>
+            <Rank>no rank</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>2759</TaxId>
+            <ScientificName>Eukaryota</ScientificName>
+            <Rank>superkingdom</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>33154</TaxId>
+            <ScientificName>Opisthokonta</ScientificName>
+            <Rank>clade</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>4751</TaxId>
+            <ScientificName>Fungi</ScientificName>
+            <Rank>kingdom</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>451864</TaxId>
+            <ScientificName>Dikarya</ScientificName>
+            <Rank>subkingdom</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>4890</TaxId>
+            <ScientificName>Ascomycota</ScientificName>
+            <Rank>phylum</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>716545</TaxId>
+            <ScientificName>saccharomyceta</ScientificName>
+            <Rank>clade</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>147538</TaxId>
+            <ScientificName>Pezizomycotina</ScientificName>
+            <Rank>subphylum</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>716546</TaxId>
+            <ScientificName>leotiomyceta</ScientificName>
+            <Rank>clade</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>715989</TaxId>
+            <ScientificName>sordariomyceta</ScientificName>
+            <Rank>clade</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>147550</TaxId>
+            <ScientificName>Sordariomycetes</ScientificName>
+            <Rank>class</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>222543</TaxId>
+            <ScientificName>Hypocreomycetidae</ScientificName>
+            <Rank>subclass</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>5125</TaxId>
+            <ScientificName>Hypocreales</ScientificName>
+            <Rank>order</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>5129</TaxId>
+            <ScientificName>Hypocreaceae</ScientificName>
+            <Rank>family</Rank>
+        </Taxon>
+        <Taxon>
+            <TaxId>5543</TaxId>
+            <ScientificName>Trichoderma</ScientificName>
+            <Rank>genus</Rank>
+        </Taxon>
+    </LineageEx>
+    <CreateDate>2020/01/22 16:22:53</CreateDate>
+    <UpdateDate>2021/11/18 14:32:32</UpdateDate>
+    <PubDate>2020/02/03 01:02:24</PubDate>
+</Taxon>
+
+</TaxaSet>
