@@ -68,11 +68,11 @@ def get_taxonomies(
     args,
 ):
     """Retrieve the taxonomy data for a set of GenBank protein accessions]
-    
+
     :param genbank_accessions: list of GenBank protein accessions
     :param connection: connection to local sql db
     :param args: cmd-line args parser
-    
+
     Return dict {genus: {species: {strain}}}
     """
     logger = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ def get_taxonomies(
 
     if args.genbank_accessions is not None or args.uniprot_accessions is not None:
         gbk_tax_dict, uniprt_tax_dict = get_uni_gbk_tax_dict(connection)
-    
+
         if args.genbank_accessions is not None:
             logger.info(f"Retrieving PDB structures for GenBank accessions listed in\n{args.genbank_accessions}")
             organisms += get_taxs_for_user_gbks(gbk_tax_dict, args)
@@ -89,7 +89,7 @@ def get_taxonomies(
         if args.uniprot_accessions is not None:
             logger.info(f"Extracting protein sequences for UniProt accessions listed in\n{args.uniprot_accessions}")
             organisms += get_taxs_for_uniprots(uniprt_tax_dict, args)
-    
+
     else:
         organisms = get_filtered_taxs(
             class_filters,
@@ -105,9 +105,9 @@ def get_taxonomies(
 
 def get_uni_gbk_tax_dict(connection):
     """Compile a dict of the data in the Genbanks and Taxs tables
-    
+
     :param connection: open connection to an SQLite3 database
-    
+
     Return dict {genbank_accession: organism}
     """
     with Session(bind=connection) as session:
@@ -119,7 +119,7 @@ def get_uni_gbk_tax_dict(connection):
     gbk_tax_dict = {}  # {genbank_accession: organism}
 
     uniprt_tax_dict = {}  # {uniprot acc: organism}
-    
+
     for record in uniprt_gbk_tax_records:
         uniprt_tax_dict[f"{record[0].genbank_accession}"] = f"{record[-1].genus} {record[-1].species}"
         gbk_tax_dict[f"{record[1].genbank_accession}"] = f"{record[-1].genus} {record[-1].species}"
@@ -129,7 +129,7 @@ def get_uni_gbk_tax_dict(connection):
 
 def get_taxs_for_user_gbks(gbk_tax_dict, args):
     """Extract taxonomy accs for GenBank accessions listed in a file
-    
+
     :param gbk_tax_dict: dict {genbank_accession: organism}
     :param args: cmd-line args parser
 
@@ -147,7 +147,7 @@ def get_taxs_for_user_gbks(gbk_tax_dict, args):
             "Terminating program"
         )
         sys.exit(1)
-    
+
     gbk_accessions = [line.strip() for line in lines]
 
     organisms = set()
@@ -167,7 +167,7 @@ def get_taxs_for_user_gbks(gbk_tax_dict, args):
 
 def get_taxs_for_uniprots(uni_tax_dict, args):
     """Extract taxonomy accs for GenBank accessions listed in a file
-    
+
     :param uni_tax_dict: dict {uniprot_acc: organism}
     :param args: cmd-line args parser
 
@@ -185,7 +185,7 @@ def get_taxs_for_uniprots(uni_tax_dict, args):
             "Terminating program"
         )
         sys.exit(1)
-    
+
     uniprot_accessions = [line.strip() for line in lines]
 
     organisms = set()
@@ -200,7 +200,7 @@ def get_taxs_for_uniprots(uni_tax_dict, args):
                 f"Not extracted protein sequences for {uniprot_accession}"
             )
             continue
-    
+
     return list(organisms)
 
 
@@ -213,14 +213,14 @@ def get_filtered_taxs(
     connection,
 ):
     """Retrieve the taxs for proteins matching the user criteria.
-    
+
     :param class_filters: set of CAZy classes to retrieve data for
     :param family_filters: set of CAZy families to retrieve data for
     :param taxonomy_filters: dict of taxonom filters to limit the retrieval of data to
     :param kingdom_filters: set of tax kingdoms to limit the retrieval of data to
     :param ec_filters: set of EC numbers to limit the retrieval of data to
     :param connection: open sqlaclchemy connection for an SQLite db
-    
+
     Return dict of organisms 
     """
     logger = logging.getLogger(__name__)
@@ -231,7 +231,7 @@ def get_filtered_taxs(
         family_filters,
         connection,
     )
-    
+
     if len(initially_selected_gbk) == 0:
         logger.error(
             "Retrieved NO proteins for the user selected CAZy classes and (sub)families\n"
@@ -239,7 +239,7 @@ def get_filtered_taxs(
             "Terminating program"
         )
         sys.exit(1)
-    
+
     logger.info(
         f"Retrieved {len(initially_selected_gbk)} from user selected CAZy class and (sub)families"
     )
@@ -250,7 +250,7 @@ def get_filtered_taxs(
         taxonomy_filter_dict,
         kingdom_filters,
     )
-    
+
     if len(ec_filters) != 0:
         filtered_records = apply_ec_filters(
             filtered_records,
@@ -282,7 +282,7 @@ def get_filtered_taxs(
 
             if organism.startswith("Influenza A virus"):
                 organism = "Influenza A virus"
-                
+
             elif organism.startswith("Influenza B virus"):
                 organism = "Influenza B virus"
 
