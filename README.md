@@ -27,11 +27,6 @@
 
 **[GenBank](https://www.ncbi.nlm.nih.gov/genbank/):**  
 - Protein sequences 
-- Retrieve source genomic assembly, specifically:
-    - GenBank assembly version accession
-    - GenBank assembly ID
-    - RefSeq assembly version accession
-    - RefSeq assembly ID
 - Latest taxonomic classification - including complete lineage (including phylum, class, order and family)
 
 **[UniProt](https://www.uniprot.org/):**  
