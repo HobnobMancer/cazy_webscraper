@@ -96,10 +96,9 @@ def closing_message(job, start_time, args):
     return
 
 
-
 def connect_existing_db(args, time_stamp, start_time):
     """Coordinate connecting to an existing local CAZyme database, define logger name and cache dir
-    
+
     :param args: cmd-line args parser
     :param time_stamp: str, time cazy_webscraper was invoked
     :param start_time: pd date-time obj, time cazy_webscraper was invoked
@@ -107,7 +106,7 @@ def connect_existing_db(args, time_stamp, start_time):
     Return connection to local CAZyme database, logger file name, and path to cache dir
     """
     logger = logging.getLogger(__name__)
-    
+
     logger.info("Adding data to an existing local CAZyme database")
 
     if os.path.isfile(args.database) is False:
@@ -130,7 +129,7 @@ def connect_existing_db(args, time_stamp, start_time):
         )
         closing_message("cazy_webscraper", start_time, args)
         sys.exit(1)
-    
+
     # used for naming additional log files
     logger_name = str(args.database).split('.')[0]
 
@@ -138,21 +137,21 @@ def connect_existing_db(args, time_stamp, start_time):
     cache_dir = Path(f"{str(args.database.parent)}/.cazy_webscraper_{time_stamp}")
 
     return connection, logger_name, cache_dir
-    
+
 
 def connect_to_new_db(args, time_stamp, start_time):
     """Build and connect to a new local CAZyme database.
-    
+
     :param args: cmd-line args parser
     :param time_stamp: str, time cazy_webscraper was invoked
     :param start_time: pd date-time obj, time cazy_webscraper was invoked
-    
+
     Return connection to the database, name of the logger, and path to the cache dir
     """
     logger = logging.getLogger(__name__)
 
     if args.db_output is not None:  # user defined target output for the NEW database
-        
+
         if (os.path.isfile(args.db_output)):  # target file exists
             if args.force:
                 logger.warning(
@@ -168,7 +167,7 @@ def connect_to_new_db(args, time_stamp, start_time):
                 )
                 closing_message("cazy_webscraper", start_time, args)
                 sys.exit(1)
-        
+
         else:  # may need to build dirs
             logger.info(
                 "Building new local CAZyme database\n"
@@ -180,19 +179,19 @@ def connect_to_new_db(args, time_stamp, start_time):
             output_dir = (args.db_output).parent
             make_output_directory(output_dir, args.force, args.nodelete)
             cache_dir = Path(f"{str(output_dir)}/.cazy_webscraper_{time_stamp}")
-            
+
         else:  # writing to cwd
             cache_dir = Path(f".cazy_webscraper_{time_stamp}")
 
         logger_name = str(args.db_output).split('.')[0]
         db_path = args.db_output
-    
+
     else:
         logger.info("Using default database name and writing to cwd")
         db_path = Path(f"cazy_webscraper_{time_stamp}.db")
         cache_dir = Path(f".cazy_webscraper_{time_stamp}")
         logger_name = f'cazy_webscraper_{time_stamp}'
-    
+
     try:
         connection = sql_orm.get_db_connection(db_path, args.sql_echo, new=True)
         logger.warning(f"Built new local CAZyme database at\n{db_path}")

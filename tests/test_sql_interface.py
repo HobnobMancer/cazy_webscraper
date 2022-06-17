@@ -104,7 +104,7 @@ def test_log_scrape(db_path, argsdict):
     ec_filter = {"32.15.1.2"}
     retrieved_annotations = "unit test"
     db = "unit test"
-    
+
     db_connection = sql_orm.get_db_connection(db_path, False, False)
 
     with sql_orm.Session(bind=db_connection) as session:
@@ -123,7 +123,6 @@ def test_log_scrape(db_path, argsdict):
         session.rollback()
 
 
-
 def test_log_scrape_class_error(db_path, argsdict):
     """Test log_scrape_in_db()"""
     time_stamp = "time_Stamp"
@@ -135,7 +134,7 @@ def test_log_scrape_class_error(db_path, argsdict):
     ec_filter = []
     retrieved_annotations = "unit test"
     db = "unit test"
-    
+
     db_connection = sql_orm.get_db_connection(db_path, False, False)
 
     with sql_orm.Session(bind=db_connection) as session:
@@ -167,7 +166,7 @@ def test_log_scrape_no_classes(db_path, argsdict):
     ec_filter = {"32.15.1.2"}
     retrieved_annotations = "unit test"
     db = "unit test"
-    
+
     db_connection = sql_orm.get_db_connection(db_path, False, False)
 
     with sql_orm.Session(bind=db_connection) as session:
@@ -184,7 +183,6 @@ def test_log_scrape_no_classes(db_path, argsdict):
         )
 
         session.rollback()
-
 
 
 def test_insert_data(db_path, argsdict):
@@ -204,4 +202,3 @@ def test_get_table(db_path, argsdict):
     db_connection = sql_orm.get_db_connection(db_path, False, False)
 
     sql_interface.get_gbk_table_dict(db_connection)
-
