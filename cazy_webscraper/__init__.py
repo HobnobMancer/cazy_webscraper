@@ -194,7 +194,7 @@ def connect_to_new_db(args, time_stamp, start_time):
         logger_name = f'cazy_webscraper_{time_stamp}'
     
     try:
-        connection = sql_orm.get_db_connection(db_path, args, new=True)
+        connection = sql_orm.get_db_connection(db_path, args.sql_echo, new=True)
         logger.warning(f"Built new local CAZyme database at\n{db_path}")
     except Exception:
         logger.error(
