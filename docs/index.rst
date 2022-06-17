@@ -117,7 +117,8 @@ The following data can be retrieved:
 
 **GenBank**
 
-To retrieve protein sequences from GenBank use the ``cw_get_genbank_seqs`` command.
+- To retrieve protein sequences from GenBank use the ``cw_get_genbank_seqs`` command.
+- To retrieve the latest taxonomic classifications from NCBI Taxonomy using the ``cw_get_ncbi_taxs`` command.
 
 **Extract sequences**
 
@@ -176,6 +177,7 @@ For details and updates on development, please consult the `GitHub repository <h
    api
    apitutorial
    cache
+   integrate
    contributing
    license
 
