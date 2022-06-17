@@ -105,7 +105,7 @@ def test_log_scrape(db_path, argsdict):
     retrieved_annotations = "unit test"
     db = "unit test"
     
-    db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
+    db_connection = sql_orm.get_db_connection(db_path, False, False)
 
     with sql_orm.Session(bind=db_connection) as session:
         sql_interface.log_scrape_in_db(
@@ -136,7 +136,7 @@ def test_log_scrape_class_error(db_path, argsdict):
     retrieved_annotations = "unit test"
     db = "unit test"
     
-    db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
+    db_connection = sql_orm.get_db_connection(db_path, False, False)
 
     with sql_orm.Session(bind=db_connection) as session:
         sql_interface.log_scrape_in_db(
@@ -168,7 +168,7 @@ def test_log_scrape_no_classes(db_path, argsdict):
     retrieved_annotations = "unit test"
     db = "unit test"
     
-    db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
+    db_connection = sql_orm.get_db_connection(db_path, False, False)
 
     with sql_orm.Session(bind=db_connection) as session:
         sql_interface.log_scrape_in_db(
@@ -189,7 +189,7 @@ def test_log_scrape_no_classes(db_path, argsdict):
 
 def test_insert_data(db_path, argsdict):
     """Test insert_data"""
-    db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
+    db_connection = sql_orm.get_db_connection(db_path, False, False)
 
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -201,7 +201,7 @@ def test_insert_data(db_path, argsdict):
 
 def test_get_table(db_path, argsdict):
     """Test get_gbk_table_dict"""
-    db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
+    db_connection = sql_orm.get_db_connection(db_path, False, False)
 
     sql_interface.get_gbk_table_dict(db_connection)
 
