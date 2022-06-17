@@ -102,7 +102,7 @@ def test_get_uni_gbk_dict(db_path):
         sql_echo=True,
         uniprot_accessions=None,
     )}
-    db_connection = sql_orm.get_db_connection(db_path, argsdict["args"], False)
+    db_connection = sql_orm.get_db_connection(db_path, False, False)
 
     assert ({}, {}) == get_taxonomies.get_uni_gbk_tax_dict(db_connection)
 
