@@ -80,6 +80,7 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 - [Configuring `cazy_webscraper` using a YAML file](#configuring-using-a-yaml-file)
 - [CAZy coverage of GenBank](#cazy-coverage-of-genbank)
     - [Configure calculating CAZy coverage of GenBank](#configure-calculating-cazy-coverage-of-genbank)
+- [Integrating a local CAZyme database](#integrating-a-local-cazyme-database)
 - [Contributions](#contributions)
 - [License and copyright](#license-and-copyright)
 <!-- /TOC -->
@@ -821,6 +822,21 @@ When listing EC numbers, the 'EC' prefix can be included or excluded. For exampl
 `cazy_webscraper` performs a direct EC number comparison. Therefore, supplying `cazy_webscraper` with the EC number EC1.2.3.- will only retrieve protein specifically annotated with EC1.2.3.-. `cazy_webscraper` will **not** retrieve proteins will all completed EC numbers under EC1.2.3.-, thus, `cazy_webscraper` will **not** retrieve data for proteins annotated with EC1.2.3.1, EC1.2.3.2, EC1.2.3.3, etc.
 
 Example configuration files, and an empty configuraiton file template are located in the [`config_files`]() directory of this repo.
+
+
+## Integrating a local CAZyme database
+
+`cazy_webscraper` compiles data downloaded from external databases into a local SQLite3 database.
+
+To facilitate integratting the local CAZyme database into third-party Python applications, use the `get_db_connection` function from `cazy_webscraper`, which will return an open connection to the CAZyme database from `sqlalchemy`.
+
+`get_db_connection` takes 2 required args and one optional arg:  
+**Required:**  
+- Path to the local CAZyme database (provided as a `pathlib.Path` object)
+- Bool to set the `sqlalchemy.create_engine` param `sql_echo`. When set to `True`, the SQL log will be printed to the terminal
+**Optional:** 
+- Bool to reflect if a new database. Default is `False`, i.e. connecting to an existing local CAZyme database
+
 
 ## Contributions
 
