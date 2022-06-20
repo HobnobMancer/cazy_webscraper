@@ -170,5 +170,5 @@ def test_get_assembly_data(monkeypatch):
         monkeypatch.setattr(genomes, "entrez_retry", mock_entrez_tax_call)
         monkeypatch.setattr(genomes, "post_ids", mock_post_ids)
 
-        output = genomes.get_nuccore_ids(['BCS34995.1'], {}, argsdict['args'])
-        assert output == (set(), {})
+        output = genomes.get_assembly_data(['BCS34995.1'], [], set(), argsdict['args'])
+        assert output == ({}, [])
