@@ -113,6 +113,67 @@ def test_get_nuccore_ids_post(monkeypatch):
     genomes.get_nuccore_ids(['BCS34995.1'], {'proteins': []}, argsdict['args'])
 
 
+def test_get_assembly_ids(monkeypatch):
+    """Retrieve mock result with https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?db=nuccore&dbfrom=protein&id=BCS34995.1&linkname=protein_nuccore"""
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    efetch_result = "tests/test_inputs/test_inputs_ncbi_genomes/elink_prot_nuccore.xml"
+
+    def mock_post_ids(*args, **kwards):
+        return "qk", "we"
+
+    with open(efetch_result, "rb") as fh:
+        result = fh
+
+        def mock_entrez_tax_call(*args, **kwargs):
+            """Mocks call to Entrez to retrieve assembly ids."""
+            return result
+
+        monkeypatch.setattr(genomes, "entrez_retry", mock_entrez_tax_call)
+        monkeypatch.setattr(genomes, "post_ids", mock_post_ids)
+
+        output = genomes.get_assembly_ids(['BCS34995.1'], {}, argsdict['args'])
+        assert output == ({'2131947417'}, {})
+
+
+def test_get_assembly_ids_fail(monkeypatch):
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    def mock_post_ids(*args, **kwards):
+        return "qk", "we"
+
+    def mock_entrez_tax_call(*args, **kwargs):
+        """Mocks call to Entrez to retrieve assembly ids."""
+        return
+
+    monkeypatch.setattr(genomes, "entrez_retry", mock_entrez_tax_call)
+    monkeypatch.setattr(genomes, "post_ids", mock_post_ids)
+
+    genomes.get_assembly_ids(['BCS34995.1'], {}, argsdict['args'])
+
+
+def test_get_assembly_ids_post(monkeypatch):
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    def mock_post_ids(*args, **kwards):
+        return None, None
+
+    def mock_entrez_tax_call(*args, **kwargs):
+        """Mocks call to Entrez to retrieve assembly ids."""
+        return
+
+    monkeypatch.setattr(genomes, "entrez_retry", mock_entrez_tax_call)
+    monkeypatch.setattr(genomes, "post_ids", mock_post_ids)
+
+    genomes.get_assembly_ids(['BCS34995.1'], {'nuccores': []}, argsdict['args'])
+
+
 def test_get_assembly_data_fail_post(monkeypatch):
     argsdict = {"args": Namespace(
         retries=10,
