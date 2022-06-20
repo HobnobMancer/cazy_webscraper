@@ -171,7 +171,7 @@ def update_genomic_data(genomes_of_interest, genome_table_dict, ncbi_genome_dict
 
 def add_prot_genome_relationships(assembly_prot_dict, gbk_dict, db_genome_table_dict, connection):
     """Add protein (Gbk) and genome links to the Genbanks_Genomes table
-    
+
     :param assembly_prot_dict: dict, {assembly_name: {protein_accessions}}
     :param db_genome_table_dict: Genomes table loaded into dict
     :param gbk_dict: dict, {gbk_accession: local db id}
@@ -193,7 +193,7 @@ def add_prot_genome_relationships(assembly_prot_dict, gbk_dict, db_genome_table_
 
             if relationship not in gbk_genome_table_data:
                 relationships_to_add.add(relationship)
-    
+
     if len(relationships_to_add) > 0:
         insert_data(
             connection,
