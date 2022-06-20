@@ -53,7 +53,7 @@ from saintBioutils.utilities.file_io import make_output_directory
 from cazy_webscraper.sql import sql_orm
 
 
-__version__ = "2.1.1"
+__version__ = "2.1.2"
 
 VERSION_INFO = f"cazy_webscraper version: {__version__}"
 
@@ -152,7 +152,7 @@ def connect_to_new_db(args, time_stamp, start_time):
 
     if args.db_output is not None:  # user defined target output for the NEW database
 
-        if (os.path.isfile(args.db_output)):  # target file exists
+        if os.path.isfile(args.db_output):  # target file exists
             if args.force:
                 logger.warning(
                     "Overwriting existing local CAZyme database at:\n"
