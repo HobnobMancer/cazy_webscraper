@@ -153,7 +153,7 @@ genbanks_genomes = Table(
     'Genbanks_Genomes',
     Base.metadata,
     Column("genbank_id", Integer, ForeignKey("Genbanks.genbank_id")),
-    Column("genome_ids", Integer, ForeignKey("Genomes.genome_id")),
+    Column("genome_id", Integer, ForeignKey("Genomes.genome_id")),
     PrimaryKeyConstraint("genbank_id", "genome_id"),
 )
 
