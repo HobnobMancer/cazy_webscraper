@@ -209,10 +209,18 @@ class Genbank(Base):
         back_populates="genbanks",
     )
 
+    genomes = relationship(
+        "Genome",
+        secondary=genbanks_genomes,
+        back_populates="genbanks",
+        lazy="dynamic",
+    )
+
     organism = relationship(
         "Taxonomy",
         back_populates="genbanks",
     )
+
     families = relationship(
         "CazyFamily",
         secondary=genbanks_families,
@@ -297,12 +305,14 @@ class Kingdom(Base):
 class Genome(Base):
     """Represent the genomic assembly from which a protein is sourced."""
     __tablename__ = "Genomes"
-    
+
     __table_args__ = (
         UniqueConstraint("assembly_name", "gbk_version_accession", "refseq_version_accession"),
-        Index("genome_options", "assembly_name", "gbk_version_accession", "refseq_version_accession")
+        Index(
+            "genome_options", "assembly_name", "gbk_version_accession", "refseq_version_accession"
+        )
     )
-    
+
     genome_id = Column(Integer, primary_key=True)
     assembly_name = Column(String)
     gbk_version_accession = Column(String)
@@ -316,7 +326,7 @@ class Genome(Base):
         back_populates="genomes",
         lazy="dynamic",
     )
-    
+
     def __str__(self):
         return f"-Genome, Gbk={self.gkb_version_accession}, RefSeq={self.refseq_version_accession}-"
 
