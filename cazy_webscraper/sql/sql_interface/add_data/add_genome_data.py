@@ -50,6 +50,7 @@ from cazy_webscraper.sql.sql_interface import insert_data
 from cazy_webscraper.sql.sql_interface.get_data.get_assemblies import (
     get_records_to_update,
     get_assembly_table,
+    get_gbk_genome_table_data,
 )
 
 
@@ -179,8 +180,8 @@ def add_prot_genome_relationships(assembly_prot_dict, gbk_dict, db_genome_table_
 
     Return nothing
     """
-    # load Genbanks_Genomes table
-    gbk_genome_table_data = ()  # setof tuples, each tuple is one row (gbk_id, genome_id)
+    # load Genbanks_Genomes table --> set of tuples, each tuple is one row (gbk_id, genome_id)
+    gbk_genome_table_data = get_gbk_genome_table_data(connection)  
     relationships_to_add = set()
 
     for assembly_name in tqdm(assembly_prot_dict, desc="Linking proteins and genomes"):

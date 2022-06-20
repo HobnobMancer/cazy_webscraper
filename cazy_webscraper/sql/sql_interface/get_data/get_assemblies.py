@@ -47,15 +47,16 @@ from cazy_webscraper.sql.sql_orm import (
     Genbank,
     Genome,
     Session,
+    genbanks_genomes,
 )
 
 
 def get_no_assembly_proteins(gbk_dict, connection):
     """Filter a gbk_dict to retain only those proteins with no assembly data in the local db
-    
+
     :param gbk_dict: dict, {protein gbk acc: db id}
     :param connection: open sqlite db connection
-    
+
     Return gbk_dict"""
     filtered_gbk_dict = {}
 
@@ -65,7 +66,7 @@ def get_no_assembly_proteins(gbk_dict, connection):
                 join(Genome, (Genome.genbank_id == Genbank.genbank_id)).\
                     filter(Genbank.genbank_accession == gbk_acc).\
                         all()
-        
+
         for result in query_result:
             filtered_gbk_dict[gbk_acc] = gbk_dict[gbk_acc]
     
@@ -74,10 +75,10 @@ def get_no_assembly_proteins(gbk_dict, connection):
 
 def get_records_to_update(gbk_dict, connection):
     """Filter a gbk_dict to retain only those proteins with no assembly data in the local db
-    
+
     :param gbk_dict: dict, {protein gbk acc: db id}
     :param connection: open sqlite db connection
-    
+
     Return gbk_dict"""
     update_gbk_dict = {}  # proteins to update the new genome data
     add_gbk_dict = {}  # proteins to add new genome data
@@ -88,26 +89,26 @@ def get_records_to_update(gbk_dict, connection):
                 join(Genome, (Genome.genbank_id == Genbank.genbank_id)).\
                     filter(Genbank.genbank_accession == gbk_acc).\
                         all()
-        
+
         if len(query_result) == 0:
             add_gbk_dict[gbk_acc] = gbk_dict[gbk_acc]
         else:
             update_gbk_dict[gbk_acc] = gbk_dict[gbk_acc]
-    
+
     return update_gbk_dict, add_gbk_dict
 
 
 def get_assembly_table(genomes_of_interest, connection):
     """Load assembly table into a dict
-    
+
     :param genomes_of_interest: list of assmebly names
     :param connection: open sql db connection
-    
+
     Return dict {assembly name: db id}
     """
     with Session(bind=connection) as session:
         genome_records = session.query(Genome).all()
-    
+
     db_genome_dict = {}  # {assembly name: db id}
 
     for record in tqdm(genome_records, desc="Retrieving genome records from the local db"):
@@ -116,5 +117,23 @@ def get_assembly_table(genomes_of_interest, connection):
 
         if assembly_name in genomes_of_interest:
             db_genome_dict[assembly_name] = db_id
-        
+
     return db_genome_dict
+
+
+def get_gbk_genome_table_data(connection):
+    """Parse the Genbanks_Genomes table into a set of tuples, one row per tuple.
+    
+    :param connection: opwn sql db connection
+    
+    Return set of tuples
+    """
+    with Session(bind=connection) as session:
+        table_objs = session.query(genbanks_genomes).all()
+
+    prot_gnm_records = set()
+
+    for record in table_objs:
+        prot_gnm_records.add((record.genbank_id, record.genome_id))
+    
+    return prot_gnm_records
