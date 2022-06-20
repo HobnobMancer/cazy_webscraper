@@ -50,7 +50,7 @@ import pytest
 
 from argparse import Namespace
 
-from cazy_webscraper import taxonomy
+from cazy_webscraper.ncbi.taxonomy import multiple_taxa
 
 
 @pytest.fixture
@@ -68,7 +68,7 @@ def test_id_multi_tax(cazy_data):
     """Test identify_multiplpe_taxa"""
     logger = logging.getLogger(__name__)
 
-    returned_list = taxonomy.identify_multiple_taxa(cazy_data, logger)
+    returned_list = multiple_taxa.identify_multiple_taxa(cazy_data, logger)
 
     assert len(returned_list) == 4
 
@@ -77,7 +77,7 @@ def test_select_first_organism(cazy_data):
     """Test select_first_organism()"""
     logger = logging.getLogger(__name__)
 
-    taxonomy.select_first_organism(cazy_data, ['gbk1', 'gbk2', 'gbk3', 'gbk4'], logger)
+    multiple_taxa.select_first_organism(cazy_data, ['gbk1', 'gbk2', 'gbk3', 'gbk4'], logger)
 
 
 def test_multi_taxa_invalid(cazy_data, monkeypatch):
@@ -88,9 +88,9 @@ def test_multi_taxa_invalid(cazy_data, monkeypatch):
     def mock_replace_multiple(*args, **kwards):
         return cazy_data, False
 
-    monkeypatch.setattr(taxonomy, "replace_multiple_tax", mock_replace_multiple)
+    monkeypatch.setattr(multiple_taxa, "replace_multiple_tax", mock_replace_multiple)
 
-    taxonomy.replace_multiple_tax_with_invalid_ids(cazy_data, gbk_accs, logger, "args")
+    multiple_taxa.replace_multiple_tax_with_invalid_ids(cazy_data, gbk_accs, logger, "args")
 
 
 def test_multi_taxa(cazy_data, monkeypatch):
@@ -101,9 +101,9 @@ def test_multi_taxa(cazy_data, monkeypatch):
     def mock_replace_multiple(*args, **kwards):
         return cazy_data, True
 
-    monkeypatch.setattr(taxonomy, "replace_multiple_tax", mock_replace_multiple)
+    monkeypatch.setattr(multiple_taxa, "replace_multiple_tax", mock_replace_multiple)
 
-    taxonomy.replace_multiple_tax_with_invalid_ids(cazy_data, gbk_accs, logger, "args")
+    multiple_taxa.replace_multiple_tax_with_invalid_ids(cazy_data, gbk_accs, logger, "args")
 
 
 def test_get_ncbi_tax(monkeypatch):
@@ -120,9 +120,9 @@ def test_get_ncbi_tax(monkeypatch):
             """Mocks call to Entrez."""
             return result
 
-        monkeypatch.setattr(taxonomy, "entrez_retry", mock_entrez_tax_call)
+        monkeypatch.setattr(multiple_taxa, "entrez_retry", mock_entrez_tax_call)
 
-        output = taxonomy.get_ncbi_tax(
+        output = multiple_taxa.get_ncbi_tax(
             {"WebEnv": 1, "QueryKey": 2},
             {'CAA35997.1': {'kingdom': {'kingdom'}, 'organism': {'organism'}}},
             logging.getLogger(__name__),
@@ -140,9 +140,9 @@ def test_get_ncbi_tax_fails(monkeypatch):
         """Mocks call to Entrez."""
         return
 
-    monkeypatch.setattr(taxonomy, "entrez_retry", mock_entrez_tax_call)
+    monkeypatch.setattr(multiple_taxa, "entrez_retry", mock_entrez_tax_call)
 
-    taxonomy.get_ncbi_tax(
+    multiple_taxa.get_ncbi_tax(
         {"WebEnv": 1, "QueryKey": 2},
         {'CAA35997.1': {'kingdom': {'kingdom'}, 'organism': {'organism'}}},
         logging.getLogger(__name__),
