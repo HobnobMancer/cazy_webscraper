@@ -207,6 +207,7 @@ def get_assembly_data(assembly_ids, failed_batches, parsed_assembly_ids, args, r
             assembly_records = Entrez.read(record_handle, validate=False)
     except (TypeError, AttributeError, RuntimeError) as err:
         logger.warning(f"Failed to retrieve Assembly records:\n{err}")
+        return genome_dict, failed_batches
 
     for genome in assembly_records['DocumentSummarySet']['DocumentSummary']:
         assembly_name = genome['AssemblyName']
