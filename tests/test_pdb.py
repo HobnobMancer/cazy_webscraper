@@ -133,8 +133,8 @@ def test_main(monkeypatch):
             force=False,
             nodelete=False,
             outdir=None,
-            genbank_accessions=None,
-            uniprot_accessions=None,
+            genbank_accessions="",
+            uniprot_accessions="",
             cache_dir=Path("tests/test_outputs/test_outputs_pdb"),
             nodelete_cache=False,
         )
@@ -163,5 +163,8 @@ def test_main(monkeypatch):
     monkeypatch.setattr(get_pdb_structures, "get_pdb_accessions", mock_selected_pdb)
     monkeypatch.setattr(get_pdb_structures, "download_pdb_structures", mock_no_return)
     monkeypatch.setattr(get_pdb_structures, "get_gbk_table_dict", mock_gbk_table)
+    monkeypatch.setattr(get_pdb_structures, "get_user_genbank_sequences", mock_gbk_table)
+    monkeypatch.setattr(get_pdb_structures, "get_uniprot_table_dict", mock_gbk_table)
+    monkeypatch.setattr(get_pdb_structures, "get_user_uniprot_sequences", mock_gbk_table)
 
     get_pdb_structures.main()
