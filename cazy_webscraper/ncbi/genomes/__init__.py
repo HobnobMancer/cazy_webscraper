@@ -73,9 +73,9 @@ def get_nuccore_ids(batch, failed_batches, args, retry=False):
 
     except RuntimeError:
         if retry:
-            logger.warning(f"{batch[0]} is not listed in NCBI")
+            logger.warning(f"{str(batch[0])} is not listed in NCBI", exc_info=1)
         else:
-            logger.warning("Batch contains invalid NCBI Protein db accessions")
+            logger.warning("Batch contains invalid NCBI Protein db accessions", exc_info=1)
             failed_batches.append(batch)
 
         return nuccore_ids, failed_batches
@@ -92,10 +92,10 @@ def get_nuccore_ids(batch, failed_batches, args, retry=False):
         ) as handle:
             nuccore_records = Entrez.read(handle, validate=False)
 
-    except (TypeError, AttributeError, RuntimeError) as error:
+    except (TypeError, AttributeError, RuntimeError):
         logger.warning(
             f"Entrez failed to link Protein records to nuccore records numbers\n",
-            error
+            exc_info=1,
         )
         return nuccore_ids, failed_batches
 
