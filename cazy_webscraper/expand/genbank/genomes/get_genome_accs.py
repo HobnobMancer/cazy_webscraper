@@ -61,21 +61,25 @@ from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger
 
 from cazy_webscraper import closing_message, connect_existing_db
-from cazy_webscraper.sql.sql_interface import get_selected_gbks, get_table_dicts
-from cazy_webscraper.sql.sql_interface.get_data.get_assemblies import get_no_assembly_proteins
-from cazy_webscraper.sql.sql_interface.add_data.add_genome_data import add_assembly_data
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.ncbi.genomes import (
     get_nuccore_ids,
     get_assembly_ids,
     get_assembly_data,
 )
-from cazy_webscraper.utilities import parse_configuration
-from cazy_webscraper.utilities.parsers.get_genomes_parser import build_parser
-from cazy_webscraper.sql.sql_interface.get_records import (
+from cazy_webscraper.sql.sql_interface.add_data.add_genome_data import add_assembly_data
+from cazy_webscraper.sql.sql_interface.get_data.get_records import (
     get_user_genbank_sequences,
     get_user_uniprot_sequences
 )
+from cazy_webscraper.sql.sql_interface.get_data.get_selected_gbks import get_genbank_accessions
+from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
+    get_gbk_table_dict,
+    get_uniprot_table_dict,
+)
+from cazy_webscraper.sql.sql_interface.get_data.get_assemblies import get_no_assembly_proteins
+from cazy_webscraper.utilities import parse_configuration
+from cazy_webscraper.utilities.parsers.get_genomes_parser import build_parser
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -158,13 +162,21 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # get data for genbank accessions
     if len(gbk_accessions) != 0:
-        new_assembly_dict, new_genome_dict = get_ncbi_assembly_data(list(gbk_accessions), cache_dir, args)
+        new_assembly_dict, new_genome_dict = get_ncbi_assembly_data(
+            list(gbk_accessions),
+            cache_dir,
+            args,
+        )
         assembly_dict.update(new_assembly_dict)
         genome_dict.update(new_genome_dict)
 
     # get data for refseq accessions
     if len(refseq_accessions) != 0:
-        new_assembly_dict, new_genome_dict = get_ncbi_assembly_data(list(refseq_accessions), cache_dir, args)
+        new_assembly_dict, new_genome_dict = get_ncbi_assembly_data(
+            list(refseq_accessions),
+            cache_dir,
+            args,
+        )
         assembly_dict.update(new_assembly_dict)
         genome_dict.update(new_genome_dict)
 
@@ -200,7 +212,7 @@ def get_gbks_of_interest(
     gbk_dict = {}  # {gbk_acc: db_id}
 
     if args.genbank_accessions is not None or args.uniprot_accessions is not None:
-        gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
+        gbk_table_dict = get_gbk_table_dict(connection)
 
         if args.genbank_accessions is not None:
             logger.info(f"Retrieving PDB structures for GenBank accessions listed in {args.genbank_accessions}")
@@ -208,11 +220,11 @@ def get_gbks_of_interest(
 
         if args.uniprot_accessions is not None:
             logger.info(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
-            uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+            uniprot_table_dict = get_uniprot_table_dict(connection)
             gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
 
     else:
-        gbk_dict = get_selected_gbks.get_genbank_accessions(
+        gbk_dict = get_genbank_accessions(
             class_filters,
             family_filters,
             taxonomy_filter_dict,
