@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2020-2021
-# (c) University of Strathclyde 2020-2021
-# (c) James Hutton Institute 2020-2021
+# (c) University of St Andrews 2022
+# (c) University of Strathclyde 2022
+# (c) James Hutton Institute 2022
 #
 # Author:
 # Emma E. M. Hobbs
@@ -51,11 +51,11 @@ from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import get_ncbi_
 
 def add_ncbi_taxonomies(tax_dict, connection, args):
     """Add NCBI taxonomy data to the local db
-    
+
     :param tax_dict: dict, keyed by ncbi tax db id, and valued by linegae data
     :param connection: open connection to an sqlite db
     :param args: cmd-line args parser
-    
+
     Return nothing
     """
     logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ def add_ncbi_taxonomies(tax_dict, connection, args):
             db_ncbi_tax_table[int(ncbi_tax_id)]
             if args.update_taxs:
                 records_to_update.add(tax_data)
-            
+
         except KeyError:
             records_to_add.add(tax_data)
 
@@ -96,19 +96,29 @@ def add_ncbi_taxonomies(tax_dict, connection, args):
         insert_data(
             connection,
             'NcbiTaxs',
-            ['ncbi_tax_id', 'kingdom', 'phylum', 'tax_class', 'tax_order', 'family', 'genus', 'species',' strain'],
+            [
+                'ncbi_tax_id',
+                'kingdom',
+                'phylum',
+                'tax_class',
+                'tax_order',
+                'family',
+                'genus',
+                'species',
+                'strain',
+            ],
             list(records_to_add),
         )
-    
+
     return
 
 
 def update_ncbi_tax_records(records_to_update, connection):
     """Update ncbi tax records in the local CAZyme database
-    
+
     :param records_to_update: set of tuples, one tuple per record to update
     :param connection: open connection to an sqlite db
-    
+
     Return nothing
     """
     for record in tqdm(records_to_update, desc="Updating NCBI tax records in the local db"):
@@ -132,11 +142,11 @@ def update_ncbi_tax_records(records_to_update, connection):
 
 def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
     """Update tax information in the Genbanks table
-    
+
     :param tax_prot_dict: dict {tax_id: lineage and protein data}
     :param connection: open connection to a sql db
     :param args: cmd-line args parser
-    
+
     Return nothing
     """
     db_ncbi_tax_table = get_ncbi_tax_table(connection)  # {ncbi_tax_id: local db id}
@@ -147,14 +157,14 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
                 proteins = tax_prot_dict[int(tax_id)]['proteins']
                 tax_db_id = db_ncbi_tax_table[tax_id]
                 for prot_db_id in proteins:
-                        connection.execute(
-                            text(
-                                "UPDATE Genbanks "
-                                f"SET ncbi_id = {tax_db_id} "
-                                f"WHERE genbank_id = '{prot_db_id}'"
-                            )
+                    connection.execute(
+                        text(
+                            "UPDATE Genbanks "
+                            f"SET ncbi_tax_id = {tax_db_id} "
+                            f"WHERE genbank_id = '{prot_db_id}'"
                         )
-    
+                    )
+
     else:
         # filter for protein records with no tax data, and only add new tax data, do no overwrite existing data
         gbk_db_ids = get_no_tax_gbk_table_dict(connection)
@@ -172,5 +182,5 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
                                 f"WHERE genbank_id = {prot_db_id}"
                             )
                         )
-    
+
     return
