@@ -683,6 +683,69 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
 
+## Retrieving genomic assembly data from NCBI
+
+CAZy does not list the source genomic assembly for proteins catalogued in its database. `cazy_webscraper` can be used to retrieve the latest genomic assembly data from NCBI for CAZymes in 
+a local CAZyme database that meet the user's specified criteria. The downloaded assembly data is added 
+to the local CAZyme database entails:
+- Assembly name
+- GenBank genomic version accession
+- GenBank genomic ID
+- RefSeq genomic version accession
+- RefSeq genomic ID
+
+### Configuring retrieving genomic assembly data
+
+Below are listed the command-line flags for configuring the retrieval of genomic assembly data from the NCBI Assembly database, and adding the data to the local CAZyme database.
+
+`database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
+
+`email` - \[REQUIRED\] User email address (required by Entrez)
+
+`--batch_size` - Size of an individual batch query of NCBI sequence version accessions to NCBI. Default is 150.
+
+`--cache_dir` - Path to cache dir to be used instead of default cache dir path.
+
+`--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
+
+`--config`, `-c` - Path to a configuration YAML file. Default: None.
+
+`--classes` - List of classes from which all families are to be scrape.
+
+`--ec_filter` - Limist retrieval of protein data to proteins annotated with a provided list of EC numbers. Separate the EC numbers bu single commas without spaces. Recommend to wrap the entire str in quotation marks, for example:
+```bash
+cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
+```
+
+`--families` - List of CAZy (sub)families to scrape.
+
+`--force` - Force writing to exiting cache directory.
+
+`--genbank_accessions` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+
+`--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
+
+`--kingdoms` - List of taxonomy kingdoms to retrieve UniProt data for.
+
+`--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+`--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
+
+`--retries`, `-r` - Define the number of times to retry making a connection to NCBI if the connection should fail. Default: 10.
+
+`--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
+
+`--species` - List of species written as Genus Species) to restrict the scraping of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
+
+`--strains` - List of specific species strains to restrict the scraping of CAZymes to.
+
+`--uniprot_accessions` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
+
+`--update` - Update assembly data in the database. Warning: updating records will overwrite existing data in the database. (Default: False, data is not updated).
+
+`--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
+
+
 ## The `cazy_webscraper` API or Interrogating the local CAZyme database
 
 The SQLite3 database compiled by `cazy_webscraper` can be interrogated in the native interface (i.e. queries written in SQL can be used to interrogate the database). This can be achieved via the command-line or via an SQL database browser (such as [DB Browser for SQLite](https://sqlitebrowser.org/)).
