@@ -739,6 +739,8 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--strains` - List of specific species strains to restrict the scraping of CAZymes to.
 
+`--timeout` - Connection timeout threshold (s). (Default: 45s).
+
 `--uniprot_accessions` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
 
 `--update` - Update assembly data in the database. Warning: updating records will overwrite existing data in the database. (Default: False, data is not updated).
