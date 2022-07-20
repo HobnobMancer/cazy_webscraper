@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2020-2021
-# (c) University of Strathclyde 2020-2021
-# (c) James Hutton Institute 2020-2021
+# (c) University of St Andrews 2022
+# (c) University of Strathclyde 2022
+# (c) James Hutton Institute 2022
 #
 # Author:
 # Emma E. M. Hobbs
@@ -53,7 +53,7 @@ with Path("README.md").open("r") as long_description_handle:
 
 setuptools.setup(
     name="cazy_webscraper",
-    version="2.1.2",
+    version="2.1.3",
     # Metadata
     author="Emma E. M. Hobbs",
     author_email="eemh1@st-andrews.ac.uk",

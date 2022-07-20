@@ -4,8 +4,8 @@ License
 MIT License
 -----------
 
-Copyright (c) University of St Andrews 2020-2021
-Copyright (c) University of Strathclyde 2020-2021
+Copyright (c) University of St Andrews 2022
+Copyright (c) University of Strathclyde 2022
 Copyright (c) 2020 Emma E. H. Hobbs
 
 Author: Emma E. H. Hobbs

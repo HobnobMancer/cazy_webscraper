@@ -854,6 +854,6 @@ We welcome contributions and suggestions. You can raise issues at this repositor
 
 MIT License
 
-Copyright (c) 2020-2021 University of St Andrews  
-Copyright (c) 2020-2021 University of Strathclyde  
-Copyright (c) 2020-2021 James Hutton Institute  
+Copyright (c) 2022 University of St Andrews  
+Copyright (c) 2022 University of Strathclyde  
+Copyright (c) 2022 James Hutton Institute  
