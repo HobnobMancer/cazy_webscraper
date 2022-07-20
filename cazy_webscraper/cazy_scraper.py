@@ -124,6 +124,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if logger is None:
         logger = logging.getLogger(__name__)
         config_logger(args, logger_name=__name__)
+      
     # check if printing out version or citation information
     if args.version:
         print(VERSION_INFO)
@@ -368,7 +369,7 @@ def get_cazy_data(
     add_cazyme_data.add_genbanks(cazy_data, connection)
 
     add_cazyme_data.add_genbank_fam_relationships(cazy_data, connection, args)
-    
+
     return
 
 

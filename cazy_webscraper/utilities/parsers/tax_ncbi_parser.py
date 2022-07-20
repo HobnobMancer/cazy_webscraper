@@ -240,7 +240,10 @@ def build_parser(argv: Optional[List] = None):
         "--use_lineage_cache",
         type=Path,
         default=None,
-        help="Path to previously cached lineage dict",
+        help=(
+            "Path to previously cached lineage dict containing lineages\n"
+            "and protein seq acc (called lineage_data.json)"
+        ),
     )
 
     parser.add_argument(

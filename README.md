@@ -27,7 +27,7 @@
 
 **[GenBank](https://www.ncbi.nlm.nih.gov/genbank/):**  
 - Protein sequences 
-- Latest taxonomic classification - including complete lineage (including phylum, class, order and family) (version >=2.1.0)
+- Latest taxonomic classification - including complete lineage (including phylum, class, order and family) (version >=2.1.2)
 
 **[UniProt](https://www.uniprot.org/):**  
 - Protein name
