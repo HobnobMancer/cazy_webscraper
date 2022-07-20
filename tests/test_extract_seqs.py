@@ -83,3 +83,18 @@ def test_validate_opts_all_outputs():
     }
 
     extract_db_seqs.validate_user_options(argsdict['args'])
+
+
+def test_get_seqs():
+    gbk_seq_dict = {
+        'gbk_acc_1': {'sequence': 'abc'},
+        'gbk_acc_2': {'sequence': 'abc'},
+    }
+    gbk_dict = {
+        'gbk_acc_1': {'db': 'genbank', 'seq': 'abc'},
+        'gbk_acc_2': {'db': 'genbank', 'seq': 'abc'},
+    }
+    assert {
+        'gbk_acc_1': {'db': 'GenBank', 'seq': 'abc'},
+        'gbk_acc_2': {'db': 'GenBank', 'seq': 'abc'},
+    } == extract_db_seqs.get_genbank_sequences(gbk_seq_dict, gbk_dict)
