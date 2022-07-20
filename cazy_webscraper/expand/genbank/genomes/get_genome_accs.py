@@ -38,7 +38,7 @@
 # SOFTWARE.
 #
 # Bio.PDB reference:
-# Hamelryck, T., Manderick, B. (2003) PDB parser and structure class 
+# Hamelryck, T., Manderick, B. (2003) PDB parser and structure class
 # implemented in Python. Bioinformatics 19: 2308–2310
 """Retrieve the accessions for proteins of interest, and store accessions in the local db"""
 
@@ -199,7 +199,7 @@ def get_gbks_of_interest(
     args,
 ):
     """Retrieve the Gbk protein accessions of proteins matching the user criteria
-    
+
     :param class_filters: set of CAZy classes of interest
     :param family_filters: set of CAZy families and subfamilies of interest
     :param kingdom_filters: set of taxonomic kingdoms of interest
@@ -207,7 +207,7 @@ def get_gbks_of_interest(
     :param ec_filters: set of EC numbers of interest
     :param connection: connection to local SQL db
     :param args: cmd-line args parser
-    
+
     Return dict {gbk_acc: db_id}
     """
     logger = logging.getLogger(__name__)
@@ -592,7 +592,7 @@ def download_feature_table(assembly_name, feature_table_url, out_file_path, args
             f"Failed to download the feature table for {assembly_name}:\n{feature_table_url}", exc_info=1,
         )
         return False
-    
+
     file_size = int(response.info().get("Content-length"))
     bsize = 1_048_576
     logger.info("Opened URL and parsed metadata")
