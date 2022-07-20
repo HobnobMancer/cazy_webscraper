@@ -53,8 +53,7 @@ from saintBioutils.utilities.file_io import make_output_directory
 
 from cazy_webscraper.sql import sql_orm
 
-
-__version__ = "2.1.2"
+__version__ = "2.1.3"
 
 VERSION_INFO = f"cazy_webscraper version: {__version__}"
 
@@ -69,6 +68,7 @@ CITATION_INFO = (
 
 def closing_message(job, start_time, args):
     """Write closing messsage to terminal"""
+    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -153,7 +153,7 @@ def connect_to_new_db(args, time_stamp, start_time):
 
     if args.db_output is not None:  # user defined target output for the NEW database
 
-        if (os.path.isfile(args.db_output)):  # target file exists
+        if os.path.isfile(args.db_output):  # target file exists
             if args.force:
                 logger.warning(
                     "Overwriting existing local CAZyme database at:\n"

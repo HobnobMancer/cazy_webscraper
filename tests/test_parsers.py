@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2020-2021
-# (c) University of Strathclyde 2020-2021
-# (c) James Hutton Institute 2020-2021
+# (c) University of St Andrews 2022
+# (c) University of Strathclyde 2022
+# (c) James Hutton Institute 2022
 #
 # Author:
 # Emma E. M. Hobbs
@@ -57,6 +57,8 @@ from cazy_webscraper.utilities.parsers import (
     pdb_strctre_parser,
     uniprot_parser,
     tax_ncbi_parser,
+    get_genomes_parser,
+
 )
 
 
@@ -155,3 +157,13 @@ def test_parser_ncbi_tax():
 def test_parser_arsv_ncbi_tax():
     """Test building the parser when argsv is not None"""
     tax_ncbi_parser.build_parser(["db", "dummy_email"])
+
+
+def test_parser_genomes():
+    """Test building the parser when argsv is None"""
+    get_genomes_parser.build_parser()
+
+
+def test_parser_arsv_genomes():
+    """Test building the parser when argsv is not None"""
+    get_genomes_parser.build_parser(["db", "dummy_email"])

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2020-2021
-# (c) University of Strathclyde 2020-2021
-# (c) James Hutton Institute 2020-2021
+# (c) University of St Andrews 2022
+# (c) University of Strathclyde 2022
+# (c) James Hutton Institute 2022
 #
 # Author:
 # Emma E. M. Hobbs
@@ -38,6 +38,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""Installation file for pip"""
 
 
 import setuptools
@@ -52,7 +53,7 @@ with Path("README.md").open("r") as long_description_handle:
 
 setuptools.setup(
     name="cazy_webscraper",
-    version="2.1.2",
+    version="2.1.3",
     # Metadata
     author="Emma E. M. Hobbs",
     author_email="eemh1@st-andrews.ac.uk",
@@ -77,6 +78,7 @@ setuptools.setup(
             "cazy_webscraper = cazy_webscraper.cazy_scraper:main",
             "cw_get_genbank_seqs = cazy_webscraper.expand.genbank.sequences.get_genbank_sequences:main",
             "cw_get_ncbi_taxs = cazy_webscraper.expand.genbank.taxonomy.get_ncbi_taxs:main",
+            "cw_get_genomics = cazy_webscraper.expand.genbank.genomes.get_genome_accs:main",
             "cw_get_uniprot_data = cazy_webscraper.expand.uniprot.get_uniprot_data:main",
             "cw_extract_db_seqs = cazy_webscraper.expand.extract_seqs.extract_db_seqs:main",
             "cw_get_pdb_structures = cazy_webscraper.expand.pdb.get_pdb_structures:main",

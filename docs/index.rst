@@ -174,6 +174,9 @@ For details and updates on development, please consult the `GitHub repository <h
    pdb
    pdbtutorial
    ncbitax
+   ncbitaxtutorial
+   genomes
+   genomestutorial
    api
    apitutorial
    cache

@@ -61,25 +61,23 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 :cmd_args --species: specify species to retrieve CAZymes from
 :cmd_args --strains: specify specific strains of species to retrieve CAZymes from
 :cmd_args --timeout: specify the maximum time (in seconds) before determining connection timed out
-:cmd_args --validate: retrieve CAZy fam population sizes and check against when adding data to the db
+:cmd_args --validate: retrieve CAZy fam population sizes and check against
 :cmd_args --verbose: change logger level from warning to info, verbose logging
 :cmd_args --version: print version info
 """
 
 
+from datetime import datetime
+from typing import List, Optional
+
 import logging
 import os
-import sys
-
 import pandas as pd
 
-from datetime import datetime
-from pathlib import Path
-from typing import List, Optional
+from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger, build_logger
 
-from Bio import Entrez
 from cazy_webscraper import (
     CITATION_INFO,
     VERSION_INFO,
@@ -94,12 +92,12 @@ from cazy_webscraper.cazy import (
     parse_all_cazy_data,
     parse_cazy_data_with_filters,
 )
-from cazy_webscraper.taxonomy import (
+from cazy_webscraper.ncbi.taxonomy.multiple_taxa import (
     identify_multiple_taxa,
     replace_multiple_tax,
 )
 from cazy_webscraper.sql import sql_orm, sql_interface
-from cazy_webscraper.sql.sql_interface.add_data import add_cazyme_data 
+from cazy_webscraper.sql.sql_interface.add_data import add_cazyme_data
 from cazy_webscraper.utilities import (
     parse_configuration,
     termcolour,
@@ -126,7 +124,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if logger is None:
         logger = logging.getLogger(__name__)
         config_logger(args, logger_name=__name__)
-
+      
     # check if printing out version or citation information
     if args.version:
         print(VERSION_INFO)
@@ -239,7 +237,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info("Starting retrieval of data from CAZy")
 
     if args.cazy_data is not None:
-        logger.warning(f"Retrieving CAZy data from predownloaded CAZy db dump at:\n{args.cazy_data}")
+        logger.warning(
+            f"Retrieving CAZy data from predownloaded CAZy db dump at:\n{args.cazy_data}"
+        )
 
     get_cazy_data(
         cazy_home_url,
@@ -299,7 +299,9 @@ def get_cazy_data(
 
     # define paths for additional logs files
     # unless specifed they are added to the logs dir in the cache dir
-    connection_failures_logger = build_logger(cache_dir, f"{logger_name}_{time_stamp}_connection_failures.log")
+    connection_failures_logger = build_logger(
+        cache_dir, f"{logger_name}_{time_stamp}_connection_failures.log"
+    )
     multiple_taxa_logger = build_logger(cache_dir, f"{logger_name}_{time_stamp}_multiple_taxa.log")
     replaced_taxa_logger = build_logger(cache_dir, f"{logger_name}_{time_stamp}_replaced_taxa.log")
 

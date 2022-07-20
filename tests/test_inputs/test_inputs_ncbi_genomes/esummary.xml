@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE eSummaryResult PUBLIC "-//NLM//DTD esummary assembly 20211202//EN" "https://eutils.ncbi.nlm.nih.gov/eutils/dtd/20211202/esummary_assembly.dtd">
+<eSummaryResult>
+<DocumentSummarySet status="OK">
+<DbBuild>Build220619-1510.1</DbBuild>
+
+<DocumentSummary uid="297058">
+	<RsUid>965198</RsUid>
+	<GbUid>297058</GbUid>
+	<AssemblyAccession>GCF_000167675.1</AssemblyAccession>
+	<LastMajorReleaseAccession>GCF_000167675.1</LastMajorReleaseAccession>
+	<LatestAccession></LatestAccession>
+	<ChainId>167675</ChainId>
+	<AssemblyName>v2.0</AssemblyName>
+	<UCSCName></UCSCName>
+	<EnsemblName></EnsemblName>
+	<Taxid>431241</Taxid>
+	<Organism>Trichoderma reesei QM6a (ascomycete fungi)</Organism>
+	<SpeciesTaxid>51453</SpeciesTaxid>
+	<SpeciesName>Trichoderma reesei</SpeciesName>
+	<AssemblyType>haploid</AssemblyType>
+	<AssemblyStatus>Scaffold</AssemblyStatus>
+	<AssemblyStatusSort>5</AssemblyStatusSort>
+	<WGS>AAIL02</WGS>
+	<GB_BioProjects>
+		<Bioproj>
+			<BioprojectAccn>PRJNA15571</BioprojectAccn>
+			<BioprojectId>15571</BioprojectId>
+		</Bioproj>
+	</GB_BioProjects>
+	<GB_Projects>
+	</GB_Projects>
+	<RS_BioProjects>
+		<Bioproj>
+			<BioprojectAccn>PRJNA225530</BioprojectAccn>
+			<BioprojectId>225530</BioprojectId>
+		</Bioproj>
+	</RS_BioProjects>
+	<RS_Projects>
+	</RS_Projects>
+	<BioSampleAccn>SAMN02746107</BioSampleAccn>
+	<BioSampleId>2746107</BioSampleId>
+	<Biosource>
+		<InfraspeciesList>
+			<Infraspecie>
+				<Sub_type>strain</Sub_type>
+				<Sub_value>QM6a</Sub_value>
+			</Infraspecie>
+		</InfraspeciesList>
+		<Sex></Sex>
+		<Isolate></Isolate>
+	</Biosource>
+	<Coverage>9</Coverage>
+	<PartialGenomeRepresentation>false</PartialGenomeRepresentation>
+	<Primary>965188</Primary>
+	<AssemblyDescription></AssemblyDescription>
+	<ReleaseLevel>Major</ReleaseLevel>
+	<ReleaseType>Major</ReleaseType>
+	<AsmReleaseDate_GenBank>2011/07/29 00:00</AsmReleaseDate_GenBank>
+	<AsmReleaseDate_RefSeq>2014/03/15 00:00</AsmReleaseDate_RefSeq>
+	<SeqReleaseDate>2011/07/18 00:00</SeqReleaseDate>
+	<AsmUpdateDate>2014/03/15 00:00</AsmUpdateDate>
+	<SubmissionDate>2011/07/18 00:00</SubmissionDate>
+	<LastUpdateDate>2014/03/15 00:00</LastUpdateDate>
+	<SubmitterOrganization>DOE Joint Genome Institute</SubmitterOrganization>
+	<RefSeq_category>representative genome</RefSeq_category>
+	<AnomalousList>
+	</AnomalousList>
+	<ExclFromRefSeq>
+	</ExclFromRefSeq>
+	<PropertyList>
+		<string>from-type</string>
+		<string>full-genome-representation</string>
+		<string>genbank_has_annotation</string>
+		<string>has_annotation</string>
+		<string>latest</string>
+		<string>latest_genbank</string>
+		<string>latest_refseq</string>
+		<string>refseq_has_annotation</string>
+		<string>representative</string>
+		<string>wgs</string>
+	</PropertyList>
+	<FromType>assembly from type material</FromType>
+	<Synonym>
+		<RefSeq>GCF_000167675.1</RefSeq>
+		<Similarity>identical</Similarity>
+	</Synonym>
+	<ContigN50>797352</ContigN50>
+	<ScaffoldN50>1219543</ScaffoldN50>
+	<FtpPath_RefSeq>ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/167/675/GCF_000167675.1_v2.0</FtpPath_RefSeq>
+	<FtpPath_Assembly_rpt>ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/167/675/GCF_000167675.1_v2.0/GCF_000167675.1_v2.0_assembly_report.txt</FtpPath_Assembly_rpt>
+	<FtpPath_Stats_rpt>ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/167/675/GCF_000167675.1_v2.0/GCF_000167675.1_v2.0_assembly_stats.txt</FtpPath_Stats_rpt>
+	<FtpPath_Regions_rpt></FtpPath_Regions_rpt>
+	<Busco>
+		<RefSeqAnnotationRelease></RefSeqAnnotationRelease>
+		<BuscoLineage></BuscoLineage>
+		<BuscoVer></BuscoVer>
+		<Complete></Complete>
+		<SingleCopy></SingleCopy>
+		<Duplicated></Duplicated>
+		<Fragmented></Fragmented>
+		<Missing></Missing>
+		<TotalCount>0</TotalCount>
+	</Busco>
+	<SortOrder>2C5T708D9992026470001676759798</SortOrder>
+	<Meta><![CDATA[ <Stats> <Stat category="alt_loci_count" sequence_tag="all">0</Stat> <Stat category="chromosome_count" sequence_tag="all">0</Stat> <Stat category="contig_count" sequence_tag="all">128</Stat> <Stat category="contig_l50" sequence_tag="all">15</Stat> <Stat category="contig_n50" sequence_tag="all">797352</Stat> <Stat category="non_chromosome_replicon_count" sequence_tag="all">0</Stat> <Stat category="replicon_count" sequence_tag="all">0</Stat> <Stat category="scaffold_count" sequence_tag="all">77</Stat> <Stat category="scaffold_count" sequence_tag="placed">0</Stat> <Stat category="scaffold_count" sequence_tag="unlocalized">0</Stat> <Stat category="scaffold_count" sequence_tag="unplaced">77</Stat> <Stat category="scaffold_l50" sequence_tag="all">9</Stat> <Stat category="scaffold_n50" sequence_tag="all">1219543</Stat> <Stat category="total_length" sequence_tag="all">33395713</Stat> <Stat category="ungapped_length" sequence_tag="all">33348591</Stat> </Stats> <FtpSites>   <FtpPath type="Assembly_rpt">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/167/675/GCF_000167675.1_v2.0/GCF_000167675.1_v2.0_assembly_report.txt</FtpPath>   <FtpPath type="GenBank">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/167/675/GCA_000167675.2_v2.0</FtpPath>   <FtpPath type="RefSeq">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/167/675/GCF_000167675.1_v2.0</FtpPath>   <FtpPath type="Stats_rpt">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/167/675/GCF_000167675.1_v2.0/GCF_000167675.1_v2.0_assembly_stats.txt</FtpPath> </FtpSites> <assembly-level>2</assembly-level> <assembly-status>Scaffold</assembly-status> <representative-status>representative genome</representative-status> <submitter-organization>DOE Joint Genome Institute</submitter-organization>    ]]></Meta>
+</DocumentSummary>
+<DocumentSummary uid="4159658">
+<error>cannot get document summary</error>
+</DocumentSummary>
+
+<DocumentSummary uid="9220111">
+	<RsUid></RsUid>
+	<GbUid>24833168</GbUid>
+	<AssemblyAccession>GCA_016806795.1</AssemblyAccession>
+	<LastMajorReleaseAccession>GCA_016806795.1</LastMajorReleaseAccession>
+	<LatestAccession></LatestAccession>
+	<ChainId>16806795</ChainId>
+	<AssemblyName>ASM1680679v1</AssemblyName>
+	<UCSCName></UCSCName>
+	<EnsemblName></EnsemblName>
+	<Taxid>51453</Taxid>
+	<Organism>Trichoderma reesei (ascomycete fungi)</Organism>
+	<SpeciesTaxid>51453</SpeciesTaxid>
+	<SpeciesName>Trichoderma reesei</SpeciesName>
+	<AssemblyType>haploid</AssemblyType>
+	<AssemblyStatus>Complete Genome</AssemblyStatus>
+	<AssemblyStatusSort>0</AssemblyStatusSort>
+	<WGS></WGS>
+	<GB_BioProjects>
+		<Bioproj>
+			<BioprojectAccn>PRJNA386077</BioprojectAccn>
+			<BioprojectId>386077</BioprojectId>
+		</Bioproj>
+	</GB_BioProjects>
+	<GB_Projects>
+	</GB_Projects>
+	<RS_BioProjects>
+	</RS_BioProjects>
+	<RS_Projects>
+	</RS_Projects>
+	<BioSampleAccn>SAMN06925268</BioSampleAccn>
+	<BioSampleId>6925268</BioSampleId>
+	<Biosource>
+		<InfraspeciesList>
+			<Infraspecie>
+				<Sub_type>strain</Sub_type>
+				<Sub_value>QM6a x CBS999.97</Sub_value>
+			</Infraspecie>
+		</InfraspeciesList>
+		<Sex></Sex>
+		<Isolate>hexadecad_008C</Isolate>
+	</Biosource>
+	<Coverage>126</Coverage>
+	<PartialGenomeRepresentation>false</PartialGenomeRepresentation>
+	<Primary>24833158</Primary>
+	<AssemblyDescription></AssemblyDescription>
+	<ReleaseLevel>Major</ReleaseLevel>
+	<ReleaseType>Major</ReleaseType>
+	<AsmReleaseDate_GenBank>2021/02/03 00:00</AsmReleaseDate_GenBank>
+	<AsmReleaseDate_RefSeq>1/01/01 00:00</AsmReleaseDate_RefSeq>
+	<SeqReleaseDate>2021/02/03 00:00</SeqReleaseDate>
+	<AsmUpdateDate>2021/02/03 00:00</AsmUpdateDate>
+	<SubmissionDate>2021/02/03 00:00</SubmissionDate>
+	<LastUpdateDate>2021/02/03 00:00</LastUpdateDate>
+	<SubmitterOrganization>Academia Sinica</SubmitterOrganization>
+	<RefSeq_category>na</RefSeq_category>
+	<AnomalousList>
+	</AnomalousList>
+	<ExclFromRefSeq>
+	</ExclFromRefSeq>
+	<PropertyList>
+		<string>full-genome-representation</string>
+		<string>has-chromosome</string>
+		<string>latest</string>
+		<string>latest_genbank</string>
+	</PropertyList>
+	<FromType></FromType>
+	<Synonym>
+		<Genbank>GCA_016806795.1</Genbank>
+		<RefSeq></RefSeq>
+		<Similarity></Similarity>
+	</Synonym>
+	<ContigN50>5315023</ContigN50>
+	<ScaffoldN50>5315023</ScaffoldN50>
+	<FtpPath_GenBank>ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/016/806/795/GCA_016806795.1_ASM1680679v1</FtpPath_GenBank>
+	<FtpPath_RefSeq></FtpPath_RefSeq>
+	<FtpPath_Assembly_rpt>ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/016/806/795/GCA_016806795.1_ASM1680679v1/GCA_016806795.1_ASM1680679v1_assembly_report.txt</FtpPath_Assembly_rpt>
+	<FtpPath_Stats_rpt>ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/016/806/795/GCA_016806795.1_ASM1680679v1/GCA_016806795.1_ASM1680679v1_assembly_stats.txt</FtpPath_Stats_rpt>
+	<FtpPath_Regions_rpt></FtpPath_Regions_rpt>
+	<Busco>
+		<RefSeqAnnotationRelease></RefSeqAnnotationRelease>
+		<BuscoLineage></BuscoLineage>
+		<BuscoVer></BuscoVer>
+		<Complete></Complete>
+		<SingleCopy></SingleCopy>
+		<Duplicated></Duplicated>
+		<Fragmented></Fragmented>
+		<Missing></Missing>
+		<TotalCount>0</TotalCount>
+	</Busco>
+	<SortOrder>5C0X70709946849760168067959800</SortOrder>
+	<Meta><![CDATA[ <Stats> <Stat category="alt_loci_count" sequence_tag="all">0</Stat> <Stat category="chromosome_count" sequence_tag="all">7</Stat> <Stat category="contig_count" sequence_tag="all">7</Stat> <Stat category="contig_l50" sequence_tag="all">3</Stat> <Stat category="contig_n50" sequence_tag="all">5315023</Stat> <Stat category="non_chromosome_replicon_count" sequence_tag="all">0</Stat> <Stat category="replicon_count" sequence_tag="all">7</Stat> <Stat category="scaffold_count" sequence_tag="all">7</Stat> <Stat category="scaffold_count" sequence_tag="placed">7</Stat> <Stat category="scaffold_count" sequence_tag="unlocalized">0</Stat> <Stat category="scaffold_count" sequence_tag="unplaced">0</Stat> <Stat category="scaffold_l50" sequence_tag="all">3</Stat> <Stat category="scaffold_n50" sequence_tag="all">5315023</Stat> <Stat category="total_length" sequence_tag="all">34707067</Stat> <Stat category="ungapped_length" sequence_tag="all">34707067</Stat> </Stats> <FtpSites>   <FtpPath type="Assembly_rpt">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/016/806/795/GCA_016806795.1_ASM1680679v1/GCA_016806795.1_ASM1680679v1_assembly_report.txt</FtpPath>   <FtpPath type="GenBank">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/016/806/795/GCA_016806795.1_ASM1680679v1</FtpPath>   <FtpPath type="Stats_rpt">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/016/806/795/GCA_016806795.1_ASM1680679v1/GCA_016806795.1_ASM1680679v1_assembly_stats.txt</FtpPath> </FtpSites> <assembly-level>90</assembly-level> <assembly-status>Complete Genome</assembly-status> <representative-status>na</representative-status> <submitter-organization>Academia Sinica</submitter-organization>    ]]></Meta>
+</DocumentSummary>
+
+</DocumentSummarySet>
+</eSummaryResult>

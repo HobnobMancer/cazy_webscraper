@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE eLinkResult PUBLIC "-//NLM//DTD elink 20101123//EN" "https://eutils.ncbi.nlm.nih.gov/eutils/dtd/20101123/elink.dtd">
+<eLinkResult>
+
+  <LinkSet>
+    <DbFrom>protein</DbFrom>
+    <IdList>
+      <Id>1968807730</Id>
+    </IdList>
+    <LinkSetDb>
+      <DbTo>nuccore</DbTo>
+      <LinkName>protein_nuccore</LinkName>
+      
+        <Link>
+				<Id>2131947417</Id>
+			</Link>
+      
+    </LinkSetDb>
+  </LinkSet>
+</eLinkResult>

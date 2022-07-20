@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2020-2021
-# (c) University of Strathclyde 2020-2021
+# (c) University of St Andrews 2022
+# (c) University of Strathclyde 2022
 # Author:
 # Emma E. M. Hobbs
 #
@@ -201,7 +201,7 @@ def validate_user_options(args):
     if 'uniprot' in args.source:
         logger.info("Extracting UniProt protein sequences")
 
-    if args.blastdb is False and args.fasta_dir is False and args.fasta_file is False:
+    if args.blastdb is None and args.fasta_dir is None and args.fasta_file is None:
         logger.error(
             "No output option provided.\n"
             "No path to create a BLAST db, output dir or output file provided\n"

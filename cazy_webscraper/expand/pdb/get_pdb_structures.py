@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2020-2021
-# (c) University of Strathclyde 2020-2021
+# (c) University of St Andrews 2022
+# (c) University of Strathclyde 2022
 # Author:
 # Emma E. M. Hobbs
 #
@@ -44,6 +44,7 @@
 
 
 import logging
+import sys
 
 import pandas as pd
 
@@ -59,13 +60,17 @@ from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.expand import get_chunks_gen
-from cazy_webscraper.sql.sql_interface.get_data import get_selected_pdbs, get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
+    get_gbk_table_dict,
+    get_uniprot_table_dict,
+)
+from cazy_webscraper.sql.sql_interface.get_data.get_selected_pdbs import get_pdb_accessions
 from cazy_webscraper.sql.sql_interface.get_data.get_records import (
     get_user_genbank_sequences,
     get_user_uniprot_sequences
 )
 from cazy_webscraper.utilities import parse_configuration
-from cazy_webscraper.utilities.parsers import pdb_strctre_parser
+from cazy_webscraper.utilities.parsers.pdb_strctre_parser import build_parser
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -75,10 +80,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     start_time = pd.to_datetime(start_time)
     # parse cmd-line arguments
     if argv is None:
-        parser = pdb_strctre_parser.build_parser()
+        parser = build_parser()
         args = parser.parse_args()
     else:
-        args = pdb_strctre_parser.build_parser(argv).parse_args()
+        args = build_parser(argv).parse_args()
 
     if logger is None:
         logger = logging.getLogger(__package__)
@@ -97,19 +102,25 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     gbk_dict = {}  # {gbk_acc: gbk_id}
 
-    gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
+    gbk_table_dict = get_gbk_table_dict(connection)
     # {genbank_accession: 'taxa_id': str, 'gbk_id': int}
 
     if args.genbank_accessions is not None:
-        logger.warning(f"Retrieving PDB structures for GenBank accessions listed in {args.genbank_accessions}")
+        logger.warning(
+            "Retrieving PDB structures for GenBank accessions "
+            f"listed in {args.genbank_accessions}"
+        )
         gbk_dict.update(get_user_genbank_sequences(gbk_table_dict, args))
 
     if args.uniprot_accessions is not None:
-        logger.warning(f"Extracting protein sequences for UniProt accessions listed in {args.uniprot_accessions}")
-        uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+        logger.warning(
+            "Extracting protein sequences for UniProt accessions "
+            f"listed in {args.uniprot_accessions}"
+        )
+        uniprot_table_dict = get_uniprot_table_dict(connection)
         gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
 
-    pdb_accessions = get_selected_pdbs.get_pdb_accessions(
+    pdb_accessions = get_pdb_accessions(
         class_filters,
         family_filters,
         taxonomy_filter_dict,
@@ -124,6 +135,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             "No PDB accessions matched the criteria provided.\n"
             "Retrieving no protein structure files from PDB"
         )
+        sys.exit(1)
     else:
         logger.warning(f"Retrieving {len(pdb_accessions)} structure files from PDB")
 

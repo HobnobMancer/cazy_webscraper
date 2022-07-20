@@ -99,6 +99,16 @@ When retrieving protein sequences from GenBank three cache file are produced:
     Future features for ``cazy_webscraper`` will include the ability to use this cached protein sequences, to (i) skip the 
     retrieval of data from GenBank and (ii) facilitate the reproduction of local CAZyme databases.
 
+When retrieving taxonomic classifications the following cache files are generated:
+* ``failed_protein_accs.txt`` - list the version accession of all proteins for which not taxonomy data could be retrieved from NCBI (possibly the protein record has been removed)
+* ``lineage_data.json`` - lists the lineage data and the associated protein sequences accessions
+* ``ncbi_lineages.json`` - lists the lineage data retrieved from NCBI Taxonomy
+* ``protein_ncbi_ids.out`` - the NCBI Protein IDs retrieved from NCBI when querying by protein version accession
+* ``tax_ids.out`` - the NCBI Taxonomy IDs retrieved from NCBI when querying by NCBI Protein IDs
+
+When retrieving genomic assembly data a file listing all protein sequence accessions for which no data was retrieved is cached (``failed_protein__accessions.txt``). 
+Additionally, the downloaded genomic assemlby feature tables are retained in their compress format and cached.
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Cache files when retrieving data from PDB
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
