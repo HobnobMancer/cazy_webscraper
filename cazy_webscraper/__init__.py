@@ -69,6 +69,7 @@ CITATION_INFO = (
 
 def closing_message(job, start_time, args):
     """Write closing messsage to terminal"""
+    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
