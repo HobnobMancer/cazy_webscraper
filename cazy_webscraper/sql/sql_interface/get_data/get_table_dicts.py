@@ -197,7 +197,7 @@ def get_no_tax_gbk_table_dict(connection):
     gbk_db_ids = set()
     
     for gbk in all_genbank:
-        if gbk.ncbi_id is None:
+        if gbk.ncbi_tax_id is None:
             gbk_db_ids.add(gbk.genbank_id)
     
     logger.info(f"{len(gbk_db_ids)} Gbk records in db do not have a NCBI Tax ID")
