@@ -623,6 +623,8 @@ The complete lineage data is retrieved from NCBI. Whereas CAZy lists only the ki
 - Species
 - Strain
 
+The command for retrieving the latest taxonomic classifications from the NCBI Taxonomy database using `cazy_webscraper` is `cw_get_ncbi_taxs`.
+
 ### Configuring retrieving NCBI taxonomies
 
 Below are listed the command-line flags for configuring the retrieval of taxonomic classifications from the NCBI Taxonomy database, and adding them to the local CAZyme database.
@@ -693,6 +695,8 @@ to the local CAZyme database entails:
 - GenBank genomic ID
 - RefSeq genomic version accession
 - RefSeq genomic ID
+
+The command for retrieving genomic assembly data from the NCBI Assembly database using cazy_webscraper is `cw_get_genomics`.
 
 ### Configuring retrieving genomic assembly data
 
