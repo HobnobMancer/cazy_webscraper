@@ -98,3 +98,18 @@ def test_get_seqs():
         'gbk_acc_1': {'db': 'GenBank', 'seq': 'abc'},
         'gbk_acc_2': {'db': 'GenBank', 'seq': 'abc'},
     } == extract_db_seqs.get_genbank_sequences(gbk_seq_dict, gbk_dict)
+
+
+def test_get_uniprot_seqs():
+    uniprot_table_dict = {
+        'uni_acc_1': {'name': 'name', 'genbank_id': 1, 'seq': 'abc', 'seq_date': 'date'},
+        'uni_acc_2': {'name': 'name', 'genbank_id': 2, 'seq': 'abc', 'seq_date': 'date'},
+    }
+    gbk_dict = {
+        'gbk_acc_1': 1,
+        'gbk_acc_2': 2,
+    }
+    assert {
+        'uni_acc_1': {'db': 'UniProt', 'seq': 'abc'},
+        'uni_acc_2': {'db': 'UniProt', 'seq': 'abc'},
+    } == extract_db_seqs.get_uniprot_sequences(uniprot_table_dict, gbk_dict)
