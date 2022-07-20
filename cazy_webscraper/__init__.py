@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2020-2021
-# (c) University of Strathclyde 2020-2021
+# (c) University of St Andrews 2022
+# (c) University of Strathclyde 2022
+# (c) James Hutton Institute 2022
 # Author:
 # Emma E. M. Hobbs
 
@@ -53,7 +54,7 @@ from saintBioutils.utilities.file_io import make_output_directory
 from cazy_webscraper.sql import sql_orm
 
 
-__version__ = "2.1.1"
+__version__ = "2.1.2"
 
 VERSION_INFO = f"cazy_webscraper version: {__version__}"
 

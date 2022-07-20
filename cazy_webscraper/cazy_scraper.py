@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2020-2021
-# (c) University of Strathclyde 2020-2021
-# (c) James Hutton Institute 2020-2021
+# (c) University of St Andrews 2022
+# (c) University of Strathclyde 2022
+# (c) James Hutton Institute 2022
 #
 # Author:
 # Emma E. M. Hobbs
@@ -126,12 +126,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if logger is None:
         logger = logging.getLogger(__name__)
         config_logger(args, logger_name=__name__)
-    
+
     # check if printing out version or citation information
     if args.version:
         print(VERSION_INFO)
         return
-    
+
     if args.citation:
         print(CITATION_INFO)
         return
@@ -194,7 +194,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     if len(taxonomy_filter_set) != 0:
         scrape_config_message += "\nTaxonomy filters applied."
-    
+
     if len(kingdom_filters) < 5:
         scrape_config_message += f"\nScraping only tax kingdoms: {kingdom_filters}"
 
@@ -319,7 +319,7 @@ def get_cazy_data(
         cazy_fam_populations = None
 
     cazy_txt_lines = get_cazy_txt_file_data(cache_dir, time_stamp, args)
-    
+
     logger.info(f"Retrieved {len(cazy_txt_lines)} lines from the CAZy db txt file")
 
     if (len(class_filters) == 0) and \
@@ -367,7 +367,7 @@ def get_cazy_data(
     add_cazyme_data.add_genbanks(cazy_data, connection)
 
     add_cazyme_data.add_genbank_fam_relationships(cazy_data, connection, args)
-    
+
     return
 
 

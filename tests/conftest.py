@@ -123,7 +123,7 @@ def mock_return_none(*args, **kwargs):
 
 @pytest.fixture()
 def db_path():
-    return Path("tests/test_inputs/unit_test_database/unit_test_2021-04-27--11-54-58.db")
+    return Path("tests/test_inputs/unit_test_database/unit_test_2022_07_20.db")
 
 
 @pytest.fixture(scope="function")
