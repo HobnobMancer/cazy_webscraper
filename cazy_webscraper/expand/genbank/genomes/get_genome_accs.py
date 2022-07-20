@@ -138,7 +138,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     genbank_accessions = list(gbk_dict.keys())
 
     if len(genbank_accessions) == 0:
-        logger.warning(f"No records matching the given criteria found in the local CAZyme database:\n{args.database}")
+        logger.warning(
+            "No records matching the given criteria found in the local CAZyme database:\n"
+            f"{args.database}"
+        )
         closing_message("get_genomic_accessions", start_time, args)
         sys.exit(1)
 
