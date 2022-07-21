@@ -77,6 +77,8 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
     - [Configuring PDB protein structure file retrieval](#configuring-pdb-protein-structure-file-retrieval)
 - [Retrieving NCBI taxonomies](#retrieving-ncbi-taxonomies)
     - [Configuring retrieving NCBI taxonomies](#configuring-retrieving-ncbi-taxonomies)
+- [Retrieving genomic assembly data from NCBI](#retrieving-genomic-assembly-data-from-ncbi)
+    - [Configuring retrieving genomic assembly data](#configuring-retrieving-genomic-assembly-data)
 - [The `cazy_webscraper` API or Interrogating the local CAZyme database](#the_cazy_webscraper_api_or_interrogating_the_local_cazyme_database)
 - [Configuring `cazy_webscraper` using a YAML file](#configuring-using-a-yaml-file)
 - [CAZy coverage of GenBank](#cazy-coverage-of-genbank)
