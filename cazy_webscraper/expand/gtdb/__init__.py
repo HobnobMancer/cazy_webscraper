@@ -42,3 +42,190 @@
 # Hamelryck, T., Manderick, B. (2003) PDB parser and structure class 
 # implemented in Python. Bioinformatics 19: 2308–2310
 """Retrieve taxonomic classifications from GTDB"""
+
+
+import logging
+import sys
+import time
+
+from requests.exceptions import ConnectionError, MissingSchema
+from socket import timeout
+from urllib3.exceptions import HTTPError, RequestError
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen
+
+import mechanicalsoup
+
+from tqdm import tqdm
+
+
+GTDB_URL = "https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/"
+
+
+def get_gtdb_data(args, cache_dir, arch, bact):
+    """Download taxonomic data files from the GTDB website
+    
+    :param args: cmd-line args parser
+    :param cache_dir: path to cache directory
+    :param arch: bool, whether to download arch datafile
+    :param bact: bool, whether to download the bact datafile
+    
+    Return None
+    """
+    logger = logging.getLogger(__name__)
+
+    gtdb_release_page, error_message = get_page(
+        GTDB_URL,
+        max_tries=args.retries,
+    )
+
+    if gtdb_release_page is None:
+        logger.error(f"Failed to get GTDB data release page:\n{error_message}\nTerminating program")
+        sys.exit(1)
+
+    archaea_link, bacteria_link = None, None
+
+    for i in gtdb_release_page.select("table")[0].select("tr"):
+        for j in i.select("td"):
+            if j.contents[0] is not None:
+                try:
+                    if j.contents[0]['href'].endswith('_taxonomy.tsv.gz'):
+                        if j.contents[0]['href'].startswith('ar'):
+                            archaea_link = f"{GTDB_URL}{j.contents[0]['href']}"
+                        else:
+                            bacteria_link = f"{GTDB_URL}{j.contents[0]['href']}"
+                        print(j.contents[0]['href'])
+                except (KeyError, TypeError):
+                    continue
+    
+    if archaea_link is None or bacteria_link is None:
+        if archaea_link is None and arch:
+            logger.error(
+                "Failed to get archeae GTDB data release page\n"
+                "Retrieved datafile urls:\n"
+                f"Archaea: {archaea_link}"
+            )
+        if bacteria_link is None and bact:
+            logger.error(
+                "Failed to get bacteria GTDB data release page\n"
+                "Retrieved datafile urls:\n"
+                f"Archaea: {bacteria_link}"
+            )
+        logger.error("Failed to retrieve download URLs\nTerminating program")
+        sys.exit(1)
+
+    if arch:
+        archaea_file = cache_dir / "archaea_data.gz"
+
+        downloaded = download_gtdb_data(archaea_link, archaea_file, 'Archaea')
+
+        if downloaded is False:
+            logger.error("Failed to download archaea GTDB data file\nTerminating program")
+            sys.exit(1)
+    
+    if bact:
+        bacteria_file = cache_dir / "bacteria_data.gz"
+
+        downloaded = download_gtdb_data(bacteria_link, bacteria_file, 'Bacteria')
+
+        if downloaded is False:
+            logger.error("Failed to download bacteria GTDB data file\nTerminating program")
+            sys.exit(1)
+    
+    return
+
+
+def download_gtdb_data(url, out_file_path, gtdb_group):
+    logger = logging.getLogger(__name__)
+    
+    # Try URL connection
+    try:
+        response = urlopen(url, timeout=45)
+    except (HTTPError, URLError, timeout) as e:
+        logger.error(
+            f"Failed to download {gtdb_group} gtdb data file from: {url}", exc_info=1,
+        )
+        return False
+
+    logger.info(f"Downloading data file from:\n{url}")
+    
+    file_size = int(response.info().get("Content-length"))
+    bsize = 1_048_576
+    
+    try:
+        with open(out_file_path, "wb") as out_handle:
+            with tqdm(
+                total=file_size,
+                leave=False,
+                desc=f"Downloading gtdb {gtdb_group} data file",
+            ) as pbar:
+                while True:
+                    buffer = response.read(bsize)
+                    if not buffer:
+                        break
+                    pbar.update(len(buffer))
+                    out_handle.write(buffer)
+    except IOError:
+        logger.error(f"Download failed GTDB {gtdb_group} data file", exc_info=1)
+        return False
+
+    return True
+
+
+def browser_decorator(func):
+    """Decorator to re-invoke the wrapped function up to 'args.retries' times."""
+
+    def wrapper(*args, **kwargs):
+        logger = logging.getLogger(__name__)
+        tries, success, err = 0, False, None
+
+        while not success and (tries < kwargs['max_tries']):
+            try:
+                response = func(*args, **kwargs)
+            except (
+                ConnectionError,
+                HTTPError,
+                OSError,
+                MissingSchema,
+                RequestError,
+            ) as err_message:
+                if (tries < kwargs['max_tries']):
+                    logger.warning(
+                        f"Failed to connect to CAZy on try {tries}/{kwargs['max_tries']}.\n"
+                        f"Error: {err_message}"
+                        "Retrying connection to CAZy in 10s"
+                    )
+                success = False
+                response = None
+                err = err_message
+            if response is not None:  # response was successful
+                success = True
+            # if response from webpage was not successful
+            tries += 1
+            time.sleep(10)
+        if (not success) or (response is None):
+            logger.warning(f"Failed to connect to CAZy.\nError: {err}")
+            return None, err
+        else:
+            return response, None
+
+    return wrapper
+
+
+@browser_decorator
+def get_page(url, **kwargs):
+    """Create browser and use browser to retrieve page for given URL.
+
+    :param url: str, url to webpage
+    :param args: cmd-line args parser
+    :kwargs max_tries: max number of times connection to CAZy can be attempted
+
+    Return browser response object (the page).
+    """
+    # create browser object
+    browser = mechanicalsoup.Browser()
+    # create response object
+    page = browser.get(url, timeout=10)
+    page = page.soup
+
+    return page
