@@ -137,3 +137,50 @@ def get_gbk_genome_table_data(connection):
         prot_gnm_records.add((record.genbank_id, record.genome_id))
     
     return prot_gnm_records
+
+
+def get_genomes(gbk_dict, connection):
+    """Retrieve genomic version accessions for proteins in gbk_dict
+    
+    :param gbk_dict: dict, gbk_ver_acc: local db ID
+    :param connection: open connectoin to a SQLite db engine
+    
+    Return dict {prot ver acc: {
+        'prot_id': int-local db id,
+        'gbk_genome': str-version acc,
+        'refseq_genome': str
+    }}
+    """
+    protein_genome_dict = {}
+
+    for gbk in gbk_dict:
+        with connection.begin():
+            cmd = text(
+                "SELECT Gn.gbk_version_accession, Gn.refseq_version_accession "
+                "FROM Genomes AS Gn "
+                "INNER JOIN Genbanks_Genomes AS GG ON Gn.genome_id = GG.genome_id "
+                "INNER JOIN Genbanks AS Gb ON GG.genbank_id = Gb.genbank_id "
+                f"WHERE Gb.genbank_accession = '{gbk}'"
+            )
+            result = connection.execute(cmd).fetchall()
+            
+        if len(result) != 0:
+            try:
+                protein_genome_dict[gbk]
+            except KeyError:
+                protein_genome_dict[gbk] = {'prot_id': gbk_dict[gbk]}
+            
+            for record in result:
+                if record[0] is not None:
+                    try:
+                        protein_genome_dict[gbk]['gkb_genomes'].add(record[0])
+                    except KeyError:
+                        protein_genome_dict[gbk]['gkb_genomes'] = {record[0]}
+
+                if record[1] is not None:
+                    try:
+                        protein_genome_dict[gbk]['ref_genomes'].add(record[1])
+                    except KeyError:
+                        protein_genome_dict[gbk]['ref_genomes'] = {record[1]}
+    
+    return protein_genome_dict
