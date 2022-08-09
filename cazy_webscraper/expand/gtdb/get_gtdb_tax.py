@@ -64,6 +64,7 @@ from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
+from cazy_webscraper.expand.gtdb import get_gtdb_data
 from cazy_webscraper.utilities import parse_configuration
 from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
     get_gbk_table_dict,
@@ -134,6 +135,22 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     protein_genome_dict = get_genomes(gbk_dict, connection)
 
     logger.info(f"Retrieving GTDB tax classification for {len(protein_genome_dict)} proteins")
+
+    archaea, bacteria = False, False
+    if 'archaea' in args.taxs:
+        archaea = True
+    if 'bacteria' in args.taxs:
+        bacteria = True
+    
+    get_gtdb_data(args, cache_dir, arch=archaea, bact=bacteria)
+
+    archaea_file = cache_dir / "archaea_data.gz"
+    bacteria_file = cache_dir / "bacteria_data.gz"
+
+    if 'archaea' in args.taxs:
+        print()
+    if 'bacteria' in args.taxs:
+        print()
 
 
 def get_gbks_of_interest(
