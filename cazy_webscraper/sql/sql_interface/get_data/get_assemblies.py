@@ -41,6 +41,7 @@
 """Retrieve proteins with no assembly data in the local database."""
 
 
+from sqlalchemy import text
 from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_orm import (
@@ -153,7 +154,7 @@ def get_genomes(gbk_dict, connection):
     """
     protein_genome_dict = {}
 
-    for gbk in gbk_dict:
+    for gbk in tqdm(gbk_dict, decs="Getting genomes for proteins of interest"):
         with connection.begin():
             cmd = text(
                 "SELECT Gn.gbk_version_accession, Gn.refseq_version_accession "
