@@ -176,10 +176,8 @@ def link_proteins_to_nuccore(query_key, web_env, args):
     
     protein_nuccore_dict = {}  # {protein_acc: nuccore_id}
 
-    for record in tqdm(nuccore_records, desc="Parsing nuccore records"):
+    # for record in tqdm(nuccore_records, desc="Parsing nuccore records"):
         
-
-
     return nuccore_ids
 
 
