@@ -46,12 +46,22 @@
 
 import logging
 import pandas as pd
+import time
 
 from datetime import datetime
 from typing import List, Optional
 
+from requests.exceptions import ConnectionError, MissingSchema
+from socket import timeout
+from urllib3.exceptions import HTTPError, RequestError
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen
+
+import mechanicalsoup
+
 from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger
+from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.utilities import parse_configuration
@@ -124,9 +134,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     protein_genome_dict = get_genomes(gbk_dict, connection)
 
     logger.info(f"Retrieving GTDB tax classification for {len(protein_genome_dict)} proteins")
-
-    
-
 
 
 def get_gbks_of_interest(
