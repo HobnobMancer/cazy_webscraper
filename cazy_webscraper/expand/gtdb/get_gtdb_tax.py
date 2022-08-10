@@ -132,6 +132,16 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # retrieve assembly accessions for the selected proteins
     # {prot_gbk_acc: {'prot_id': int-local db id, 'gbk_genome': str-version acc, 'refseq_genome': str}}
+
+    #
+    #
+    #
+    # should be reoranised to be keyed by genome
+    # use refseq unless no refseq if avaiable
+    # value by local db genome id
+    # and gbk accession
+    # {genome: {id: int, gbk_acc: str}}
+    # then create list of selected genomes
     protein_genome_dict = get_genomes(gbk_dict, connection)
 
     logger.info(f"Retrieving GTDB tax classification for {len(protein_genome_dict)} proteins")
@@ -147,10 +157,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     archaea_file = cache_dir / "archaea_data.gz"
     bacteria_file = cache_dir / "bacteria_data.gz"
 
+    # get the lineage data from the GTDB data files
     if 'archaea' in args.taxs:
-        print()
+        get_lineage_data(archaea_file, selected_genomes)
+
     if 'bacteria' in args.taxs:
-        print()
+        get_lineage_data(bacteria_file, selected_genomes)
+    
+    # add data to the local CAZyme db
 
 
 def get_gbks_of_interest(
@@ -210,4 +224,23 @@ def get_gbks_of_interest(
     return gbk_dict
 
 
-
+def get_lineage_data(gtdb_file_path, selected_genomes):
+    """Iterate through GTDB datafile, extracting info for genomes of interest
+    
+    :param gtdb_file_path: Path, GTDB datafile, csv
+    :param selected_genomes: dict, {local db id: {refseq: str, gbk: str}}
+    
+    Return dict {local db id: {refseq: str, gbk: str, lineage: str}}
+    """
+    i = 0
+    for line in pd.read_csv(gtdb_file_path, sep='\t', chunksize=1, names=['genome', 'lineage']):
+        genome = line['genome'][i].replace("RS_","").replace("GB_","")
+        
+        try:
+            selected_genomes[genome]['lineage'] = line['lineage'][i]
+        except KeyError:
+            pass
+    
+        i += 1
+    
+    return selected_genomes
