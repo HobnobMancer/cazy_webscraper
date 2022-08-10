@@ -130,21 +130,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         args,
     )
 
-    # retrieve assembly accessions for the selected proteins
-    # {prot_gbk_acc: {'prot_id': int-local db id, 'gbk_genome': str-version acc, 'refseq_genome': str}}
+    # genome_dict = {local db genome id: {
+    #     'gbk_genome': str-version acc,
+    #     'refseq_genome': str
+    # }}
+    # selected_genomes = set of genome version accessions
+    genome_dict, selected_genomes = get_genomes(gbk_dict, connection)
 
-    #
-    #
-    #
-    # should be reoranised to be keyed by genome
-    # use refseq unless no refseq if avaiable
-    # value by local db genome id
-    # and gbk accession
-    # {genome: {id: int, gbk_acc: str}}
-    # then create list of selected genomes
-    protein_genome_dict = get_genomes(gbk_dict, connection)
-
-    logger.info(f"Retrieving GTDB tax classification for {len(protein_genome_dict)} proteins")
+    logger.info(f"Retrieving GTDB tax classification for {len(selected_genomes)} genomes")
 
     archaea, bacteria = False, False
     if 'archaea' in args.taxs:
@@ -158,11 +151,18 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     bacteria_file = cache_dir / "bacteria_data.gz"
 
     # get the lineage data from the GTDB data files
+    genome_lineage_dict = {}
     if 'archaea' in args.taxs:
-        get_lineage_data(archaea_file, selected_genomes)
+        genome_lineage_dict.update(get_lineage_data(archaea_file, selected_genomes))
 
     if 'bacteria' in args.taxs:
-        get_lineage_data(bacteria_file, selected_genomes)
+        genome_lineage_dict.update(get_lineage_data(bacteria_file, selected_genomes))
+    
+    if len(list(genome_lineage_dict.keys())) == 0:
+        logger.error(
+            "Retrieved no lineage data for genomes retrieved from the local db.\n"
+            "Terminating program"
+        )
     
     # add data to the local CAZyme db
 
@@ -226,21 +226,18 @@ def get_gbks_of_interest(
 
 def get_lineage_data(gtdb_file_path, selected_genomes):
     """Iterate through GTDB datafile, extracting info for genomes of interest
-    
+
     :param gtdb_file_path: Path, GTDB datafile, csv
     :param selected_genomes: dict, {local db id: {refseq: str, gbk: str}}
-    
-    Return dict {local db id: {refseq: str, gbk: str, lineage: str}}
+
+    Return dict {genome_version_accession: lineage}
     """
+    genome_lineage_dict = {}
     i = 0
     for line in pd.read_csv(gtdb_file_path, sep='\t', chunksize=1, names=['genome', 'lineage']):
         genome = line['genome'][i].replace("RS_","").replace("GB_","")
-        
-        try:
-            selected_genomes[genome]['lineage'] = line['lineage'][i]
-        except KeyError:
-            pass
-    
+        if genome in selected_genomes:
+            genome_lineage_dict[genome] = line['lineage'][i]
         i += 1
-    
-    return selected_genomes
+
+    return genome_lineage_dict
