@@ -172,6 +172,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     add_gtdb_taxs(genome_lineage_dict, connection)
     add_genome_gtdb_relations(genome_lineage_dict, args, connection)
 
+    closing_message("Get-GTDB-taxs", start_time, args)
+
 
 def get_gbks_of_interest(
     class_filters,
