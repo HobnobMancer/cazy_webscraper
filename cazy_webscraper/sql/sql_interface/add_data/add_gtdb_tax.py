@@ -47,13 +47,18 @@ from sqlalchemy import text
 from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_interface import insert_data
-from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import get_gtdb_table_dict
+from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
+    get_gtdb_table_dict,
+    get_genome_gtdb_table,
+    get_genome_table,
+)
+from cazy_webscraper.sql.sql_interface.get_data.get_assemblies import get_assembly_table
 
 
 def add_gtdb_taxs(gtdb_lineages, connection):
     """Add GTDB lineages to GtdbTaxs table
 
-    :param gtdb_lineags:
+    :param gtdb_lineags: {genome version accession: raw str lineage from gtdb}
     :param connection: open connection to an SQlite db engine
 
     Return nothing
@@ -85,4 +90,66 @@ def add_gtdb_taxs(gtdb_lineages, connection):
             list(lineages_to_add),
         )
 
+    return
+
+
+def add_genome_gtdb_relations(gtdb_lineages, args, connection):
+    """Add genome - gtdb tax relationships
+    
+    :param gtdb_lineags: dict {genome version accession: raw str lineage from gtdb}
+    :param CLI argument parser
+    :param connection: open connection to an SQlite db engine
+
+    Return nothing
+    """
+    logger = logging.getLogger(__name__)
+
+    genome_table = get_genome_table(connection)  # {genomic ver acc: {'db_id': db_id, 'gtdb_id': gtdb_id}}
+    gtdb_table = get_gtdb_table_dict(connection)
+    # flip gtdb_table dict key/value pairs
+    gtdb_lineage_table_dict = {}
+    for db_id in gtdb_table:
+        gtdb_lineage_table_dict[gtdb_table[db_id]] = db_id
+
+    relationships_to_update = set()  # tuples (genome_id, gtdb_id)
+
+    for genome_ver_acc in tqdm(gtdb_lineages, desc="Adding genome-gtdb relations to db"):
+        try:
+            genome_id =  genome_table[genome_ver_acc]['db_id']
+            current_gtdb_id = genome_table[genome_ver_acc]['gtdb_id']
+        except KeyError:
+            logger.error(
+                f"Data retrieved for {genome_ver_acc}\n"
+                "but genome v.accession not found in local db"
+                "Not linking genome to GTDB lineages in local db"
+            )
+            continue
+
+        try:
+            gtdb_id = gtdb_lineage_table_dict[gtdb_lineages[genome_ver_acc]]
+        except KeyError:
+            logger.error(
+                "Could not find local db id for the folllowing lienage:\n"
+                f"{gtdb_lineages[genome_ver_acc]}\n"
+                "Not linking lineage to genomes in local db"
+            )
+            continue
+    
+        if current_gtdb_id is None:
+            relationships_to_update.add((genome_id, gtdb_id))
+        else:
+            if args.update_genome_lineage:
+                relationships_to_update.add((genome_id, gtdb_id))
+
+    if len(relationships_to_update):
+        for record in tqdm(relationships_to_update, desc="Update genonme GTDB lineage links"):
+            with connection.begin():
+                connection.execute(
+                    text(
+                        "UPDATE Genomes "
+                        f"SET gtdb_tax_id = {record[1]} "
+                        f"WHERE genome_id = '{record[0]}'"
+                    )
+                )
+    
     return
