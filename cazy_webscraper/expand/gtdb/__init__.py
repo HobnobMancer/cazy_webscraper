@@ -118,7 +118,7 @@ def get_gtdb_data(args, cache_dir, arch, bact):
 
     archaea_file, bacteria_file = None, None
 
-    if arch:
+    if 'archaea' in args.taxs:
         if args.archaea_file is not None:
             archaea_file = args.archaea_file
         else:
@@ -131,7 +131,7 @@ def get_gtdb_data(args, cache_dir, arch, bact):
                 logger.error("Failed to download archaea GTDB data file\nTerminating program")
                 sys.exit(1)
 
-    if bact:
+    if 'bacteria' in args.taxs:
         if args.bacteria_file is not None:
             bacteria_file = args.bacteria_file
         else:

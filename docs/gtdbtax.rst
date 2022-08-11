@@ -54,7 +54,7 @@ Command line options
 
 ``database`` - **REQUIRED** Path to a local CAZyme database to add UniProt data to.
 
-``source`` - **REQUIRED** Kingdoms to get lineages from. Accepts 'archaea' and/or 'bacteria'. Separate with a single space. Order does not matter.
+``taxs`` - **REQUIRED** Kingdoms to get lineages from. Accepts 'archaea' and/or 'bacteria'. Separate with a single space. Order does not matter.
 Determines which datafiles are retrieved from GTDB.
 
 ``--archaea_file`` - Path to GTDB archaea data file. Default: None, download latest dataset from GTDB.

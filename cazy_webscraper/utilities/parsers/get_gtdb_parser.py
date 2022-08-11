@@ -84,7 +84,7 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "source",
+        "taxs",
         nargs='+',
         action=ValidateNames,
         choices=["archaea", "bacteria"],
