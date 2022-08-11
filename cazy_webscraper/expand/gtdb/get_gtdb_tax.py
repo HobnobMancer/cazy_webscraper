@@ -221,13 +221,6 @@ def get_gbks_of_interest(
             ec_filters,
             connection,
         )
-
-    if args.update:
-        gbk_dict = get_no_gtdb_proteins(gbk_dict, connection)
-
-    else:
-        # only retrieve data for proteins with no assembly data in the local db
-        return gbk_dict
         
     return gbk_dict
 
