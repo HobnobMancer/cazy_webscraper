@@ -49,6 +49,7 @@ from cazy_webscraper.sql.sql_orm import (
     CazyFamily,
     Ec,
     Genbank,
+    GtdbTax,
     Kingdom,
     NcbiTax,
     Pdb,
@@ -455,3 +456,29 @@ def get_ncbi_tax_table(connection):
         ncbi_tax_dict[ncbi_tax_id] = db_id
     
     return ncbi_tax_dict
+
+
+def get_gtdb_table_dict(connection):
+    """Load GTDB table into dict
+    
+    :param connection: open connection to an sql db
+    
+    Return dict {db id: (tuple of lineage data)}
+    """
+    with Session(bind=connection) as session:
+        query_results = session.query(GtdbTax).all()
+
+    gtdb_dict = {}
+
+    for record in tqdm(query_results, desc="Loading GtdbTax table into dict"):
+        gtdb_dict[record.gtdb_tax_id] = (
+            record.kingdom,
+            record.phylum,
+            record.tax_class,
+            record.tax_order,
+            record.family,
+            record.genus,
+            record.species,
+        )
+    
+    return gtdb_dict
