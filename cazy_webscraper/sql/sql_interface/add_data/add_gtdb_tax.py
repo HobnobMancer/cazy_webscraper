@@ -49,7 +49,6 @@ from tqdm import tqdm
 from cazy_webscraper.sql.sql_interface import insert_data
 from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
     get_gtdb_table_dict,
-    get_genome_gtdb_table,
     get_genome_table,
 )
 from cazy_webscraper.sql.sql_interface.get_data.get_assemblies import get_assembly_table
