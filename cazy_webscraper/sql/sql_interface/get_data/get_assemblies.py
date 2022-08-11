@@ -154,7 +154,7 @@ def get_genomes(gbk_dict, args, connection):
     """
     genome_dict = {}
 
-    for gbk in tqdm(gbk_dict, decs="Getting genomes for proteins of interest"):
+    for gbk in tqdm(gbk_dict, desc="Getting genomes for proteins of interest"):
         with connection.begin():
             cmd = text(
                 "SELECT Gn.gbk_version_accession, Gn.refseq_version_accession, Gn.genome_id, Gn.gtdb_tax_id "
