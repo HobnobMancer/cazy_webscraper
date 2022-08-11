@@ -57,7 +57,8 @@ from cazy_webscraper.sql.sql_interface.get_data.get_assemblies import get_assemb
 def add_gtdb_taxs(gtdb_lineages, connection):
     """Add GTDB lineages to GtdbTaxs table
 
-    :param gtdb_lineags: {genome version accession: raw str lineage from gtdb}
+    :param gtdb_lineags: dict
+    {genome_version_accession: {'lineage': raw str lineage from gtdb. 'release': release-str}}
     :param connection: open connection to an SQlite db engine
 
     Return nothing
@@ -68,9 +69,10 @@ def add_gtdb_taxs(gtdb_lineages, connection):
     lineages_to_add = set()
 
     for genome in tqdm(gtdb_lineages, desc='Adding GTDB lineages to db'):
-        lineage = [" ".join(_.split("__")[1:]) for _ in gtdb_lineages[genome].split(";")]
+        lineage = [" ".join(_.split("__")[1:]) for _ in gtdb_lineages[genome]['lineage'].split(";")]
         if lineage not in list(existing_gtdb_table.values()):
-            lineages_to_add.add(lineage)
+            lineage.append(gtdb_lineages[genome]['release'])
+            lineages_to_add.add(tuple(lineage))
 
     if len(lineages_to_add) != 0:
         insert_data(
@@ -85,6 +87,7 @@ def add_gtdb_taxs(gtdb_lineages, connection):
                 'genus',
                 'species',
                 'strain',
+                'release',
             ],
             list(lineages_to_add),
         )
@@ -95,7 +98,8 @@ def add_gtdb_taxs(gtdb_lineages, connection):
 def add_genome_gtdb_relations(gtdb_lineages, args, connection):
     """Add genome - gtdb tax relationships
     
-    :param gtdb_lineags: dict {genome version accession: raw str lineage from gtdb}
+    :param gtdb_lineags: dict
+    {genome_version_accession: {'lineage': raw str lineage from gtdb. 'release': release-str}}
     :param CLI argument parser
     :param connection: open connection to an SQlite db engine
 
@@ -125,11 +129,11 @@ def add_genome_gtdb_relations(gtdb_lineages, args, connection):
             continue
 
         try:
-            gtdb_id = gtdb_lineage_table_dict[gtdb_lineages[genome_ver_acc]]
+            gtdb_id = gtdb_lineage_table_dict[gtdb_lineages[genome_ver_acc]['lineage']]
         except KeyError:
             logger.error(
                 "Could not find local db id for the folllowing lienage:\n"
-                f"{gtdb_lineages[genome_ver_acc]}\n"
+                f"{gtdb_lineages[genome_ver_acc]['lineage']}\n"
                 "Not linking lineage to genomes in local db"
             )
             continue

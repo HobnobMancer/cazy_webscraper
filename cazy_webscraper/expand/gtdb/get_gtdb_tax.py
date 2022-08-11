@@ -164,7 +164,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             "Retrieved no lineage data for genomes retrieved from the local db.\n"
             "Terminating program"
         )
-    
+
     # add data to the local CAZyme db
     add_gtdb_taxs(genome_lineage_dict, connection)
     add_genome_gtdb_relations(genome_lineage_dict, args, connection)
@@ -218,7 +218,7 @@ def get_gbks_of_interest(
             ec_filters,
             connection,
         )
-        
+
     return gbk_dict
 
 
@@ -228,9 +228,9 @@ def get_lineage_data(gtdb_file_path, selected_genomes):
     :param gtdb_file_path: Path, GTDB datafile, csv
     :param selected_genomes: dict, {local db id: {refseq: str, gbk: str}}
 
-    Return dict {genome_version_accession: {'lineage': lineage. 'release': release-str}
+    Return dict {genome_version_accession: {'lineage': lineage. 'release': release-str}}
     """
-    release = gtdb_file_path.name.split("-")[-1].replace('.gz','')
+    release = gtdb_file_path.name.split("-")[-1].replace('.gz', '')
     genome_lineage_dict = {}
     i = 0
     for line in pd.read_csv(gtdb_file_path, sep='\t', chunksize=1, names=['genome', 'lineage']):

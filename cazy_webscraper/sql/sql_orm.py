@@ -355,6 +355,7 @@ class GtdbTax(Base):
             "family",
             "genus",
             "species",
+            "release",
         ),
         Index(
             Index("gtdb_index", "gtdb_tax_id", "genus", "species"),
@@ -369,6 +370,7 @@ class GtdbTax(Base):
     family = Column(ReString)
     genus = Column(ReString)
     species = Column(ReString)
+    release = Column(ReString)  # GTDB release
 
     gtdb_genomes = relationship(
         "Genome",
