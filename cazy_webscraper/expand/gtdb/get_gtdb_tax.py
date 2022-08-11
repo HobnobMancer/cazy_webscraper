@@ -76,6 +76,10 @@ from cazy_webscraper.sql.sql_interface.get_data.get_records import (
 )
 from cazy_webscraper.sql.sql_interface.get_data.get_selected_gbks import get_genbank_accessions
 from cazy_webscraper.sql.sql_interface.get_data.get_assemblies import get_genomes
+from cazy_webscraper.sql.sql_interface.add_data.add_gtdb_tax import (
+    add_gtdb_taxs,
+    add_genome_gtdb_relations,
+)
 # import build parser
 
 
@@ -106,7 +110,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     else:
         cache_dir = cache_dir / "genomes"
         make_output_directory(cache_dir, args.force, args.nodelete_cache)
-    
+
     logger.info(f"Using cache dir: {cache_dir}")
 
     # get configuration data
@@ -144,20 +148,20 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         archaea = True
     if 'bacteria' in args.taxs:
         bacteria = True
-    
+
     get_gtdb_data(args, cache_dir, arch=archaea, bact=bacteria)
 
     archaea_file = cache_dir / "archaea_data.gz"
     bacteria_file = cache_dir / "bacteria_data.gz"
 
     # get the lineage data from the GTDB data files
-    genome_lineage_dict = {}
+    genome_lineage_dict = {}  # {genome_version_accession: lineage}
     if 'archaea' in args.taxs:
         genome_lineage_dict.update(get_lineage_data(archaea_file, selected_genomes))
 
     if 'bacteria' in args.taxs:
         genome_lineage_dict.update(get_lineage_data(bacteria_file, selected_genomes))
-    
+
     if len(list(genome_lineage_dict.keys())) == 0:
         logger.error(
             "Retrieved no lineage data for genomes retrieved from the local db.\n"
@@ -165,6 +169,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
     
     # add data to the local CAZyme db
+    add_gtdb_taxs(genome_lineage_dict, connection)
+    add_genome_gtdb_relations(genome_lineage_dict, args, connection)
 
 
 def get_gbks_of_interest(
@@ -235,7 +241,7 @@ def get_lineage_data(gtdb_file_path, selected_genomes):
     genome_lineage_dict = {}
     i = 0
     for line in pd.read_csv(gtdb_file_path, sep='\t', chunksize=1, names=['genome', 'lineage']):
-        genome = line['genome'][i].replace("RS_","").replace("GB_","")
+        genome = line['genome'][i].replace("RS_", "").replace("GB_", "")
         if genome in selected_genomes:
             genome_lineage_dict[genome] = line['lineage'][i]
         i += 1
