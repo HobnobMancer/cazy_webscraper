@@ -114,7 +114,7 @@ def add_genome_gtdb_relations(gtdb_lineages, args, connection):
 
     for genome_ver_acc in tqdm(gtdb_lineages, desc="Adding genome-gtdb relations to db"):
         try:
-            genome_id =  genome_table[genome_ver_acc]['db_id']
+            genome_id = genome_table[genome_ver_acc]['db_id']
             current_gtdb_id = genome_table[genome_ver_acc]['gtdb_id']
         except KeyError:
             logger.error(
