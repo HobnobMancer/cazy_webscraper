@@ -80,7 +80,7 @@ from cazy_webscraper.sql.sql_interface.add_data.add_gtdb_tax import (
     add_gtdb_taxs,
     add_genome_gtdb_relations,
 )
-# import build parser
+from cazy_webscraper.utilities.parsers.get_gtdb_parser import build_parser
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
