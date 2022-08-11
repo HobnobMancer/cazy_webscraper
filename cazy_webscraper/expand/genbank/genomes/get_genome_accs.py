@@ -324,11 +324,11 @@ def get_ncbi_assembly_data(sequence_accessions, cache_dir, args, refseq=False):
                         f"Failed to download feature table from {feature_table_url}\n"
                         f"on the {failed_feature_tables[feature_table_url]} try"
                     )
-                    continue
                     if failed_feature_tables[feature_table_url] > args.retries:
                         done_urls.add(feature_table_url)
                         with open(no_urls, 'a') as fh:
                             fh.write(f"{assembly_name}\n")
+                    continue
             
                 feature_table = pd.read_csv(out_file_path, sep="\t")
 
