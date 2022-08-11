@@ -486,37 +486,6 @@ def get_gtdb_table_dict(connection):
     return gtdb_dict
 
 
-def get_genome_gtdb_table(connection):
-    """Load Genomes_Gtdbs table into dict
-    
-    :param connection: open connection to an sql db
-    
-    Return dict {genome db id: {gtdb db ids}}
-    """
-
-    with Session(bind=connection) as session:
-        existing_relationships = session.query(Genome, GtdbTax).\
-            join(Genome, GtdbTax.gtdb_genomes).\
-                all()
-
-    genome_gtdb_table_dict = {}
-    # {genome db id: {gtdb db ids}}
-
-    for record in tqdm(
-        existing_relationships,
-        ' Retreving existing genome-gtdb relationships from db'
-    ):
-        genome_id = record[0].genome_id
-        gtdb_id = record[1].gtdb_tax_id
-
-        try:
-            genome_gtdb_table_dict[genome_id].add(gtdb_id)
-        except KeyError:
-            genome_gtdb_table_dict[genome_id] = {gtdb_id}
-
-    return genome_gtdb_table_dict
-
-
 def get_genome_table(connection):
     """Load genome table into a dict
 
