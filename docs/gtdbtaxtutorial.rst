@@ -285,3 +285,25 @@ CAZymes of interest.
    Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cw_get_gtdb_taxs`` will ignore 
    the ``--classes`` flag and only taxonomic classifications for the proteins listed in the file provided via 
    the ``--genbank_accessions``.
+
+
+------------------------
+Providing GTDB datafiles
+------------------------
+
+By default ``--cazy_webscraper`` retrieves the latest GTDB datafiles from the GTDB website. However, 
+you can provide your own GTDB datafiles.
+
+Specifically, these are the avaialble from `GTDB release page <https://data.ace.uq.edu.au/public/gtdb/data/releases/>`_.
+
+The filenames must use the same filename format as GTDB to enable the correct extraction of the GTDB release 
+number from the filename.
+
+To provide a previously downloaded `archaea datafile <https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/ar53_taxonomy.tsv.gz>`_ use 
+the ``--archaea_file`` flag followed by the path point to the target data file.
+
+Similarly, to provide a previously downloaded `bacteria datafile <https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/bac120_taxonomy.tsv.gz>`_ use 
+the ``--bacteria_file`` flag followed by the path point to the target data file.
+
+.. NOTE:: 
+   ``cazy_webscraper`` excepts GTDB datafiles in the compressed (``.gz``) tab-separated file format (``.tsv``).
