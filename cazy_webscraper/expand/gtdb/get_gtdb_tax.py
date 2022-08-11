@@ -139,7 +139,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     #     'refseq_genome': str
     # }}
     # selected_genomes = set of genome version accessions
-    genome_dict, selected_genomes = get_genomes(gbk_dict, connection)
+    genome_dict, selected_genomes = get_genomes(gbk_dict, args, connection)
 
     logger.info(f"Retrieving GTDB tax classification for {len(selected_genomes)} genomes")
 
@@ -149,13 +149,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if 'bacteria' in args.taxs:
         bacteria = True
 
-    get_gtdb_data(args, cache_dir, arch=archaea, bact=bacteria)
-
-    archaea_file = cache_dir / "archaea_data.gz"
-    bacteria_file = cache_dir / "bacteria_data.gz"
+    archaea_file, bacteria_file = get_gtdb_data(args, cache_dir, arch=archaea, bact=bacteria)
 
     # get the lineage data from the GTDB data files
-    genome_lineage_dict = {}  # {genome_version_accession: lineage}
+    genome_lineage_dict = {}  # {genome_version_accession: {'lineage': lineage. 'release': release-str}
     if 'archaea' in args.taxs:
         genome_lineage_dict.update(get_lineage_data(archaea_file, selected_genomes))
 
@@ -231,14 +228,18 @@ def get_lineage_data(gtdb_file_path, selected_genomes):
     :param gtdb_file_path: Path, GTDB datafile, csv
     :param selected_genomes: dict, {local db id: {refseq: str, gbk: str}}
 
-    Return dict {genome_version_accession: lineage}
+    Return dict {genome_version_accession: {'lineage': lineage. 'release': release-str}
     """
+    release = gtdb_file_path.name.split("-")[-1].replace('.gz','')
     genome_lineage_dict = {}
     i = 0
     for line in pd.read_csv(gtdb_file_path, sep='\t', chunksize=1, names=['genome', 'lineage']):
         genome = line['genome'][i].replace("RS_", "").replace("GB_", "")
         if genome in selected_genomes:
-            genome_lineage_dict[genome] = line['lineage'][i]
+            genome_lineage_dict[genome] = {
+                'lineage': line['lineage'][i],
+                'release': release,
+            }
         i += 1
 
     return genome_lineage_dict
