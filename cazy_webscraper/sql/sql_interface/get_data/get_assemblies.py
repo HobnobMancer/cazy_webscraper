@@ -177,18 +177,17 @@ def get_genomes(gbk_dict, args, connection):
                 except KeyError:
                     genome_dict[genome_db_id] = {}
 
-                for record in result:
-                    if record[0] is not None:
-                        try:
-                            genome_dict[genome_db_id]['gkb_genomes'].add(record[0])
-                        except KeyError:
-                            genome_dict[genome_db_id]['gkb_genomes'] = {record[0]}
+                if result[0] is not None:
+                    try:
+                        genome_dict[genome_db_id]['gkb_genomes'].add(result[0])
+                    except KeyError:
+                        genome_dict[genome_db_id]['gkb_genomes'] = {result[0]}
 
-                    if record[1] is not None:
-                        try:
-                            genome_dict[genome_db_id]['ref_genomes'].add(record[1])
-                        except KeyError:
-                            genome_dict[genome_db_id]['ref_genomes'] = {record[1]}
+                if result[1] is not None:
+                    try:
+                        genome_dict[genome_db_id]['ref_genomes'].add(result[1])
+                    except KeyError:
+                        genome_dict[genome_db_id]['ref_genomes'] = {result[1]}
 
     selected_genomes = set()
     for genome_db_id in genome_dict:
