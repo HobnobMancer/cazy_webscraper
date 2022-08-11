@@ -85,7 +85,7 @@ def get_gtdb_data(args, cache_dir, arch, bact):
 
     archaea_link, bacteria_link = None, None
 
-    if args.archaea_file is not None or args.bacteria_file is not None:
+    if args.archaea_file is None or args.bacteria_file is None:
         # need to retrieve links from the website
         for i in gtdb_release_page.select("table")[0].select("tr"):
             for j in i.select("td"):
@@ -96,18 +96,17 @@ def get_gtdb_data(args, cache_dir, arch, bact):
                                 archaea_link = f"{GTDB_URL}{j.contents[0]['href']}"
                             else:
                                 bacteria_link = f"{GTDB_URL}{j.contents[0]['href']}"
-                            print(j.contents[0]['href'])
                     except (KeyError, TypeError):
                         continue
 
         if archaea_link is None or bacteria_link is None:
-            if archaea_link is None and arch:
+            if archaea_link is None and 'archaea' in args.taxs:
                 logger.error(
                     "Failed to get archeae GTDB data release page\n"
                     "Retrieved datafile urls:\n"
                     f"Archaea: {archaea_link}"
                 )
-            if bacteria_link is None and bact:
+            if bacteria_link is None and 'bacteria' in args.taxs:
                 logger.error(
                     "Failed to get bacteria GTDB data release page\n"
                     "Retrieved datafile urls:\n"
