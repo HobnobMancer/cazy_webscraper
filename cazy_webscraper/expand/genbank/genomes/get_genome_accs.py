@@ -305,7 +305,7 @@ def get_ncbi_assembly_data(sequence_accessions, cache_dir, args, refseq=False):
         logger.info("Retrying failed downloads of feaure tables")
         done_urls = set()
 
-        while len(done_urls) < list(failed_feature_tables.keys()):
+        while len(done_urls) < len(list(failed_feature_tables.keys())):
             for feature_table_url in failed_feature_tables:
                 if feature_table_url in done_urls:
                     continue
