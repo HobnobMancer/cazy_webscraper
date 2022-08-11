@@ -2,7 +2,7 @@
 Retrieving GTDB Taxonomic Classifications
 =========================================
 
-``cazy_webscraper`` can be used to retrieve the latest taxonomic classification from the `GTDB <https://gtdb.ecogenomic.org/>`_ taxonomy database.
+``cazy_webscraper`` can be used to retrieve the latest taxonomic classification from the `Genome Taxonomy Database (GTDB) <https://gtdb.ecogenomic.org/>`_ taxonomy database 
 for a set of proteins of interest in a local CAZyme database.
 
 .. Note::

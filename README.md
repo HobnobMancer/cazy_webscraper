@@ -41,6 +41,9 @@
 - Protein structure files
 - *Structure files are written to disk, **not** stored in the local CAZyme database*
 
+**[Genome Taxonomy Database (GTDB)](https://gtdb.ecogenomic.org/):**
+Retrieve the latest archaeal and bacterial taxonomic classifications (including complete lineages from kingdom to species).
+
 **`cazy_webscraper` faciltates extracting information from the local CAZyme database.**
 
 Protein sequences (retrieved from GenBank and/or UniProt) from the local CAZyme database for CAZymes matching the user specified criteria, and write to:
@@ -79,6 +82,8 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
     - [Configuring retrieving NCBI taxonomies](#configuring-retrieving-ncbi-taxonomies)
 - [Retrieving genomic assembly data from NCBI](#retrieving-genomic-assembly-data-from-ncbi)
     - [Configuring retrieving genomic assembly data](#configuring-retrieving-genomic-assembly-data)
+- [Retrieving GTDB taxonomies](#retrieving-gtdb-taxonomies)
+    - [Configuring retrieving GTDB taxonomies](#configuring-retrieving-gtdb-taxonomies)
 - [The `cazy_webscraper` API or Interrogating the local CAZyme database](#the_cazy_webscraper_api_or_interrogating_the_local_cazyme_database)
 - [Configuring `cazy_webscraper` using a YAML file](#configuring-using-a-yaml-file)
 - [CAZy coverage of GenBank](#cazy-coverage-of-genbank)
@@ -753,6 +758,82 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--update` - Update assembly data in the database. Warning: updating records will overwrite existing data in the database. (Default: False, data is not updated).
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
+
+## Retrieving GTDB Taxonomies
+
+`cazy_webscraper` can be used to retrieve the latest taxonomic classification from the [Genome Taxonomy Database (GTDB)](https://gtdb.ecogenomic.org/) taxonomy database for a set of proteins of interest in a local CAZyme database.
+
+**Note:**
+    As in the GTDB database, GTDB taxonomic classifications are retrieved and associated with genomes stored 
+    in the local CAZyme database. To retrieve GTDB taxonomic classifications the genomic data for the 
+    proteins of interest **must** be listed in the local CAZyme database.
+
+GTDB catalogues archaeal and bacterial lineages. Either archaeal and/or bacterial GTDB lineages can be added to the local CAZyme database.
+
+The complete lineage data is retrieved from GTDB. Whereas CAZy lists only the kingdom, genus, species and strain, `cazy_webscraper` retrieves the full taxonomic lineage from GTDB and stores the complete lineage in the `GtdbTaxs` table in the local CAZyme database. This include:
+- Kingdom
+- Phylum
+- Class (stored as `tax_class` in the local CAZyme database due to keyword classes in Python)
+- Order(stored as `tax_order` in the local CAZyme database due to keyword classes in SQL)
+- Family
+- Genus
+- Species
+- Strain
+- Release (the GTDB release from which the lineage was retrieved)
+
+The command for retrieving the latest taxonomic classifications from the NCBI Taxonomy database using `cazy_webscraper` is `cw_get_gtdb_taxs`.
+
+### Configuring retrieving GTDB taxonomies
+
+
+`database` - **REQUIRED** Path to a local CAZyme database to add UniProt data to.
+
+`taxs` - **REQUIRED** Kingdoms to get lineages from. Accepts 'archaea' and/or 'bacteria'. Separate with a single space. Order does not matter.
+Determines which datafiles are retrieved from GTDB.
+
+`--archaea_file` - Path to GTDB archaea data file. Default: None, download latest dataset from GTDB.
+
+`--bacteria_file` - Path to GTDB bacteria data file. Default: None, download latest dataset from GTDB.
+
+.. NOTE::
+    The filenames of provided GTDB data files must match the filename format used by GTDB, to allow 
+    `cazy_webscraper` to retrieve the release number of the dataset.
+
+`--cache_dir` - Path to cache dir to be used instead of default cache dir path.
+
+`--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
+
+`--config``, ``-c` - Path to a configuration YAML file. Default: None.
+
+`--classes` - list of classes to retrieve UniProt data for.
+
+`--ec_filter` - List of EC numbers to limit the retrieval of structure files to proteins with at least one of the given EC numbers *in the local CAZyme database*.
+
+`--families` - List of CAZy (sub)families to retrieve UniProt protein data for.
+
+`--genbank_accessions` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+
+`--genera` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
+
+`--kingdoms` - List of taxonomy kingdoms to retrieve UniProt data for.
+
+`--log``, ``-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
+
+`--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
+
+`--retries``, ``-r` - Define the number of times to retry making a connection to GTDB if the connection should fail. Default: 10.
+
+`--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
+
+`--species` - List of species (organsim scientific names) to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given species.
+
+`--strains` - List of species strains to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given strains.
+
+`--uniprot_accessions` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
+
+`--update_genome_lineage_gbk` - Update Genome GTDB lineage. Default: only add lineages to Genomes without a lineage.
+
+`--verbose``, ``-v` - Enable verbose logging. This does **not** set the SQLite engine ``echo`` parameter to True. Default: False.
 
 
 ## The `cazy_webscraper` API or Interrogating the local CAZyme database

@@ -3,7 +3,7 @@ Tutorials on configuring ``cazy_webscraper`` to retrieve GTDB taxonomic classifi
 =======================================================================================
 
 ``cazy_webscraper`` can be configured to retrieve the latest taxonomic classifications from the 
-GTDB Taxonomy database for user specified sets of 
+Genome Taxonomy Database (GTDB) for user specified sets of 
 CAZymes in a local CAZyme database. Many of the same configuration options 
 apply to the retrieval of protein data from CAZy, UniProt, GenBank and PDB.
 
