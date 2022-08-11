@@ -496,16 +496,17 @@ def get_genome_table(connection):
     with Session(bind=connection) as session:
         genome_records = session.query(Genome).all()
 
-    db_genome_dict = {}  # {assembly name: db id}
+    db_genome_dict = {}  # {genomic ver acc: {'db_id': db_id, 'gtdb_id': gtdb_id}}
 
     for record in tqdm(genome_records, desc="Retrieving genome records from the local db"):
         gbk_acc = record.gbk_version_accession
         ref_acc = record.refseq_version_accession
         db_id = record.genome_id
+        gtdb_id = record.gtdb_tax_id
 
         if gbk_acc is not None:
-            db_genome_dict[gbk_acc] = db_id
+            db_genome_dict[gbk_acc] = {'db_id': db_id, 'gtdb_id': gtdb_id}
         if ref_acc is not None:
-            db_genome_dict[ref_acc] = db_id
+            db_genome_dict[ref_acc] = {'db_id': db_id, 'gtdb_id': gtdb_id}
 
     return db_genome_dict
