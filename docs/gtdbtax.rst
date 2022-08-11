@@ -18,10 +18,13 @@ To download the GTDB taxonomic classifications for all proteins in a local CAZym
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs <path to local CAZyme db>
+   cw_get_gtdb_taxs <path to local CAZyme db> <kingdoms>
 
 .. NOTE::
    The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
+
+.. NOTE::
+    GTDB only provides data for bacteria and archaeal genomes.
 
    
 -------------------------------------
@@ -50,6 +53,9 @@ Command line options
 --------------------
 
 ``database`` - **REQUIRED** Path to a local CAZyme database to add UniProt data to.
+
+``source`` - **REQUIRED** Kingdoms to get lineages from. Accepts 'archaea' and/or 'bacteria'. Separate with a single space. Order does not matter.
+Determines which datafiles are retrieved from GTDB.
 
 ``--archaea_file`` - Path to GTDB archaea data file. Default: None, download latest dataset from GTDB.
 

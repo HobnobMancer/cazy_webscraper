@@ -33,16 +33,47 @@ scraping of data from CAZy.
 Configuration via the command line
 ----------------------------------
 
-``cw_get_gtdb_taxs`` has one required argument:
+``cw_get_gtdb_taxs`` has two required arguments:
 * The path to the local CAZyme database created using ``cazy_webscraper``
+* Source kingdoms. Accepts 'archaea' and/or 'bacteria'
 
 .. code-block:: bash
     
-    cw_get_gtdb_taxs cazy/cazyme_db.db
+    cw_get_gtdb_taxs cazy/cazyme_db.db archaea bacteria
 
 When no optional arguments are provided, the default behaviour is invoked. The default behaviour is to: 
 Retrieve the latest taxonomic classification from GTDB for all proteins in the local CAZyme database which do 
 not currently have GTDB taxonomy data listed in local database, and the taxonomic information (i.e. the higher lineage classifications in the local database) are not updated.
+
+-------------------------
+Selecting source kingdoms
+-------------------------
+
+GTDB catalogues the taxonomic lineages of archaea and bacterial species. Defining the source taxonomic kingdom(s) 
+(the second positional argument for ``cw_get_gtdb_taxs``) determines which datafiles are retrieved from GTDB, 
+and thus which taxonomic lineages are added to the local CAZyme database. This is separate to the 
+``--kingdoms`` filter which is used to define CAZymes of interest by the taxonomic classification retrieved 
+from CAZy.
+
+To add only archaeal lineages retrieved from GTDB use only ``archaea``:
+
+.. code-block:: bash
+    
+    cw_get_gtdb_taxs cazy/cazyme_db.db archaea
+   
+To add only bacterial lineages to the local CAZyme database, using only ``bacteria``:
+
+.. code-block:: bash
+    
+    cw_get_gtdb_taxs cazy/cazyme_db.db bacteria
+
+To add both archaeal and bacterial lineages from GTDB to the local CAZyme database using both ``archaea`` and 
+``bacteria`` (in any order), separated with a singel space:
+
+.. code-block:: bash
+    
+    cw_get_gtdb_taxs cazy/cazyme_db.db bacteria archaea
+
 
 -----------------------------------------
 Options configurable at the command line 
@@ -81,13 +112,13 @@ For example, if you want to retrieve protein data for all CAZymes from Glycoside
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db --classes GH,CE
+   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH,CE
 
 OR
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db --classes Glycoside Hydrolases,Carbohydrate Esterases
+   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes Glycoside Hydrolases,Carbohydrate Esterases
 
 Retrieving protein data for proteins from specific specific CAZy families is achieved using the ``--families`` flag. For 
 example, to retrieve protein data for all proteins in PL1, PL2 and PL3 in the local CAZyme database, use the 
@@ -95,7 +126,7 @@ following command:
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db --families PL1,PL2,PL3
+   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --families PL1,PL2,PL3
 
 .. WARNING::
    ``cw_get_gtdb_taxs`` only accpets families written in the proper CAZy family syntax.
@@ -107,13 +138,13 @@ protein data for all CAZymes in PL1, PL2, PL3 and *all* of GH and CE both:
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db --families PL1,PL2,PL3 --classes GH,CE
+   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --families PL1,PL2,PL3 --classes GH,CE
 
 **AND**
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db --classes GH,CE --families PL1,PL2,PL3
+   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH,CE --families PL1,PL2,PL3
 
 are accepted.
 
@@ -131,7 +162,7 @@ For example, if you want to retrieve data for all CAZymes in a local CAZyme data
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db --kingdoms bacteria,eukaryota
+   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --kingdoms bacteria,eukaryota
 
 .. warning::
    The kingdoms must be spelt the same way CAZy spells them, for example use 'eukaryot**a**' instead of 'eukaryot**e**'.
@@ -149,7 +180,7 @@ we would use would be:
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
+   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
 
 .. note::
    The order that the flags are used and the order taxa  are listed does **not** matter, and separate multiple taxa names with a single comma 
@@ -182,7 +213,7 @@ wish to retrieve protein data for CAZymes annotated with specific EC numbers. To
 
 .. code-block:: bash
    
-   cw_get_gtdb_taxs cazy/cazyme.db --ec_filter "EC1.2.3.4,EC2.3.4.5"
+   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --ec_filter "EC1.2.3.4,EC2.3.4.5"
 
 
 .. NOTE::
@@ -229,31 +260,37 @@ taxonomic data will be retrieved from GTDB.
 Below we run through 3 example commands of combining these flags, and the resulting behaviour.
 
 **Example 1:**
-To taxonomic data for all CAZymes in GH, GT, CE1, CE5 and CE8, and which are derived from baceterial species, we use the command:
+To add taxonomic data for all CAZymes in GH, GT, CE1, CE5 and CE8, and which are derived from baceterial species, we use the command:
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
+   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
 
 
 **Example 2:**
-To taxonomic data for all CAZymes in GH and which are derived from *Aspegillus* and *Trichoderma* species, we use the command:
+To add taxonomic data for all CAZymes in GH and which are derived from *Aspegillus* and *Trichoderma* species, we use the command:
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db --classes GH --genera Aspegillus,Trichoderma
+   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH --genera Aspegillus,Trichoderma
 
 
 **Example 3:**
-To taxonomic classifications for all CAZymes in GH,CE and CBM which are derived from baceterial species and are annotated with at least one of 
+To add taxonomic classifications for all CAZymes in GH,CE and CBM which are derived from baceterial species and are annotated with at least one of 
 EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, we use the command:
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
+   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
-.. NOTE::
-   The order the structure file formats are provided does **not** matter.
+**Example 4:**
+To add bacterial taxonomic classifications for all CAZymes in GH,CE and CBM which are derived from baceterial species and are annotated with at least one of 
+EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, we use the command:
+
+.. code-block:: bash
+
+   cw_get_gtdb_taxs cazy/cazyme.db bacteria --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
+
 
 ------------------------------
 Providing a list of accessions
@@ -307,3 +344,19 @@ the ``--bacteria_file`` flag followed by the path point to the target data file.
 
 .. NOTE:: 
    ``cazy_webscraper`` excepts GTDB datafiles in the compressed (``.gz``) tab-separated file format (``.tsv``).
+
+
+--------------------------------
+Updating genomic classifications
+--------------------------------
+
+By default ``cw_get_gtdb_taxs`` only adds links to GTDB lineages to genomes in the local CAZyme 
+database that are not already linked to a GTDB lineage. To update which GTDB lineage genomes in the local 
+CAZyme database are linked to add the ``--update_genome_lineage`` flag.
+
+.. code-block:: bash
+
+   cw_get_gtdb_taxs cazy/cazyme.db bacteria \
+      --classes GH,CE,CBM \
+      --kingdoms bacteria \
+      --update_genome_lineage
