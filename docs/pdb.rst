@@ -86,7 +86,7 @@ Command line options
 
 ``--overwrite`` - Overwrite existing structure files with the same PDB accession as files being downloaded. Default false, do not overwrite existing files.
 
-``--retries``, ``-r`` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
+``--retries``, ``-r`` - Define the number of times to retry making a connection to PDB if the connection should fail. Default: 10.
 
 ``--sql_echo`` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 

@@ -87,7 +87,7 @@ Determines which datafiles are retrieved from GTDB.
 
 ``--nodelete_cache`` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
-``--retries``, ``-r`` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
+``--retries``, ``-r`` - Define the number of times to retry making a connection to GTDB if the connection should fail. Default: 10.
 
 ``--sql_echo`` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
