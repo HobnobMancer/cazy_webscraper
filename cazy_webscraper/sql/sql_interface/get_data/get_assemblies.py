@@ -197,7 +197,7 @@ def get_genomes(gbk_dict, args, connection):
         except KeyError:
             pass
         try:
-            for genome in [genome_db_id]['ref_genomes']
+            for genome in [genome_db_id]['ref_genomes']:
                 selected_genomes.add(genome)
         except KeyError:
             pass
