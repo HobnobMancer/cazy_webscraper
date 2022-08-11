@@ -166,11 +166,11 @@ def get_genomes(gbk_dict, args, connection):
             result = connection.execute(cmd).fetchall()
 
         if len(result) != 0:
-            if result[4] is not None:
+            if result[3] is not None:
                 if args.update_genome_lineage is False:
                     continue
 
-            genome_db_id = result[3]
+            genome_db_id = result[2]
             try:
                 genome_dict[genome_db_id]
             except KeyError:
