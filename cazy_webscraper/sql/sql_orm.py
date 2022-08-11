@@ -162,15 +162,6 @@ genbanks_genomes = Table(
 )
 
 
-genomes_gtdb = Table(
-    'Genomes_Gtdbs',
-    Base.metadata,
-    Column("genome_id", Integer, ForeignKey("Genomes.genome_id")),
-    Column("genome_id", Integer, ForeignKey("GtdbTaxs.gtdb_tax_id")),
-    PrimaryKeyConstraint("genome_id", "gtdb_tax_id"),
-)
-
-
 genbanks_families = Table(
     'Genbanks_CazyFamilies',
     Base.metadata,
@@ -331,7 +322,8 @@ class Genome(Base):
     gbk_ncbi_id = Column(Integer)
     refseq_version_accession = Column(String)
     refseq_ncbi_id = Column(Integer)
-
+    gtdb_tax_id = Column(Integer, ForeignKey("GtdbTaxs.gtdb_tax_id"))
+    
     genbanks = relationship(
         "Genbank",
         secondary=genbanks_genomes,
@@ -339,12 +331,7 @@ class Genome(Base):
         lazy="dynamic",
     )
 
-    genome_gtdb_tax = relationship(
-        "GtdbTax",
-        secondary=genomes_gtdb,
-        back_populates="gtdb_genomes",
-        lazy="dynamic",
-    )
+    genome_gtdb_tax = relationship("GtdbTax", back_populates="gtdb_genomes")
 
     def __str__(self):
         return f"-Genome, Gbk={self.gkb_version_accession}, RefSeq={self.refseq_version_accession}-"
@@ -385,9 +372,7 @@ class GtdbTax(Base):
 
     gtdb_genomes = relationship(
         "Genome",
-        secondary=genomes_gtdb,
         back_populates="genome_gtdb_tax",
-        lazy="dynamic",
     )
 
     def __str__(self):
