@@ -123,21 +123,20 @@ def update_ncbi_tax_records(records_to_update, connection):
     """
     for record in tqdm(records_to_update, desc="Updating NCBI tax records in the local db"):
         with connection.begin():
-            for record in records_to_update:
-                connection.execute(
-                    text(
-                        "UPDATE NcbiTaxs "
-                        f"SET kingdom = {record[1]} AND "
-                        f"phylum = {record[2]} AND "
-                        f"tax_class = {record[3]} AND "
-                        f"order = {record[4]} AND "
-                        f"family = {record[5]} AND "
-                        f"genus = {record[6]} AND "
-                        f"species = {record[7]} AND "
-                        f"strain = {record[8]}"
-                        f"WHERE ncbi_tax_id = '{record[0]}'"
-                    )
+            connection.execute(
+                text(
+                    "UPDATE NcbiTaxs "
+                    f"SET kingdom = {record[1]} AND "
+                    f"phylum = {record[2]} AND "
+                    f"tax_class = {record[3]} AND "
+                    f"order = {record[4]} AND "
+                    f"family = {record[5]} AND "
+                    f"genus = {record[6]} AND "
+                    f"species = {record[7]} AND "
+                    f"strain = {record[8]}"
+                    f"WHERE ncbi_tax_id = '{record[0]}'"
                 )
+            )
 
 
 def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
