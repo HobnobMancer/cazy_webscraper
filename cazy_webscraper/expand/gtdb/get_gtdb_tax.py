@@ -108,7 +108,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_dir = args.cache_dir
         make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
-        cache_dir = cache_dir / "genomes"
+        cache_dir = cache_dir / "gtdb"
         make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     logger.info(f"Using cache dir: {cache_dir}")
@@ -233,7 +233,10 @@ def get_lineage_data(gtdb_file_path, selected_genomes):
     release = gtdb_file_path.name.split("-")[-1].replace('.gz', '')
     genome_lineage_dict = {}
     i = 0
-    for line in pd.read_csv(gtdb_file_path, sep='\t', chunksize=1, names=['genome', 'lineage']):
+    for line in tqdm(
+        pd.read_csv(gtdb_file_path, sep='\t', chunksize=1, names=['genome', 'lineage']),
+        desc=f"Parsing GTDB file {gtdb_file_path.name}"
+    ):
         genome = line['genome'][i].replace("RS_", "").replace("GB_", "")
         if genome in selected_genomes:
             genome_lineage_dict[genome] = {
