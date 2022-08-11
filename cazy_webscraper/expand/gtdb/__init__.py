@@ -70,7 +70,7 @@ def get_gtdb_data(args, cache_dir, arch, bact):
     :param arch: bool, whether to download arch datafile
     :param bact: bool, whether to download the bact datafile
     
-    Return None
+    Return paths to downloaded archea and bacteria data files. None if kingdom not selected for DL
     """
     logger = logging.getLogger(__name__)
 
@@ -114,8 +114,11 @@ def get_gtdb_data(args, cache_dir, arch, bact):
         logger.error("Failed to retrieve download URLs\nTerminating program")
         sys.exit(1)
 
+    archaea_file, bacteria_file = None, None
+
     if arch:
-        archaea_file = cache_dir / "archaea_data.gz"
+        arch_release = archaea_link.split("/")[-1].split("_")[0]
+        archaea_file = cache_dir / f"archaea_data-{arch_release}.gz"
 
         downloaded = download_gtdb_data(archaea_link, archaea_file, 'Archaea')
 
@@ -124,7 +127,8 @@ def get_gtdb_data(args, cache_dir, arch, bact):
             sys.exit(1)
     
     if bact:
-        bacteria_file = cache_dir / "bacteria_data.gz"
+        bact_release = bacteria_link.split("/")[-1].split("_")[0]
+        bacteria_file = cache_dir / f"bacteria_data-{bact_release}.gz"
 
         downloaded = download_gtdb_data(bacteria_link, bacteria_file, 'Bacteria')
 
@@ -132,7 +136,7 @@ def get_gtdb_data(args, cache_dir, arch, bact):
             logger.error("Failed to download bacteria GTDB data file\nTerminating program")
             sys.exit(1)
     
-    return
+    return archaea_file, bacteria_file
 
 
 def download_gtdb_data(url, out_file_path, gtdb_group):
