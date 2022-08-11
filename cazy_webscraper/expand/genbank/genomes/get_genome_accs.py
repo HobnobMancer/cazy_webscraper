@@ -322,8 +322,9 @@ def get_ncbi_assembly_data(sequence_accessions, cache_dir, args, refseq=False):
                     failed_feature_tables[feature_table_url] += 1
                     logger.warning(
                         f"Failed to download feature table from {feature_table_url}\n"
-                        f"on the {failed_feature_tables[feature_table_url]} true"
+                        f"on the {failed_feature_tables[feature_table_url]} try"
                     )
+                    continue
                     if failed_feature_tables[feature_table_url] > args.retries:
                         done_urls.add(feature_table_url)
                         with open(no_urls, 'a') as fh:
@@ -589,7 +590,11 @@ def download_feature_table(assembly_name, feature_table_url, out_file_path, args
         response = urlopen(feature_table_url, timeout=args.timeout)
     except (HTTPError, URLError, timeout) as e:
         logger.error(
-            f"Failed to download the feature table for {assembly_name}:\n{feature_table_url}", exc_info=1,
+            (
+                f"Failed to download the feature table for {assembly_name}:\n"
+                f"{feature_table_url}\n"
+                "See traceback below\n"
+            ), exc_info=1,
         )
         return False
 
