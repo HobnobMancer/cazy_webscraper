@@ -86,7 +86,6 @@ def add_gtdb_taxs(gtdb_lineages, connection):
                 'family',
                 'genus',
                 'species',
-                'strain',
                 'release',
             ],
             list(lineages_to_add),
