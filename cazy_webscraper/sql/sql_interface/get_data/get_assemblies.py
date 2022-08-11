@@ -192,12 +192,12 @@ def get_genomes(gbk_dict, args, connection):
     selected_genomes = set()
     for genome_db_id in genome_dict:
         try:
-            for genome in [genome_db_id]['gkb_genomes']:
+            for genome in genome_dict[genome_db_id]['gkb_genomes']:
                 selected_genomes.add(genome)
         except KeyError:
             pass
         try:
-            for genome in [genome_db_id]['ref_genomes']:
+            for genome in genome_dict[genome_db_id]['ref_genomes']:
                 selected_genomes.add(genome)
         except KeyError:
             pass
