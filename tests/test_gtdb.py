@@ -53,6 +53,7 @@ from pathlib import Path
 from saintBioutils.utilities import logger as saint_logger
 
 from cazy_webscraper.expand.gtdb import get_gtdb_tax
+from cazy_webscraper.expand import gtdb
 from cazy_webscraper.utilities.parsers import get_gtdb_parser
 
 
@@ -281,3 +282,22 @@ def test_gtdb_main_successful(monkeypatch, mock_config_logger, db_path, config_d
     monkeypatch.setattr(get_gtdb_tax, "closing_message", mock_return_none)
 
     get_gtdb_tax.main()
+
+
+def test_getting_download_links_fail(monkeypatch):
+    _local_page = Path("tests/test_inputs/test_inputs_gtdb/gtdb_page.html")
+
+    def mock_get_page(*args, **kwards):
+        return None, 'error'
+
+    _args = {"args": Namespace(
+        retries=10,
+    )}
+
+    _output_dir = Path("tests/test_outputs/test_gtdb_output")
+
+    monkeypatch.setattr(gtdb, "get_page", mock_get_page)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        gtdb.get_gtdb_data(_args['args'], _output_dir, True, True)
+    assert pytest_wrapped_e.type == SystemExit
