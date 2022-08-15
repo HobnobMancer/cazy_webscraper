@@ -70,7 +70,6 @@ def add_gtdb_taxs(gtdb_lineages, connection):
 
     for genome in tqdm(gtdb_lineages, desc='Adding GTDB lineages to db'):
         lineage = [" ".join(_.split("__")[1:]) for _ in gtdb_lineages[genome]['lineage'].split(";")]
-        print(lineage)
         if tuple(lineage) not in list(existing_gtdb_table.values()):
             lineage.append(gtdb_lineages[genome]['release'])
             lineages_to_add.add(tuple(lineage))
@@ -147,11 +146,6 @@ def add_genome_gtdb_relations(gtdb_lineages, args, connection):
     if len(relationships_to_update):
         for record in tqdm(relationships_to_update, desc="Update genonme GTDB lineage links"):
             with connection.begin():
-                print(
-                    "UPDATE Genomes "
-                    f"SET gtdb_tax_id = {record[1]} "
-                    f"WHERE genome_id = '{record[0]}'"
-                )
                 connection.execute(
                     text(
                         "UPDATE Genomes "
