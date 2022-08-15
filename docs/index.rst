@@ -181,8 +181,8 @@ For details and updates on development, please consult the `GitHub repository <h
    ncbitaxtutorial
    genomes
    genomestutorial
-   gtdb
-   gtdbtutorial
+   gtdbtax
+   gtdbtaxtutorial
    api
    apitutorial
    cache
