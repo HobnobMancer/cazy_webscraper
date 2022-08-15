@@ -54,6 +54,7 @@ from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
     get_taxs_table_dict,
     get_fams_table_dict,
     get_gbk_table_dict,
+    get_gbk_fam_table_dict,
 )
 from cazy_webscraper.sql.sql_orm import genbanks_families
 
@@ -287,15 +288,15 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
     # get dict of GenBank and CazyFamilies tables, used for getting gbk_ids  and fam_ids of accessions and
     # families without entries in the CazyFamilies_Genbanks table
     
-    gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection) 
+    gbk_table_dict = get_gbk_table_dict(connection) 
     # {genbank_accession: 'taxa_id': int, 'gbk_id': int}
 
 
-    fam_table_dict = get_table_dicts.get_fams_table_dict(connection) 
+    fam_table_dict = get_fams_table_dict(connection) 
     # {'fam subfam': fam_id}
 
     # load current relationships in the db
-    gbk_fam_table_dict, existing_rel_tuples = get_table_dicts.get_gbk_fam_table_dict(connection)
+    gbk_fam_table_dict, existing_rel_tuples = get_gbk_fam_table_dict(connection)
     # {genbank_accession: {'families': {str(fam subfam): int(fam_id)}, 'gbk_id': int(gbk_db_id)} }
 
     for genbank_accession in tqdm(cazy_data, desc="Extracting Genbank-Family relationships from CAZy data"):
