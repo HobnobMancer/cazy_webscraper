@@ -50,6 +50,7 @@ import pytest
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from bs4 import BeautifulSoup
 from saintBioutils.utilities import logger as saint_logger
 
 from cazy_webscraper.expand.gtdb import get_gtdb_tax
@@ -297,6 +298,36 @@ def test_getting_download_links_fail(monkeypatch):
     _output_dir = Path("tests/test_outputs/test_gtdb_output")
 
     monkeypatch.setattr(gtdb, "get_page", mock_get_page)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        gtdb.get_gtdb_data(_args['args'], _output_dir, True, True)
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_getting_download_links_download_fail(monkeypatch):
+    _local_page = Path("tests/test_inputs/test_inputs_gtdb/gtdb_page.html")
+
+    with open(_local_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_page(*args, **kwargs):
+        return soup, "error message"
+
+    def mock_download(*args, **kwards):
+        return False
+
+    _args = {"args": Namespace(
+        retries=10,
+        archaea_file=None,
+        bacteria_file=None,
+        taxs=['archaea', 'bacteria']
+    )}
+
+    _output_dir = Path("tests/test_outputs/test_gtdb_output")
+
+    monkeypatch.setattr(gtdb, "get_page", mock_get_page)
+    monkeypatch.setattr(gtdb, "download_gtdb_data", mock_download)
+
 
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         gtdb.get_gtdb_data(_args['args'], _output_dir, True, True)
