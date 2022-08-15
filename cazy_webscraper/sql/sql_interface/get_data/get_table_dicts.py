@@ -42,6 +42,7 @@
 
 
 import logging
+from operator import ge
 
 from tqdm import tqdm
 
@@ -49,6 +50,8 @@ from cazy_webscraper.sql.sql_orm import (
     CazyFamily,
     Ec,
     Genbank,
+    Genome,
+    GtdbTax,
     Kingdom,
     NcbiTax,
     Pdb,
@@ -455,3 +458,55 @@ def get_ncbi_tax_table(connection):
         ncbi_tax_dict[ncbi_tax_id] = db_id
     
     return ncbi_tax_dict
+
+
+def get_gtdb_table_dict(connection):
+    """Load GTDB table into dict
+    
+    :param connection: open connection to an sql db
+    
+    Return dict {db id: (tuple of lineage data)}
+    """
+    with Session(bind=connection) as session:
+        query_results = session.query(GtdbTax).all()
+
+    gtdb_dict = {}
+
+    for record in tqdm(query_results, desc="Loading GtdbTax table into dict"):
+        gtdb_dict[record.gtdb_tax_id] = (
+            record.kingdom,
+            record.phylum,
+            record.tax_class,
+            record.tax_order,
+            record.family,
+            record.genus,
+            record.species,
+        )
+    
+    return gtdb_dict
+
+
+def get_genome_table(connection):
+    """Load genome table into a dict
+
+    :param connection: open sql db connection
+
+    Return dict {genomic version accession: db id}
+    """
+    with Session(bind=connection) as session:
+        genome_records = session.query(Genome).all()
+
+    db_genome_dict = {}  # {genomic ver acc: {'db_id': db_id, 'gtdb_id': gtdb_id}}
+
+    for record in tqdm(genome_records, desc="Retrieving genome records from the local db"):
+        gbk_acc = record.gbk_version_accession
+        ref_acc = record.refseq_version_accession
+        db_id = record.genome_id
+        gtdb_id = record.gtdb_tax_id
+
+        if gbk_acc is not None:
+            db_genome_dict[gbk_acc] = {'db_id': db_id, 'gtdb_id': gtdb_id}
+        if ref_acc is not None:
+            db_genome_dict[ref_acc] = {'db_id': db_id, 'gtdb_id': gtdb_id}
+
+    return db_genome_dict

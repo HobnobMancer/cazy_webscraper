@@ -57,6 +57,7 @@ CAZymes of interest can be defined via providing:
 * Genera
 * Species
 * Strains
+* EC numbers (if previously retrieved from UniProt)
 
 `Here <https://cazy-webscraper.readthedocs.io/en/latest/ncbitax.html>`_ you can find a full list of the command-line flags and options.
 

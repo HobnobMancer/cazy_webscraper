@@ -132,6 +132,10 @@ To protein structure files from PDB use the ``cw_get_pdb_structures`` command.
 
 Retrieve the latest taxonomic classifications (including the complete lineage from kingdom to strain) using the ``cw_get_ncbi_taxs`` command.
 
+**GTDB taxonomies**
+
+Retrieve the latest taxonomic classifications (incluidng the complete lineage from kingdom to strain) from the GTDB database using the ``cw_get_gtdb_taxs`` command.
+
 **Interrogate the database**
 
 To interrogate the database, use the ``cw_query_database`` command.
@@ -177,6 +181,8 @@ For details and updates on development, please consult the `GitHub repository <h
    ncbitaxtutorial
    genomes
    genomestutorial
+   gtdb
+   gtdbtutorial
    api
    apitutorial
    cache

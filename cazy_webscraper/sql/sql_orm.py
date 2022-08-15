@@ -148,6 +148,10 @@ SQLITE_REGEX_FUNCTIONS = {
             lambda value, regex: not re.match(regex, value, re.IGNORECASE)),
 }
 
+
+# define linker/relationship tables
+
+
 genbanks_genomes = Table(
     'Genbanks_Genomes',
     Base.metadata,
@@ -157,7 +161,6 @@ genbanks_genomes = Table(
 )
 
 
-# define linker/relationship tables
 genbanks_families = Table(
     'Genbanks_CazyFamilies',
     Base.metadata,
@@ -318,7 +321,8 @@ class Genome(Base):
     gbk_ncbi_id = Column(Integer)
     refseq_version_accession = Column(String)
     refseq_ncbi_id = Column(Integer)
-
+    gtdb_tax_id = Column(Integer, ForeignKey("GtdbTaxs.gtdb_tax_id"))
+    
     genbanks = relationship(
         "Genbank",
         secondary=genbanks_genomes,
@@ -326,12 +330,55 @@ class Genome(Base):
         lazy="dynamic",
     )
 
+    genome_gtdb_tax = relationship("GtdbTax", back_populates="gtdb_genomes")
+
     def __str__(self):
         return f"-Genome, Gbk={self.gkb_version_accession}, RefSeq={self.refseq_version_accession}-"
 
     def __repr__(self):
         return (
             f"<Class Genome: Gbk={self.gkb_version_accession}, RefSeq={self.refseq_version_accession}>"
+        )
+
+
+class GtdbTax(Base):
+    """Represent the GTDB taxonomic lineage."""
+    __tablename__ = "GtdbTaxs"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "kingdom",
+            "phylum",
+            "tax_class",
+            "tax_order",
+            "family",
+            "genus",
+            "species",
+            "release",
+        ),
+    )
+
+    gtdb_tax_id = Column(Integer, primary_key=True)
+    kingdom = Column(ReString)
+    phylum = Column(ReString)
+    tax_class = Column(ReString)
+    tax_order = Column(ReString)
+    family = Column(ReString)
+    genus = Column(ReString)
+    species = Column(ReString)
+    release = Column(ReString)  # GTDB release
+
+    gtdb_genomes = relationship(
+        "Genome",
+        back_populates="genome_gtdb_tax",
+    )
+
+    def __str__(self):
+        return f"-GtdbTax, id={self.gtdb_tax_id}, kingdom={self.kingdom}-"
+
+    def __repr__(self):
+        return (
+            f"<Class GtdbTax: id={self.gtdb_tax_id}, kingdom={self.kingdom}, genus={self.genus}>"
         )
 
 

@@ -126,3 +126,13 @@ def test_get_gbk_kingdom_table(db_path):
 def test_get_ncbi_tax_table(db_path):
     db_connection = sql_orm.get_db_connection(db_path, False, False)
     get_table_dicts.get_ncbi_tax_table(db_connection)
+
+
+def test_get_gtdb_table(db_path):
+    db_connection = sql_orm.get_db_connection(db_path, False, False)
+    get_table_dicts.get_gtdb_table_dict(db_connection)
+
+
+def test_get_gtdb_table(db_path):
+    db_connection = sql_orm.get_db_connection(db_path, False, False)
+    get_table_dicts.get_genome_table(db_connection)

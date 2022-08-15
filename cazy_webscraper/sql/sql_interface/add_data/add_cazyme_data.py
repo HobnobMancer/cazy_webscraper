@@ -49,6 +49,13 @@ from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_interface import insert_data
 from cazy_webscraper.sql.sql_interface.get_data import get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
+    get_kingdom_table_dict,
+    get_taxs_table_dict,
+    get_fams_table_dict,
+    get_gbk_table_dict,
+    get_gbk_fam_table_dict,
+)
 from cazy_webscraper.sql.sql_orm import genbanks_families
 
 
@@ -64,7 +71,7 @@ def add_kingdoms(cazy_taxa_dict, connection):
     
     Return nothing
     """
-    kingdom_table_dict = get_table_dicts.get_kingdom_table_dict(connection)
+    kingdom_table_dict = get_kingdom_table_dict(connection)
     # dict {kingdom: {organisms}}
 
     # retrieve the Kingdoms retrieved from the CAZy txt file
@@ -93,9 +100,9 @@ def add_source_organisms(taxa_dict, connection):
     logger = logging.getLogger(__name__)
 
     # retrieve db kingdom objects for retrieving the kingdom_id for the Taxs table
-    kingdom_table_dict = get_table_dicts.get_kingdom_table_dict(connection)
+    kingdom_table_dict = get_kingdom_table_dict(connection)
     # {kingdom: kingdom_id}
-    tax_table_dict = get_table_dicts.get_taxs_table_dict(connection)
+    tax_table_dict = get_taxs_table_dict(connection)
     # {genus species: {'tax_id': int(db_tax_id), 'kingdom_id': int(kingdom_id)}
     
     # compare taxa already in the db against taxa retrieved from the CAZy txt file
@@ -169,7 +176,7 @@ def add_cazy_families(cazy_data, connection):
     logger = logging.getLogger(__name__)
 
     # get list of CAZy (sub)families already present in the db
-    fam_table_dict = get_table_dicts.get_fams_table_dict(connection)  # {family subfamily: db_family_id}
+    fam_table_dict = get_fams_table_dict(connection)  # {family subfamily: db_family_id}
 
     existing_fam_records = list(fam_table_dict.keys()) 
 
@@ -213,10 +220,10 @@ def add_genbanks(cazy_data, connection):
     logger = logging.getLogger(__name__)
 
     # retrieve existing records from the db
-    gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
+    gbk_table_dict = get_gbk_table_dict(connection)
     existing_gbk_records = list(gbk_table_dict.keys())
 
-    taxa_table_dict = get_table_dicts.get_taxs_table_dict(connection)
+    taxa_table_dict = get_taxs_table_dict(connection)
     # {genus species: {'tax_id': db_tax_id, 'kingdom_id': kingdom_id}
 
     gbk_record_updates = set()  # {gbk_accession: 'taxa_id': (new taxa_id) int, 'gbk_id': int}
@@ -281,15 +288,15 @@ def add_genbank_fam_relationships(cazy_data, connection, args):
     # get dict of GenBank and CazyFamilies tables, used for getting gbk_ids  and fam_ids of accessions and
     # families without entries in the CazyFamilies_Genbanks table
     
-    gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection) 
+    gbk_table_dict = get_gbk_table_dict(connection) 
     # {genbank_accession: 'taxa_id': int, 'gbk_id': int}
 
 
-    fam_table_dict = get_table_dicts.get_fams_table_dict(connection) 
+    fam_table_dict = get_fams_table_dict(connection) 
     # {'fam subfam': fam_id}
 
     # load current relationships in the db
-    gbk_fam_table_dict, existing_rel_tuples = get_table_dicts.get_gbk_fam_table_dict(connection)
+    gbk_fam_table_dict, existing_rel_tuples = get_gbk_fam_table_dict(connection)
     # {genbank_accession: {'families': {str(fam subfam): int(fam_id)}, 'gbk_id': int(gbk_db_id)} }
 
     for genbank_accession in tqdm(cazy_data, desc="Extracting Genbank-Family relationships from CAZy data"):
