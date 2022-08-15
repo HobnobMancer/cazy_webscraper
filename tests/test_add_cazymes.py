@@ -75,3 +75,26 @@ def test_add_kingdoms(monkeypatch):
     monkeypatch.setattr(add_cazyme_data, "get_kingdom_table_dict", mock_kingdom_table)
 
     add_cazyme_data.add_kingdoms(cazy_tax_data, connection)
+
+
+def test_add_organisms(monkeypatch):
+    tax_dict = {
+        'Bacteria': {'Genus species'},
+        'Eukaryota': {'Genus1 species1 strain1'},
+    }
+    connection = None
+
+    def mock_kingdom_table(*args, **kwards):
+        return {'Bacteria': 1, 'Eukaryota': 2}
+    
+    def mock_tax_table(*args, **kwards):
+        return {}
+
+    def mock_return_none(*args, **kwards):
+        return
+
+    monkeypatch.setattr(add_cazyme_data, "get_kingdom_table_dict", mock_kingdom_table)
+    monkeypatch.setattr(add_cazyme_data, "get_taxs_table_dict", mock_tax_table)
+    monkeypatch.setattr(add_cazyme_data, "insert_data", mock_return_none)
+
+    add_cazyme_data.add_source_organisms(tax_dict, connection)

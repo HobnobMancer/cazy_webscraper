@@ -51,6 +51,7 @@ from cazy_webscraper.sql.sql_interface import insert_data
 from cazy_webscraper.sql.sql_interface.get_data import get_table_dicts
 from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
     get_kingdom_table_dict,
+    get_taxs_table_dict,
 )
 from cazy_webscraper.sql.sql_orm import genbanks_families
 
@@ -96,9 +97,9 @@ def add_source_organisms(taxa_dict, connection):
     logger = logging.getLogger(__name__)
 
     # retrieve db kingdom objects for retrieving the kingdom_id for the Taxs table
-    kingdom_table_dict = get_table_dicts.get_kingdom_table_dict(connection)
+    kingdom_table_dict = get_kingdom_table_dict(connection)
     # {kingdom: kingdom_id}
-    tax_table_dict = get_table_dicts.get_taxs_table_dict(connection)
+    tax_table_dict = get_taxs_table_dict(connection)
     # {genus species: {'tax_id': int(db_tax_id), 'kingdom_id': int(kingdom_id)}
     
     # compare taxa already in the db against taxa retrieved from the CAZy txt file
