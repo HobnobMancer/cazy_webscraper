@@ -44,7 +44,7 @@
 - *Structure files are written to disk, **not** stored in the local CAZyme database*
 
 **[Genome Taxonomy Database (GTDB)](https://gtdb.ecogenomic.org/):**
-Retrieve the latest archaeal and bacterial taxonomic classifications (including complete lineages from kingdom to species).
+Retrieve the latest archaeal and bacterial taxonomic classifications (including complete lineages from kingdom to species) - available in `cazy_webscraper` verion >= 2.2.0.
 
 **`cazy_webscraper` faciltates extracting information from the local CAZyme database.**
 
