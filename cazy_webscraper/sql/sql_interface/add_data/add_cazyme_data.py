@@ -52,6 +52,7 @@ from cazy_webscraper.sql.sql_interface.get_data import get_table_dicts
 from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
     get_kingdom_table_dict,
     get_taxs_table_dict,
+    get_fams_table_dict,
 )
 from cazy_webscraper.sql.sql_orm import genbanks_families
 
@@ -173,7 +174,7 @@ def add_cazy_families(cazy_data, connection):
     logger = logging.getLogger(__name__)
 
     # get list of CAZy (sub)families already present in the db
-    fam_table_dict = get_table_dicts.get_fams_table_dict(connection)  # {family subfamily: db_family_id}
+    fam_table_dict = get_fams_table_dict(connection)  # {family subfamily: db_family_id}
 
     existing_fam_records = list(fam_table_dict.keys()) 
 

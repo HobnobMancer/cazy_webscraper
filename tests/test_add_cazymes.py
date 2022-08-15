@@ -98,3 +98,25 @@ def test_add_organisms(monkeypatch):
     monkeypatch.setattr(add_cazyme_data, "insert_data", mock_return_none)
 
     add_cazyme_data.add_source_organisms(tax_dict, connection)
+
+
+def test_add_fams(monkeypatch):
+    cazy_data = {
+        'gbk1': {'kingdom': 'k', 'organism': 'o', 'families': {
+                'fam': {'subfam'},
+                'fam1': {None},
+            }
+        }
+    }
+    connection = None
+
+    def mock_fam_table(*args, **kwards):
+        return {}
+
+    def mock_return_none(*args, **kwards):
+        return
+
+    monkeypatch.setattr(add_cazyme_data, "get_fams_table_dict", mock_fam_table)
+    monkeypatch.setattr(add_cazyme_data, "insert_data", mock_return_none)
+
+    add_cazyme_data.add_cazy_families(cazy_data, connection)
