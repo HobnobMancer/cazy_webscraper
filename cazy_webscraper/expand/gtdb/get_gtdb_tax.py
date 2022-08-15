@@ -46,7 +46,7 @@
 
 import logging
 import pandas as pd
-import time
+import sys
 
 from datetime import datetime
 from typing import List, Optional
@@ -65,7 +65,7 @@ from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.expand.gtdb import get_gtdb_data
-from cazy_webscraper.utilities import parse_configuration
+from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
     get_gbk_table_dict,
     get_uniprot_table_dict,
@@ -121,7 +121,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         kingdom_filters,
         taxonomy_filter_dict,
         ec_filters,
-    ) = parse_configuration.get_expansion_configuration(args)
+    ) = get_expansion_configuration(args)
 
     # get the GenBank verion accessions and local db IDs of proteins matching the config criteria
     gbk_dict = get_gbks_of_interest(
@@ -140,6 +140,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # }}
     # selected_genomes = set of genome version accessions
     genome_dict, selected_genomes = get_genomes(gbk_dict, args, connection)
+
+    if len(selected_genomes) == 0:
+        logger.error(
+            "Retrieved no genomes matching specified criteria from the local database.\n"
+            "Terminating program"
+        )
+        sys.exit(1)
 
     logger.info(f"Retrieving GTDB tax classification for {len(selected_genomes)} genomes")
 
@@ -164,6 +171,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             "Retrieved no lineage data for genomes retrieved from the local db.\n"
             "Terminating program"
         )
+        sys.exit(1)
 
     # add data to the local CAZyme db
     add_gtdb_taxs(genome_lineage_dict, connection)
