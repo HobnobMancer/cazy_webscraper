@@ -49,6 +49,9 @@ from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_interface import insert_data
 from cazy_webscraper.sql.sql_interface.get_data import get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
+    get_kingdom_table_dict,
+)
 from cazy_webscraper.sql.sql_orm import genbanks_families
 
 
@@ -64,7 +67,7 @@ def add_kingdoms(cazy_taxa_dict, connection):
     
     Return nothing
     """
-    kingdom_table_dict = get_table_dicts.get_kingdom_table_dict(connection)
+    kingdom_table_dict = get_kingdom_table_dict(connection)
     # dict {kingdom: {organisms}}
 
     # retrieve the Kingdoms retrieved from the CAZy txt file

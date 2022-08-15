@@ -56,6 +56,7 @@ from saintBioutils.utilities import logger as saint_logger
 
 from cazy_webscraper.expand.gtdb import get_gtdb_tax
 from cazy_webscraper.expand import gtdb
+from cazy_webscraper.sql.sql_interface.add_data import add_gtdb_tax
 from cazy_webscraper.utilities.parsers import get_gtdb_parser
 
 
@@ -66,7 +67,7 @@ def archaea_data_file_path():
 
 
 @pytest.fixture
-def test_genomes():
+def selected_test_genomes():
     _genomes = [
         'GCF_000979375.1',
         'GCF_11111111.1',
@@ -87,8 +88,8 @@ def mock_building_parser(*args, **kwargs):
     return parser_args
 
 
-def test_parse_gtdb_datafile(archaea_data_file_path, test_genomes):
-    result = get_gtdb_tax.get_lineage_data(archaea_data_file_path, test_genomes)
+def test_parse_gtdb_datafile(archaea_data_file_path, selected_test_genomes):
+    result = get_gtdb_tax.get_lineage_data(archaea_data_file_path, selected_test_genomes)
     assert result == {
         'GCF_000979375.1': {'lineage': 'd__Archaea;p__Halobacteriota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina mazei', 'release': 'ar53_taxonomy.tsv'},
         'GCA_002506415.1': {'lineage': 'd__Archaea;p__Halobacteriota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina mazei', 'release': 'ar53_taxonomy.tsv'}
@@ -365,3 +366,27 @@ def test_browser_decorator():
     """Test browser_decorator to ensure proper handling if unsuccessful."""
     result = gtdb.get_page('www.caz!!!!!!!!y.org', max_tries=1)
     assert True == (result[0] is None) and (type(result[1]) is MissingSchema)
+
+
+def test_adding_lineages(monkeypatch):
+    """test sql_interface.add_data.add_gtdb_tax.add_gtdb_taxs"""
+    lin_1 = "d__Archaea;p__Halobacteriota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina mazei"
+    lin_2 = "d__Archaea;p__Halobacteriota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina mazei"
+    
+    gtdb_lineages = {
+        'RS_GCF_000979375.1': {'lineage': lin_1, 'release': 'release'},
+        'RS_GCF_000970165.1': {'lineage': lin_2, 'release': 'release'}
+    }
+    connection = None
+
+    def mock_load_gtdb_table(*args, **kwards):
+        lin_1_str = [" ".join(_.split("__")[1:]) for _ in lin_1.split(";")]
+        lin_2_str = [" ".join(_.split("__")[1:]) for _ in lin_2.split(";")]
+        table_dict = {1: lin_1_str, 2: lin_2_str}
+        return table_dict
+
+    def mock_no_return(*args, **kwards):
+        return
+    
+    monkeypatch.setattr(add_gtdb_tax, "get_gtdb_table_dict", mock_load_gtdb_table)
+    monkeypatch.setattr(add_gtdb_tax, "insert_data", mock_no_return)
