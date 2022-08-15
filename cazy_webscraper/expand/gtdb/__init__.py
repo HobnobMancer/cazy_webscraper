@@ -92,7 +92,7 @@ def get_gtdb_data(args, cache_dir, arch, bact):
                 if j.contents[0] is not None:
                     try:
                         if j.contents[0]['href'].endswith('_taxonomy.tsv.gz'):
-                            if j.contents[0]['href'].startswith('ar'):
+                            if j.contents[0]['href'].split("/")[-1].startswith('ar'):
                                 archaea_link = f"{GTDB_URL}{j.contents[0]['href']}"
                             else:
                                 bacteria_link = f"{GTDB_URL}{j.contents[0]['href']}"
