@@ -357,9 +357,6 @@ class GtdbTax(Base):
             "species",
             "release",
         ),
-        Index(
-            Index("gtdb_index", "gtdb_tax_id", "genus", "species"),
-        )
     )
 
     gtdb_tax_id = Column(Integer, primary_key=True)

@@ -70,7 +70,8 @@ def add_gtdb_taxs(gtdb_lineages, connection):
 
     for genome in tqdm(gtdb_lineages, desc='Adding GTDB lineages to db'):
         lineage = [" ".join(_.split("__")[1:]) for _ in gtdb_lineages[genome]['lineage'].split(";")]
-        if lineage not in list(existing_gtdb_table.values()):
+        print(lineage)
+        if tuple(lineage) not in list(existing_gtdb_table.values()):
             lineage.append(gtdb_lineages[genome]['release'])
             lineages_to_add.add(tuple(lineage))
 
@@ -86,7 +87,6 @@ def add_gtdb_taxs(gtdb_lineages, connection):
                 'family',
                 'genus',
                 'species',
-                'strain',
                 'release',
             ],
             list(lineages_to_add),
@@ -108,7 +108,7 @@ def add_genome_gtdb_relations(gtdb_lineages, args, connection):
     logger = logging.getLogger(__name__)
 
     genome_table = get_genome_table(connection)  # {genomic ver acc: {'db_id': db_id, 'gtdb_id': gtdb_id}}
-    gtdb_table = get_gtdb_table_dict(connection)
+    gtdb_table = get_gtdb_table_dict(connection)  # {db id: (tuple of lineage data)}
     # flip gtdb_table dict key/value pairs
     gtdb_lineage_table_dict = {}
     for db_id in gtdb_table:
@@ -147,6 +147,11 @@ def add_genome_gtdb_relations(gtdb_lineages, args, connection):
     if len(relationships_to_update):
         for record in tqdm(relationships_to_update, desc="Update genonme GTDB lineage links"):
             with connection.begin():
+                print(
+                    "UPDATE Genomes "
+                    f"SET gtdb_tax_id = {record[1]} "
+                    f"WHERE genome_id = '{record[0]}'"
+                )
                 connection.execute(
                     text(
                         "UPDATE Genomes "
@@ -156,3 +161,7 @@ def add_genome_gtdb_relations(gtdb_lineages, args, connection):
                 )
     
     return
+
+#
+#
+# Fix unique constrain issue when adding data to the GTDB table

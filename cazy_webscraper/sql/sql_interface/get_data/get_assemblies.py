@@ -154,7 +154,7 @@ def get_genomes(gbk_dict, args, connection):
     """
     genome_dict = {}
 
-    for gbk in tqdm(gbk_dict, decs="Getting genomes for proteins of interest"):
+    for gbk in tqdm(gbk_dict, desc="Getting genomes for proteins of interest"):
         with connection.begin():
             cmd = text(
                 "SELECT Gn.gbk_version_accession, Gn.refseq_version_accession, Gn.genome_id, Gn.gtdb_tax_id "
@@ -163,41 +163,41 @@ def get_genomes(gbk_dict, args, connection):
                 "INNER JOIN Genbanks AS Gb ON GG.genbank_id = Gb.genbank_id "
                 f"WHERE Gb.genbank_accession = '{gbk}'"
             )
-            result = connection.execute(cmd).fetchall()
+            query_result = connection.execute(cmd).fetchall()
 
-        if len(result) != 0:
-            if result[4] is not None:
-                if args.update_genome_lineage is False:
-                    continue
+        if len(query_result) != 0:
+            for result in query_result:
+                if result[3] is not None:
+                    if args.update_genome_lineage is False:
+                        continue
 
-            genome_db_id = result[3]
-            try:
-                genome_dict[genome_db_id]
-            except KeyError:
-                genome_dict[genome_db_id] = {}
+                genome_db_id = result[2]
+                try:
+                    genome_dict[genome_db_id]
+                except KeyError:
+                    genome_dict[genome_db_id] = {}
 
-            for record in result:
-                if record[0] is not None:
+                if result[0] is not None:
                     try:
-                        genome_dict[genome_db_id]['gkb_genomes'].add(record[0])
+                        genome_dict[genome_db_id]['gkb_genomes'].add(result[0])
                     except KeyError:
-                        genome_dict[genome_db_id]['gkb_genomes'] = {record[0]}
+                        genome_dict[genome_db_id]['gkb_genomes'] = {result[0]}
 
-                if record[1] is not None:
+                if result[1] is not None:
                     try:
-                        genome_dict[genome_db_id]['ref_genomes'].add(record[1])
+                        genome_dict[genome_db_id]['ref_genomes'].add(result[1])
                     except KeyError:
-                        genome_dict[genome_db_id]['ref_genomes'] = {record[1]}
+                        genome_dict[genome_db_id]['ref_genomes'] = {result[1]}
 
     selected_genomes = set()
     for genome_db_id in genome_dict:
         try:
-            for genome in [genome_db_id]['gkb_genomes']:
+            for genome in genome_dict[genome_db_id]['gkb_genomes']:
                 selected_genomes.add(genome)
         except KeyError:
             pass
         try:
-            for genome in [genome_db_id]['ref_genomes']
+            for genome in genome_dict[genome_db_id]['ref_genomes']:
                 selected_genomes.add(genome)
         except KeyError:
             pass
