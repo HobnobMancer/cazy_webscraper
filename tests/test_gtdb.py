@@ -350,7 +350,7 @@ def test_getting_download_links(monkeypatch):
         retries=10,
         archaea_file=None,
         bacteria_file=None,
-        taxs=['archaea']
+        taxs=['archaea', 'bacteria']
     )}
 
     _output_dir = Path("tests/test_outputs/test_gtdb_output")
