@@ -53,6 +53,7 @@ from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
     get_kingdom_table_dict,
     get_taxs_table_dict,
     get_fams_table_dict,
+    get_gbk_table_dict,
 )
 from cazy_webscraper.sql.sql_orm import genbanks_families
 
@@ -218,10 +219,10 @@ def add_genbanks(cazy_data, connection):
     logger = logging.getLogger(__name__)
 
     # retrieve existing records from the db
-    gbk_table_dict = get_table_dicts.get_gbk_table_dict(connection)
+    gbk_table_dict = get_gbk_table_dict(connection)
     existing_gbk_records = list(gbk_table_dict.keys())
 
-    taxa_table_dict = get_table_dicts.get_taxs_table_dict(connection)
+    taxa_table_dict = get_taxs_table_dict(connection)
     # {genus species: {'tax_id': db_tax_id, 'kingdom_id': kingdom_id}
 
     gbk_record_updates = set()  # {gbk_accession: 'taxa_id': (new taxa_id) int, 'gbk_id': int}
