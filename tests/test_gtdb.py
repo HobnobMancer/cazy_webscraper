@@ -46,15 +46,21 @@ pytest -v
 
 
 import pytest
+
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from saintBioutils.utilities import logger as saint_logger
+
 from cazy_webscraper.expand.gtdb import get_gtdb_tax
+from cazy_webscraper.utilities.parsers import get_gtdb_parser
 
 
 @pytest.fixture
 def archaea_data_file_path():
     _path = Path("tests/test_inputs/test_inputs_gtdb/ar53_taxonomy.tsv.gz")
     return _path
+
 
 @pytest.fixture
 def test_genomes():
@@ -66,9 +72,86 @@ def test_genomes():
     return _genomes
 
 
+@pytest.fixture
+def mock_building_parser(*args, **kwargs):
+    parser_args = ArgumentParser(
+        prog="get_gtdb_taxs.py",
+        usage=None,
+        description="Retrieve GTDB taxonomic classifications",
+        conflict_handler="error",
+        add_help=True,
+    )
+    return parser_args
+
+
 def test_parse_gtdb_datafile(archaea_data_file_path, test_genomes):
     result = get_gtdb_tax.get_lineage_data(archaea_data_file_path, test_genomes)
     assert result == {
         'GCF_000979375.1': {'lineage': 'd__Archaea;p__Halobacteriota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina mazei', 'release': 'ar53_taxonomy.tsv'},
         'GCA_002506415.1': {'lineage': 'd__Archaea;p__Halobacteriota;c__Methanosarcinia;o__Methanosarcinales;f__Methanosarcinaceae;g__Methanosarcina;s__Methanosarcina mazei', 'release': 'ar53_taxonomy.tsv'}
     }
+
+
+def test_gtdb_main_no_genomes(monkeypatch, mock_config_logger, db_path, config_dict):
+    
+    def mock_parser(*args, **kwargs):
+        parser = Namespace(
+            database=db_path,
+            taxs=['archaea', 'bacteria'],
+            archaea_file=None,
+            bacterial_file=None,
+            classes=None,
+            config=None,
+            force=False,
+            families=None,
+            genera=None,
+            kingdoms=None,
+            log=None,
+            nodelete=False,
+            nodelete_cache=False,
+            nodelete_log=False,
+            retries=10,
+            sql_echo=False,
+            subfamilies=False,
+            species=None,
+            strains=None,
+            timeout=45,
+            validate=False,
+            verbose=False,
+            version=False,
+            uniprot_accessions=None,
+            update_genom_lineage=False,
+            cache_dir=Path("tests/test_output/mock_gtdb_cache"),
+        )
+        return parser
+
+    def mock_return_none(*args, **kwargs):
+        return
+
+    def mock_get_expansion_configuration(*args, **kwards):
+        return config_dict, set(), set(), set(), dict(), set()
+    
+    def mock_empty_dict(*args, **kwards):
+        return {}
+
+    def mock_get_links(*args, **kwards):
+        return 'url', 'url'
+    
+    def mock_get_genomes(*args, **kwards):
+        return {}, []
+
+    monkeypatch.setattr(get_gtdb_parser, "build_parser", mock_building_parser)
+    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
+    monkeypatch.setattr(saint_logger, "config_logger", mock_config_logger)
+    monkeypatch.setattr(get_gtdb_tax, "make_output_directory", mock_return_none)
+    monkeypatch.setattr(get_gtdb_tax, "get_expansion_configuration", mock_get_expansion_configuration)
+    monkeypatch.setattr(get_gtdb_tax, "get_gbks_of_interest", mock_return_none)
+    monkeypatch.setattr(get_gtdb_tax, "get_genomes", mock_get_genomes)
+    # monkeypatch.setattr(get_gtdb_tax, "get_gtdb_data", mock_get_links)
+    # monkeypatch.setattr(get_gtdb_tax, "get_lineage_data", mock_empty_dict)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        get_gtdb_tax.main()
+    assert pytest_wrapped_e.type == SystemExit
+    
+
