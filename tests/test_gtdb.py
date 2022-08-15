@@ -49,6 +49,7 @@ import pytest
 
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
+from requests.exceptions import MissingSchema
 
 from bs4 import BeautifulSoup
 from saintBioutils.utilities import logger as saint_logger
@@ -328,7 +329,6 @@ def test_getting_download_links_download_fail(monkeypatch):
     monkeypatch.setattr(gtdb, "get_page", mock_get_page)
     monkeypatch.setattr(gtdb, "download_gtdb_data", mock_download)
 
-
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         gtdb.get_gtdb_data(_args['args'], _output_dir, True, True)
     assert pytest_wrapped_e.type == SystemExit
@@ -359,3 +359,9 @@ def test_getting_download_links(monkeypatch):
     monkeypatch.setattr(gtdb, "download_gtdb_data", mock_download)
 
     gtdb.get_gtdb_data(_args['args'], _output_dir, True, True)
+
+
+def test_browser_decorator():
+    """Test browser_decorator to ensure proper handling if unsuccessful."""
+    result = gtdb.get_page('www.caz!!!!!!!!y.org', max_tries=1)
+    assert True == (result[0] is None) and (type(result[1]) is MissingSchema)
