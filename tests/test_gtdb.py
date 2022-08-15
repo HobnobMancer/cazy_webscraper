@@ -155,3 +155,65 @@ def test_gtdb_main_no_genomes(monkeypatch, mock_config_logger, db_path, config_d
     assert pytest_wrapped_e.type == SystemExit
     
 
+
+def test_gtdb_main_no_proteins(monkeypatch, mock_config_logger, db_path, config_dict):
+    
+    def mock_parser(*args, **kwargs):
+        parser = Namespace(
+            database=db_path,
+            taxs=['archaea', 'bacteria'],
+            archaea_file=None,
+            bacterial_file=None,
+            classes=None,
+            config=None,
+            force=False,
+            families=None,
+            genera=None,
+            kingdoms=None,
+            log=None,
+            nodelete=False,
+            nodelete_cache=False,
+            nodelete_log=False,
+            retries=10,
+            sql_echo=False,
+            subfamilies=False,
+            species=None,
+            strains=None,
+            timeout=45,
+            validate=False,
+            verbose=False,
+            version=False,
+            uniprot_accessions=None,
+            update_genom_lineage=False,
+            cache_dir=Path("tests/test_output/mock_gtdb_cache"),
+        )
+        return parser
+
+    def mock_return_none(*args, **kwargs):
+        return
+
+    def mock_get_expansion_configuration(*args, **kwards):
+        return config_dict, set(), set(), set(), dict(), set()
+    
+    def mock_empty_dict(*args, **kwards):
+        return {}
+
+    def mock_get_links(*args, **kwards):
+        return 'url', 'url'
+    
+    def mock_get_genomes(*args, **kwards):
+        return {}, ['g1', 'g2']
+
+    monkeypatch.setattr(get_gtdb_parser, "build_parser", mock_building_parser)
+    monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
+    monkeypatch.setattr(saint_logger, "config_logger", mock_config_logger)
+    monkeypatch.setattr(get_gtdb_tax, "make_output_directory", mock_return_none)
+    monkeypatch.setattr(get_gtdb_tax, "get_expansion_configuration", mock_get_expansion_configuration)
+    monkeypatch.setattr(get_gtdb_tax, "get_gbks_of_interest", mock_return_none)
+    monkeypatch.setattr(get_gtdb_tax, "get_genomes", mock_get_genomes)
+    monkeypatch.setattr(get_gtdb_tax, "get_gtdb_data", mock_get_links)
+    monkeypatch.setattr(get_gtdb_tax, "get_lineage_data", mock_empty_dict)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        get_gtdb_tax.main()
+    assert pytest_wrapped_e.type == SystemExit
