@@ -53,7 +53,7 @@ from saintBioutils.utilities.file_io import make_output_directory
 
 from cazy_webscraper.sql import sql_orm
 
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 
 VERSION_INFO = f"cazy_webscraper version: {__version__}"
 
