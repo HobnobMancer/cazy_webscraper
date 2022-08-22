@@ -48,6 +48,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from Bio import Entrez, SeqIO
+from Bio.Entrez.Parser import NotXMLError
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from saintBioutils.genbank import entrez_retry
@@ -233,6 +234,9 @@ def get_sequences(genbank_accessions, args, retry=False):
 
             failed_queries.append(query_list)
             continue
+    
+        if epost_webenv is None:
+            return None, None
 
         try:
             # retrieve the protein sequences
@@ -327,6 +331,8 @@ def bulk_query_ncbi(accessions, args):
 
     Return webenv and query key
     """
+    logger = logging.getLogger(__name__)
+
     # perform batch query of Entrez
     try:
         accessions_string = ",".join(accessions)
@@ -334,14 +340,19 @@ def bulk_query_ncbi(accessions, args):
         accessions_string = accessions
 
     # Runtime error captured by try/except function call
-    epost_result = Entrez.read(
-        entrez_retry(
-            args.retries,
-            Entrez.epost,
-            db="Protein",
-            id=accessions_string,
+    try:
+        epost_result = Entrez.read(
+            entrez_retry(
+                args.retries,
+                Entrez.epost,
+                db="Protein",
+                id=accessions_string,
+            ),
+            validate=False,
         )
-    )
+    except NotXMLError:
+        logger.error("Could not parse Entrez output")
+        return None, None
 
     # retrieve the web environment and query key from the Entrez post
     epost_webenv = epost_result["WebEnv"]
