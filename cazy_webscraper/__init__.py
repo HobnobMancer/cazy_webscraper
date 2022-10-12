@@ -68,13 +68,22 @@ CITATION_INFO = (
     "\thttps://doi.org/10.6084/m9.figshare.14370860.v7"
 )
 
+WEBSITE = "https://hobnobmancer.github.io/cazy_webscraper/"
+
+DOCUMENTATION = "https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest"
+
 GITHUB_ISSUES = "https://github.com/HobnobMancer/cazy_webscraper/issues"
 
 AUTHOR_EMAIL = "eemh1@st-andrews.ac.uk"
 
 
 def closing_message(job, start_time, args):
-    """Write closing messsage to terminal"""
+    """Write closing messsage to terminal
+
+    :param job: str, name of module run
+    :param start_time: str, time run was started
+    :param args: CLI arguments parser
+    """
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
@@ -84,11 +93,16 @@ def closing_message(job, start_time, args):
 
     message = f"""
     ====================={job}=====================
-    Scrape initiated at {start_time}
-    Scrape finished at {end_time}
+    Run initiated at {start_time}
+    **Run terminated early to do an error**
+    Run finished at {end_time}
     Total run time: {total_time}
 
     Version: {VERSION_INFO}
+
+    For help with trouble shooting and operating cazy_webscraper please see the documentation:
+    README: {WEBSITE}
+    Documentation (including tutorials): {DOCUMENTATION}
 
     We are interested in your views on the operation and addition of new features
     to cazy_webscraper. Please get in touch with any issues, praise, recommendations and
@@ -104,8 +118,6 @@ def closing_message(job, start_time, args):
         logger.info(message)
     else:
         print(message)
-
-    return
 
 
 def connect_existing_db(args, time_stamp, start_time):
