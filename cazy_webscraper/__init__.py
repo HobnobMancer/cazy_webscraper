@@ -70,6 +70,8 @@ CITATION_INFO = (
 
 GITHUB_ISSUES = "https://github.com/HobnobMancer/cazy_webscraper/issues"
 
+AUTHOR_EMAIL = "eemh1@st-andrews.ac.uk"
+
 
 def closing_message(job, start_time, args):
     """Write closing messsage to terminal"""
@@ -92,7 +94,7 @@ def closing_message(job, start_time, args):
     to cazy_webscraper. Please get in touch with any issues, praise, recommendations and
     suggestions. Please submit your suggestions and comments at:
     GitHub issues: {GITHUB_ISSUES}
-    Email: eemh1@st-andrews.ac.uk
+    Email: {AUTHOR_EMAIL}
 
     When publishing work that uses cazy_webscraper please cite:
     Citation: {CITATION_INFO}
