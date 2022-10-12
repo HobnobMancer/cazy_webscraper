@@ -53,9 +53,12 @@ from saintBioutils.utilities.file_io import make_output_directory
 
 from cazy_webscraper.sql import sql_orm
 
+
 __version__ = "2.2.1"
 
+
 VERSION_INFO = f"cazy_webscraper version: {__version__}"
+
 
 CITATION_INFO = (
     "If you use cazy_webscraper in your work, please cite the following publication:\n"
@@ -64,6 +67,8 @@ CITATION_INFO = (
     "\tFigShare. Poster.\n"
     "\thttps://doi.org/10.6084/m9.figshare.14370860.v7"
 )
+
+GITHUB_ISSUES = "https://github.com/HobnobMancer/cazy_webscraper/issues"
 
 
 def closing_message(job, start_time, args):
@@ -75,24 +80,28 @@ def closing_message(job, start_time, args):
     end_time = pd.to_datetime(end_time)
     total_time = end_time - start_time
 
+    message = f"""
+    ====================={job}=====================
+    Scrape initiated at {start_time}
+    Scrape finished at {end_time}
+    Total run time: {total_time}
+
+    Version: {VERSION_INFO}
+
+    We are interested in your views on the operation and addition of new features
+    to cazy_webscraper. Please get in touch with any issues, praise, recommendations and
+    suggestions. Please submit your suggestions and comments at:
+    GitHub issues: {GITHUB_ISSUES}
+    Email: eemh1@st-andrews.ac.uk
+
+    When publishing work that uses cazy_webscraper please cite:
+    Citation: {CITATION_INFO}
+    """
+
     if args.verbose:
-        logger.info(
-            f"====================={job}=====================\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}"
-            f"Version: {VERSION_INFO}\n"
-            f"Citation: {CITATION_INFO}"
-        )
+        logger.info(message)
     else:
-        print(
-            f"====================={job}=====================\n"
-            f"Scrape initated at {start_time}\n"
-            f"Scrape finished at {end_time}\n"
-            f"Total run time: {total_time}\n"
-            f"Version: {VERSION_INFO}\n"
-            f"Citation: {CITATION_INFO}"
-        )
+        print(message)
 
     return
 
