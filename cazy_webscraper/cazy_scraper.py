@@ -143,7 +143,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             "Terminating program."
         )
         logger.warning(termcolour(warning_message, "red"))
-        closing_message("cazy_webscraper", start_time, args)
+        closing_message("cazy_webscraper", start_time, args, early_term=True)
         return
 
     if args.db_output is not None and args.db_output.exists():
@@ -161,7 +161,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 "Not ovewriting existing database\n"
                 "Termianting program"
             )
-            closing_message("cazy_webscraper", start_time, args)
+            closing_message("cazy_webscraper", start_time, args, early_term=True)
             return
 
     Entrez.email = args.email

@@ -77,12 +77,13 @@ GITHUB_ISSUES = "https://github.com/HobnobMancer/cazy_webscraper/issues"
 AUTHOR_EMAIL = "eemh1@st-andrews.ac.uk"
 
 
-def closing_message(job, start_time, args):
+def closing_message(job, start_time, args, early_term=False):
     """Write closing messsage to terminal
 
     :param job: str, name of module run
     :param start_time: str, time run was started
     :param args: CLI arguments parser
+    :param early_term: bool, True if run terminated early due to an error
     """
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
@@ -91,11 +92,18 @@ def closing_message(job, start_time, args):
     end_time = pd.to_datetime(end_time)
     total_time = end_time - start_time
 
+    if early_term:
+        termination_status = (
+            "**Run terminated early to do an error**"
+            f"Run finished at {end_time}"
+        )
+    else:
+        termination_status = f"Run finished at {end_time}"
+
     message = f"""
     ====================={job}=====================
     Run initiated at {start_time}
-    **Run terminated early to do an error**
-    Run finished at {end_time}
+    {termination_status}
     Total run time: {total_time}
 
     Version: {VERSION_INFO}

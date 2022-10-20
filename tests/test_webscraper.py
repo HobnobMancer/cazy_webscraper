@@ -657,7 +657,7 @@ def test_closing_message_verbose():
         )
     }
 
-    closing_message('cazy_webscraper', start_time, argsdict['args'])
+    closing_message('cazy_webscraper', start_time, argsdict['args'], early_term=True)
 
 
 # # # test get_cazy_data()
