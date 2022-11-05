@@ -54,7 +54,7 @@ from saintBioutils.utilities.file_io import make_output_directory
 from cazy_webscraper.sql import sql_orm
 
 
-__version__ = "2.2.1"
+__version__ = "2.2.2"
 
 
 VERSION_INFO = f"cazy_webscraper version: {__version__}"
@@ -94,7 +94,7 @@ def closing_message(job, start_time, args, early_term=False):
 
     if early_term:
         termination_status = (
-            "**Run terminated early to do an error**"
+            "**Run terminated early due to do an error**\n"
             f"Run finished at {end_time}"
         )
     else:
