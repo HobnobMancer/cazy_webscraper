@@ -85,6 +85,7 @@ from cazy_webscraper import (
     connect_to_new_db,
     connect_existing_db,
     display_citation_info,
+    display_version_info,
 )
 from cazy_webscraper.crawler.get_validation_data import get_validation_data
 from cazy_webscraper.cazy import (
@@ -128,7 +129,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # check if printing out version or citation information
     if args.version:
-        print(VERSION_INFO)
+        display_version_info()
         return
 
     if args.citation:

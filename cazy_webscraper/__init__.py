@@ -177,6 +177,17 @@ def display_citation_info():
     print(message)
 
 
+def display_version_info():
+    """Display package version number information"""
+
+    message = f""""
+    =====================cazy_webscraper Version Information=====================
+    Version: {VERSION_INFO}
+    """
+
+    print(message)
+
+
 def connect_existing_db(args, time_stamp, start_time):
     """Coordinate connecting to an existing local CAZyme database, define logger name and cache dir
 
