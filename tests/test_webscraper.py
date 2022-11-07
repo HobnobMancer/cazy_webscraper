@@ -48,7 +48,6 @@ from logging import getLogger
 import logging
 import os
 
-from cazy_webscraper import cazy
 from cazy_webscraper.utilities.parse_configuration.cazy_class_synonym_dict import cazy_synonym_dict
 from saintBioutils.utilities import logger as saint_logger
 import pytest
@@ -60,7 +59,7 @@ from argparse import Namespace, ArgumentParser
 from datetime import datetime
 from pathlib import Path
 
-from cazy_webscraper import cazy_scraper, sql, utilities, closing_message
+from cazy_webscraper import cazy_scraper, sql, closing_message
 from cazy_webscraper.sql.sql_interface.add_data import add_cazyme_data
 from cazy_webscraper.sql import sql_interface, sql_orm
 from cazy_webscraper.utilities import parse_configuration, parsers
@@ -742,272 +741,21 @@ def test_get_cazy_data_no_filters(db_path, empty_config_dict, monkeypatch):
         argsdict['args'],
     )
 
-# # def test_get_cazy_data_no_fam_urls(
-# #     cazy_home_url,
-# #     cazy_dictionary,
-# #     config_dict,
-# #     time_stamp,
-# #     args_get_cazy_data,
-# #     logs_dir,
-# #     monkeypatch,
-# #     null_logger
-# # ):
-# #     """Test get_cazy_data() when no family URLS are retrieved."""
-# #     os.makedirs(logs_dir, exist_ok=True)
 
-# #     def mock_get_classes(*args, **kwargs):
-# #         class1 = crawler.CazyClass("test_class", "test_class_url.html", 0)
-# #         return [class1]
+def test_term_message():
+    """Test closing_message when terminating early"""
+    argsdict = {
+        "args": Namespace(
+            verbose="False",
+        )
+    }
 
-# #     def mock_get_families(*args, **kwargs):
-# #         return None, "test error message", ["test_url1", "test_url2"]
+    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    start_time = pd.to_datetime(start_time)
 
-# #     def mock_logger(*args, **kwargs):
-# #         return null_logger
-
-# #     monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
-# #     monkeypatch.setattr(crawler, "get_cazy_family_urls", mock_get_families)
-# #     monkeypatch.setattr(utilities, "build_logger", mock_logger)
-
-# #     cazy_scraper.get_cazy_data(
-# #         cazy_home=cazy_home_url,
-# #         excluded_classes=None,
-# #         config_dict=config_dict,
-# #         cazy_dict=cazy_dictionary,
-# #         taxonomy_filters=set(),
-# #         kingdoms="all",
-# #         ec_filters=[],
-# #         time_stamp="timestamp",
-# #         session="session_representative",
-# #         args=args_get_cazy_data["args"],
-# #     )
-# #     file_io.make_output_directory(logs_dir, True, False)
-
-
-# # def test_get_cazy_data_no_all(
-# #     time_stamp,
-# #     cazy_home_url,
-# #     cazy_dictionary,
-# #     args_get_cazy_data,
-# #     logs_dir,
-# #     monkeypatch,
-# # ):
-# #     """Test get_cazy_data() when no kingdoms are specified and config_dict is None."""
-# #     # prepare dir for log files
-# #     os.makedirs(logs_dir, exist_ok=True)
-
-# #     fam1 = crawler.Family("test_fam", "test_class", "test_url")
-
-# #     def mock_get_classes(*args, **kwargs):
-# #         class1 = crawler.CazyClass(
-# #             name="test_class",
-# #             url="test_class_url.html",
-# #             tries=0,
-# #         )
-# #         return [class1]
-
-# #     def mock_get_fam_urls(*args, **kwargs):
-# #         return [fam1], "error message", ["in", "cor", "rect", "urls"]
-
-# #     def mock_parse_family(*args, **kwargs):
-# #         return fam1, True, ["fail1", "fail2"], ["sqlFail1", "sqlFail2"], ["format error"], "session"
-
-# #     monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
-# #     monkeypatch.setattr(crawler, "get_cazy_family_urls", mock_get_fam_urls)
-# #     monkeypatch.setattr(scrape_all, "parse_family_via_all_pages", mock_parse_family)
-
-# #     cazy_scraper.get_cazy_data(
-# #         cazy_home=cazy_home_url,
-# #         excluded_classes=None,
-# #         config_dict=None,
-# #         cazy_dict=None,
-# #         taxonomy_filters=set(),
-# #         kingdoms="all",
-# #         ec_filters=[],
-# #         time_stamp="timestamp",
-# #         session="session_representative",
-# #         args=args_get_cazy_data["args"],
-# #     )
-# #     file_io.make_output_directory(logs_dir, True, False)
-
-
-# # def test_get_cazy_data_no_config_dict_kingdom(
-# #     time_stamp,
-# #     cazy_home_url,
-# #     cazy_dictionary,
-# #     args_get_cazy_data,
-# #     logs_dir,
-# #     monkeypatch,
-# # ):
-# #     """Test get_cazy_data() when kingdoms are specified and config_dict is None."""
-# #     # prepare dir for log files
-# #     os.makedirs(logs_dir, exist_ok=True)
-
-# #     fam1 = crawler.Family("test_fam", "test_class", "test_url")
-
-# #     def mock_get_classes(*args, **kwargs):
-# #         class1 = crawler.CazyClass(
-# #             name="test_class",
-# #             url="test_class_url.html",
-# #             tries=0,
-# #             failed_families={fam1: 0},
-# #         )
-# #         return [class1]
-
-# #     def mock_parse_family(*args, **kwargs):
-# #         return fam1, True, ["fail1", "fail2"], ["sqlFail1", "sqlFail2"], ["format error"], "session"
-
-# #     monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
-# #     monkeypatch.setattr(scrape_by_kingdom, "parse_family_by_kingdom", mock_parse_family)
-
-# #     cazy_scraper.get_cazy_data(
-# #         cazy_home=cazy_home_url,
-# #         excluded_classes=None,
-# #         config_dict=None,
-# #         cazy_dict=None,
-# #         taxonomy_filters=set(),
-# #         kingdoms=["Bacteria", "Viruses"],
-# #         ec_filters=[],
-# #         time_stamp="timestamp",
-# #         session="session_representative",
-# #         args=args_get_cazy_data["args"],
-# #     )
-# #     file_io.make_output_directory(logs_dir, True, False)
-
-
-# # def test_get_cazy_data_config_data_all(
-# #     time_stamp,
-# #     cazy_home_url,
-# #     cazy_dictionary,
-# #     args_get_cazy_data,
-# #     logs_dir,
-# #     monkeypatch,
-# # ):
-# #     """Test get_cazy_data() when no kingdoms are specified and configuration given."""
-# #     # prepare dir for log files
-# #     os.makedirs(logs_dir, exist_ok=True)
-
-# #     fam1 = crawler.Family("GH3_1", "test_class", "test_url")
-
-# #     config_dict = {"Glycoside Hydrolases": ["GH3"]}
-
-# #     def mock_get_classes(*args, **kwargs):
-# #         class1 = crawler.CazyClass(
-# #             name="Glycoside Hydrolases",
-# #             url="test_class_url.html",
-# #             tries=0,
-# #             failed_families={fam1: 0},
-# #         )
-# #         return [class1]
-
-# #     def mock_parse_family(*args, **kwargs):
-# #         return fam1, True, ["fail1", "fail2"], ["sqlFail1", "sqlFail2"], ["format error"], "session"
-
-# #     monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
-# #     monkeypatch.setattr(scrape_all, "parse_family_via_all_pages", mock_parse_family)
-
-# #     cazy_scraper.get_cazy_data(
-# #         cazy_home=cazy_home_url,
-# #         excluded_classes=None,
-# #         config_dict=config_dict,
-# #         cazy_dict=cazy_dictionary,
-# #         taxonomy_filters=set(),
-# #         kingdoms="all",
-# #         ec_filters=[],
-# #         time_stamp="timestamp",
-# #         session="session_representative",
-# #         args=args_get_cazy_data["args"],
-# #     )
-# #     file_io.make_output_directory(logs_dir, True, False)
-
-
-# # def test_get_cazy_data_config_data_kingdom(
-# #     time_stamp,
-# #     cazy_home_url,
-# #     cazy_dictionary,
-# #     args_get_cazy_data,
-# #     logs_dir,
-# #     monkeypatch,
-# # ):
-# #     """Test get_cazy_data() when kingdoms are specified and configuration given."""
-# #     # prepare dir for log files
-# #     os.makedirs(logs_dir, exist_ok=True)
-
-# #     fam1 = crawler.Family("GH1", "test_class", "test_url")
-
-# #     config_dict = {"Glycoside Hydrolases": ["GH1"]}
-
-# #     def mock_get_classes(*args, **kwargs):
-# #         class1 = crawler.CazyClass(
-# #             name="Glycoside Hydrolases",
-# #             url="test_class_url.html",
-# #             tries=0,
-# #             failed_families={fam1: 0},
-# #         )
-# #         return [class1]
-
-# #     def mock_parse_family(*args, **kwargs):
-# #         return fam1, True, ["fail1", "fail2"], ["sqlFail1", "sqlFail2"], ["format error"], {}
-
-# #     monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
-# #     monkeypatch.setattr(scrape_by_kingdom, "parse_family_by_kingdom", mock_parse_family)
-
-# #     cazy_scraper.get_cazy_data(
-# #         cazy_home=cazy_home_url,
-# #         excluded_classes=None,
-# #         config_dict=config_dict,
-# #         cazy_dict=cazy_dictionary,
-# #         taxonomy_filters=set(),
-# #         kingdoms=["Bacteria", "Viruses"],
-# #         ec_filters=[],
-# #         time_stamp="timestamp",
-# #         session={},
-# #         args=args_get_cazy_data["args"],
-# #     )
-# #     file_io.make_output_directory(logs_dir, True, False)
-
-
-# # def test_get_cazy_data_config_data_kingdom_stdout(
-# #     time_stamp,
-# #     cazy_home_url,
-# #     cazy_dictionary,
-# #     args_get_cazy_data_stdout,
-# #     logs_dir,
-# #     monkeypatch,
-# # ):
-# #     """Test get_cazy_data() when kingdoms are specified and configuration given."""
-# #     # prepare dir for log files
-# #     os.makedirs(logs_dir, exist_ok=True)
-
-# #     fam1 = crawler.Family("GH1", "test_class", "test_url")
-
-# #     config_dict = {"Glycoside Hydrolases": ["GH1"]}
-
-# #     def mock_get_classes(*args, **kwargs):
-# #         class1 = crawler.CazyClass(
-# #             name="Glycoside Hydrolases",
-# #             url="test_class_url.html",
-# #             tries=0,
-# #             failed_families={fam1: 0},
-# #         )
-# #         return [class1]
-
-# #     def mock_parse_family(*args, **kwargs):
-# #         return fam1, True, ["fail1", "fail2"], ["sqlFail1", "sqlFail2"], ["format error"], {}
-
-# #     monkeypatch.setattr(crawler, "get_cazy_classes", mock_get_classes)
-# #     monkeypatch.setattr(scrape_by_kingdom, "parse_family_by_kingdom", mock_parse_family)
-
-# #     cazy_scraper.get_cazy_data(
-# #         cazy_home=cazy_home_url,
-# #         excluded_classes=None,
-# #         config_dict=config_dict,
-# #         cazy_dict=cazy_dictionary,
-# #         taxonomy_filters=set(),
-# #         kingdoms=["Bacteria", "Viruses"],
-# #         ec_filters=[],
-# #         time_stamp="timestamp",
-# #         session={},
-# #         args=args_get_cazy_data_stdout["args"],
-# #     )
-# #     file_io.make_output_directory(logs_dir, True, False)
+    closing_message(
+        job="Test",
+        start_time=start_time,
+        args=argsdict["args"],
+        early_term=True
+    )
