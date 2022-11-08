@@ -113,3 +113,5 @@ def test_get_uniprot_seqs():
         'uni_acc_1': {'db': 'UniProt', 'seq': 'abc'},
         'uni_acc_2': {'db': 'UniProt', 'seq': 'abc'},
     } == extract_db_seqs.get_uniprot_sequences(uniprot_table_dict, gbk_dict)
+
+
