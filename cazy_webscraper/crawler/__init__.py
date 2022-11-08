@@ -101,30 +101,28 @@ def download_file_decorator(func):
         else:
             return None
 
-        
-        
     return wrapper
 
 
 @download_file_decorator
 def get_cazy_file(out_path, args, **kwargs):
     """Download plain text file database dumb from the CAZy website
-    
+
     :param out_path: Path, target path to write out downloaded txt file
     :param args: cmd-line args parser
     :param max_tries: int, max number of times connection to CAZy can be attempted
-    
+
     Return nothing
     """
     logger = logging.getLogger(__name__)
     download_url = 'http://www.cazy.org/IMG/cazy_data/cazy_data.zip'
-    
+
     # HTTPError, URLError or timeout error may be raised, handled by wrapper
     response = urlopen(download_url, timeout=args.timeout)
-    
+
     file_size = int(response.info().get("Content-length"))
     bsize = 1_048_576
-    
+
     # IOError may be raised, handled by wrapper
     with open(out_path, 'wb') as fh:
         with tqdm(
