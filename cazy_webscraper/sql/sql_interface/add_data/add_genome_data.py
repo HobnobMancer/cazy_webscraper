@@ -132,7 +132,7 @@ def add_genomic_data(ncbi_genome_dict, genomes_of_interst, connection):
     return
 
 
-def update_genomic_data(genomes_of_interest, genome_table_dict, ncbi_genome_dict, connection):
+def update_genomic_data(genomes_of_interest, genome_table_dict, ncbi_genome_dict, connection, unit_test=False):
     """Update existing genomic assembly data in the local CAZyme database
 
     :param genomes_of_interest: list, assembly names of records to update in the local db
@@ -166,6 +166,8 @@ def update_genomic_data(genomes_of_interest, genome_table_dict, ncbi_genome_dict
                     f"WHERE genome_id = '{db_id}'"
                 )
             )
+            if unit_test:
+                connection.rollback()
 
     return
 
