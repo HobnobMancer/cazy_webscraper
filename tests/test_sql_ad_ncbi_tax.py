@@ -155,6 +155,21 @@ def test_update_gbk_tax(db_path, monkeypatch):
             2: 2,
         }
 
+    def mock_get_tax_table(*args, **kwards):
+        return {
+            1 : {
+                'kingdom': 'kingdom',
+                'phylum': 'phylum',
+                'class': 'class',
+                'order': 'order',
+                'family': 'family',
+                'genus': 'genus',
+                'species': 'species',
+                'strain': 'strain',
+            },
+        }
+
+    monkeypatch.setattr(add_ncbi_tax_data, "get_ncbi_tax_table", mock_get_tax_table)
     monkeypatch.setattr(add_ncbi_tax_data, "get_ncbi_tax_table", mock_ncbi_tax_table)
     monkeypatch.setattr(add_ncbi_tax_data, "get_no_tax_gbk_table_dict", mock_tax_gbk_table)
 
