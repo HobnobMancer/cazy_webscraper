@@ -45,11 +45,18 @@ pytest -v
 """
 
 
+import pytest
+
 from argparse import Namespace
 
 from Bio import Entrez
 
 from cazy_webscraper.ncbi import genomes
+
+
+@pytest.fixture
+def failed_batches():
+    return {'proteins': [], 'nuccores': [], 'assemblies': []}
 
 
 def test_get_nuccore_ids(monkeypatch):
@@ -75,6 +82,36 @@ def test_get_nuccore_ids(monkeypatch):
 
         output = genomes.get_nuccore_ids(['BCS34995.1'], {}, argsdict['args'])
         assert output == ({'2131947417'}, {})
+
+
+def test_get_nuccore_ids_runtime(monkeypatch, failed_batches):
+    """Retrieve mock result with https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?db=nuccore&dbfrom=protein&id=BCS34995.1&linkname=protein_nuccore"""
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    efetch_result = "tests/test_inputs/test_inputs_ncbi_genomes/elink_prot_nuccore.xml"
+
+    def mock_post_ids(*args, **kwards):
+        raise RuntimeError
+
+    with open(efetch_result, "rb") as fh:
+        result = fh
+
+        def mock_entrez_tax_call(*args, **kwargs):
+            """Mocks call to Entrez to retrieve nuccore ids."""
+            return result
+
+        monkeypatch.setattr(genomes, "entrez_retry", mock_entrez_tax_call)
+        monkeypatch.setattr(genomes, "post_ids", mock_post_ids)
+
+        output = genomes.get_nuccore_ids(
+            ['BCS34995.1'],
+            failed_batches,
+            argsdict['args'],
+        )
+        assert output == (set(), {'proteins': [['BCS34995.1']], 'nuccores': [], 'assemblies': []})
+
 
 
 def test_get_nuccore_ids_fail(monkeypatch):
@@ -138,6 +175,32 @@ def test_get_assembly_ids(monkeypatch):
         assert output == ({'2131947417'}, {})
 
 
+def test_get_assembly_ids_runtime(monkeypatch, failed_batches):
+    """Retrieve mock result with https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?db=nuccore&dbfrom=protein&id=BCS34995.1&linkname=protein_nuccore"""
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    efetch_result = "tests/test_inputs/test_inputs_ncbi_genomes/elink_prot_nuccore.xml"
+
+    def mock_post_ids(*args, **kwards):
+        raise RuntimeError
+
+    with open(efetch_result, "rb") as fh:
+        result = fh
+
+        def mock_entrez_tax_call(*args, **kwargs):
+            """Mocks call to Entrez to retrieve assembly ids."""
+            return result
+
+        monkeypatch.setattr(genomes, "entrez_retry", mock_entrez_tax_call)
+        monkeypatch.setattr(genomes, "post_ids", mock_post_ids)
+
+        output = genomes.get_assembly_ids(['BCS34995.1'], failed_batches, argsdict['args'])
+        print(output)
+        assert output == (set(), {'proteins': [], 'nuccores': [['BCS34995.1']], 'assemblies': []})
+
+
 def test_get_assembly_ids_fail(monkeypatch):
     argsdict = {"args": Namespace(
         retries=10,
@@ -190,6 +253,25 @@ def test_get_assembly_data_fail_post(monkeypatch):
     monkeypatch.setattr(genomes, "post_ids", mock_post_ids)
 
     genomes.get_assembly_data(['BCS34995.1'], [], set(), argsdict['args'])
+
+
+def test_get_assembly_data_runtime(monkeypatch, failed_batches):
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    def mock_post_ids(*args, **kwards):
+        raise RuntimeError
+
+    def mock_entrez_tax_call(*args, **kwargs):
+        """Mocks call to Entrez to retrieve nuccore ids."""
+        return
+
+    monkeypatch.setattr(genomes, "entrez_retry", mock_entrez_tax_call)
+    monkeypatch.setattr(genomes, "post_ids", mock_post_ids)
+
+    output = genomes.get_assembly_data(['BCS34995.1'], failed_batches, set(), argsdict['args'])
+    assert output == ({}, {'proteins': [], 'nuccores': [], 'assemblies': [['BCS34995.1']]})
 
 
 def test_get_assemly_data_fail(monkeypatch):
