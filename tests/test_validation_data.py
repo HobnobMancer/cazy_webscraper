@@ -50,6 +50,7 @@ import pytest
 
 from argparse import Namespace
 from pathlib import Path
+from requests.exceptions import MissingSchema
 
 from cazy_webscraper.crawler import get_validation_data
 from cazy_webscraper.crawler.get_validation_data import CazyClass
@@ -188,3 +189,12 @@ def test_get_val_data_failed_fam(start_time, cazy_url, cache_dir, monkeypatch):
         start_time,
         argsdict['args'],
     )
+
+
+# test browser dectorator
+
+def test_browser_decorator():
+    """Test browser_decorator to ensure proper handling if unsuccessful."""
+    args = {"args": Namespace(timeout=10)}
+    result = get_validation_data.get_page('www.caz!!!!!!!!y.org', args["args"], max_tries=1)
+    assert True == (result[0] is None) and (type(result[1]) is MissingSchema)
