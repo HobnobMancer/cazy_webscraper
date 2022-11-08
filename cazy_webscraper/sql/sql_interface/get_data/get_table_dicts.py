@@ -453,9 +453,8 @@ def get_ncbi_tax_table(connection):
     ncbi_tax_dict = {}
 
     for record in tqdm(query_results, desc="Loading NcbiTax table into dict"):
-        db_id = record.ncbi_id
         ncbi_tax_id = record.ncbi_tax_id
-        ncbi_tax_dict[ncbi_tax_id] = db_id
+        ncbi_tax_dict[ncbi_tax_id] = ncbi_tax_id
     
     return ncbi_tax_dict
 
