@@ -49,6 +49,7 @@ import logging
 import pytest
 
 from argparse import Namespace
+from bs4 import BeautifulSoup
 from pathlib import Path
 from requests.exceptions import MissingSchema
 
@@ -64,6 +65,53 @@ def cazy_url():
 @pytest.fixture
 def cache_dir():
     return Path("tests/test_outputs/test_outputs_validation_data")
+
+
+@pytest.fixture
+def input_dir(test_input_dir):
+    dir_path = test_input_dir / "test_inputs_crawler"
+    return dir_path
+
+
+@pytest.fixture
+def subfamily_urls(input_dir):
+    file_path = input_dir / "subfamily_urls.txt"
+    with open(file_path, "r") as fh:
+        fam_string = fh.read()
+    fam_string = fam_string[1:-1]
+    fam_string = fam_string.replace("'", "")
+    fam_list = fam_string.split(", ")
+    return fam_list
+
+
+@pytest.fixture
+def no_subfam_h3_element(input_dir):
+    file_path = input_dir / "cazy_classpage_no_subfams.html"
+    with open(file_path) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    return [_ for _ in
+            soup.find_all("h3", {"class": "spip"}) if
+            str(_.contents[0]) == "Tables for Direct Access"][0]
+
+
+@pytest.fixture
+def cazy_class_page(input_dir):
+    file_path = input_dir / "family_url_pages" / "cazy_classpage.html"
+    return file_path
+
+
+@pytest.fixture
+def family_h3_element(cazy_class_page):
+    with open(cazy_class_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    return [_ for _ in
+            soup.find_all("h3", {"class": "spip"}) if
+            str(_.contents[0]) == "Tables for Direct Access"][0]
+
+
+###### Test functions
 
 
 def test_get_val_data_no_classes(start_time, cazy_url, cache_dir, monkeypatch):
@@ -188,6 +236,30 @@ def test_get_val_data_failed_fam(start_time, cazy_url, cache_dir, monkeypatch):
         logging.getLogger(),
         start_time,
         argsdict['args'],
+    )
+
+
+
+# test get_subfamily_links
+
+
+def test_get_subfam_links_successul(family_h3_element, subfamily_urls):
+    """Test get_subfamily_links when links are retrieved."""
+
+    res = get_validation_data.get_subfamily_links(
+        family_h3_element,
+        "http://www.cazy.org",
+    )
+    print(subfamily_urls)
+    assert res == subfamily_urls
+
+
+def test_get_subfam_links_no_urls(no_subfam_h3_element):
+    """Test get_subfamily_links when no urls are retrieved."""
+
+    assert None is get_validation_data.get_subfamily_links(
+        no_subfam_h3_element,
+        "http://www.cazy.org",
     )
 
 
