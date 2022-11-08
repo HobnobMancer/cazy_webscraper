@@ -327,6 +327,7 @@ def test_get_class_urls_fail(cazy_url, cazy_dictionary, monkeypatch, args, cache
             cache_dir,
             start_time,
             args["args"],
+            unit_test=True,
         ) is None
 
 

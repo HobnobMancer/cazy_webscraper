@@ -315,3 +315,41 @@ def test_get_assembly_data(monkeypatch):
 
         output = genomes.get_assembly_data(['297058','4159658','9220111'], [], set(), argsdict['args'])
         assert output == ({}, [])
+
+
+def test_get_assembly_data_success(monkeypatch, failed_batches):
+    """Get mock entrez call results from https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=assembly&id=297058,4159658,9220111"""
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    efetch_result = "tests/test_inputs/test_inputs_ncbi_genomes/efetch_accession_results.xml"
+
+    def mock_post_ids(*args, **kwards):
+        return "qk", "we"
+
+    with open(efetch_result, "rb") as fh:
+        def mock_entrez_tax_call(*args, **kwargs):
+            """Mocks call to Entrez to retrieve nuccore ids."""
+            return fh
+
+        monkeypatch.setattr(genomes, "entrez_retry", mock_entrez_tax_call)
+        monkeypatch.setattr(genomes, "post_ids", mock_post_ids)
+
+        output = genomes.get_assembly_data(
+            ['6231181', '297058', '4159658', '9220111', '965198', '965188', '6231181'],
+            failed_batches,
+            set(),
+            argsdict['args'],
+        )
+        assert output == (
+                {'ASM1131625v1': {
+                    'gbk_acc': 'GCA_011316255.1',
+                    'refseq_acc': '',
+                    'gbk_uid': '17648048',
+                    'refseq_uid': '',
+                    'gbk_url': 'ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/011/316/255/GCA_011316255.1_ASM1131625v1/GCA_011316255.1_ASM1131625v1_feature_table.txt.gz',
+                    'refseq_url': '/_feature_table.txt.gz'}},
+                    {'proteins': [], 'nuccores': [], 'assemblies': []},
+                    {'', '17648048'},
+            )
