@@ -45,6 +45,7 @@ def time_stamp():
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
     return time_stamp
 
+
 @pytest.fixture
 def start_time():
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
