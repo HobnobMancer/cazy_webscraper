@@ -384,8 +384,9 @@ def get_cazy_family_pops(
 
         cache_name = fam_url.replace('.', '_')
         cache_path = cache_dir / f"{cache_name}_{time_stamp}.html"
-        with open(cache_path, "w") as cache:
-            cache.write(family_page)
+        if unit_test is False:
+            with open(cache_path, "w") as cache:
+                cache.write(family_page)
 
         # retrieve the table containing the Family data
         family_data = family_page.find_all("div", {"class": "pos_choix"})

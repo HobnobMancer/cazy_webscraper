@@ -677,3 +677,47 @@ def test_get_fam_pops_no_fams(
     assert incorrect_urls == []
     assert failed_connections == []
 
+
+def test_get_fam_pops_success(
+    cazy_url,
+    cache_dir,
+    start_time,
+    cazy_class_page,
+    monkeypatch,
+):
+    """Unit test get_cazy_family_pops() when no fam urls are retrieved"""
+    with open(cazy_class_page) as fp:
+        page = BeautifulSoup(fp, features="lxml")
+
+    argsdict = {
+        "args": Namespace(
+            force=True,
+            nodelete_cache=True,
+            retries=2,
+        )
+    }
+
+    def mock_get_page(*args, **kwards):
+        return page, None
+
+    def mock_get_fams(*args, **kwards):
+        return ['http://www.cazy.org/GH50.html', 'http://www.cazy.org/GH1.html'], "error", []
+
+    monkeypatch.setattr(get_validation_data, "get_page", mock_get_page)
+    monkeypatch.setattr(get_validation_data, "get_families_urls", mock_get_fams)
+
+    result, error, incorrect_urls, failed_connections = get_validation_data.get_cazy_family_pops(
+        "GH",
+        "www.cazy_url",
+        cazy_url,
+        ["GH1"],
+        cache_dir,
+        start_time,
+        argsdict["args"],
+        unit_test=True,
+    )
+
+    assert result == ['http://www.cazy.org/GH50.html', 'http://www.cazy.org/GH1.html']
+    assert error == "error"
+    assert incorrect_urls == []
+    assert failed_connections == []
