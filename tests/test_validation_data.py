@@ -46,7 +46,6 @@ pytest -v
 
 
 import logging
-from matplotlib.pyplot import get
 import pytest
 
 from argparse import Namespace
@@ -68,6 +67,30 @@ def args():
 
 
 @pytest.fixture
+def args_subfam_true():
+    argsdict = {
+        "args": Namespace(
+            subfamilies=True,
+            retries=2,
+            timeout=45,
+        )
+    }
+    return argsdict
+
+
+@pytest.fixture
+def args_subfam_false():
+    argsdict = {
+        "args": Namespace(
+            subfamilies=False,
+            retries=2,
+            timeout=45,
+        )
+    }
+    return argsdict
+
+
+@pytest.fixture
 def cazy_url():
     return "html/www.cazy.org"
 
@@ -84,20 +107,57 @@ def cache_dir():
 
 
 @pytest.fixture
-def input_dir(test_input_dir):
-    dir_path = test_input_dir / "test_inputs_crawler"
-    return dir_path
+def cazy_class_page_no_urls(input_dir):
+    file_path = input_dir / "family_url_pages" / "cazy_classpage_no_urls.html"
+    return file_path
 
 
 @pytest.fixture
-def subfamily_urls(input_dir):
-    file_path = input_dir / "subfamily_urls.txt"
+def cazy_home_no_spip(input_dir):
+    file_path = input_dir / "class_url_pages" / "cazy_homepage_no_spip_out.html"
+    return file_path
+
+
+@pytest.fixture
+def cazy_home_no_urls(input_dir):
+    file_path = input_dir / "class_url_pages" / "cazy_homepage_no_urls.html"
+    return file_path
+
+
+@pytest.fixture
+def cazy_class_page(input_dir):
+    file_path = input_dir / "family_url_pages" / "cazy_classpage.html"
+    return file_path
+
+
+@pytest.fixture
+def family_urls(input_dir):
+    file_path = input_dir / "test_family_urls.txt"
+
     with open(file_path, "r") as fh:
-        fam_string = fh.read()
-    fam_string = fam_string[1:-1]
-    fam_string = fam_string.replace("'", "")
-    fam_list = fam_string.split(", ")
+        fam_lines = fh.read().splitlines()
+
+    fam_list = []
+    for line in fam_lines:
+        fam_list.append([line, 0])
+
     return fam_list
+
+
+@pytest.fixture
+def family_h3_element(cazy_class_page):
+    with open(cazy_class_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    return [_ for _ in
+            soup.find_all("h3", {"class": "spip"}) if
+            str(_.contents[0]) == "Tables for Direct Access"][0]
+
+
+@pytest.fixture
+def input_dir(test_input_dir):
+    dir_path = test_input_dir / "test_inputs_crawler"
+    return dir_path
 
 
 @pytest.fixture
@@ -112,32 +172,14 @@ def no_subfam_h3_element(input_dir):
 
 
 @pytest.fixture
-def cazy_class_page(input_dir):
-    file_path = input_dir / "family_url_pages" / "cazy_classpage.html"
-    return file_path
-
-
-@pytest.fixture
-def family_h3_element(cazy_class_page):
-    with open(cazy_class_page) as fp:
-        soup = BeautifulSoup(fp, features="lxml")
-
-    return [_ for _ in
-            soup.find_all("h3", {"class": "spip"}) if
-            str(_.contents[0]) == "Tables for Direct Access"][0]
-
-
-@pytest.fixture
-def cazy_home_no_spip(input_dir):
-    file_path = input_dir / "class_url_pages" / "cazy_homepage_no_spip_out.html"
-    return file_path
-
-
-@pytest.fixture
-def cazy_home_no_urls(input_dir):
-    file_path = input_dir / "class_url_pages" / "cazy_homepage_no_urls.html"
-    return file_path
-
+def subfamily_urls(input_dir):
+    file_path = input_dir / "subfamily_urls.txt"
+    with open(file_path, "r") as fh:
+        fam_string = fh.read()
+    fam_string = fam_string[1:-1]
+    fam_string = fam_string.replace("'", "")
+    fam_list = fam_string.split(", ")
+    return fam_list
 
 ###### Test functions
 
@@ -414,6 +456,102 @@ def test_get_class_urls_no_urls(
 
 
 # test get_families_urls
+
+
+def test_get_family_urls_no_urls(cazy_url, args_subfam_false, monkeypatch, cazy_class_page_no_urls):
+    """Tests get_families_urls when no Family URls are returned."""
+    with open(cazy_class_page_no_urls) as fp:
+        page = BeautifulSoup(fp, features="lxml")
+
+    fam, message, incorrect_urls = get_validation_data.get_families_urls(
+        cazy_url,
+        "Glycoside Hydrolases (GHs)",
+        page,
+        args_subfam_false["args"],
+    )
+    assert fam is None
+    assert message == "Failed to retrieve URLs to CAZy families for Glycoside Hydrolases (GHs)"
+    assert incorrect_urls == []
+
+
+def test_get_family_urls_no_urls_no_subfam_true(
+    cazy_url,
+    args_subfam_true,
+    monkeypatch,
+    cazy_class_page_no_urls,
+):
+    """Tests get_families_urls when no Family URls are returned, and retrieving subfamiles
+    but none are retrieved."""
+    with open(cazy_class_page_no_urls) as fp:
+        page = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_page(*args, **kwargs):
+        return page, None
+
+    def mock_subfams(*args, **kwargs):
+        return
+
+    monkeypatch.setattr(get_validation_data, "get_subfamily_links", mock_subfams)
+
+    fam, message, incorrect_urls = get_validation_data.get_families_urls(
+        cazy_url,
+        "Glycoside Hydrolases (GHs)",
+        page,
+        args_subfam_true["args"],
+    )
+
+    assert fam is None
+    assert incorrect_urls == []
+
+
+def test_get_family_urls_no_urls_subfam_true(
+    cazy_url,
+    args_subfam_true,
+    monkeypatch,
+    cazy_class_page_no_urls,
+):
+    """Tests get_families_urls when no Family URls are returned, and retrieving subfamiles
+    and are retrieved."""
+    with open(cazy_class_page_no_urls) as fp:
+        page = BeautifulSoup(fp, features="lxml")
+
+    def mock_subfams(*args, **kwargs):
+        return ["http://www.cazy.org/GH5_1.html"]
+
+    monkeypatch.setattr(get_validation_data, "get_subfamily_links", mock_subfams)
+
+    fam, message, incorrect_urls = get_validation_data.get_families_urls(
+        cazy_url,
+        "Glycoside Hydrolases (GHs)",
+        page,
+        args_subfam_true["args"],
+    )
+
+
+def test_get_family_urls_success(
+    cazy_class_page,
+    args_subfam_true,
+    monkeypatch,
+):
+    """Test get_families_urls when successful, and subfamilies is True."""
+    with open(cazy_class_page) as fp:
+        page = BeautifulSoup(fp, features="lxml")
+
+    def mock_get_subfams(*args, **kwargs):
+        return []
+
+    monkeypatch.setattr(get_validation_data, "get_subfamily_links", mock_get_subfams)
+
+    fam, message, incorrect_urls = get_validation_data.get_families_urls(
+        cazy_url,
+        "Glycoside Hydrolases (GHs)",
+        page,
+        args_subfam_true["args"],
+    )
+
+    print(incorrect_urls)
+
+    assert incorrect_urls == []
 
 
 # test get_subfamily_links
