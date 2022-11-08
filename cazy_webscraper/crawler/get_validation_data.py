@@ -363,7 +363,7 @@ def get_cazy_family_pops(
 
     if family_urls is None:
         return None, url_err_message, incorrect_urls, failed_connections
-    
+
     for fam_url in tqdm(family_urls, desc=f"Retrieing fam populations for {class_name}"):
         fam_name = fam_url.replace(cazy_home_url, "").split(".")[0]
 
@@ -416,9 +416,9 @@ def get_cazy_family_pops(
                 f"Failed to retrieve population for {fam_name}\t"
                 f"{err}"
             )
-        
+
         family_populations[fam_name] = fam_pop        # handle errors
-    
+
     logger.info(f"Retrieved URLs for {len(family_urls)} from {class_name} class page")
 
     return family_urls, url_err_message, incorrect_urls, failed_connections
@@ -426,12 +426,12 @@ def get_cazy_family_pops(
 
 def get_families_urls(cazy_home_url, class_name, class_page, args):
     """Retrieve the URLs to CAZy family pages.
-    
+
     :param cazy_home_url: str, CAZ home page URL
     :param class_name: str, name of CAZy class
     :param class_page: bs4 soup object, CAZy class summary page
     :param args: cmd-line args parser
-    
+
     Return:
     List of CAZy family URLs
     Str, message if any errors arose
@@ -440,7 +440,7 @@ def get_families_urls(cazy_home_url, class_name, class_page, args):
     logger = logging.getLogger(__name__)
     incorrect_urls = []
     err_message = None
-    
+
     # retrieve the <h3> element that titles the div section containing the tables of family links
     family_h3_element = [
         _
