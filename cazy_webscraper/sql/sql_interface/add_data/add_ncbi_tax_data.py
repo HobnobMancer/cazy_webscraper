@@ -113,7 +113,7 @@ def add_ncbi_taxonomies(tax_dict, connection, args):
     return
 
 
-def update_ncbi_tax_records(records_to_update, connection):
+def update_ncbi_tax_records(records_to_update, connection, unit_test=False):
     """Update ncbi tax records in the local CAZyme database
 
     :param records_to_update: set of tuples, one tuple per record to update
@@ -126,20 +126,22 @@ def update_ncbi_tax_records(records_to_update, connection):
             connection.execute(
                 text(
                     "UPDATE NcbiTaxs "
-                    f"SET kingdom = {record[1]} AND "
-                    f"phylum = {record[2]} AND "
-                    f"tax_class = {record[3]} AND "
-                    f"order = {record[4]} AND "
-                    f"family = {record[5]} AND "
-                    f"genus = {record[6]} AND "
-                    f"species = {record[7]} AND "
-                    f"strain = {record[8]}"
+                    f"SET kingdom = '{record[1]}' AND "
+                    f"phylum = '{record[2]}' AND "
+                    f"tax_class = '{record[3]}' AND "
+                    f"tax_order = '{record[4]}' AND "
+                    f"family = '{record[5]}' AND "
+                    f"genus = '{record[6]}' AND "
+                    f"species = '{record[7]}' AND "
+                    f"strain = '{record[8]}' "
                     f"WHERE ncbi_tax_id = '{record[0]}'"
                 )
             )
+            if unit_test:
+                connection.rollback()
 
 
-def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
+def update_genbank_ncbi_tax(tax_prot_dict, connection, args, unit_test=False):
     """Update tax information in the Genbanks table
 
     :param tax_prot_dict: dict {tax_id: lineage and protein data}
@@ -163,6 +165,8 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
                             f"WHERE genbank_id = '{prot_db_id}'"
                         )
                     )
+                if unit_test:
+                    connection.rollback()
 
     else:
         # filter for protein records with no tax data, and only add new tax data, do no overwrite existing data
@@ -181,5 +185,7 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args):
                                 f"WHERE genbank_id = {prot_db_id}"
                             )
                         )
+                        if unit_test:
+                            connection.rollback()
 
     return

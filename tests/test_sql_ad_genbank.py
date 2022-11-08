@@ -106,4 +106,3 @@ def test_add_gbk_seqs(monkeypatch, db_path):
         argsdict['args'],
         unit_test=True,
     )
-    
