@@ -584,3 +584,11 @@ def test_browser_decorator():
     args = {"args": Namespace(timeout=10)}
     result = get_validation_data.get_page('www.caz!!!!!!!!y.org', args["args"], max_tries=1)
     assert True == (result[0] is None) and (type(result[1]) is MissingSchema)
+
+
+# test CAZyClass
+
+
+def test_cazy_class():
+    new_class = get_validation_data.CazyClass("GH", "url", 0)
+    new_class = get_validation_data.CazyClass("GH", "url", 0, {})
