@@ -592,3 +592,88 @@ def test_browser_decorator():
 def test_cazy_class():
     new_class = get_validation_data.CazyClass("GH", "url", 0)
     new_class = get_validation_data.CazyClass("GH", "url", 0, {})
+
+
+# test get fam populations
+
+
+def test_get_fam_pops_failed_connection(
+    cazy_url,
+    cache_dir,
+    start_time,
+    monkeypatch,
+):
+    """Unit test get_cazy_family_pops() when can't get page"""
+    argsdict = {
+        "args": Namespace(
+            force=True,
+            nodelete_cache=True,
+            retries=2,
+        )
+    }
+
+    def mock_get_page(*args, **kwards):
+        return None, "error"
+
+    monkeypatch.setattr(get_validation_data, "get_page", mock_get_page)
+
+    result, error, incorrect_urls, failed_connections = get_validation_data.get_cazy_family_pops(
+        "GH",
+        "www.cazy_url",
+        cazy_url,
+        ["GH1"],
+        cache_dir,
+        start_time,
+        argsdict["args"],
+        unit_test=True,
+    )
+
+    assert result is None
+    assert incorrect_urls == []
+    assert failed_connections == []
+
+
+def test_get_fam_pops_no_fams(
+    cazy_url,
+    cache_dir,
+    start_time,
+    cazy_class_page,
+    monkeypatch,
+):
+    """Unit test get_cazy_family_pops() when no fam urls are retrieved"""
+    with open(cazy_class_page) as fp:
+        page = BeautifulSoup(fp, features="lxml")
+
+    argsdict = {
+        "args": Namespace(
+            force=True,
+            nodelete_cache=True,
+            retries=2,
+        )
+    }
+
+    def mock_get_page(*args, **kwards):
+        return page, None
+
+    def mock_get_fams(*args, **kwards):
+        return None, "error", []
+
+    monkeypatch.setattr(get_validation_data, "get_page", mock_get_page)
+    monkeypatch.setattr(get_validation_data, "get_families_urls", mock_get_fams)
+
+    result, error, incorrect_urls, failed_connections = get_validation_data.get_cazy_family_pops(
+        "GH",
+        "www.cazy_url",
+        cazy_url,
+        ["GH1"],
+        cache_dir,
+        start_time,
+        argsdict["args"],
+        unit_test=True,
+    )
+
+    assert result is None
+    assert error == "error"
+    assert incorrect_urls == []
+    assert failed_connections == []
+

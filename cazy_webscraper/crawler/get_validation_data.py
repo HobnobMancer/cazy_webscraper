@@ -320,6 +320,7 @@ def get_cazy_family_pops(
     cache_dir,
     time_stamp,
     args,
+    unit_test=False,
 ):
     """Retrieve all protein members of each CAZy family within the given CAZy class.
 
@@ -356,8 +357,10 @@ def get_cazy_family_pops(
 
     cache_name = class_url.replace('.', '_')
     cache_path = cache_dir / f"{cache_name}_{time_stamp}.html"
-    with open(cache_path, "w") as cache:
-        cache.write(class_page)
+
+    if unit_test is False:
+        with open(cache_path, "w") as cache:
+            cache.write(class_page)
 
     family_urls, url_err_message, incorrect_urls = get_families_urls(cazy_home_url, class_page, args)
 
