@@ -44,24 +44,10 @@ These test are intened to be run from the root of the repository using:
 pytest -v
 """
 
-import logging
-import os
-import time
 
-from socket import timeout
-from tqdm import tqdm
-from urllib.error import HTTPError, URLError
-from urllib3.exceptions import HTTPError, RequestError
 from urllib import request
-from requests.exceptions import ConnectionError, MissingSchema
 from argparse import Namespace
-from bs4 import BeautifulSoup
-from pathlib import Path
-from requests.exceptions import MissingSchema
 from cazy_webscraper import crawler
-
-from cazy_webscraper.crawler import get_validation_data
-from cazy_webscraper.crawler.get_validation_data import CazyClass
 
 
 class MockedResponse:
