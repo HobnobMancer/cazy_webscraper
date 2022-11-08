@@ -46,6 +46,7 @@ pytest -v
 
 
 import logging
+from matplotlib.pyplot import get
 import pytest
 
 from argparse import Namespace
@@ -58,8 +59,23 @@ from cazy_webscraper.crawler.get_validation_data import CazyClass
 
 
 @pytest.fixture
+def args():
+    args = {"args": Namespace(
+        retries=2,
+        timeout=45,
+    )}
+    return args
+
+
+@pytest.fixture
 def cazy_url():
     return "html/www.cazy.org"
+
+
+@pytest.fixture
+def cazy_home_page(input_dir):
+    file_path = input_dir / "class_url_pages" / "cazy_homepage.html"
+    return file_path
 
 
 @pytest.fixture
@@ -109,6 +125,18 @@ def family_h3_element(cazy_class_page):
     return [_ for _ in
             soup.find_all("h3", {"class": "spip"}) if
             str(_.contents[0]) == "Tables for Direct Access"][0]
+
+
+@pytest.fixture
+def cazy_home_no_spip(input_dir):
+    file_path = input_dir / "class_url_pages" / "cazy_homepage_no_spip_out.html"
+    return file_path
+
+
+@pytest.fixture
+def cazy_home_no_urls(input_dir):
+    file_path = input_dir / "class_url_pages" / "cazy_homepage_no_urls.html"
+    return file_path
 
 
 ###### Test functions
@@ -238,6 +266,154 @@ def test_get_val_data_failed_fam(start_time, cazy_url, cache_dir, monkeypatch):
         argsdict['args'],
     )
 
+
+# test get_cazy_classes
+
+
+def test_get_class_urls_fail(cazy_url, cazy_dictionary, monkeypatch, args, cache_dir, start_time):
+    """Test get_cazy_class_urls home_page not returned"""
+
+    def mock_get_home_page(*args, **kwargs):
+        return None, "error"
+
+    monkeypatch.setattr(get_validation_data, "get_page", mock_get_home_page)
+
+    assert get_validation_data.get_cazy_classes(
+            cazy_url,
+            None,
+            cazy_dictionary,
+            cache_dir,
+            start_time,
+            args["args"],
+        ) is None
+
+
+def test_get_class_urls_exclusions_none(
+    cazy_url,
+    cache_dir,
+    cazy_home_page,
+    cazy_dictionary,
+    monkeypatch,
+    start_time,
+    args,
+):
+    """Test get_cazy_class_urls when excluded_classess is None."""
+    with open(cazy_home_page, "r") as fp:
+        home_page = BeautifulSoup(fp, features="lxml")
+
+        def mock_get_home_page(*args, **kwargs):
+            return [home_page, None]
+
+    monkeypatch.setattr(get_validation_data, "get_page", mock_get_home_page)
+
+    result = get_validation_data.get_cazy_classes(
+            cazy_url,
+            None,
+            cazy_dictionary,
+            cache_dir,
+            start_time,
+            args["args"],
+            unit_test=True,
+    )
+    assert len(result) == 6
+
+
+def test_get_class_urls_exclusions_given(
+    cazy_url,
+    cache_dir,
+    cazy_home_page,
+    cazy_dictionary,
+    monkeypatch,
+    start_time,
+    args,
+):
+    """Test get_cazy_class_urls when excluded_classess is not None."""
+    with open(cazy_home_page) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    exclusions = ["<strong>Glycoside Hydrolases (GHs)</strong>"]
+
+    def mock_get_home_page(*args, **kwargs):
+        return [soup, None]
+
+    monkeypatch.setattr(get_validation_data, "get_page", mock_get_home_page)
+
+    result = get_validation_data.get_cazy_classes(
+        cazy_url,
+        exclusions,
+        cazy_dictionary,
+        cache_dir,
+        start_time,
+        args["args"],
+        unit_test=True,
+    )
+
+    assert len(result) == 5
+
+
+def test_get_class_urls_attribute(
+    cazy_url,
+    cache_dir,
+    cazy_home_no_spip,
+    cazy_dictionary,
+    monkeypatch,
+    start_time,
+    args,
+):
+    """Test get_cazy_class_urls when attribute error is raised."""
+    with open(cazy_home_no_spip) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    exclusions = ["<strong>Glycoside Hydrolases (GHs)</strong>"]
+
+    def mock_get_home_page(*args, **kwargs):
+        return [soup, None]
+
+    monkeypatch.setattr(get_validation_data, "get_page", mock_get_home_page)
+
+    assert get_validation_data.get_cazy_classes(
+        cazy_url,
+        exclusions,
+        cazy_dictionary,
+        cache_dir,
+        start_time,
+        args["args"],
+        unit_test=True,
+        ) is None
+
+
+def test_get_class_urls_no_urls(
+    cazy_url,
+    cache_dir,
+    cazy_home_no_urls,
+    cazy_dictionary,
+    monkeypatch,
+    start_time,
+    args,
+):
+    """Test get_cazy_class_urls when no class urls are returned from the HTML webpage."""
+    with open(cazy_home_no_urls) as fp:
+        soup = BeautifulSoup(fp, features="lxml")
+
+    exclusions = ["<strong>Glycoside Hydrolases (GHs)</strong>"]
+
+    def mock_get_home_page(*args, **kwargs):
+        return [soup, None]
+
+    monkeypatch.setattr(get_validation_data, "get_page", mock_get_home_page)
+
+    assert get_validation_data.get_cazy_classes(
+        cazy_url,
+        exclusions,
+        cazy_dictionary,
+        cache_dir,
+        start_time,
+        args["args"],
+        unit_test=True,
+        ) is None
+
+
+# test get_families_urls
 
 
 # test get_subfamily_links
