@@ -61,6 +61,19 @@ from cazy_webscraper.sql.sql_orm import (
     Uniprot,
 )
 
+from sqlalchemy import (
+    MetaData,
+    create_engine,
+)
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+# Use the declarative system
+# Database structured in NF1
+metadata_obj = MetaData()
+Base = declarative_base()
+Session = sessionmaker()
+
 
 class MockTaxTableRecord:
 
@@ -69,6 +82,12 @@ class MockTaxTableRecord:
         self.species = species
         self.strain = strain
         self.kingdom = kingdom
+
+
+class MockGbkRecord:
+
+    def __init__(self, genbank_id):
+        self.genbank_id = genbank_id
 
 
 def test_get_tax_user_acc(monkeypatch):
@@ -195,7 +214,7 @@ def test_get_filtered_tax_no_initial_selected(monkeypatch):
 def test_get_filtered_tax(monkeypatch):
     """Test get_filtered_taxs()"""
     def mock_class_fam_accs(*args, **kwards):
-        return [1,2,3]
+        return [1, 2, 3]
 
     def mock_ec_filter(*args, **kwards):
         return [
@@ -213,7 +232,7 @@ def test_get_filtered_tax(monkeypatch):
     family_filters = set()
     tax_filter_dict = {}
     kingdom_filters = set()
-    ec_filters = {1,2,3}
+    ec_filters = {1, 2, 3}
     connection = None
 
     output = get_taxonomies.get_filtered_taxs(
@@ -287,3 +306,24 @@ def test_applying_all_tax_filter():
         taxonomy_filters,
         kingdom_filters,
     )
+
+
+def test_apply_ec_fails(db_path):
+    """Test apply_ec_filters()"""
+    ec_filters = {'1.test.4'}
+    current_objs = [
+        (MockGbkRecord(1))
+    ]
+
+    engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False, future=True)
+    Base.metadata.create_all(engine)
+    Session.configure(bind=engine)  # allows for calls to session later on when required
+    connection = engine.connect()
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        get_taxonomies.apply_ec_filters(
+            current_objs,
+            ec_filters,
+            connection,
+        )
+    assert pytest_wrapped_e.type == SystemExit
