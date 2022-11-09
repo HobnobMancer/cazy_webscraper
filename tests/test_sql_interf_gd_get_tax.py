@@ -64,9 +64,10 @@ from cazy_webscraper.sql.sql_orm import (
 
 class MockTaxTableRecord:
 
-    def __init__(self, genus, species, kingdom):
+    def __init__(self, genus, species, strain, kingdom):
         self.genus = genus
         self.species = species
+        self.strain = strain
         self.kingdom = kingdom
 
 
@@ -225,3 +226,64 @@ def test_get_filtered_tax(monkeypatch):
     )
 
     assert output == {'genus': {'species': {''}, 'sp': {'strain'}}, 'Influenza A virus': {'sp': {'strain'}}, 'Influenza B virus': {'sp': {'strain'}}}
+
+
+def test_applying_no_tax_filters():
+    """Test apply_tax_filteres() when no tax filters were given"""
+    initally_selected = [1, 2, 3]
+    taxonomy_filters = {
+        'genera': [],
+        'species': [],
+        'strains': [],
+    }
+    kingdom_filters = set()
+
+    assert [1, 2, 3] == get_taxonomies.apply_tax_filters(
+        initally_selected,
+        taxonomy_filters,
+        kingdom_filters
+    )
+
+
+def test_applying_only_strain_filter():
+    """Test apply_tax_filteres() when only strains are specified"""
+    initally_selected = [
+            ('someting', MockTaxTableRecord(genus='genus', species='species', strain='yes', kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='genus', species='sp strain', strain='no', kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='Influenza A virus', species='sp strain', strain=None, kingdom='Virus')),
+            ('someting', MockTaxTableRecord(genus='Influenza B virus', species='sp strain', strain=None, kingdom='Virus')),
+        ]
+    taxonomy_filters = {
+        'genera': [],
+        'species': [],
+        'strains': ['sp strain', 'no'],
+    }
+    kingdom_filters = set()
+
+    get_taxonomies.apply_tax_filters(
+        initally_selected,
+        taxonomy_filters,
+        kingdom_filters,
+    )
+
+
+def test_applying_all_tax_filter():
+    """Test apply_tax_filteres() when only strains are specified"""
+    initally_selected = [
+            ('someting', MockTaxTableRecord(genus='genus', species='species', strain='yes', kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='genus', species='sp strain', strain='no', kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='Influenza A virus', species='sp strain', strain=None, kingdom='Virus')),
+            ('someting', MockTaxTableRecord(genus='Influenza B virus', species='sp strain', strain=None, kingdom='Virus')),
+        ]
+    taxonomy_filters = {
+        'genera': ['genus'],
+        'species': [],
+        'strains': ['sp strain', 'no'],
+    }
+    kingdom_filters = {'Bacteria'}
+
+    get_taxonomies.apply_tax_filters(
+        initally_selected,
+        taxonomy_filters,
+        kingdom_filters,
+    )
