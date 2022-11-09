@@ -218,10 +218,10 @@ def test_get_filtered_tax(monkeypatch):
 
     def mock_ec_filter(*args, **kwards):
         return [
-            ('someting', MockTaxTableRecord(genus='genus', species='species', kingdom='Bacteria')),
-            ('someting', MockTaxTableRecord(genus='genus', species='sp strain', kingdom='Bacteria')),
-            ('someting', MockTaxTableRecord(genus='Influenza A virus', species='sp strain', kingdom='Virus')),
-            ('someting', MockTaxTableRecord(genus='Influenza B virus', species='sp strain', kingdom='Virus')),
+            ('someting', MockTaxTableRecord(genus='genus', species='species', strain=None, kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='genus', species='sp strain', strain=None, kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='Influenza A virus', species='sp strain', strain=None, kingdom='Virus')),
+            ('someting', MockTaxTableRecord(genus='Influenza B virus', species='sp strain', strain=None, kingdom='Virus')),
         ]
 
     monkeypatch.setattr(get_taxonomies, "get_class_fam_genbank_accessions", mock_class_fam_accs)
@@ -289,10 +289,10 @@ def test_applying_only_strain_filter():
 def test_applying_all_tax_filter():
     """Test apply_tax_filteres() when only strains are specified"""
     initally_selected = [
-            ('someting', MockTaxTableRecord(genus='genus', species='species', strain='yes', kingdom='Bacteria')),
-            ('someting', MockTaxTableRecord(genus='genus', species='sp strain', strain='no', kingdom='Bacteria')),
-            ('someting', MockTaxTableRecord(genus='Influenza A virus', species='sp strain', strain=None, kingdom='Virus')),
-            ('someting', MockTaxTableRecord(genus='Influenza B virus', species='sp strain', strain=None, kingdom='Virus')),
+            ('someting', MockTaxTableRecord(genus='genus', species='species', strain='yes', kingdom='Bacteria'), MockTaxTableRecord(genus='genus', species='species', strain='yes', kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='genus', species='sp strain', strain='no', kingdom='Bacteria'), MockTaxTableRecord(genus='genus', species='sp strain', strain='no', kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='Influenza A virus', species='sp strain', strain=None, kingdom='Virus'), MockTaxTableRecord(genus='Influenza A virus', species='sp strain', strain=None, kingdom='Virus')),
+            ('someting', MockTaxTableRecord(genus='Influenza B virus', species='sp strain', strain=None, kingdom='Virus'), MockTaxTableRecord(genus='Influenza B virus', species='sp strain', strain=None, kingdom='Virus')),
         ]
     taxonomy_filters = {
         'genera': ['genus'],
