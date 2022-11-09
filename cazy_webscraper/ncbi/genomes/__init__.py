@@ -76,7 +76,7 @@ def get_nuccore_ids(batch, failed_batches, args, retry=False):
             logger.warning(f"{str(batch[0])} is not listed in NCBI", exc_info=1)
         else:
             logger.warning("Batch contains invalid NCBI Protein db accessions", exc_info=1)
-            failed_batches.append(batch)
+            failed_batches['proteins'].append(batch)
 
         return nuccore_ids, failed_batches
 
@@ -135,7 +135,7 @@ def get_assembly_ids(nuccore_ids, failed_batches, args, retry=False):
             logger.warning(f"Nuccore ID '{nuccore_ids[0]}' is not listed in NCBI")
         else:
             logger.warning("Batch contains invalid NCBI Nuccore db IDs")
-            failed_batches.append(nuccore_ids)
+            failed_batches['nuccores'].append(nuccore_ids)
 
         return assembly_ids, failed_batches
 

@@ -84,6 +84,8 @@ from cazy_webscraper import (
     closing_message,
     connect_to_new_db,
     connect_existing_db,
+    display_citation_info,
+    display_version_info,
 )
 from cazy_webscraper.crawler.get_validation_data import get_validation_data
 from cazy_webscraper.cazy import (
@@ -124,14 +126,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if logger is None:
         logger = logging.getLogger(__name__)
         config_logger(args, logger_name=__name__)
-      
+
     # check if printing out version or citation information
     if args.version:
-        print(VERSION_INFO)
+        display_version_info()
         return
 
     if args.citation:
-        print(CITATION_INFO)
+        display_citation_info()
         return
 
     # check correct output was provided, exit if not operable
@@ -143,7 +145,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             "Terminating program."
         )
         logger.warning(termcolour(warning_message, "red"))
-        closing_message("cazy_webscraper", start_time, args)
+        closing_message("cazy_webscraper", start_time, args, early_term=True)
         return
 
     if args.db_output is not None and args.db_output.exists():
@@ -161,7 +163,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 "Not ovewriting existing database\n"
                 "Termianting program"
             )
-            closing_message("cazy_webscraper", start_time, args)
+            closing_message("cazy_webscraper", start_time, args, early_term=True)
             return
 
     Entrez.email = args.email

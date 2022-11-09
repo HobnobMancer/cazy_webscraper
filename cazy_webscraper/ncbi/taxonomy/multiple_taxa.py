@@ -112,6 +112,7 @@ def replace_multiple_tax(cazy_data, genbank_accessions, replaced_taxa_logger, ar
         success = True
 
     except (TypeError, AttributeError):  # if no record is returned from call to Entrez
+        # error not due to the presence of invalid IDs
         logger.error(
             f"Entrez failed to post assembly IDs.\n"
             "Not retrieving taxonomy classification from NCBI.\n"
@@ -119,6 +120,7 @@ def replace_multiple_tax(cazy_data, genbank_accessions, replaced_taxa_logger, ar
         )
         cazy_data = select_first_organism(cazy_data, genbank_accessions)
         success = True
+        return cazy_data, success
 
     except RuntimeError:
         logger.warning("Found GenBank accessions in CAZy data that are no longer in NCBI")

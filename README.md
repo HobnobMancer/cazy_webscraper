@@ -96,20 +96,7 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 <!-- /TOC -->
 
 
-## New features in version 2:
-
-`cazy_webscraper` version 1 is depracted due to updates of the CAZy website. In addition, several new features and improvements to performance have been added to version 2.
-
-- **Faster scraping:** The entirtity of CAZy can be scraped in 15 minutes
-- **Retrieval of UniProt data:** UniProt accessions, EC numbers, protein sequences, and PDB accessions can be retrieved from UniProt and added to the local CAZyme database
-- **Retrieve the latest taxonomic classifications:** Retrieve the latest taxonomic classifications from the NCBI Taxonomy database (version >=2.1.0)
-- **Retrieve genomic data:** Retrieve the NCBI ID and version accession of the genomic assembly from CAZyme protein sequences were sourced
-- **Addition of an API:** As well as retrieving data from the local CAZyme database via an SQL interface, `cazy_webscraper` can retrieved user-specfied data (e.g. the GenBank protein accession and EC number annotations) for proteins matching user-specified critieria. The extracted data can be written to a `JSON` and/or `CSV` file, to facilitate inclusion in downstream analyses.
-- **Caching:** Data downloaded from CAZy is not only parsed and written to a local CAZyme database. The raw data files are written to cache. Data can be scraped directly from a cache (ideal if CAZy updates during the retrieval of multiple datasets from the CAZy database).
-- **Handling multiple taxa:** It is possible for a single protein (identified by its unique GenBank accession) to be associated with multiple taxa in the CAZy data. For these instances, `cazy_webscraper` queries NCBI to retrieve the latest taxonomic source of the protein.
-
 ## Features in the pipeline:
-- Retrieve the genomic IDs and version accessions from NCBI for proteins in a local CAZyme database, and add them to the local database
 - Retrieve and stored PubMed IDs in the local CAZyme database
 - Fix any remaining bugs we can find (if you find a bug, please report it and provide as detailed bug report as possible!)
 - Update the unit tests to work with the new `cazy_webscraper` architecture
@@ -121,6 +108,26 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 If you use `cazy_webscraper`, please cite the following publication:
 
 > Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. [https://doi.org/10.6084/m9.figshare.14370860.v7](https://doi.org/10.6084/m9.figshare.14370860.v7)
+
+cazy_webscraper depends on a number of tools. To recognise the contributions that the 
+authors and developers have made, please also cite the following:
+
+When making an SQLite database:
+> Hipp, R. D. (2020) SQLite, available: https://www.sqlite.org/index.html.
+
+Retrieving taxonomic, genomic or sequence data from NCBI:
+> Cock, P.J.A., Antao, T., Chang, J.T., Chapman, B.A., Cox, C.J., Dalke, A., et al (2009) Biopython: freely available Python tools for computational molecular biology and bioinformatics, Bioinformatics, 25(11), 1422-1423.
+> Wheeler,D.L., Benson,D.A., Bryant,S., Canese,K., Church,D.M., Edgar,R., Federhen,S., Helmberg,W., Kenton,D., Khovayko,O. et al (2005) Database resources of the National Centre for Biotechnology Information: Update, Nucleic Acid Research, 33, D39-D45
+
+Retrieving data from UniProt:
+> Cokelaer, T., Pultz, D., Harder, L. M., Serra-Musach, J., Saez-Rodriguez, J. (2013) BioServices: a common Python package to access biological Web Services programmatically, Bioinformatics, 19(24), 3241-3242.
+
+Downloading protein structure files from RSCB PDB:
+> Berman, H.M., Westbrook, J., Feng, Z., Gilliland, G., Bhat, T.N., Weissig, H., et al (2022) The Protein Data Bank, Nucleic Acids Research, 28(1), 235-242.
+> Hamelryck, T., Manderick, B. (2003), PDB parser and structure class implemented in Python. Bioinformatics, 19 (17), 2308–2310
+
+Retrieving and using taxonomic data from GTDB:
+> Parks, D.H., Chuvochina, M., Rinke, C., Mussig, A.J., Chaumeil, P., Hugenholtz, P. (2022) GTDB: an ongoing census of bacterial and archaeal diversity through a phylogenetically consistent, rank normalized and complete genome-based taxonomy, Nucleic Acids Research, 50(D1), D785-D794.
 
 ## Best practice
 

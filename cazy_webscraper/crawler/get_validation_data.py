@@ -50,6 +50,7 @@ from urllib.error import HTTPError
 from tqdm import tqdm
 from requests.exceptions import ConnectionError, MissingSchema
 from saintBioutils.utilities import file_io
+from saintBioutils.utilities.file_io import make_output_directory
 from urllib3.exceptions import HTTPError, RequestError
 
 import mechanicalsoup
@@ -91,7 +92,7 @@ def get_validation_data(
     args,
 ):
     """Coordinate retrieving the population sizes of CAZy familes from the CAZy website.
-    
+
     :param cazy_home_url: str, URL to CAZy home page
     :param excluded_classes: list of CAZy classes NOT to scrape
     :param cazy_synonym_dict: dict of accepted CAZy class name synonyms
@@ -101,12 +102,12 @@ def get_validation_data(
             could not be made
     :param time_stamp: str, time cazy_webscraper was invoked
     :param args: cmd-line args parser
-    
+
     Return dict, keyed by CAZy family (str) and valued by population size (int)
     """
     # make dir fo caching HTML files
     cache_dir = cache_dir / "html"
-    file_io.make_output_directory(cache_dir, args.force, args.nodelete_cache)
+    make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     cazy_fam_populations = {}  # {fam(str): population(int)}
 
@@ -123,7 +124,7 @@ def get_validation_data(
         return
 
     for cazy_class in tqdm(cazy_classes, desc="Retrieving CAZy family population sizes"):
-        
+
         # first attempt of scraping, retrieve URLs to CAZy families
         if len(list(cazy_class.failed_families.keys())) == 0:
             fam_pops_to_retrieve = config_dict[cazy_class.name]  # retrieve user specified fams
@@ -166,7 +167,7 @@ def get_validation_data(
                         cazy_class.failed_families[fam] = 1
 
                 cazy_classes.append(cazy_class)  # retry retriving family populations later
-            
+
             continue  # go onto next CAZy class
 
         else:  # retrieved CAZy family populations
@@ -180,11 +181,19 @@ def get_validation_data(
                 "Retrieved no family population for data retrieval validation\n"
                 f"Failed to conencted to CAZy after {(args.retries + 1)*(args.retries +1)} attempts"
             )
-    
+
     return cazy_fam_populations
 
 
-def get_cazy_classes(cazy_home_url, excluded_classes, cazy_synonym_dict, cache_dir, time_stamp, args):
+def get_cazy_classes(
+    cazy_home_url,
+    excluded_classes,
+    cazy_synonym_dict,
+    cache_dir,
+    time_stamp,
+    args,
+    unit_test=False,
+):
     """Returns a list of CAZy class instances.
 
     :param cazy_url: str, URL to the CAZy home page.
@@ -222,8 +231,9 @@ def get_cazy_classes(cazy_home_url, excluded_classes, cazy_synonym_dict, cache_d
 
     cache_name = cazy_home_url.replace('.', '_')
     cache_path = cache_dir / f"{cache_name}_{time_stamp}.html"
-    with open(cache_path, "w") as cache:
-        cache.write(homepage)
+    if unit_test is False:
+        with open(cache_path, "w") as cache:
+            cache.write(homepage)
 
     # retrieve the h3 elements with class spip
     h3_spip_elements = homepage.find_all("h3", {"class": "spip"})
@@ -236,7 +246,7 @@ def get_cazy_classes(cazy_home_url, excluded_classes, cazy_synonym_dict, cache_d
                 ) == 'Enzyme Classes currently covered'][0].parent
 
         # Retreive the enzyme class page URLs suffixs
-        enzyme_class_urls  = [
+        enzyme_class_urls = [
             f"{cazy_home_url}/{_['href']}" for _ in enzyme_classes_div.find_all("a") 
             if (not _["href"].startswith("http"))
             and (str(_.contents[0]) not in exclusions)
@@ -255,12 +265,12 @@ def get_cazy_classes(cazy_home_url, excluded_classes, cazy_synonym_dict, cache_d
             and (str(_.contents[0]) not in exclusions)
         ]
 
-    except AttributeError:
+    except (AttributeError, IndexError) as err:
         logger.error(
             (
-                "Attribute error raised during retrieving of CAZy class URLs.\n"
+                "Error raised during retrieving of CAZy class URLs.\n"
                 "Therefore, cannot validate data retrieval. \n"
-                "Will proceed with scraping CAZy"
+                "Will proceed with scraping CAZy. Error message:\n"
             ),
             exc_info=1,
         )
@@ -310,6 +320,7 @@ def get_cazy_family_pops(
     cache_dir,
     time_stamp,
     args,
+    unit_test=False,
 ):
     """Retrieve all protein members of each CAZy family within the given CAZy class.
 
@@ -346,14 +357,16 @@ def get_cazy_family_pops(
 
     cache_name = class_url.replace('.', '_')
     cache_path = cache_dir / f"{cache_name}_{time_stamp}.html"
-    with open(cache_path, "w") as cache:
-        cache.write(class_page)
+
+    if unit_test is False:
+        with open(cache_path, "w") as cache:
+            cache.write(class_page)
 
     family_urls, url_err_message, incorrect_urls = get_families_urls(cazy_home_url, class_page, args)
 
     if family_urls is None:
         return None, url_err_message, incorrect_urls, failed_connections
-    
+
     for fam_url in tqdm(family_urls, desc=f"Retrieing fam populations for {class_name}"):
         fam_name = fam_url.replace(cazy_home_url, "").split(".")[0]
 
@@ -371,8 +384,9 @@ def get_cazy_family_pops(
 
         cache_name = fam_url.replace('.', '_')
         cache_path = cache_dir / f"{cache_name}_{time_stamp}.html"
-        with open(cache_path, "w") as cache:
-            cache.write(family_page)
+        if unit_test is False:
+            with open(cache_path, "w") as cache:
+                cache.write(family_page)
 
         # retrieve the table containing the Family data
         family_data = family_page.find_all("div", {"class": "pos_choix"})
@@ -406,9 +420,9 @@ def get_cazy_family_pops(
                 f"Failed to retrieve population for {fam_name}\t"
                 f"{err}"
             )
-        
+
         family_populations[fam_name] = fam_pop        # handle errors
-    
+
     logger.info(f"Retrieved URLs for {len(family_urls)} from {class_name} class page")
 
     return family_urls, url_err_message, incorrect_urls, failed_connections
@@ -416,12 +430,12 @@ def get_cazy_family_pops(
 
 def get_families_urls(cazy_home_url, class_name, class_page, args):
     """Retrieve the URLs to CAZy family pages.
-    
+
     :param cazy_home_url: str, CAZ home page URL
     :param class_name: str, name of CAZy class
     :param class_page: bs4 soup object, CAZy class summary page
     :param args: cmd-line args parser
-    
+
     Return:
     List of CAZy family URLs
     Str, message if any errors arose
@@ -430,7 +444,7 @@ def get_families_urls(cazy_home_url, class_name, class_page, args):
     logger = logging.getLogger(__name__)
     incorrect_urls = []
     err_message = None
-    
+
     # retrieve the <h3> element that titles the div section containing the tables of family links
     family_h3_element = [
         _

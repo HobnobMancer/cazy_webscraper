@@ -61,6 +61,34 @@ from cazy_webscraper.sql.sql_orm import (
     Uniprot,
 )
 
+from sqlalchemy import (
+    MetaData,
+    create_engine,
+)
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+# Use the declarative system
+# Database structured in NF1
+metadata_obj = MetaData()
+Base = declarative_base()
+Session = sessionmaker()
+
+
+class MockTaxTableRecord:
+
+    def __init__(self, genus, species, strain, kingdom):
+        self.genus = genus
+        self.species = species
+        self.strain = strain
+        self.kingdom = kingdom
+
+
+class MockGbkRecord:
+
+    def __init__(self, genbank_id):
+        self.genbank_id = genbank_id
+
 
 def test_get_tax_user_acc(monkeypatch):
     argsdict = {"args": Namespace(
@@ -155,3 +183,147 @@ def test_get_user_uniprot():
     gbk_table_dict = {'test_gbk': 1, 'gbk_acc': 2}
 
     assert [2] == get_taxonomies.get_taxs_for_uniprots(gbk_table_dict, argsdict['args'])
+
+
+def test_get_filtered_tax_no_initial_selected(monkeypatch):
+    """Test get_filtered_taxs()"""
+    def mock_class_fam_accs(*args, **kwards):
+        return []
+
+    monkeypatch.setattr(get_taxonomies, "get_class_fam_genbank_accessions", mock_class_fam_accs)
+
+    class_filteres = set()
+    family_filters = set()
+    tax_filter_dict = {}
+    kingdom_filters = set()
+    ec_filters = set()
+    connection = None
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        get_taxonomies.get_filtered_taxs(
+            class_filteres,
+            family_filters,
+            tax_filter_dict,
+            kingdom_filters,
+            ec_filters,
+            connection,
+        )
+    assert pytest_wrapped_e.type == SystemExit
+
+
+def test_get_filtered_tax(monkeypatch):
+    """Test get_filtered_taxs()"""
+    def mock_class_fam_accs(*args, **kwards):
+        return [1, 2, 3]
+
+    def mock_ec_filter(*args, **kwards):
+        return [
+            ('someting', MockTaxTableRecord(genus='genus', species='species', strain=None, kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='genus', species='sp strain', strain=None, kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='Influenza A virus', species='sp strain', strain=None, kingdom='Virus')),
+            ('someting', MockTaxTableRecord(genus='Influenza B virus', species='sp strain', strain=None, kingdom='Virus')),
+        ]
+
+    monkeypatch.setattr(get_taxonomies, "get_class_fam_genbank_accessions", mock_class_fam_accs)
+    monkeypatch.setattr(get_taxonomies, "apply_tax_filters", mock_class_fam_accs)
+    monkeypatch.setattr(get_taxonomies, "apply_ec_filters", mock_ec_filter)
+
+    class_filteres = set()
+    family_filters = set()
+    tax_filter_dict = {}
+    kingdom_filters = set()
+    ec_filters = {1, 2, 3}
+    connection = None
+
+    output = get_taxonomies.get_filtered_taxs(
+        class_filteres,
+        family_filters,
+        tax_filter_dict,
+        kingdom_filters,
+        ec_filters,
+        connection,
+    )
+
+    assert output == {'genus': {'species': {''}, 'sp': {'strain'}}, 'Influenza A virus': {'sp': {'strain'}}, 'Influenza B virus': {'sp': {'strain'}}}
+
+
+def test_applying_no_tax_filters():
+    """Test apply_tax_filteres() when no tax filters were given"""
+    initally_selected = [1, 2, 3]
+    taxonomy_filters = {
+        'genera': [],
+        'species': [],
+        'strains': [],
+    }
+    kingdom_filters = set()
+
+    assert [1, 2, 3] == get_taxonomies.apply_tax_filters(
+        initally_selected,
+        taxonomy_filters,
+        kingdom_filters
+    )
+
+
+def test_applying_only_strain_filter():
+    """Test apply_tax_filteres() when only strains are specified"""
+    initally_selected = [
+            ('someting', MockTaxTableRecord(genus='genus', species='species', strain='yes', kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='genus', species='sp strain', strain='no', kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='Influenza A virus', species='sp strain', strain=None, kingdom='Virus')),
+            ('someting', MockTaxTableRecord(genus='Influenza B virus', species='sp strain', strain=None, kingdom='Virus')),
+        ]
+    taxonomy_filters = {
+        'genera': [],
+        'species': [],
+        'strains': ['sp strain', 'no'],
+    }
+    kingdom_filters = set()
+
+    get_taxonomies.apply_tax_filters(
+        initally_selected,
+        taxonomy_filters,
+        kingdom_filters,
+    )
+
+
+def test_applying_all_tax_filter():
+    """Test apply_tax_filteres() when only strains are specified"""
+    initally_selected = [
+            ('someting', MockTaxTableRecord(genus='genus', species='species', strain='yes', kingdom='Bacteria'), MockTaxTableRecord(genus='genus', species='species', strain='yes', kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='genus', species='sp strain', strain='no', kingdom='Bacteria'), MockTaxTableRecord(genus='genus', species='sp strain', strain='no', kingdom='Bacteria')),
+            ('someting', MockTaxTableRecord(genus='Influenza A virus', species='sp strain', strain=None, kingdom='Virus'), MockTaxTableRecord(genus='Influenza A virus', species='sp strain', strain=None, kingdom='Virus')),
+            ('someting', MockTaxTableRecord(genus='Influenza B virus', species='sp strain', strain=None, kingdom='Virus'), MockTaxTableRecord(genus='Influenza B virus', species='sp strain', strain=None, kingdom='Virus')),
+        ]
+    taxonomy_filters = {
+        'genera': ['genus'],
+        'species': [],
+        'strains': ['sp strain', 'no'],
+    }
+    kingdom_filters = {'Bacteria'}
+
+    get_taxonomies.apply_tax_filters(
+        initally_selected,
+        taxonomy_filters,
+        kingdom_filters,
+    )
+
+
+def test_apply_ec_fails(db_path):
+    """Test apply_ec_filters()"""
+    ec_filters = {'1.test.4'}
+    current_objs = [
+        (MockGbkRecord(1))
+    ]
+
+    engine = create_engine(f"sqlite+pysqlite:///{db_path}", echo=False, future=True)
+    Base.metadata.create_all(engine)
+    Session.configure(bind=engine)  # allows for calls to session later on when required
+    connection = engine.connect()
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        get_taxonomies.apply_ec_filters(
+            current_objs,
+            ec_filters,
+            connection,
+        )
+    assert pytest_wrapped_e.type == SystemExit

@@ -148,3 +148,43 @@ def test_get_ncbi_tax_fails(monkeypatch):
         logging.getLogger(__name__),
         argsdict['args'],
     )
+
+
+def test_failed_replace_tax(monkeypatch):
+    """Test replace_multiple_tax when failes to conenct to NCBI.Entrez"""
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    def mock_return_none(*args, **kwards):
+        return None
+
+    def mock_select_org(*args, **kwards):
+        return {}
+
+    monkeypatch.setattr(multiple_taxa, "entrez_retry", mock_return_none)
+    monkeypatch.setattr(multiple_taxa, "select_first_organism", mock_select_org)
+
+    multiple_taxa.replace_multiple_tax({}, "gk1", logging.getLogger(__name__), argsdict["args"], [])
+
+
+def test_failed_replace_tax_run_time(monkeypatch):
+    """Test replace_multiple_tax when failes to conenct to NCBI.Entrez"""
+    argsdict = {"args": Namespace(
+        retries=10,
+    )}
+
+    def mock_error(*args, **kwards):
+        raise RuntimeError
+
+    def mock_select_org(*args, **kwards):
+        return {}
+
+    def mock_replace_tax(*args, **kwards):
+        return {}, False
+
+    monkeypatch.setattr(multiple_taxa, "entrez_retry", mock_error)
+    monkeypatch.setattr(multiple_taxa, "select_first_organism", mock_select_org)
+    monkeypatch.setattr(multiple_taxa, "replace_multiple_tax_with_invalid_ids", mock_replace_tax)
+
+    multiple_taxa.replace_multiple_tax({}, "gk1", logging.getLogger(__name__), argsdict["args"], [])

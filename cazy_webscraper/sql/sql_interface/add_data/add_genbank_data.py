@@ -45,10 +45,10 @@ import logging
 from sqlalchemy import text
 from tqdm import tqdm
 
-from cazy_webscraper.sql.sql_interface.get_data import get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import get_gbk_table_seq_dict
 
 
-def add_gbk_seqs_to_db(seq_dict, retrieval_date, gbk_dict, connection, args):
+def add_gbk_seqs_to_db(seq_dict, retrieval_date, gbk_dict, connection, args, unit_test=False):
     """Add sequences retrieved from GenBank to the local CAZyme db
     
     :param seq_dict: dict of retrieved seq {gbk_acc: seq}
@@ -62,7 +62,7 @@ def add_gbk_seqs_to_db(seq_dict, retrieval_date, gbk_dict, connection, args):
     logger = logging.getLogger(__name__)
     
     # load the current Genbanks table into a dict
-    gbk_table_dict = get_table_dicts.get_gbk_table_seq_dict(connection)
+    gbk_table_dict = get_gbk_table_seq_dict(connection)
 
     records = set()  # records to update, contains tuples (gbk_acc, seq, )
 
@@ -80,21 +80,23 @@ def add_gbk_seqs_to_db(seq_dict, retrieval_date, gbk_dict, connection, args):
     if len(records) != 0:
         with connection.begin():
             for record in tqdm(records, desc="Adding seqs to db"): 
-                    connection.execute(
-                        text(
-                            "UPDATE Genbanks "
-                            f"SET sequence = '{record[1]}'"
-                            f"WHERE genbank_id = '{record[0]}'"
-                        )
+                connection.execute(
+                    text(
+                        "UPDATE Genbanks "
+                        f"SET sequence = '{record[1]}'"
+                        f"WHERE genbank_id = '{record[0]}'"
                     )
-                    #, seq_update_date = {retrieval_date} 
-                    connection.execute(
-                        text(
-                            "UPDATE Genbanks "
-                            f"SET seq_update_date = '{retrieval_date}'"
-                            f"WHERE genbank_id = '{record[0]}'"
-                        )
+                )
+                #, seq_update_date = {retrieval_date} 
+                connection.execute(
+                    text(
+                        "UPDATE Genbanks "
+                        f"SET seq_update_date = '{retrieval_date}'"
+                        f"WHERE genbank_id = '{record[0]}'"
                     )
+                )
+                if unit_test:
+                    connection.rollback()
     else:
         logger.warning("No records to update")
 

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE eSummaryResult PUBLIC "-//NLM//DTD esummary assembly 20200615//EN" "https://eutils.ncbi.nlm.nih.gov/eutils/dtd/20200615/esummary_assembly.dtd">
+<eSummaryResult>
+
+<DocumentSummarySet status="OK">
+<DbBuild>Build200717-1225.1</DbBuild>
+
+<DocumentSummary uid="6231181">
+	<RsUid/>
+	<GbUid>17648048</GbUid>
+	<AssemblyAccession>GCA_011316255.1</AssemblyAccession>
+	<LastMajorReleaseAccession>GCA_011316255.1</LastMajorReleaseAccession>
+	<LatestAccession/>
+	<ChainId>11316255</ChainId>
+	<AssemblyName>ASM1131625v1</AssemblyName>
+	<UCSCName/>
+	<EnsemblName/>
+	<Taxid>5061</Taxid>
+	<Organism>Aspergillus niger (ascomycetes)</Organism>
+	<SpeciesTaxid>5061</SpeciesTaxid>
+	<SpeciesName>Aspergillus niger</SpeciesName>
+	<AssemblyType>haploid</AssemblyType>
+	<AssemblyClass>haploid</AssemblyClass>
+	<AssemblyStatus>Contig</AssemblyStatus>
+	<AssemblyStatusSort>5</AssemblyStatusSort>
+	<WGS>RIBO01</WGS>
+	<GB_BioProjects>
+		<Bioproj>
+			<BioprojectAccn>PRJNA503751</BioprojectAccn>
+			<BioprojectId>503751</BioprojectId>
+		</Bioproj>
+	</GB_BioProjects>
+	<GB_Projects>
+	</GB_Projects>
+	<RS_BioProjects>
+	</RS_BioProjects>
+	<RS_Projects>
+	</RS_Projects>
+	<BioSampleAccn>SAMN10373498</BioSampleAccn>
+	<BioSampleId>10373498</BioSampleId>
+	<Biosource>
+		<InfraspeciesList>
+			<Infraspecie>
+				<Sub_type>strain</Sub_type>
+				<Sub_value>RAF106</Sub_value>
+			</Infraspecie>
+		</InfraspeciesList>
+		<Sex/>
+		<Isolate/>
+	</Biosource>
+	<Coverage>295</Coverage>
+	<PartialGenomeRepresentation>false</PartialGenomeRepresentation>
+	<Primary>17648018</Primary>
+	<AssemblyDescription/>
+	<ReleaseLevel>Major</ReleaseLevel>
+	<ReleaseType>Major</ReleaseType>
+	<AsmReleaseDate_GenBank>2020/03/16 00:00</AsmReleaseDate_GenBank>
+	<AsmReleaseDate_RefSeq>1/01/01 00:00</AsmReleaseDate_RefSeq>
+	<SeqReleaseDate>2020/03/16 00:00</SeqReleaseDate>
+	<AsmUpdateDate>2020/03/16 00:00</AsmUpdateDate>
+	<SubmissionDate>2020/03/16 00:00</SubmissionDate>
+	<LastUpdateDate>2020/03/16 00:00</LastUpdateDate>
+	<SubmitterOrganization>South China Agricultural University</SubmitterOrganization>
+	<RefSeq_category>na</RefSeq_category>
+	<AnomalousList>
+	</AnomalousList>
+	<ExclFromRefSeq>
+	</ExclFromRefSeq>
+	<PropertyList>
+		<string>full-genome-representation</string>
+		<string>latest</string>
+		<string>latest_genbank</string>
+		<string>wgs</string>
+	</PropertyList>
+	<FromType/>
+	<Synonym>
+		<Genbank>GCA_011316255.1</Genbank>
+		<RefSeq/>
+		<Similarity/>
+	</Synonym>
+	<ContigN50>4121371</ContigN50>
+	<ScaffoldN50>4121371</ScaffoldN50>
+	<FtpPath_GenBank>ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/011/316/255/GCA_011316255.1_ASM1131625v1</FtpPath_GenBank>
+	<FtpPath_RefSeq/>
+	<FtpPath_Assembly_rpt>ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/011/316/255/GCA_011316255.1_ASM1131625v1/GCA_011316255.1_ASM1131625v1_assembly_report.txt</FtpPath_Assembly_rpt>
+	<FtpPath_Stats_rpt>ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/011/316/255/GCA_011316255.1_ASM1131625v1/GCA_011316255.1_ASM1131625v1_assembly_stats.txt</FtpPath_Stats_rpt>
+	<FtpPath_Regions_rpt/>
+	<SortOrder>5C5X9958786280113162559800</SortOrder>
+	<Meta><![CDATA[ <Stats> <Stat category="alt_loci_count" sequence_tag="all">0</Stat> <Stat category="chromosome_count" sequence_tag="all">0</Stat> <Stat category="contig_count" sequence_tag="all">10</Stat> <Stat category="contig_l50" sequence_tag="all">4</Stat> <Stat category="contig_n50" sequence_tag="all">4121371</Stat> <Stat category="non_chromosome_replicon_count" sequence_tag="all">0</Stat> <Stat category="replicon_count" sequence_tag="all">0</Stat> <Stat category="scaffold_count" sequence_tag="all">10</Stat> <Stat category="scaffold_count" sequence_tag="placed">0</Stat> <Stat category="scaffold_count" sequence_tag="unlocalized">0</Stat> <Stat category="scaffold_count" sequence_tag="unplaced">10</Stat> <Stat category="scaffold_l50" sequence_tag="all">4</Stat> <Stat category="scaffold_n50" sequence_tag="all">4121371</Stat> <Stat category="total_length" sequence_tag="all">35088461</Stat> <Stat category="ungapped_length" sequence_tag="all">35088461</Stat> </Stats> <FtpSites>   <FtpPath type="Assembly_rpt">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/011/316/255/GCA_011316255.1_ASM1131625v1/GCA_011316255.1_ASM1131625v1_assembly_report.txt</FtpPath>   <FtpPath type="GenBank">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/011/316/255/GCA_011316255.1_ASM1131625v1</FtpPath>   <FtpPath type="Stats_rpt">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/011/316/255/GCA_011316255.1_ASM1131625v1/GCA_011316255.1_ASM1131625v1_assembly_stats.txt</FtpPath> </FtpSites> <assembly-level>1</assembly-level> <assembly-status>Contig</assembly-status> <representative-status>na</representative-status> <submitter-organization>South China Agricultural University</submitter-organization>    ]]></Meta>
+</DocumentSummary>
+
+</DocumentSummarySet></eSummaryResult>
