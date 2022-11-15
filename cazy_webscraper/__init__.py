@@ -127,6 +127,9 @@ def closing_message(job, start_time, args, early_term=False):
     else:
         print(message)
 
+    if early_term:
+        sys.exit(1)
+
 
 def display_citation_info():
     """Display citation inforamtion.
