@@ -41,8 +41,6 @@ Build Information
 ``bioconda``
 ------------
 
-.. image:: https://anaconda.org/bioconda/cazy_webscraper/badges/installer/conda.svg?style=flat-square
-     :target: https://conda.anaconda.org/bioconda
 .. image:: https://anaconda.org/bioconda/cazy_webscraper/badges/version.svg?style=flat-square
     :target: https://anaconda.org/bioconda/cazy_webscraper
 .. image:: https://anaconda.org/bioconda/cazy_webscraper/badges/latest_release_date.svg?style=flat-square
