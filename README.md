@@ -57,8 +57,6 @@ Protein sequences (retrieved from GenBank and/or UniProt) from the local CAZyme 
 
 Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest).
 
-**The `bioconda` installation method is not currently supported, but we are working on getting this fixed soon**. For now please install via pypi or from source.
-
 
 ## Table of Contents
 <!-- TOC -->
