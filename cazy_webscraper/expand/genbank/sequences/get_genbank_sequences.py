@@ -488,7 +488,7 @@ def get_sequences(batches, cache_dir, args):
                         continue
 
                     if retrieved_accession not in success_accessions:
-                        seq_records.add(record)
+                        seq_records.append(record)
                         success_accessions.add(retrieved_accession)
 
         except IncompleteRead as err:
