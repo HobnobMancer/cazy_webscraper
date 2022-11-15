@@ -359,7 +359,9 @@ def test_main_double_db(mock_building_parser, mock_config_logger, monkeypatch):
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(saint_logger,  "config_logger", mock_config_logger)
 
-    cazy_scraper.main()
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        cazy_scraper.main()
+    assert pytest_wrapped_e.type == SystemExit
 
 
 def test_main_new_db_exists_force(db_path, mock_building_parser, mock_config_logger, monkeypatch):
@@ -656,7 +658,9 @@ def test_closing_message_verbose():
         )
     }
 
-    closing_message('cazy_webscraper', start_time, argsdict['args'], early_term=True)
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        closing_message('cazy_webscraper', start_time, argsdict['args'], early_term=True)
+    assert pytest_wrapped_e.type == SystemExit
 
 
 # # # test get_cazy_data()
@@ -753,9 +757,12 @@ def test_term_message():
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     start_time = pd.to_datetime(start_time)
 
-    closing_message(
-        job="Test",
-        start_time=start_time,
-        args=argsdict["args"],
-        early_term=True
-    )
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        closing_message(
+            job="Test",
+            start_time=start_time,
+            args=argsdict["args"],
+            early_term=True
+        )
+    assert pytest_wrapped_e.type == SystemExit
