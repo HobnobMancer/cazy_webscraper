@@ -43,6 +43,7 @@ from http.client import IncompleteRead
 import json
 import logging
 import pandas as pd
+import shutil
 
 from datetime import datetime
 from typing import List, Optional
@@ -152,6 +153,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     acc_with_unknown_db_id = list(set(seq_dict.keys()) - set(gbk_dict.keys()))
     if len(acc_with_unknown_db_id) > 0:
         gbk_dict.update(get_selected_gbks.get_ids(acc_with_unknown_db_id, connection))
+
+    try:
+        shutil.make_archive(cache_dir, 'tar',  cache_dir)
+        shutil.rmtree(cache_dir)
+    except FileNotFoundError:
+        logger.error(
+            "Failed to compress cache directory"
+        )
 
     if len(list(seq_dict.keys())) != 0:
         closing_message()
