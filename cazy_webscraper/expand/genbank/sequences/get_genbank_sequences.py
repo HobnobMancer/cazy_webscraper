@@ -346,6 +346,7 @@ def get_seqs_from_ncbi(
     # retry failed accs
     no_seq_acc = []
     if len(failed_queries) != 0:
+        logger.warning("Parsing accessions which could not retrieve a seq for the first time")
         # break up and query individually
         retrying_acc = {}  # {acc: # of tries}
         for batch in failed_queries:
