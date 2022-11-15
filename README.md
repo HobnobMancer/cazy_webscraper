@@ -593,6 +593,8 @@ Providing the file types **is** case sensitive, but the order the file types are
 cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 ```
 
+`-F`, `--file_only` - Only add seqs provided via JSON and/or FASTA file. Do not retrieved data from NCBI.
+
 `--families` - List of CAZy (sub)families to scrape.
 
 `--genbank_accessions` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
@@ -612,6 +614,10 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--overwrite` - Overwrite existing structure files with the same PDB accession as files being downloaded. Default false, do not overwrite existing files.
 
 `--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
+
+`--seq_dict` - Path to a JSON file, keyed by GenBank accessions and valued by protein sequence. Add seqs in file to the local CAZyme database.
+
+`--seq_file` - Path to a FASTA file, keyed by GenBank accessions and valued by protein sequence. Add seqs in file to the local CAZyme database.
 
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 

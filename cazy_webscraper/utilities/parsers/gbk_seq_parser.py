@@ -130,6 +130,15 @@ def build_parser(argv: Optional[List] = None):
         help="Force file in existing cache directory",
     )
 
+    parser.add_argument(
+        "-F",
+        "--file_only",
+        dest="file_only",
+        action="store_true",
+        default=False,
+        help="Only add seqs provided via JSON and/or FASTA file. Do not retrieved data from NCBI",
+    )
+
     # Add option to specify families to retrieve protein sequences for
     parser.add_argument(
         "--families",
@@ -195,7 +204,20 @@ def build_parser(argv: Optional[List] = None):
         "--seq_dict",
         type=Path,
         default=None,
-        help="Path to a JSON file, keyed by GenBank accessions and valued by protein sequence",
+        help=(
+            "Path to a JSON file, keyed by GenBank accessions and valued by protein sequence\n"
+            "Add seqs in file to the local CAZyme database"
+        ),
+    )
+
+    parser.add_argument(
+        "--seq_file",
+        type=Path,
+        default=None,
+        help=(
+            "Path to a FASTA file of protein sequences\n"
+            "Add seqs in file to the local CAZyme database"
+        ),
     )
 
     # Add option to update sequences if the retrieved sequence is different
