@@ -202,7 +202,7 @@ def get_seqs_from_ncbi(
     if len(genbank_accessions) == 0:
         return seq_dict
 
-    cache_path = cache_dir / f"genbank_seqs_{start_time}.fasta" 
+    cache_path = cache_dir / f"genbank_seqs_{start_time}.fasta"
 
     downloaded_seqs, no_seq_acc = get_sequences(genbank_accessions, cache_path, args)
 
@@ -242,7 +242,8 @@ def get_seqs_from_ncbi(
 
 
 def get_cache_seqs(start_time, args):
-    """Extract protein sequences from FASTA and/or JSON file, which will be added to the local CAZyme database
+    """Extract protein sequences from FASTA and/or JSON file, which will be added to the
+    local CAZyme database
 
     :param seq_dict: dict, {genbank_acc: Bio.Seq}
 
@@ -281,8 +282,8 @@ def get_cache_seqs(start_time, args):
                     seq_dict[record.id]
                     if seq_dict[record.id] != record.seq:
                         logger.warning(
-                            f"Retrieved seq for {record.id} from JSON file which does NOT match the "
-                            "seq in the FASTA file.\n"
+                            f"Retrieved seq for {record.id} from JSON file which does NOT match "
+                            "the seq in the FASTA file.\n"
                             "Adding seq from the FASTA file to the local CAZyme database\n"
                             f"JSON seq: {seq_dict[record.id]}\n"
                             f"FASTA seq: {record.seq}"
@@ -370,9 +371,10 @@ def get_sequences(genbank_accessions, cache_path, args, retry=False):
     :param genbank_accessions: list, GenBank accessions
     :param cache_path: Path, to fasta file to write out retrieved protein seqs
     :param args: cmb-line args parser
-    :param retry: bool, default False, if get_sequences is being called for retrying a previously failed query
+    :param retry: bool, default False, if get_sequences is being called for retrying a previously
+    failed query
 
-    Return list of SeqRecords, and a list of all GenBank accessions 
+    Return list of SeqRecords, and a list of all GenBank accessions
     for which no record from NCBI was retrieved.
     """
     logger = logging.getLogger(__name__)
@@ -382,7 +384,8 @@ def get_sequences(genbank_accessions, cache_path, args, retry=False):
     # the list of accessions is to long, break down into smaller chunks for batch querying
     all_queries = get_chunks_list(genbank_accessions, args.batch_size)
 
-    failed_queries = []  # lists which raised an error, likely because contain an accession not in NCBI
+    failed_queries = []  # lists which raised an error,
+    # likely because contain an accession not in NCBI
 
     irregular_accessions = []
 
@@ -431,7 +434,7 @@ def get_sequences(genbank_accessions, cache_path, args, retry=False):
                             "Could not retrieve a GenBank protein accession matching "
                             "an accession from the local database from:\n"
                             f"{record.id}\n"
-                            "The sequence from this record will not be added to the db"   
+                            "The sequence from this record will not be added to the db"
                         )
                         irregular_accessions.append(temp_accession)
                         continue
@@ -545,8 +548,8 @@ def bulk_query_ncbi(accessions, args):
 
 
 def retry_failed_queries(query, seq_dict, success_accessions, args):
-    """Parse queries which previously raised a Runtime Error, likey the result of containing accessions 
-    that are not present in NCBI.
+    """Parse queries which previously raised a Runtime Error, likey the result of
+    containing accessions that are not present in NCBI.
 
     :param query: list GenBank accessions
     :param seq_dict: dict, keyed by GenBank accession, valued by BioPython Seq obj
@@ -555,7 +558,7 @@ def retry_failed_queries(query, seq_dict, success_accessions, args):
 
     Return seq_dict and success_accessions with data from the reparsed failed queries
     """
-    failed_accessions = []  # accessions of proteins for which no record was retrieved from NCBI.Entrez
+    failed_accessions = []  # Acc of proteins for which no record was retrieved from NCBI.Entrez
 
     new_seq_dict, no_seq = get_sequences(query, args, retry=True)
 
