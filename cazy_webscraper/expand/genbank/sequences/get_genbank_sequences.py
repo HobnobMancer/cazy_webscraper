@@ -550,6 +550,12 @@ def bulk_query_ncbi(accessions, args):
     except NotXMLError:
         logger.error("Could not parse Entrez output")
         return None, None
+    except IncompleteRead:
+        logger.error(
+            "IncompleteRead error raised when posting protein record(s)\n"
+            "Will try again later"
+        )
+        return None, None
 
     # retrieve the web environment and query key from the Entrez post
     epost_webenv = epost_result["WebEnv"]
