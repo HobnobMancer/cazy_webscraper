@@ -110,7 +110,76 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # add log to the local CAZyme database
     logger.info("Adding log of scrape to the local CAZyme database")
+    add_db_log(
+        config_dict,
+        taxonomy_filter_dict,
+        kingdom_filters,
+        ec_filters,
+        time_stamp,
+        connection,
+        args,
+    )
 
+    # get dick to GenBank accessions and local db IDs
+    gbk_dict = get_db_gbk_accs(
+        class_filters,
+        family_filters,
+        taxonomy_filter_dict,
+        kingdom_filters,
+        ec_filters,
+        connection,
+        args,
+    )
+
+    # get cached data, or return an empty dict and set
+    uniprot_dict, all_ecs, gbk_data_to_download = get_uniprot_cache(gbk_dict, args)
+
+    if args.skip_download is False:
+        logger.warning(f"Retrieving data for {len(gbk_data_to_download)} proteins")
+
+        downloaded_uniprot_data, all_ecs = get_uniprot_data(uniprot_dict, gbk_data_to_download, cache_dir, args)
+
+        uniprot_dict.update(downloaded_uniprot_data)
+
+    else:
+        logger.warning(f"Using only data from cache:\n{args.use_uniprot_cache}")
+
+    if len(list(downloaded_uniprot_data.keys())) != 0:
+        cache_uniprot_data(uniprot_dict, cache_dir, time_stamp)
+
+    # add uniprot accessions (and sequences if seq retrieval is enabled)
+    logger.warning("Adding data to the local CAZyme database")
+    add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args)
+
+    # add ec numbers
+    if (args.ec) and (len(all_ecs) != 0):
+        logger.warning("Adding EC numbers to the local CAZyme database")
+        add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args)
+
+    # add pdb accessions
+    if args.pdb:
+        logger.warning("Adding RSCB PDB IDs to the local CAZyme database")
+        add_pdb_accessions(uniprot_dict, gbk_dict, connection, args)
+
+    closing_message("get_uniprot_data", start_time, args)
+
+
+def add_db_log(
+    config_dict,
+    taxonomy_filter_dict,
+    kingdom_filters,
+    ec_filters,
+    time_stamp,
+    connection,
+    args,
+):
+    """Add log to local db
+
+    :param connection: open connection to SQLite db engine
+    :param args: CLI args parser
+    
+    Return nothing
+    """
     retrieved_annotations = "UniProt accessions, Protein names"
     if args.ec:
         retrieved_annotations += ", EC numbers"
@@ -134,9 +203,26 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             args,
         )
 
+
+def get_db_gbk_accs(
+    class_filters,
+    family_filters,
+    taxonomy_filter_dict,
+    kingdom_filters,
+    ec_filters,
+    connection,
+    args
+):
+    """Get the GenBank accessions of proteins to retrieve UniProt data for.
+
+    :param args: CLI args parser
+
+    Return dict {gbk_acc: local db id}
+    """
     # retrieve dict of genbank accession and genbank db ids from the local CAZyme db
     if args.genbank_accessions is not None:
         logger.warning(f"Getting GenBank accessions from file: {args.genbank_accessions}")
+
         with open(args.genbank_accessions, "r") as fh:
             lines = fh.read().splitlines()
         
@@ -157,72 +243,56 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     logger.warning(f"Retrieving UniProt data for {len(gbk_dict.keys())}")
 
+    return gbk_dict
+
+
+def get_uniprot_cache(gbk_dict, args):
+    """Get cached UniProt data, or return empty dict and set.
+    
+    :param gbk_dict: {gbk acc: local db id}
+    :param args: CLI args parser
+
+    Return dict {uniprot: {genbank_accession: str, uniprot_name: str, pdb: set, ec: set}}
+    and set of EC numbers
+    and list of GenBank accessions to download UniProt data for
+    """
     # if using cachce skip accession retrieval
+    uniprot_dict = {}  # {uniprot: {genbank_accession: str, uniprot_name: str, pdb: set, ec: set}}
+    all_ecs = set()
+    gbk_data_to_download = []
+
     if args.use_uniprot_cache is not None:
-        logger.warning(f"Using UniProt data from cache: {args.use_uniprot_cache}")
+        logger.warning(f"Getting UniProt data from cache: {args.use_uniprot_cache}")
+
         with open(args.use_uniprot_cache, "r") as fh:
             uniprot_dict = json.load(fh)
 
         if args.ec:
             all_ecs = get_ecs_from_cache(uniprot_dict)
-        else:
-            all_ecs = set()
+    
+    if args.skip_download:  # only use cached data
+        return uniprot_dict, all_ecs, gbk_data_to_download
 
-    else:
-
-        # Get the UniProt accessions/IDs for the corresponding GenBank accessions
-        if args.skip_uniprot_accessions is not None:
-            logger.warning(f"Using UniProt accessions from cache: {args.skip_uniprot_accessions}")
-            with open(args.skip_uniprot_accessions, "r") as fh:
-                uniprot_gkb_dict = json.load(fh)
-
-        else:
-            uniprot_gkb_dict = get_uniprot_accessions(gbk_dict, args)  # {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
-
-            uniprot_acc_cache = cache_dir / f"uniprot_accessions_{time_stamp}.json"
-            with open(uniprot_acc_cache, "w") as fh:
-                json.dump(uniprot_gkb_dict, fh)
-
-        # get data from UniProt
-        uniprot_dict, all_ecs = get_uniprot_data(uniprot_gkb_dict, cache_dir, args)
-
-        # converts sets to lists for json serialisation
-        for uniprot_accession in uniprot_dict:
-            try:
-                uniprot_dict[uniprot_accession]['ec'] = list(uniprot_dict[uniprot_accession]['ec'])
-            except KeyError:
-                pass
-            try:
-                uniprot_dict[uniprot_accession]['pdb'] = list(uniprot_dict[uniprot_accession]['pdb'])
-            except KeyError:
-                pass
-
-        uniprot_acc_cache = cache_dir / f"uniprot_data_{time_stamp}.json"
-        with open(uniprot_acc_cache, "w") as fh:
-            json.dump(uniprot_dict, fh)   
-
-    # add uniprot accessions (and sequences if seq retrieval is enabled)
-    logger.warning("Adding data to the local CAZyme database")
-    add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args)
-
-    # add ec numbers
-    if (args.ec) and (len(all_ecs) != 0):
-        add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args)
-
-    # add pdb accessions
-    if args.pdb:
-        add_pdb_accessions(uniprot_dict, gbk_dict, connection, args)
-
-    closing_message("get_uniprot_data", start_time, args)
+    # else: check for which GenBank accessions data still needs be retrieved from UniProt
+    # if some of the data is used from a cache, if no data is provided from a cache
+    # retrieve data for all GenBank accesisons matching the provided criteria
+    if len(list(uniprot_dict.keys())) != 0: 
+        for uniprot_acc in tqdm(uniprot_dict):
+            gbk_data_to_download.append(uniprot_dict[uniprot_acc]['genbank_accession'])
+    else:  # get data for all GenBank accessions from the local db matching the user criteria
+        gbk_data_to_download = list(gbk_dict.keys())
+    
+    return uniprot_dict, all_ecs, gbk_data_to_download
 
 
-def get_uniprot_data(uniprot_gbk_dict, cache_dir, args):
+def get_uniprot_data(uniprot_dict, gbk_data_to_download, cache_dir, args):
     """Batch query UniProt to retrieve protein data. Save data to cache directory.
     
     Bioservices requests batch queries no larger than 200.
 
-    :param uniprot_gbk_dict: dict, keyed by UniProt accession and valued by dict of a GenBank accession
+    :param uniprot_dict: dict, keyed by UniProt accession and valued by dict of a GenBank accession
         and the local CAZyme db record ID {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
+    :param gbk_data_to_download: list of NCBI protein accessions to query UniProt with
     :param cache_dir: path to directory to write out cache
     :param args: cmd-line args parser
     
@@ -399,6 +469,29 @@ def get_ecs_from_cache(uniprot_dict):
             pass
 
     return all_ecs
+
+
+def cache_uniprot_data(uniprot_dict, cache_dir, time_stamp):
+    """Cache data retrieved from UniProt.
+
+    :param
+
+    Return nothing
+    """
+    # cache updated UniProt data
+    for uniprot_accession in uniprot_dict:
+        try:
+            uniprot_dict[uniprot_accession]['ec'] = list(uniprot_dict[uniprot_accession]['ec'])
+        except KeyError:
+            pass
+        try:
+            uniprot_dict[uniprot_accession]['pdb'] = list(uniprot_dict[uniprot_accession]['pdb'])
+        except KeyError:
+            pass
+
+    uniprot_acc_cache = cache_dir / f"uniprot_data_{time_stamp}.json"
+    with open(uniprot_acc_cache, "w") as fh:
+        json.dump(uniprot_dict, fh) 
 
 
 if __name__ == "__main__":
