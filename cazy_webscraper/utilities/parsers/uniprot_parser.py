@@ -251,6 +251,15 @@ def build_parser(argv: Optional[List] = None):
         ),
     )
 
+
+    parser.add_argument(
+        "--skip_download",
+        dest="skip_download",
+        action="store_true",
+        default=False,
+        help="Skip downloading data from UniProt. Use when only using data from cache",
+    )
+
     # Add option to force file over writting
     parser.add_argument(
         "--sql_echo",
@@ -288,13 +297,6 @@ def build_parser(argv: Optional[List] = None):
         default=45,
         help="Connection timeout limit (seconds)"
     )
-
-    parser.add_argument(
-        "--skip_uniprot_accessions",
-        type=Path,
-        default=None,
-        help="Path to a JSON file containing UniProt IDs, GenBank accessions and db IDs",
-    )  
 
     parser.add_argument(
         "--use_uniprot_cache",
