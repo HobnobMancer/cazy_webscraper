@@ -219,6 +219,8 @@ def get_db_gbk_accs(
 
     Return dict {gbk_acc: local db id}
     """
+    logger = logging.getLogger(__name__)
+
     # retrieve dict of genbank accession and genbank db ids from the local CAZyme db
     if args.genbank_accessions is not None:
         logger.warning(f"Getting GenBank accessions from file: {args.genbank_accessions}")
