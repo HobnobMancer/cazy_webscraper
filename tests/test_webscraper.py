@@ -757,7 +757,6 @@ def test_term_message():
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     start_time = pd.to_datetime(start_time)
 
-
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         closing_message(
             job="Test",
