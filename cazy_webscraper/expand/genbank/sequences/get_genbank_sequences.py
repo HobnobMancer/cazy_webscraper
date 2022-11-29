@@ -43,6 +43,7 @@ from http.client import IncompleteRead
 import json
 import logging
 import pandas as pd
+import re
 import shutil
 
 from datetime import datetime
@@ -152,7 +153,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # get acc and db ids for seqs to be added to the db from the cache
     acc_with_unknown_db_id = list(set(seq_dict.keys()) - set(gbk_dict.keys()))
     if len(acc_with_unknown_db_id) > 0:
-        gbk_dict.update(get_selected_gbks.get_ids(acc_with_unknown_db_id, connection))
+        gbk_dict.update(get_selected_gbks.get_ids(acc_with_unknown_db_id, connection, cache_dir))
 
     try:
         shutil.make_archive(cache_dir, 'tar',  cache_dir)
@@ -162,10 +163,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             "Failed to compress cache directory"
         )
 
-    if len(list(seq_dict.keys())) != 0:
-        closing_message()
+    if len(list(seq_dict.keys())) == 0:
+        logger.warning("Adding 0 sequences to the local CAZyme database")
+        closing_message("Get GenBank Sequences", start_time, args)
 
-    add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, gbk_dict, connection, args)
+    # make subdir in cache dir for logging failed seqs
+    make_output_directory(cache_dir, force=True, nodelete=True)
+    add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, gbk_dict, connection, cache_dir, args)
 
     closing_message("Get GenBank Sequences", start_time, args)
 
@@ -286,8 +290,10 @@ def get_records_to_retrieve(
             connection,
         )
 
+        gbk_accs = list(gbk_dict.keys())
+
         # don't retrieve data for cached seqs
-        for gbk_acc in gbk_dict:
+        for gbk_acc in gbk_accs:
             if gbk_acc in list(seq_dict.keys()):
                 del gbk_dict[gbk_acc]
 
@@ -346,7 +352,10 @@ def get_seqs_from_ncbi(
     # retry failed accs
     no_seq_acc = []
     if len(failed_queries) != 0:
-        logger.warning("Parsing accessions which could not retrieve a seq for the first time")
+        logger.warning(
+            "Parsing accessions which could not retrieve a seq for the first time\n"
+            f"Handling {len(failed_queries)} failed batches"
+        )
         # break up and query individually
         retrying_acc = {}  # {acc: # of tries}
         for batch in failed_queries:
@@ -355,24 +364,36 @@ def get_seqs_from_ncbi(
 
         finished_retry = False
 
-        acc_list = list(retrying_acc)
+        acc_list = list(retrying_acc.keys())
 
         no_seq_acc = set()  # set of accessions for which no seq could be retrieved
 
         while finished_retry is False:
-            acc_list = list(retrying_acc)
+            acc_list = list(retrying_acc.keys())
 
-            for accession in acc_list:
-                new_seq, failed_seq = get_sequences([[accession]], cache_dir, args)
+            logger.warning(
+                "Handling failed protein accessions\n"
+                f"{len(acc_list)} protein accessions remaining"
+            )
+
+            for accession in tqdm(acc_list, desc="Handling failed accessions"):
+                new_seq, failed_seq = get_sequences([[accession]], cache_dir, args, disable_prg_bar=True)
 
                 if len(new_seq) == 0:
+                    logger.warning(
+                        f"Failed to retrieve sequence for {accession} on try no. {retrying_acc[accession]}"
+                    )
                     retrying_acc[accession] += 1
 
                     if retrying_acc[accession] >= args.retries:
+                        logger.warning(
+                            f"Could not retrieve sequence for {accession}\n"
+                            "Ran out of attempts"
+                        )
                         del retrying_acc[accession]
                         no_seq_acc.add(accession)
 
-            acc_list = list(retrying_acc)
+            acc_list = list(retrying_acc.keys())
 
             if len(acc_list) > 0:
                 finished_retry = True
@@ -412,7 +433,7 @@ def get_seqs_from_ncbi(
     return seq_dict, gbk_dict
 
 
-def get_sequences(batches, cache_dir, args):
+def get_sequences(batches, cache_dir, args, disable_prg_bar=False):
     """Retrieve protein sequences from Entrez.
 
     :param batches: list of lists, one list be batch of gbk acc to query against NCBI
@@ -427,7 +448,7 @@ def get_sequences(batches, cache_dir, args):
     logger = logging.getLogger(__name__)
 
     cache_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    cache_path = cache_dir / f"genbank_seqs_{cache_time}.json"
+    cache_path = cache_dir / f"genbank_seqs_{cache_time}.fasta"
 
     gbk_acc_to_retrieve = []
     for batch in batches:
@@ -442,7 +463,7 @@ def get_sequences(batches, cache_dir, args):
 
     success_accessions = set()  # accessions for which seqs were retrieved
 
-    for batch in tqdm(batches, desc="Batch querying NCBI.Entrez"):
+    for batch in tqdm(batches, desc="Batch querying NCBI.Entrez", disable=disable_prg_bar):
 
         # POST IDS
         try:
@@ -479,14 +500,21 @@ def get_sequences(batches, cache_dir, args):
                     try:
                         retrieved_accession = [_ for _ in record.id.split("|") if _.strip() in gbk_acc_to_retrieve][0]
                     except IndexError:
-                        logger.error(
-                            "Could not retrieve a GenBank protein accession matching "
-                            "an accession from the local database from:\n"
-                            f"{record.id}\n"
-                            "The sequence from this record will not be added to the db"
-                        )
-                        irregular_accessions.append(temp_accession)
-                        continue
+                        # try re search for accession in string
+                        try:
+                            retrieved_accession = re.match(r"\D{3}\d+\.\d+", record.id).group()
+                        except AttributeError:
+                            try:
+                                retrieved_accession = re.match(r"\D{2}_\d+\.\d+", record.id).group()
+                            except AttributeError:
+                                logger.error(
+                                    "Could not retrieve a GenBank protein accession matching "
+                                    "an accession from the local database from:\n"
+                                    f"{record.id}\n"
+                                    "The sequence from this record will not be added to the db"
+                                )
+                                irregular_accessions.append(temp_accession)
+                                continue
 
                     if retrieved_accession not in success_accessions:
                         seq_records.append(record)
