@@ -86,8 +86,8 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
                 
             if args.name_update:
                 # check if the name has changed
-                existing_name = uniprot_table_dict[uniprot_acc]['name']
-                retrieved_name = uniprot_dict[uniprot_acc]['name']
+                existing_name = uniprot_table_dict[uniprot_acc]["protein_name"]
+                retrieved_name = uniprot_dict[uniprot_acc]["protein_name"]
                 
                 if existing_name != retrieved_name:
                     update_record_name.add( (uniprot_acc, retrieved_name) )
@@ -119,7 +119,7 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
             if args.sequence or args.seq_update:
                 genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]['gbk_acc']
                 gbk_id = gbk_dict[genbank_acc]
-                uniprot_name = uniprot_dict[uniprot_acc]["name"]
+                uniprot_name = uniprot_dict[uniprot_acc]["protein_name"]
                 seq = uniprot_dict[uniprot_acc]["sequence"]
                 date = uniprot_dict[uniprot_acc]["seq_date"]
 
@@ -128,7 +128,7 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
             else:  # not retrieving protein sequences
                 genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]['gbk_acc']
                 gbk_id = gbk_dict[genbank_acc]
-                uniprot_name = uniprot_dict[uniprot_acc]["name"]
+                uniprot_name = uniprot_dict[uniprot_acc]["protein_name"]
                 
                 uniprot_insert_values.add( (gbk_id, uniprot_acc, uniprot_name) )
     
