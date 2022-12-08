@@ -95,6 +95,19 @@ def get_linked_ncbi_accessions(uniprot_dict):
 
     if len(list(failed_names.keys())) != 0:
         while len(list(failed_names.keys())) != 0:
+            # remove invalid ids and don't retry
+            for name in invalid_ids:
+                try:
+                    failed_names[name]
+                    logger.warning(
+                        f"Gene name {name} retrieved from UniProt record {gene_names[name]}\n"
+                        "is no longer in NCBI, therefore, not adding protein data to the\n"
+                        f"local CAZyme database for UniProt record {gene_names[name]}"
+                    )
+                    del failed_names[name]
+                except KeyError:
+                    continue
+
             names_to_process = list(failed_names.keys())
             for name in names_to_process:
                 uniprot_dict, invalid_gene_names, processed_batch = process_batch(
