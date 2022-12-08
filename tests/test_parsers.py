@@ -146,7 +146,7 @@ def test_parser_uniprot():
 
 def test_parser_arsv_uniprot():
     """Test building the parser when argsv is not None"""
-    uniprot_parser.build_parser(["dummy_email"])
+    uniprot_parser.build_parser(["dbpath", "dummy_email"])
 
 
 def test_parser_ncbi_tax():
