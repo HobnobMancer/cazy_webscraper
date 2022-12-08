@@ -154,11 +154,13 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if len(list(downloaded_uniprot_data.keys())) != 0:
         cache_uniprot_data(uniprot_dict, cache_dir, time_stamp)
 
+    uniprot_dict = get_gene_names(uniprot_dict, args)
     # Retrieve the NCBI protein version accession for each gene name retrieved from UniProt
     # This a more robust method for linking the correct UniProt record to the corresponding 
     # NCBI protein record than presuming only one record is returned per NCBI protein accession
     # queried against NCBI
-    uniprot_dict = get_linked_ncbi_accessions(uniprot_dict)
+    uniprot_dict = get_linked_ncbi_accessions(uniprot_dict, args)
+    print(uniprot_dict)
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
     logger.warning("Adding data to the local CAZyme database")
@@ -276,6 +278,8 @@ def get_uniprot_cache(gbk_dict, args):
     all_ecs = set()
     gbk_data_to_download = []
 
+    logger = logging.getLogger(__name__)
+
     if args.use_uniprot_cache is not None:
         logger.warning(f"Getting UniProt data from cache: {args.use_uniprot_cache}")
 
@@ -329,7 +333,7 @@ def get_uniprot_data(gbk_data_to_download, cache_dir, args):
     print(bioservices_queries)
 
     for query in tqdm(bioservices_queries, "Batch retrieving protein data from UniProt"):
-        uniprot_df = UniProt().get_df(entries=query, limit=None)
+        uniprot_df = UniProt().get_df(entries=query, limit=args.uniprot_batch_size)
 
         # cache UniProt response
         _time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -401,7 +405,7 @@ def get_uniprot_data(gbk_data_to_download, cache_dir, args):
 
             if args.pdb:
                 # retrieve PDB accessions
-                pdb_accessions = row['Cross-reference (PDB)']
+                pdb_accessions = row['PDB']
                 try:
                     pdb_accessions = pdb_accessions.split(';')
                     pdb_accessions = [pdb.strip() for pdb in pdb_accessions if len(pdb.strip()) > 0]
@@ -488,6 +492,35 @@ def cache_uniprot_data(uniprot_dict, cache_dir, time_stamp):
     uniprot_acc_cache = cache_dir / f"uniprot_data_{time_stamp}.json"
     with open(uniprot_acc_cache, "w") as fh:
         json.dump(uniprot_dict, fh) 
+
+
+def get_gene_names(uniprot_dict, args):
+    """Map UniProt accessions to Ensemble-GenBank gene name
+    
+    :param uniprot_dict: {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
+    :param args: CLI parser
+    
+    Return UniProt dict
+    """
+    uniprot_acc_to_parse = [acc for acc in uniprot_dict if uniprot_dict[acc]['gene_name'] == 'nan']
+
+    bioservices_queries = get_chunks_list(
+        uniprot_acc_to_parse,
+        args.uniprot_batch_size,
+    )
+
+    for batch in tqdm(bioservices_queries, "Getting gene names from UniProt"):
+        mapping_dict = UniProt().mapping(
+            fr="UniProtKB_AC-ID",
+            to="EMBL-GenBank-DDBJ",
+            query=batch,
+        )
+        for result in mapping_dict['results']:
+            uniprot_acc = result['from']
+            gene_name = result['to']
+            uniprot_dict[uniprot_acc]['gene_name'] = gene_name
+    
+    return uniprot_dict
 
 
 if __name__ == "__main__":
