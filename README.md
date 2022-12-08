@@ -312,7 +312,7 @@ Data can be retrieived for all proteins in the local CAZyme database, or a speci
 
 To retrieve all UniProt data for all proteins in a local CAZyme datbase, using the following command:
 ```bash
-cw_get_uniprot_data <path_to_local_CAZyme_db> --ec --pdb --sequence
+cw_get_uniprot_data <path_to_local_CAZyme_db> <user_email> --ec --pdb --sequence
 ```
 
 ### Configuring UniProt data retrieval
@@ -321,7 +321,11 @@ Below are listed the command-line flags for configuring the retrieval of UniProt
 
 `database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
 
-`--bioservices_batch_size` - Change the query batch size submitted via [`bioservices`](https://bioservices.readthedocs.io/en/master/) to UniProt to retrieve protein data. Default is 150. `bioservices` recommands queries not larger than 200 objects.
+`email` - \[REQUIRED\] User email address. This is required by NCBI Entrez for querying the Entrez server.
+
+`--ncbi_batch_size` - Size of batch query posted to NCBI Entrez. Default 150.
+
+`--uniprot_batch_size` - Change the query batch size submitted via [`bioservices`](https://bioservices.readthedocs.io/en/master/) to UniProt to retrieve protein data. Default is 150. `bioservices` recommands queries not larger than 200 objects.
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
