@@ -14,7 +14,7 @@ the local CAZyme database, use the following command structure:
 
 .. code-block:: bash
     
-   cw_get_uniprot_data <path to local CAZyme db>
+   cw_get_uniprot_data <path to local CAZyme db> <user email>
 
 .. NOTE::
    The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
@@ -30,7 +30,13 @@ the local CAZyme database, use the following command structure:
 
 .. code-block:: bash
     
-   cw_get_uniprot_data <path to local CAZyme db> --ec --pdb --sequence
+   cw_get_uniprot_data <path to local CAZyme db> <user email> --ec --pdb --sequence
+
+For example:
+
+.. code-block:: bash
+    cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --ec --pdb --sequence
+
 
 --------------------
 Command line options
@@ -40,8 +46,12 @@ Below are listed the required and optional command-line options for configuring 
 
 ``database`` - **REQUIRED** Path to a local CAZyme database to add UniProt data to.
 
-``bioservices_batch_size`` - Change the size of the batch query size submitted via `bioservices <https://bioservices.readthedocs.io/en/master/>`_ to UniProt
-to retrieve protein data. Default 150. ``bioservices`` recommends submitting    ueries no larger than 200 objects.
+``email`` - **REQUIRED** User email address, required by NCBI Entrez.
+
+``--ncbi_batch_size`` - Size of batch query posted to NCBI Entrez. Default 150.
+
+``uniprot_batch_size`` - Change the size of the batch query size submitted via `bioservices <https://bioservices.readthedocs.io/en/master/>`_ to UniProt
+to retrieve protein data. Default 150. ``bioservices`` recommends submitting queries no larger than 200 objects.
 
 ``--cache_dir`` - Path to cache dir to be used instead of default cache dir path.
 
@@ -85,7 +95,9 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting    
 
 ``--seq_update`` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
-``--skip_uniprot_accessions`` - Path to a JSON file, keyed by UniProt accessions/IDs and valued by dicts containing ``{'gbk_acc': str, 'db_id': int}``. This file part of the cache created by ``cw_get_uniprot_data``. This is option to skip retrieving the UniProt IDs for a set of GenBank accessions, if retrieving data for the same dataset (this save a lot of time!)
+``--use_uniprot_cache`` - Path to a JSON file, keyed by UniProt accessions/IDs and valued by dicts containing `{'gbk_acc': str, 'db_id': int}`. This file part of the cache created by `cw_get_uniprot_data`. This is option to skip retrieving the UniProt IDs for a set of GenBank accessions, if retrieving data for the same dataset (this save a lot of time!)
+
+``skip_download`` - Bool, default False. If set to True, only uses data from UniProt cache and will not download new data from UniProt.
 
 ``--sql_echo`` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
