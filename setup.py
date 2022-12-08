@@ -88,6 +88,7 @@ setuptools.setup(
     },
     install_requires=[
         "biopython>=1.76",
+        "bioservices>=1.10.4",
         "mechanicalsoup",
         "pandas>=1.0.3",
         "pyyaml",
