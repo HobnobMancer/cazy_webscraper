@@ -59,6 +59,7 @@ import cazy_webscraper
 from cazy_webscraper import utilities
 from cazy_webscraper.cazy_scraper import connect_existing_db
 from cazy_webscraper.expand.uniprot import get_uniprot_data
+from cazy_webscraper.ncbi.gene_names import get_linked_ncbi_accessions
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface.add_data import add_uniprot_data
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
@@ -120,6 +121,8 @@ def test_main(
             pdb=True,
             skip_uniprot_accessions=None,
             use_uniprot_cache=None,
+            email="dummy_email",
+            skip_download=False,
         )
         return parser
 
@@ -148,6 +151,7 @@ def test_main(
     monkeypatch.setattr(get_selected_gbks, "get_genbank_accessions", mock_get_genbank_accessions)
     monkeypatch.setattr(get_uniprot_data, "get_uniprot_accessions", mock_get_genbank_accessions)
     monkeypatch.setattr(get_uniprot_data, "get_uniprot_data", mock_get_uniprot_data)
+    monkeypatch.setattr(get_uniprot_data, "get_linked_ncbi_accessions", mock_get_uniprot_data)
     monkeypatch.setattr(get_uniprot_data, "add_uniprot_accessions", mock_return_none)
     monkeypatch.setattr(get_uniprot_data, "add_ec_numbers", mock_return_none)
     monkeypatch.setattr(get_uniprot_data, "add_pdb_accessions", mock_return_none)
