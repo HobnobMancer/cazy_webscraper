@@ -158,7 +158,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # This a more robust method for linking the correct UniProt record to the corresponding 
     # NCBI protein record than presuming only one record is returned per NCBI protein accession
     # queried against NCBI
-    uniprot_dict.update(get_linked_ncbi_accessions(uniprot_dict))
+    uniprot_dict = get_linked_ncbi_accessions(uniprot_dict)
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
     logger.warning("Adding data to the local CAZyme database")

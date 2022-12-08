@@ -57,7 +57,7 @@ def get_linked_ncbi_accessions(uniprot_dict):
 
     gene_names = {}
     for uniprot_acc in uniprot_dict:
-        gene_names[[uniprot_acc]['gene_name']] = uniprot_acc
+        gene_names[uniprot_dict[uniprot_acc]['gene_name']] = uniprot_acc
 
     ncbi_queries = get_chunks_list(
         list(gene_names.keys()),
@@ -69,7 +69,7 @@ def get_linked_ncbi_accessions(uniprot_dict):
 
     for batch in tqdm(ncbi_queries, desc="Batch quering NCBI to get protein accesions for gene names"):
         uniprot_dict, invalid_gene_names, failed_batches = process_batch(
-            batch
+            batch,
             uniprot_dict,
             invalid_gene_names,
             failed_batches,
@@ -83,7 +83,7 @@ def get_linked_ncbi_accessions(uniprot_dict):
             batch = list(set(batch).difference(set(invalid_ids)))
 
             uniprot_dict, invalid_gene_names, processed_batch = process_batch(
-                batch
+                batch,
                 uniprot_dict,
                 invalid_gene_names,
                 [],  # pass an empty list
@@ -133,11 +133,11 @@ def process_batch(batch, uniprot_dict, invalid_gene_names, failed_batches):
 
     if success == 'invalid ID':
         invalid_gene_names.add(batch[0])
-        continue
+        return uniprot_dict, invalid_gene_names, failed_batches
     
     elif success == 'retry':
         failed_batches.append(batch)
-        continue
+        return uniprot_dict, invalid_gene_names, failed_batches
 
     epost_webenv = epost_result["WebEnv"]
     epost_query_key = epost_result["QueryKey"]
@@ -146,11 +146,11 @@ def process_batch(batch, uniprot_dict, invalid_gene_names, failed_batches):
 
     if success == 'invalid ID':
         invalid_gene_names.add(batch[0])
-        continue
+        return uniprot_dict, invalid_gene_names, failed_batches
     
     elif success == 'retry':
         failed_batches.append(batch)
-        continue
+        return uniprot_dict, invalid_gene_names, failed_batches
 
     for prot_record in tqdm(record, desc="Parsing query output"):
         gene_name = None
@@ -165,7 +165,7 @@ def process_batch(batch, uniprot_dict, invalid_gene_names, failed_batches):
                         uniprot_acc = gene_names[gene_name]
 
                     except KeyError:
-                        continue
+                        return uniprot_dict, invalid_gene_names, failed_batches
                     
                 for k in i['GBFeature_intervals']:
                     genebank_accession = k['GBInterval_accession'].split(".")[0]
@@ -238,7 +238,6 @@ def query_ncbi(id=None, query_key=None, WebEnv=None):
                 f"{repr(err)}"
             )
             success = "retry"
-        continue
 
     except (TypeError, AttributeError) as err:  # if no record is returned from call to Entrez
         logger.warning(
