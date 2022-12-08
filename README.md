@@ -105,7 +105,7 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 
 If you use `cazy_webscraper`, please cite the following publication:
 
-> Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. [https://doi.org/10.6084/m9.figshare.14370860.v7](https://doi.org/10.6084/m9.figshare.14370860.v7)
+> Hobbs, E. E. M., Gloster, T. M., and Pritchard, L. (2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets', _bioRxiv_, [https://doi.org/10.1101/2022.12.02.518825](https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1)
 
 cazy_webscraper depends on a number of tools. To recognise the contributions that the 
 authors and developers have made, please also cite the following:
