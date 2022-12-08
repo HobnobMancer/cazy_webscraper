@@ -1,6 +1,6 @@
 beautifulsoup4
 biopython
-bioservices
+bioservices>=1.10.4
 html5lib
 lxml
 mechanicalsoup
