@@ -49,6 +49,7 @@ import pandas as pd
 from datetime import datetime
 from typing import List, Optional
 
+from Bio import Entrez
 from bioservices import UniProt
 from saintBioutils.misc import get_chunks_list
 from saintBioutils.uniprot import get_uniprot_accessions
@@ -57,6 +58,7 @@ from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
+from cazy_webscraper.ncbi.gene_names import get_linked_ncbi_accessions
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_data.add_uniprot_data import (
@@ -87,6 +89,8 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if logger is None:
         logger = logging.getLogger(__name__)
         config_logger(args)
+
+    Entrez.email = args.email
     
     # parse the configuration data (cache the uniprot data as .csv files)
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
@@ -133,11 +137,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # get cached data, or return an empty dict and set
     uniprot_dict, all_ecs, gbk_data_to_download = get_uniprot_cache(gbk_dict, args)
+    # uniprot_dict = {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
+    # all_ecs = set of EC numers
+    # gbk_data_to_download = list of GenBank accs to download data for
 
     if args.skip_download is False:
         logger.warning(f"Retrieving data for {len(gbk_data_to_download)} proteins")
 
-        downloaded_uniprot_data, all_ecs = get_uniprot_data(uniprot_dict, gbk_data_to_download, cache_dir, args)
+        downloaded_uniprot_data, all_ecs = get_uniprot_data(gbk_data_to_download, cache_dir, args)
 
         uniprot_dict.update(downloaded_uniprot_data)
 
@@ -146,6 +153,12 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     if len(list(downloaded_uniprot_data.keys())) != 0:
         cache_uniprot_data(uniprot_dict, cache_dir, time_stamp)
+
+    # Retrieve the NCBI protein version accession for each gene name retrieved from UniProt
+    # This a more robust method for linking the correct UniProt record to the corresponding 
+    # NCBI protein record than presuming only one record is returned per NCBI protein accession
+    # queried against NCBI
+    uniprot_dict.update(get_linked_ncbi_accessions(uniprot_dict))
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
     logger.warning("Adding data to the local CAZyme database")
@@ -287,34 +300,29 @@ def get_uniprot_cache(gbk_dict, args):
     return uniprot_dict, all_ecs, gbk_data_to_download
 
 
-def get_uniprot_data(uniprot_dict, gbk_data_to_download, cache_dir, args):
+def get_uniprot_data(gbk_data_to_download, cache_dir, args):
     """Batch query UniProt to retrieve protein data. Save data to cache directory.
     
     Bioservices requests batch queries no larger than 200.
 
-    :param uniprot_dict: dict, keyed by UniProt accession and valued by dict of a GenBank accession
-        and the local CAZyme db record ID {uniprot_acc: {'gbk_acc': str, 'db_id': int}}
     :param gbk_data_to_download: list of NCBI protein accessions to query UniProt with
     :param cache_dir: path to directory to write out cache
     :param args: cmd-line args parser
     
     Return
     Dict of data retrieved from UniProt and to be added to the db 
-        {uniprot_acccession: {gbk_acccession: str, uniprot_name: str, pdb: set, ec: set}}
+        {uniprot_acccession: {gene_name: str, uniprot_name: str, pdb: set, ec: set}}
     Set of all retrieved EC numbers
+    Set of gene names
     """
     logger = logging.getLogger(__name__)
 
-    uniprot_dict = {}  # {uniprot: {genbank_accession: str, uniprot_name: str, pdb: set, ec: set}}
+    uniprot_dict = {}  # {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
     all_ecs = set()  # store all retrieved EC numbers as one tuple per unique EC number
-
-    # add PDB column to columns to be retrieved
-    UniProt()._valid_columns.append('database(PDB)')
-
-    print(list(uniprot_gbk_dict.keys()))
-
+    ncbi_gene_names = set()
+    
     bioservices_queries = get_chunks_list(
-        list(uniprot_gbk_dict.keys()),
+        gbk_data_to_download,
         args.bioservices_batch_size,
     )
 
@@ -330,17 +338,29 @@ def get_uniprot_data(uniprot_dict, gbk_data_to_download, cache_dir, args):
 
         index = 0
         uniprot_df = uniprot_df[[
+            'Gene Names (primary)', # used to link UniProt record to GenBank protein accession
             'Entry',
             'Protein names',
             'EC number',
             'Sequence',
             'Date of last sequence modification',
-            'Cross-reference (PDB)',
+            'PDB', 
         ]]
 
-        for index in tqdm(range(len(uniprot_df['Entry'])), desc="Parsing UniProt response"):
+        for index in tqdm(range(len(uniprot_df)), desc="Parsing UniProt response"):
             row = uniprot_df.iloc[index]
+
+            # Parse UniProt accession
             uniprot_acc = row['Entry'].strip()
+
+           # checked if parsed before incase bioservices returned duplicate proteins
+            try:
+                uniprot_dict[uniprot_acc]
+                continue  # already parsed
+            except KeyError:
+                pass
+
+            # Parse UniProt protein name
             try:
                 uniprot_name = row['Protein names'].strip()
 
@@ -348,46 +368,20 @@ def get_uniprot_data(uniprot_dict, gbk_data_to_download, cache_dir, args):
                 logger.warning(
                     f"Protein name {row['Protein names']} was returned as float not string. Converting to string"
                 )
-                uniprot_name = str(row['Protein names'])
+                uniprot_name = str(row['Protein names']).strip()
 
             # remove quotation marks from the protein name, else an SQL error will be raised on insert
             uniprot_name = uniprot_name.replace("'", "")
             uniprot_name = uniprot_name.replace('"', '')
             uniprot_name = uniprot_name.replace("`", "")
 
-            # checked if parsed before incase bioservices returned duplicate proteins
-            try:
-                uniprot_gbk_dict[uniprot_acc]
-            except KeyError:
-                logger.warning(
-                    f"UniProt ID {uniprot_acc} was retrieved from UniProt\n"
-                    "But no corresponding record was found in the local CAZyme database\n"
-                    "Skipping this UniProt ID"
-                )
-                continue  # uniprot ID does not match any retrieved previously
-
-            try:
-                uniprot_dict[uniprot_acc]
-                logger.warning(
-                    f'Multiple entries for UniProt:{uniprot_acc}, '
-                    f'GenBank:{uniprot_gbk_dict[uniprot_acc]} retrieved from UniProt,\n'
-                    'compiling data into a single record'
-                )
-            except KeyError:
-                try:
-                    uniprot_dict[uniprot_acc] = {
-                        "genbank_accession": uniprot_gbk_dict[uniprot_acc],
-                        "name": uniprot_name,
-                    }
-                except KeyError:
-                    logger.warning(
-                        f"Retrieved record with UniProt accession {uniprot_acc} but this "
-                        "accession was not\nretrieved from the UniProt REST API"
-                    )
-                    continue
+            # add protein data to uniprot dict
+            uniprot_dict[uniprot_acc] = {
+                'gene_name': str(row['Gene Names (primary)']).strip(),
+                'protein_name': uniprot_name, 
+            }
             
             if args.ec:
-                # retrieve EC numbers
                 ec_numbers = row['EC number']
                 try:
                     ec_numbers = ec_numbers.split('; ')
