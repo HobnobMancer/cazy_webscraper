@@ -62,6 +62,13 @@ def build_parser(argv: Optional[List] = None):
         help="Path to local CAZyme database"
     )
 
+    parser.add_argument(
+        "email",
+        type=str,
+        metavar="user email address",
+        help="User email address, requirement of NCBI-Entrez",
+    )
+
     # Add optional arguments to parser
     parser.add_argument(
         "--bioservices_batch_size",
@@ -310,6 +317,13 @@ def build_parser(argv: Optional[List] = None):
         type=int,
         default=150,
         help="Batch size for queries sent to the UniProt REST API to retrieved UniProt accessions"
+    )
+
+    parser.add_argument(
+        "--ncbi_batch_size",
+        type=int,
+        default=150,
+        help="Batch size for queries sent to NCBI Entrez to retrieve protein accessions for gene names retrieved from UniProt"
     )
 
     # Add option for more detail (verbose) logging

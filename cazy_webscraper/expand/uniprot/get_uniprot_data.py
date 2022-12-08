@@ -323,7 +323,7 @@ def get_uniprot_data(gbk_data_to_download, cache_dir, args):
     
     bioservices_queries = get_chunks_list(
         gbk_data_to_download,
-        args.bioservices_batch_size,
+        args.uniprot_batch_size,
     )
 
     print(bioservices_queries)
