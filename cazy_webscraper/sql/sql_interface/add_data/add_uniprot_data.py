@@ -131,8 +131,6 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
         except KeyError:  # new record to add to local CAZyme db
             
             if args.sequence or args.seq_update:
-                print(uniprot_dict)
-                print(uniprot_acc)
                 genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
                 gbk_id = gbk_dict[genbank_acc]
                 uniprot_name = uniprot_dict[uniprot_acc]["protein_name"]
@@ -236,7 +234,16 @@ def add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args):
 
     for uniprot_acc in tqdm(uniprot_dict, desc="Updating EC numbers"):
         genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
-        gbk_id = gbk_dict[genbank_acc]
+        try:
+            gbk_id = gbk_dict[genbank_acc]
+        except KeyError:
+            logger.error(
+                f"Mapped the GenBank accession '{retrieved_gbk_acc}' to the UniProt accession\n"
+                f"'{uniprot_acc}' but the GenBank accession is not in the local CAZyme database\n"
+                f"therefore, not adding protein data for GBK:{retrieved_gbk_acc}/UniProt:{uniprot_acc}"
+                "to the local CAZyme database."
+            )
+            continue
         
         retrieved_ec_numbers = uniprot_dict[uniprot_acc]["ec"]  # EC#s retrieved from UniProt
         for ec in retrieved_ec_numbers:
@@ -317,7 +324,17 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
     gbk_pdb_insert_values = set()
     for uniprot_acc in tqdm(uniprot_dict, desc="Identifying new protein-PDB relationships to add to db"):
         genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
-        gbk_db_id = gbk_dict[genbank_acc]
+
+        try:
+            gbk_db_id = gbk_dict[genbank_acc]
+        except KeyError:
+            logger.error(
+                f"Mapped the GenBank accession '{retrieved_gbk_acc}' to the UniProt accession\n"
+                f"'{uniprot_acc}' but the GenBank accession is not in the local CAZyme database\n"
+                f"therefore, not adding protein data for GBK:{retrieved_gbk_acc}/UniProt:{uniprot_acc}"
+                "to the local CAZyme database."
+            )
+            continue
 
         # set of pdb_accessions retrieved from UniProt
         retrieved_pdbs = uniprot_dict[uniprot_acc]["pdb"]
