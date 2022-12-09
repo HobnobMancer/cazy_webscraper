@@ -62,6 +62,13 @@ def build_parser(argv: Optional[List] = None):
         help="Path to local CAZyme database"
     )
 
+    parser.add_argument(
+        "email",
+        type=str,
+        metavar="user email address",
+        help="User email address, requirement of NCBI-Entrez",
+    )
+
     # Add optional arguments to parser
     parser.add_argument(
         "--bioservices_batch_size",
@@ -251,6 +258,15 @@ def build_parser(argv: Optional[List] = None):
         ),
     )
 
+
+    parser.add_argument(
+        "--skip_download",
+        dest="skip_download",
+        action="store_true",
+        default=False,
+        help="Skip downloading data from UniProt. Use when only using data from cache",
+    )
+
     # Add option to force file over writting
     parser.add_argument(
         "--sql_echo",
@@ -290,13 +306,6 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--skip_uniprot_accessions",
-        type=Path,
-        default=None,
-        help="Path to a JSON file containing UniProt IDs, GenBank accessions and db IDs",
-    )  
-
-    parser.add_argument(
         "--use_uniprot_cache",
         type=Path,
         default=None,
@@ -308,6 +317,13 @@ def build_parser(argv: Optional[List] = None):
         type=int,
         default=150,
         help="Batch size for queries sent to the UniProt REST API to retrieved UniProt accessions"
+    )
+
+    parser.add_argument(
+        "--ncbi_batch_size",
+        type=int,
+        default=150,
+        help="Batch size for queries sent to NCBI Entrez to retrieve protein accessions for gene names retrieved from UniProt"
     )
 
     # Add option for more detail (verbose) logging

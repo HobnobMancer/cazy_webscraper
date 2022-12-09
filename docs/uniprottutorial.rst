@@ -36,13 +36,13 @@ Therefore, ``cw_get_uniprot_data`` can be enabled using a simple command structu
 
 .. code-block:: bash
 
-  cazy_webscraper <path to the local CAZyme db>
+  cazy_webscraper <path to the local CAZyme db> <user email>
 
-For example, if our database was stored in ``cazy/cazyme.db``, we would used:
+For example, if our database was stored in ``cazy/cazyme.db myemail@domain.com``, we would used:
 
 .. code-block:: bash
    
-  cazy_webscraper cazy/cazyme.db
+  cazy_webscraper cazy/cazyme.db myemail@domain.com myemail@domain.com
 
 .. NOTE::
    Make sure ``cw_get_uniprot_data`` is pointed directly at the database file.
@@ -87,13 +87,13 @@ For example, if you want to retrieve protein data for all CAZymes from Glycoside
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --classes GH,CE
+   cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --classes GH,CE
 
 OR
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --classes Glycoside Hydrolases,Carbohydrate Esterases
+   cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --classes Glycoside Hydrolases,Carbohydrate Esterases
 
 Retrieving protein data for proteins from specific specific CAZy families is achieved using the ``--families`` flag. For 
 example, to retrieve protein data for all proteins in PL1, PL2 and PL3 in the local CAZyme database use the 
@@ -101,7 +101,7 @@ following command:
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --families PL1,PL2,PL3
+   cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --families PL1,PL2,PL3
 
 .. WARNING::
    ``cw_get_uniprot_data`` only accpets families written in the proper CAZy family syntax.
@@ -113,13 +113,13 @@ protein data for all CAZymes in PL1, PL2, PL3 and *all* of GH and CE both:
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --families PL1,PL2,PL3 --classes GH,CE
+   cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --families PL1,PL2,PL3 --classes GH,CE
 
 **AND**
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --classes GH,CE --families PL1,PL2,PL3
+   cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --classes GH,CE --families PL1,PL2,PL3
 
 are accepted.
 
@@ -137,7 +137,7 @@ For example, if you want to retrieve protein data for all CAZymes in a local CAZ
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --kingdoms bacteria,eukaryota
+   cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --kingdoms bacteria,eukaryota
 
 .. warning::
    The kingdoms must be spelt the same way CAZy spells them, for example use 'eukaryot**a**' instead of 'eukaryot**e**'.
@@ -155,7 +155,7 @@ we would use would be:
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
+   cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
 
 .. note::
    The order that the flags are used and the order taxa  are listed does **not** matter, and separate multiple taxa names with a single comma 
@@ -188,7 +188,7 @@ wish to retrieve protein data for CAZymes annotated with specific EC numbers. To
 
 .. code-block:: bash
    
-   cw_get_uniprot_data cazy/cazyme.db --ec_filter "EC1.2.3.4,EC2.3.4.5"
+   cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --ec_filter "EC1.2.3.4,EC2.3.4.5"
 
 
 .. NOTE::
@@ -241,7 +241,7 @@ To retrieve PDB accessions for all CAZymes in GH, GT, CE1, CE5 and CE8, and whic
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --pdb --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
+   cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --pdb --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
 
 
 **Example 2:**
@@ -249,7 +249,7 @@ To retrieve EC numbers and PDB accessions for all CAZymes in GH and which are de
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --pdb --ec --classes GH --genera Aspegillus,Trichoderma
+   cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --pdb --ec --classes GH --genera Aspegillus,Trichoderma
 
 
 **Example 3:**
@@ -258,7 +258,7 @@ EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, we use the command:
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --ec --sequences --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
+   cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --ec --sequences --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
 ------------------------------
 Providing a list of accessions
@@ -283,3 +283,4 @@ then passed to ``cw_get_uniprot_data`` via the ``--genbank_accessions`` flag.
    Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cw_get_uniprot_data`` will ignore 
    the ``--classes`` flag and only retrieve protein data for the proteins listed in the file provided via 
    the ``--genbank_accessions``.
+

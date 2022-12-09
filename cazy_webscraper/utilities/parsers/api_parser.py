@@ -139,7 +139,7 @@ def build_parser(argv: Optional[List] = None):
         "--include",
         action="store",
         nargs="+",
-        choices=["class", "family", "subfamily", "organism", "uniprot_acc", "uniprot_name", "ec", "pdb", "genbank_seq", "uniprot_seq"],
+        choices=["class", "family", "subfamily", "kingdom", "organism", "uniprot_acc", "uniprot_name", "ec", "pdb", "genbank_seq", "uniprot_seq"],
         help="Additional data to include in the output file. Separate with a single space (' ')"
     )
 

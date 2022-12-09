@@ -54,7 +54,7 @@ from saintBioutils.utilities.file_io import make_output_directory
 from cazy_webscraper.sql import sql_orm
 
 
-__version__ = "2.2.2"
+__version__ = "2.2.3"
 
 
 VERSION_INFO = f"cazy_webscraper version: {__version__}"
@@ -62,10 +62,10 @@ VERSION_INFO = f"cazy_webscraper version: {__version__}"
 
 CITATION_INFO = (
     "If you use cazy_webscraper in your work, please cite the following publication:\n"
-    "\tHobbs, E. E. M., Pritchard, L., Chapman, S., Gloster, T. M.,\n"
-    "\t(2021) cazy_webscraper Microbiology Society Annual Conference 2021 poster.\n"
-    "\tFigShare. Poster.\n"
-    "\thttps://doi.org/10.6084/m9.figshare.14370860.v7"
+    "\tHobbs, E. E. M., Gloster, T. M., and Pritchard, L.\n"
+    "\t(2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets',\n"
+    "\tbioRxiv\n"
+    "\thttps://doi.org/10.1101/2022.12.02.518825"
 )
 
 WEBSITE = "https://hobnobmancer.github.io/cazy_webscraper/"
