@@ -159,6 +159,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # map the uniprot acc to the gene name and then retrieve the genbank accession from ncbi
     uniprot_dict = get_mapped_genbank_accessions(uniprot_dict, args)
 
+    acc_to_remove = set()
     for uniprot_acc in uniprot_dict:
         try:
             uniprot_dict[uniprot_acc]['genbank_accession']
@@ -169,7 +170,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 f"Not adding protein data for the UniProt accession '{uniprot_acc}' to the\n"
                 "local CAZyme database."
             )
-            del uniprot_dict[uniprot_acc]
+            acc_to_remove.add(uniprot_acc)
+    for uniprot_acc in acc_to_remove:
+        del uniprot_dict[uniprot_acc]
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
     logger.warning("Adding data to the local CAZyme database")
