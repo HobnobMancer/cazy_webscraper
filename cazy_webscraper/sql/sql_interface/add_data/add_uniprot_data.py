@@ -72,6 +72,18 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
     update_record_seq = set()  # ((uniprot_accession, retrieved_seq), )
 
     for uniprot_acc in tqdm(uniprot_dict, desc="Separating new and existing records"):
+        # check the genbank accession is in the local cazyme database
+        retrieved_gbk_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
+        try:
+            gbk_dict[retrieved_gbk_acc]
+        except KeyError:
+            logger.error(
+                f"Mapped the GenBank accession '{retrieved_gbk_acc}' to the UniProt accession\n"
+                f"'{uniprot_acc}' but the GenBank accession is not in the local CAZyme database\n"
+                f"therefore, not adding protein data for GBK:{retrieved_gbk_acc}/UniProt:{uniprot_acc}"
+                "to the local CAZyme database."
+            )
+            continue
         # check if the UniProt accession is already in the local CAZyme db
         try:
             uniprot_table_dict[uniprot_acc]
