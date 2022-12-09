@@ -157,7 +157,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # get genbank accessions by mapping uniprot accession to ncbi
     # if can't get genbank accession and did not retrieve a gene name from uniprot
     # map the uniprot acc to the gene name and then retrieve the genbank accession from ncbi
-    uniprot_dict = get_mapped_genbank_accessions(uniprot_dict, args)
+    uniprot_dict = get_mapped_genbank_accessions(uniprot_dict, cache_dir, args)
 
     acc_to_remove = set()
     for uniprot_acc in uniprot_dict:
@@ -506,15 +506,18 @@ def cache_uniprot_data(uniprot_dict, cache_dir, time_stamp):
         json.dump(uniprot_dict, fh) 
 
 
-def get_mapped_genbank_accessions(uniprot_dict, args):
+def get_mapped_genbank_accessions(uniprot_dict, cache_dir, args):
     """Map uniprot accessions to GenBank protein version accessions.
     
     :param uniprot_dict: {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
+    :param cache_dir: path to cache directory
+    :param args: CLI parser
 
     Return uniprot_dict with GenBank accessions
     """
     logger = logging.getLogger(__name__)
     mapping_batch_size = 25
+    cache_path = cache_dir / "failed_mapped_uniprot_ids"
 
     bioservices_queries = get_chunks_list(
         list(uniprot_dict.keys()),
@@ -607,17 +610,19 @@ def get_mapped_genbank_accessions(uniprot_dict, args):
                     pass
 
     if len(failed_ids) != 0:
-        for acc in failed_ids:
-            if acc in list(uniprot_dict.keys()):
-                if uniprot_dict[acc]['gene_name'] == 'nan':
-                    logger.error(
-                        f"Could not map the UniProt accession '{acc}' to a NCBI GenBank protein\n"
-                        "accession or gene name, so can't map the UniProt accession to a GenBank\n"
-                        "accession in the local CAZyme database.\n"
-                        f"Not adding protein data for UniProt accession '{acc}' to the local\n"
-                        "CAZyme database"
-                    )
-                    del uniprot_dict[acc]
+        with open(cache_path, "w") as fh:
+            for acc in failed_ids:
+                if acc in list(uniprot_dict.keys()):
+                    if uniprot_dict[acc]['gene_name'] == 'nan':
+                        logger.error(
+                            f"Could not map the UniProt accession '{acc}' to a NCBI GenBank protein\n"
+                            "accession or gene name, so can't map the UniProt accession to a GenBank\n"
+                            "accession in the local CAZyme database.\n"
+                            f"Not adding protein data for UniProt accession '{acc}' to the local\n"
+                            "CAZyme database"
+                        )
+                        del uniprot_dict[acc]
+                        fh.write(f"Could not map UniProt accession '{acc}' to a GenBank accession or gene name\n")
 
     uniprot_dict = get_linked_ncbi_accessions(uniprot_dict, args)
     
