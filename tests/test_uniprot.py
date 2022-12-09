@@ -139,8 +139,20 @@ def test_main(
         return {1: 1, 2:2, 3:3}
     
     def mock_get_uniprot_data(*args, **kwards):
-        return {1: {'ec': {1,2,3}, 'pdb': {1,2,3}}, 2: {'ec': {1,2,3}, 'pdb': {1,2,3}}, 3: {'ec': {1,2,3}, 'pdb': {1,2,3}}}, {1, 2, 3}
+        return (
+            {
+                1: {'genbank_accession': 1, 'gene_name': 1, 'ec': {1,2,3}, 'pdb': {1,2,3}},
+                2: {'gene_name': 'nan', 'ec': {1,2,3}, 'pdb': {1,2,3}}, 3: {'ec': {1,2,3}, 'pdb': {1,2,3}}
+            },
+            {1, 2, 3}
+        )
 
+    def mock_uniprot_data(*args, **kwards):
+        return {
+                1: {'genbank_accession': 1, 'gene_name': 1, 'ec': {1,2,3}, 'pdb': {1,2,3}},
+                2: {'gene_name': 'nan', 'ec': {1,2,3}, 'pdb': {1,2,3}}, 3: {'ec': {1,2,3}, 'pdb': {1,2,3}}
+            }
+    
     monkeypatch.setattr(uniprot_parser, "build_parser", mock_building_parser)
     monkeypatch.setattr(ArgumentParser, "parse_args", mock_parser)
     monkeypatch.setattr(saint_logger, "config_logger", mock_return_logger)
@@ -152,7 +164,7 @@ def test_main(
     monkeypatch.setattr(get_uniprot_data, "get_uniprot_accessions", mock_get_genbank_accessions)
     monkeypatch.setattr(get_uniprot_data, "get_uniprot_data", mock_get_uniprot_data)
     monkeypatch.setattr(get_uniprot_data, "get_gene_names", mock_get_uniprot_data)
-    monkeypatch.setattr(get_uniprot_data, "get_mapped_genbank_accessions", mock_get_uniprot_data)
+    monkeypatch.setattr(get_uniprot_data, "get_mapped_genbank_accessions", mock_uniprot_data)
     monkeypatch.setattr(get_uniprot_data, "get_linked_ncbi_accessions", mock_get_uniprot_data)
     monkeypatch.setattr(get_uniprot_data, "add_uniprot_accessions", mock_return_none)
     monkeypatch.setattr(get_uniprot_data, "add_ec_numbers", mock_return_none)
