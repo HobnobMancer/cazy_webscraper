@@ -542,9 +542,12 @@ def get_mapped_genbank_accessions(uniprot_dict, args):
         except KeyError:
             pass
 
-        for acc in mapping_dict['failedIds']:
-            if acc in (list(uniprot_dict.keys())):
-                failed_ids.add(acc)
+        try:
+            for acc in mapping_dict['failedIds']:
+                if acc in (list(uniprot_dict.keys())):
+                    failed_ids.add(acc)
+        except KeyError:
+            pass
 
     if len(failed_ids) != 0:
         logger.warning(f"Could not map {len(failed_ids)} UniProt accessions to GenBank accessions")
