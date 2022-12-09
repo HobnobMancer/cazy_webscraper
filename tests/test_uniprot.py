@@ -152,6 +152,7 @@ def test_main(
     monkeypatch.setattr(get_uniprot_data, "get_uniprot_accessions", mock_get_genbank_accessions)
     monkeypatch.setattr(get_uniprot_data, "get_uniprot_data", mock_get_uniprot_data)
     monkeypatch.setattr(get_uniprot_data, "get_gene_names", mock_get_uniprot_data)
+    monkeypatch.setattr(get_uniprot_data, "get_mapped_genbank_accessions", mock_get_uniprot_data)
     monkeypatch.setattr(get_uniprot_data, "get_linked_ncbi_accessions", mock_get_uniprot_data)
     monkeypatch.setattr(get_uniprot_data, "add_uniprot_accessions", mock_return_none)
     monkeypatch.setattr(get_uniprot_data, "add_ec_numbers", mock_return_none)
