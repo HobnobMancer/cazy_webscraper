@@ -154,13 +154,22 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if len(list(downloaded_uniprot_data.keys())) != 0:
         cache_uniprot_data(uniprot_dict, cache_dir, time_stamp)
 
-    uniprot_dict = get_gene_names(uniprot_dict, args)
-    # Retrieve the NCBI protein version accession for each gene name retrieved from UniProt
-    # This a more robust method for linking the correct UniProt record to the corresponding 
-    # NCBI protein record than presuming only one record is returned per NCBI protein accession
-    # queried against NCBI
-    uniprot_dict = get_linked_ncbi_accessions(uniprot_dict, args)
-    print(uniprot_dict)
+    # get genbank accessions by mapping uniprot accession to ncbi
+    # if can't get genbank accession and did not retrieve a gene name from uniprot
+    # map the uniprot acc to the gene name and then retrieve the genbank accession from ncbi
+    uniprot_dict = get_mapped_genbank_accessions(uniprot_dict, args)
+
+    for uniprot_acc in uniprot_dict:
+        try:
+            uniprot_dict[uniprot_acc]['genbank_accession']
+        except KeyError:
+            logger.error(
+                f"Could not map the UniProt accession '{uniprot_acc}' to a GenBank accession\n"
+                "directly via the UniProt mapping service or via its gene name.\n"
+                f"Not adding protein data for the UniProt accession '{uniprot_acc}' to the\n"
+                "local CAZyme database."
+            )
+            del uniprot_dict[uniprot_acc]
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
     logger.warning("Adding data to the local CAZyme database")
@@ -490,6 +499,122 @@ def cache_uniprot_data(uniprot_dict, cache_dir, time_stamp):
     uniprot_acc_cache = cache_dir / f"uniprot_data_{time_stamp}.json"
     with open(uniprot_acc_cache, "w") as fh:
         json.dump(uniprot_dict, fh) 
+
+
+def get_mapped_genbank_accessions(uniprot_dict, args):
+    """Map uniprot accessions to GenBank protein version accessions.
+    
+    :param uniprot_dict: {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
+
+    Return uniprot_dict with GenBank accessions
+    """
+    logger = logging.getLogger(__name__)
+    mapping_batch_size = 25
+
+    bioservices_queries = get_chunks_list(
+        list(uniprot_dict.keys()),
+        mapping_batch_size,
+    )
+
+    failed_ids = set()
+
+    for batch in tqdm(bioservices_queries, desc="Mapping UniProt acc to GenBank acc"):
+        mapping_dict = UniProt().mapping(
+            fr="UniProtKB_AC-ID",
+            to="EMBL-GenBank-DDBJ_CDS",
+            query=batch,
+        )
+        try:
+            for mapped_pair in mapping_dict['results']:
+                uniprot_acc = mapped_pair['from']
+                gbk_acc = mapped_pair['to']
+
+                try:
+                    uniprot_dict[uniprot_acc]['genbank_accession'] = gbk_acc
+                except KeyError:
+                    logger.error(
+                        f"Retrieved UniProt accessions {uniprot_acc} from UniProt but accession was\n"
+                        "not retrieved when quering by GenBank accession"
+                    )
+                    pass
+        except KeyError:
+            pass
+
+        for acc in mapping_dict['failedIds']:
+            if acc in (list(uniprot_dict.keys())):
+                failed_ids.add(acc)
+
+    if len(failed_ids) != 0:
+        logger.warning(f"Could not map {len(failed_ids)} UniProt accessions to GenBank accessions")
+
+        failed_ids_to_parse = set()
+
+        for failed_id in failed_ids:
+            if uniprot_dict[failed_id]['gene_name'] == 'nan':
+                failed_ids_to_parse.add(failed_id)
+
+        if len(failed_ids_to_parse) != 0:
+            failed_ids = set()
+
+            logger.warning(
+                f"Could not map {len(failed_ids_to_parse)} UniProt accessions to GenBank accessions\n"
+                "and could did not retrieve a gene name from UniProt.\n"
+                "Will try mapping the UniProt acc to the gene name"
+            )
+
+            # retry getting gene names if did not have gene names before
+            bioservices_queries = get_chunks_list(
+                list(failed_ids_to_parse),
+                mapping_batch_size,
+            )
+
+            for batch in tqdm(bioservices_queries, desc="Getting gene names"):
+                mapping_dict = UniProt().mapping(
+                    fr="UniProtKB_AC-ID",
+                    to="EMBL-GenBank-DDBJ",
+                    query=batch,
+                )
+
+                try:
+                    for mapped_pair in mapping_dict['results']:
+                        uniprot_acc = mapped_pair['from']
+                        gene_name = mapped_pair['to']
+
+                        try:
+                            uniprot_dict[uniprot_acc]['gene_name'] = gene_name
+                        except KeyError:
+                            logger.error(
+                                f"Retrieved UniProt accessions {uniprot_acc} from UniProt but accession was\n"
+                                "not retrieved when quering by GenBank accession"
+                            )
+                            pass
+                except KeyError:
+                    pass
+
+                try:
+                    for acc in mapping_dict['failedIds']:
+                        if acc in list(uniprot_dict.keys()):
+                            failed_ids.add(acc)
+                except KeyError:
+                    pass
+
+    if len(failed_ids) != 0:
+        for acc in failed_ids:
+            if acc in list(uniprot_dict.keys()):
+                if uniprot_dict[acc]['gene_name'] == 'nan':
+                    logger.error(
+                        f"Could not map the UniProt accession '{acc}' to a NCBI GenBank protein\n"
+                        "accession or gene name, so can't map the UniProt accession to a GenBank\n"
+                        "accession in the local CAZyme database.\n"
+                        f"Not adding protein data for UniProt accession '{acc}' to the local\n"
+                        "CAZyme database"
+                    )
+                    del uniprot_dict[acc]
+
+    uniprot_dict = get_linked_ncbi_accessions(uniprot_dict, args)
+    
+    return uniprot_dict
+    
 
 
 def get_gene_names(uniprot_dict, args):
