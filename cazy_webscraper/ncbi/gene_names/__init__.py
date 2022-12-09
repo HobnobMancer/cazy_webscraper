@@ -58,9 +58,16 @@ def get_linked_ncbi_accessions(uniprot_dict, args):
     Entrez.email = args.email
     logger = logging.getLogger(__name__)
 
-    gene_names = {}
+    gene_names = {}  # to process
     for uniprot_acc in uniprot_dict:
-        gene_names[uniprot_dict[uniprot_acc]['gene_name']] = uniprot_acc
+        try:
+            uniprot_dict[uniprot_acc]['genbank_accession']  # already have the accession
+        except KeyError:
+            if uniprot_dict[uniprot_acc]['gene_name'] != 'nan':
+                gene_names[uniprot_dict[uniprot_acc]['gene_name']] = uniprot_acc
+
+    if len(list(gene_names.keys())) == 0:  # do not need to query NCBI to get the genbank accessions
+        return uniprot_dict
 
     ncbi_queries = get_chunks_list(
         list(gene_names.keys()),
@@ -74,6 +81,7 @@ def get_linked_ncbi_accessions(uniprot_dict, args):
         batch = list(set(batch).difference(set(invalid_gene_names)))
         uniprot_dict, invalid_gene_names, failed_batches = process_batch(
             batch,
+            gene_names,
             uniprot_dict,
             invalid_gene_names,
             failed_batches,
@@ -83,11 +91,12 @@ def get_linked_ncbi_accessions(uniprot_dict, args):
         failed_names = {}
 
         # remove invalid IDs
-        for batch in failed_batches:
+        for batch in tqdm(failed_batches, desc="Retrying failed batches"):
             batch = list(set(batch).difference(set(invalid_gene_names)))
 
             uniprot_dict, invalid_gene_names, processed_batch = process_batch(
                 batch,
+                gene_names,
                 uniprot_dict,
                 invalid_gene_names,
                 [],  # pass an empty list
@@ -114,9 +123,10 @@ def get_linked_ncbi_accessions(uniprot_dict, args):
                     continue
 
             names_to_process = list(failed_names.keys())
-            for name in names_to_process:
+            for name in tqdm(names_to_process, desc="Retrying failed gene names"):
                 uniprot_dict, invalid_gene_names, processed_batch = process_batch(
                     [name],  # gene name must be in a list
+                    gene_names,
                     uniprot_dict,
                     invalid_gene_names,
                     [],
@@ -138,7 +148,7 @@ def get_linked_ncbi_accessions(uniprot_dict, args):
     return uniprot_dict
 
 
-def process_batch(batch, uniprot_dict, invalid_gene_names, failed_batches, uniprot_acc=None):
+def process_batch(batch, gene_names, uniprot_dict, invalid_gene_names, failed_batches, uniprot_acc=None):
     """Coordinate processing batch query results.
 
     :param batch: list of gene_names
@@ -159,10 +169,10 @@ def process_batch(batch, uniprot_dict, invalid_gene_names, failed_batches, unipr
         failed_batches.append(batch)
         return uniprot_dict, invalid_gene_names, failed_batches
 
-    epost_webenv = epost_result["WebEnv"]
-    epost_query_key = epost_result["QueryKey"]
+    epost_webenv = record["WebEnv"]
+    epost_query_key = record["QueryKey"]
 
-    record, success = query_ncbi(batch, query_key=epost_query_key, WebEnv=epost_webenv)
+    record, success = query_ncbi(batch, query_key=epost_query_key, webEnv=epost_webenv)
 
     if success == 'invalid ID':
         invalid_gene_names.add(batch[0])
@@ -196,7 +206,7 @@ def process_batch(batch, uniprot_dict, invalid_gene_names, failed_batches, unipr
     return uniprot_dict, invalid_gene_names, failed_batches
 
 
-def query_ncbi(batch, gene_names=None, query_key=None, WebEnv=None, uniprot_acc=None):
+def query_ncbi(batch, gene_names=None, query_key=None, webEnv=None, uniprot_acc=None):
     """Post IDs or retrieved results from positing IDs to NCBI.
 
     :param batch: list of gene names
@@ -215,7 +225,7 @@ def query_ncbi(batch, gene_names=None, query_key=None, WebEnv=None, uniprot_acc=
     try:
         if gene_names is not None:  # post IDs
             process = "ePost"
-            epost_result = Entrez.read(
+            record = Entrez.read(
                 entrez_retry(
                     10,
                     Entrez.epost,
@@ -231,8 +241,8 @@ def query_ncbi(batch, gene_names=None, query_key=None, WebEnv=None, uniprot_acc=
                 10,
                 Entrez.efetch,
                 db="Protein",
-                query_key=epost_query_key,
-                WebEnv=epost_webenv,
+                query_key=query_key,
+                WebEnv=webEnv,
                 retmode='xml',
             ) as record_handle:
                 record = Entrez.read(record_handle, validate=False)
@@ -241,7 +251,7 @@ def query_ncbi(batch, gene_names=None, query_key=None, WebEnv=None, uniprot_acc=
         if repr(err).startswith("RuntimeError('Some IDs have invalid value and were omitted.") or repr(err).startswith("RuntimeError('Empty ID list; Nothing to store')"):
             if len(batch) == 1:
                 logger.warning(
-                    f"Gene name {batch[0]} retrieved for UniProt entry {uniprot_acc} "
+                    f"Gene name {batch[0]} retrieved for UniProt entry '{uniprot_acc}' "
                     "is no longer listed in CAZy\n"
                     f"Not adding protein data for UniProt accessions {uniprot_acc}"
                 )
@@ -250,7 +260,7 @@ def query_ncbi(batch, gene_names=None, query_key=None, WebEnv=None, uniprot_acc=
             else:
                 logger.warning(
                     "Batch contains a gene name not in NCBI\n"
-                    "Will identify invalid gene names laters"
+                    "Will identify invalid gene names later"
                 )
                 success = "retry"
         else:
