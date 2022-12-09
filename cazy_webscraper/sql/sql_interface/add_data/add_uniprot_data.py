@@ -238,9 +238,9 @@ def add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args):
             gbk_id = gbk_dict[genbank_acc]
         except KeyError:
             logger.error(
-                f"Mapped the GenBank accession '{retrieved_gbk_acc}' to the UniProt accession\n"
+                f"Mapped the GenBank accession '{genbank_acc}' to the UniProt accession\n"
                 f"'{uniprot_acc}' but the GenBank accession is not in the local CAZyme database\n"
-                f"therefore, not adding protein data for GBK:{retrieved_gbk_acc}/UniProt:{uniprot_acc}"
+                f"therefore, not adding protein data for GBK:{genbank_acc}/UniProt:{uniprot_acc}"
                 "to the local CAZyme database."
             )
             continue
@@ -329,9 +329,9 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
             gbk_db_id = gbk_dict[genbank_acc]
         except KeyError:
             logger.error(
-                f"Mapped the GenBank accession '{retrieved_gbk_acc}' to the UniProt accession\n"
+                f"Mapped the GenBank accession '{genbank_acc}' to the UniProt accession\n"
                 f"'{uniprot_acc}' but the GenBank accession is not in the local CAZyme database\n"
-                f"therefore, not adding protein data for GBK:{retrieved_gbk_acc}/UniProt:{uniprot_acc}"
+                f"therefore, not adding protein data for GBK:{genbank_acc}/UniProt:{uniprot_acc}"
                 "to the local CAZyme database."
             )
             continue
