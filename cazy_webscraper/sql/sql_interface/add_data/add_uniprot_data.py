@@ -60,6 +60,8 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+
     # load the current Uniprot records in the local CAZyme db
     # {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
     uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
@@ -147,6 +149,7 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
                 uniprot_insert_values.add( (gbk_id, uniprot_acc, uniprot_name) )
     
     if len(uniprot_insert_values) != 0:
+        logger.warning(f"Inserting {len(uniprot_insert_values)} into the local CAZyme db")
         if args.sequence or args.seq_update:
             columns = ['genbank_id', 'uniprot_accession', 'uniprot_name', 'sequence', 'seq_update_date']
         else:
@@ -155,6 +158,7 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
         insert_data(connection, "Uniprots", columns, list(uniprot_insert_values))
 
     if len(update_record_gbk_id) != 0:
+        logger.warning(f"Updating {len(update_record_gbk_id)} Gbk-UniProt relationships in the local CAZyme db")
         with connection.begin():
             for record in tqdm(update_record_gbk_id, desc="Updating UniProt-Gbk relationships"):
                 connection.execute(
@@ -166,6 +170,7 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
                 )
         
     if len(update_record_name) != 0:
+        logger.warning(f"Updating {len(update_record_name)} UniProt protein names in the local CAZyme db")
         with connection.begin():
             for record in tqdm(update_record_name, desc="Updating UniProt protein names"):
                 connection.execute(
@@ -177,6 +182,7 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
                 )
 
     if len(update_record_seq) != 0:
+        logger.warning(f"Updating {len(update_record_seq)} UniProt protein sequences in the local CAZyme db")
         with connection.begin():
             for record in tqdm(update_record_seq, desc="Updating UniProt protein seqs"):
                 connection.execute(
