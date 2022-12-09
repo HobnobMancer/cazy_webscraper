@@ -198,10 +198,10 @@ def process_batch(batch, gene_names, uniprot_dict, invalid_gene_names, failed_ba
                         return uniprot_dict, invalid_gene_names, failed_batches
                     
                 for k in i['GBFeature_intervals']:
-                    genebank_accession = k['GBInterval_accession'].split(".")[0]
+                    genbank_accession = k['GBInterval_accession'].split(".")[0]
                     
         if gene_name is not None:
-            uniprot_dict[uniprot_acc]['genbank_accession'] = genebank_accession
+            uniprot_dict[uniprot_acc]['genbank_accession'] = genbank_accession
 
     return uniprot_dict, invalid_gene_names, failed_batches
 
