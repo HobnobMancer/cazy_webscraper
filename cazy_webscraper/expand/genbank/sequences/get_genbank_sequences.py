@@ -400,7 +400,10 @@ def get_seqs_from_ncbi(
             seq = seq_dict[record.id]
             if seq != record.seq:
                 logger.warning(
-                    f""
+                    f"Sequence downloaded from NCBI for protein '{record.id}' does not match the seq\n"
+                    "retrieved from the cache:\n"
+                    f"Downloaded seq:\n{record.seq}\nSeq from cache:\n{seq}\n"
+                    "Overwriting seq from cache and using downloaded seq"
                 )
             seq_dict[record.id] = record.seq
         except KeyError:
