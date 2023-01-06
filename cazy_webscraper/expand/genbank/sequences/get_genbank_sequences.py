@@ -151,7 +151,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     else:  # retrieve data from NCBI for seqs in the local db
         seq_dict = get_seqs_from_ncbi(
-            accs_seqs_to_retrieve
+            accs_seqs_to_retrieve,
             seq_dict,
             start_time,
             cache_dir,
@@ -318,13 +318,13 @@ def get_records_to_retrieve(
                 del gbk_dict[gbk_acc]
 
     gbk_dict = get_selected_gbks.get_ids(all_accessions, connection)
-    accs_to_retrieve = [for acc in all_accessions if acc not in list(seq_dict.keys())]
+    accs_to_retrieve = [acc for acc in all_accessions if acc not in list(seq_dict.keys())]
 
     return gbk_dict, accs_to_retrieve
 
 
 def get_seqs_from_ncbi(
-    accs_seqs_to_retrieve
+    accs_seqs_to_retrieve,
     seq_dict,
     start_time,
     cache_dir,
@@ -542,7 +542,7 @@ def parse_failed_connections(
     failed_connection_cache = cache_dir / "failed_entrez_connection_accessions"
     failed_batches = [failed_connections_batches[batch_name]['batch'] for batch_name in failed_connections_batches]
 
-    while (len(list(failed_connections_batches.keys())) != 0:
+    while len(list(failed_connections_batches.keys())) != 0:
         # remove processed batches from failed_batches
         for batch in failed_batches:
             try:
