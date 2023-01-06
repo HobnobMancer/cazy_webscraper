@@ -53,11 +53,7 @@ with Path("README.md").open("r") as long_description_handle:
 
 setuptools.setup(
     name="cazy_webscraper",
-<<<<<<< HEAD
     version="2.2.5",
-=======
-    version="2.2.3",
->>>>>>> update version number
     # Metadata
     author="Emma E. M. Hobbs",
     author_email="eemh1@st-andrews.ac.uk",
@@ -92,7 +88,6 @@ setuptools.setup(
     },
     install_requires=[
         "biopython>=1.76",
-        "bioservices>=1.10.4",
         "mechanicalsoup",
         "pandas>=1.0.3",
         "pyyaml",
