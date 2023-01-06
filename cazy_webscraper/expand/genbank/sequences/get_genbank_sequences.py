@@ -60,6 +60,7 @@ from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
+from cazy_webscraper.ncbi.sequences import post_accessions_to_entrez, fetch_ncbi_seqs
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_data import add_genbank_data
@@ -392,9 +393,6 @@ def get_seqs_from_ncbi(
             invalid_ids_cache,
             args,
         )
-
-
-        
 
     if len(accs_still_to_fetch) > 0:
         logger.error(
