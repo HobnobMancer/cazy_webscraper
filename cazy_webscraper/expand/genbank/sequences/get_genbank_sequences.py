@@ -394,16 +394,6 @@ def get_seqs_from_ncbi(
             args,
         )
 
-    if len(accs_still_to_fetch) > 0:
-        logger.error(
-            f"Could not fetch seqs for {len(accs_still_to_fetch)} NCBI protein accessions.\n"
-            "Caching these protein accessions"
-        )
-        failed_ids_cache = cache_dir / "failed_retrieve_ids"
-        with open(failed_ids_cache, "a") as fh:
-            for acc in accs_still_to_fetch:
-                fh.write(f"{acc}\n")
-
     # add seq records to seq dict
     for record in seq_records:
         try:
@@ -416,95 +406,26 @@ def get_seqs_from_ncbi(
         except KeyError:
             seq_dict[record.id] = record.seq
 
+    accs_still_to_fetch = set()
+    for acc in accs_seqs_to_retrieve:
+        try:
+            seq_dict[acc]
+        except KeyError:
+            accs_still_to_fetch.add(acc)
+
+    if len(accs_still_to_fetch) > 0:
+        logger.error(
+            f"Could not fetch seqs for {len(accs_still_to_fetch)} NCBI protein accessions.\n"
+            "Caching these protein accessions"
+        )
+        failed_ids_cache = cache_dir / "failed_retrieve_ids"
+        with open(failed_ids_cache, "a") as fh:
+            for acc in accs_still_to_fetch:
+                fh.write(f"{acc}\n")
+
     logger.warning(f"Retrieved {len(seq_records)} from NCBI")
     
     return seq_dict
-
-    # list of downloaded SeqRecords and list of gbk acc for which no seq was retrieved from NCBI
-    downloaded_seqs, failed_queries = get_sequences(all_queries, cache_dir, args)
-
-    # retry failed accs
-    no_seq_acc = []
-    if len(failed_queries) != 0:
-        logger.warning(
-            "Parsing accessions which could not retrieve a seq for the first time\n"
-            f"Handling {len(failed_queries)} failed batches"
-        )
-        # break up and query individually
-        retrying_acc = {}  # {acc: # of tries}
-        for batch in failed_queries:
-            for acc in batch:
-                retrying_acc[acc] = 0
-
-        finished_retry = False
-
-        acc_list = list(retrying_acc.keys())
-
-        no_seq_acc = set()  # set of accessions for which no seq could be retrieved
-
-        while finished_retry is False:
-            acc_list = list(retrying_acc.keys())
-
-            logger.warning(
-                "Handling failed protein accessions\n"
-                f"{len(acc_list)} protein accessions remaining"
-            )
-
-            for accession in tqdm(acc_list, desc="Handling failed accessions"):
-                new_seq, failed_seq = get_sequences([[accession]], cache_dir, args, disable_prg_bar=True)
-
-                if len(new_seq) == 0:
-                    logger.warning(
-                        f"Failed to retrieve sequence for {accession} on try no. {retrying_acc[accession]}"
-                    )
-                    retrying_acc[accession] += 1
-
-                    if retrying_acc[accession] >= args.retries:
-                        logger.warning(
-                            f"Could not retrieve sequence for {accession}\n"
-                            "Ran out of attempts"
-                        )
-                        del retrying_acc[accession]
-                        no_seq_acc.add(accession)
-
-            acc_list = list(retrying_acc.keys())
-
-            if len(acc_list) > 0:
-                finished_retry = True
-
-    # cache accs of proteins for which not seq could be retrieved from NCBI
-    if len(no_seq_acc) != 0:
-        no_seq_cache = cache_dir / f"no_seq_retrieved_{start_time}.txt"
-
-        logger.warning(
-            f"No protein sequence retrieved for {len(no_seq_acc)} proteins\n"
-            f"The GenBank accessions for these proteins have been written to: {no_seq_cache}"
-        )
-
-        try:
-            with open(no_seq_cache, "a") as fh:
-                for acc in no_seq_acc:
-                    fh.write(f"{acc}\n")
-        except FileNotFoundError:
-            logger.error(
-                "Could not cache acc of proteins for which not seqs were retrieved from NCBI to:\n"
-                f"{no_seq_cache}"
-            )
-
-    # only cache the sequence. Seq obj is not JSON serializable
-    cache_dict = {}
-    for key in seq_dict:
-        cache_dict[key] = str(seq_dict[key])
-
-    # cache the retrieved sequences
-    cache_path = cache_dir / f"genbank_seqs_{start_time}.json"
-    with open(cache_path, "w") as fh:
-        json.dump(cache_dict, fh)
-
-    for record in downloaded_seqs:
-        seq_dict[record.id] = record.seq
-
-    return seq_dict, gbk_dict
 
 
 def get_seqs(batches, cache_path, invalid_ids_cache, args, disable_prg_bar=False):
@@ -676,9 +597,77 @@ def parse_failed_connections(
                             fh.write(f"{protein_acc}\n")
                     del failed_connections_batches[str(batch)]
 
-    return seq_records, batches_with_invalid_ids
-                    
+                else:
+                    failed_connections_batches[str(failed_connections_batches)]['#_of_attempts'] += 1
 
+    return seq_records, batches_with_invalid_ids
+
+
+def parse_invalid_id_batches(
+    seq_records,
+    batches_with_invalid_ids,
+    cache_path,
+    invalid_ids_cache,
+    args,
+):
+    """Separate accessions in batches containing invalid IDs. Retrieve seqs for valid IDs.
+
+    :param seq_records: list of Bio.SeqRecords
+    :param batches_with_invalid_ids: list of batches containing invalid IDs
+    :param cache_path: path to cache downloaded seqs
+    :param invalid_ids_cache: path to cache invalid IDs
+    :param args: CLI args parser
+
+    Return updated list of seq_records
+    """
+    logger = logging.getLogger(__name__)
+
+    # separaet accessions into individual batches to identify invalid IDs
+    batches = []
+    for batch in batches_with_invalid_ids:
+        for acc in batch:
+            batches.append([acc])
+
+    logger.warning(
+        "Separted accessions in batches containing invalid IDs.\n"
+        f"Processing {len(batches)} batches"
+    )
+
+    # inital parse
+    (
+        new_seq_records,
+        batches_with_invalid_ids,
+        failed_connections_batches,
+        accs_still_to_fetch,
+    ) = get_seqs(
+        batches,
+        cache_path,
+        invalid_ids_cache,
+        args,
+    )
+
+    seq_records += new_seq_records
+
+    if len(list(failed_connections_batches.keys())) > 0:
+        # Retry failed batches before parsing invalid IDs as the failed connections
+        # may contain invalid IDs
+        (
+            new_seq_records,
+            batches_with_invalid_ids,
+            accs_still_to_fetch,
+        ) = parse_failed_connections(
+            failed_connections_batches,
+            seq_records,
+            accs_still_to_fetch,
+            cache_dir,
+            cache_path,
+            batches_with_invalid_ids.
+            invalid_ids_cache, 
+            args,
+        )
+        seq_records += new_seq_records
+
+    return seq_records
 
 
 if __name__ == "__main__":
