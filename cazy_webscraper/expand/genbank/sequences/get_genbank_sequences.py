@@ -140,6 +140,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         seq_dict,
         start_time,
         connection,
+        cache_dir,
         args,
     )
 
@@ -256,6 +257,7 @@ def get_records_to_retrieve(
     seq_dict,
     start_time,
     connection,
+    cache_dir,
     args,
 ):
     """Get Genbank accessions to retrieved data for from NCBI and genbank accessions and local 
@@ -264,20 +266,21 @@ def get_records_to_retrieve(
     :param seq_dict: dict {id: seq} of seqs retrieved from cache json/fasta files
     :param start_time: str: time program was called
     :param connection: open connection to a SQLite db engine
+    :param cache_dir: Path to cache directory
     :param args: CLI args parser
 
     Return a dict {gbk_acc: gbk db id} and list of genbank accs to retrieve seqs for.
     """
     logger = logging.getLogger(__name__)
 
-    all_accessions = list(seq_dict.keys())
+    all_accessions = list(seq_dict.keys())  # cache + (file or db)
 
     if args.file_only:
         gbk_dict = get_selected_gbks.get_ids(all_accessions, connection)
         accs_to_retrieve = []
-        return gbk_dict, accs_seqs_to_retrieve
+        return gbk_dict, accs_to_retrieve
 
-    accessions = []
+    accessions_of_interest = []  # acc from file or from db that match provided criteria
 
     # retrieve dict of genbank accession and genbank db ids from the local CAZyme db
     if args.genbank_accessions is not None:
@@ -295,12 +298,13 @@ def get_records_to_retrieve(
             )
             closing_message("Get GenBank seqs", start_time, args, early_term=True)
 
-        accessions = [line.strip() for line in lines if line not in list(seq_dict.keys())]
-        all_accessions += list(set(accessions))
+        # don't add accessions that are already in the cache
+        accessions_of_interest = [line.strip() for line in lines if line not in list(seq_dict.keys())]
+        all_accessions += list(set(accessions_of_interest))
 
     else:
         logger.warning("Getting GenBank accessions of proteins matching the provided criteria from the local CAZyme db")
-        selected_gbk_dict = get_selected_gbks.get_genbank_accessions(
+        gbk_dict = get_selected_gbks.get_genbank_accessions(
             class_filters,
             family_filters,
             taxonomy_filter_dict,
@@ -309,18 +313,13 @@ def get_records_to_retrieve(
             connection,
         )
 
-        accessions = list(gbk_dict.keys())
-        all_accessions += accessions
+        # don't get seq for accession retrieved from cache
+        accessions_of_interest = [acc for acc in gbk_dict if acc not in list(seq_dict.keys())]
+        all_accessions += accessions_of_interest
 
-        # don't retrieve data for cached seqs
-        for gbk_acc in gbk_accs:
-            if gbk_acc in list(seq_dict.keys()):
-                del gbk_dict[gbk_acc]
+    gbk_dict = get_selected_gbks.get_ids(set(all_accessions), connection, cache_dir)
 
-    gbk_dict = get_selected_gbks.get_ids(all_accessions, connection)
-    accs_to_retrieve = [acc for acc in all_accessions if acc not in list(seq_dict.keys())]
-
-    return gbk_dict, accs_to_retrieve
+    return gbk_dict, accessions_of_interest
 
 
 def get_seqs_from_ncbi(
