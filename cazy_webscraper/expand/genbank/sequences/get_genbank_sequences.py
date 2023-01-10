@@ -373,7 +373,7 @@ def get_seqs_from_ncbi(
             accs_still_to_fetch,
             cache_dir,
             cache_path,
-            batches_with_invalid_ids.
+            batches_with_invalid_ids,
             invalid_ids_cache, 
             args,
         )
