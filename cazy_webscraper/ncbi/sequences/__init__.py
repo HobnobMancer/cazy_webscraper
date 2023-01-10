@@ -50,11 +50,11 @@ from saintBioutils.misc import get_chunks_list
 from tqdm import tqdm
  
 
-def post_accessions_to_entrez(batch):
+def post_accessions_to_entrez(batch, args):
     """Post NCBI protein accessions to NCBI via Entrez, and capture error message if one returned.
 
     :param batch: list of genbank accessions
-    :param entrez_function: Entrez function (epost or efetch)
+    :param args: CLI args parser
 
     Return Entrez ePost web environment and query key.
     """
@@ -128,7 +128,7 @@ def post_accessions_to_entrez(batch):
 
     except (TypeError, AttributeError) as err:  # if no record is returned from call to Entrez
         logger.warning(
-            f"Error occurenced when batch quering NCBI\n"
+            f"Error occurenced when batch posting IDs to NCBI\n"
             "Error retrieved:\n"
             f"{repr(err)}\n"
             "Will retry batch later"
@@ -156,13 +156,14 @@ def post_accessions_to_entrez(batch):
     return epost_webenv, epost_query_key, success
 
 
-def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve):
+def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve, args):
     """Retrieve protein sequences from NCBI from ePost of protein v.accs.
 
     :param seq_records: list of Bio.SeqRecords
     :param epost_websenv: Entrez ePost webenvironment
     :param epost_query_key: Entrez ePost query key
     :param acc_to_retrieve: set of NCBI protein version accessions to retrieve seqs for
+    :param args: CLI args parser
 
     Return updated list of SeqRecords and string marking success/failure or seq retrieval.
     """
