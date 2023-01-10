@@ -41,6 +41,8 @@
 
 import logging
 
+from http.client import IncompleteRead
+
 from Bio import Entrez
 from saintBioutils.genbank import entrez_retry
 from saintBioutils.misc import get_chunks_list
