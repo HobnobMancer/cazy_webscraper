@@ -44,6 +44,7 @@ import logging
 from http.client import IncompleteRead
 
 from Bio import Entrez
+from Bio.Entrez.Parser import NotXMLError
 from saintBioutils.genbank import entrez_retry
 from saintBioutils.misc import get_chunks_list
 from tqdm import tqdm
