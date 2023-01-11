@@ -546,8 +546,8 @@ def parse_failed_connections(
     logger = logging.getLogger(__name__)
     failed_connection_cache = cache_dir / "failed_entrez_connection_accessions"
     failed_batches = []
-    for batch in failed_connections_batches:
-        failed_batches.append(failed_connections_batches["_".join(batch)]['batch'])
+    for batch_name in failed_connections_batches:
+        failed_batches.append(failed_connections_batches[batch_name]['batch'])
 
     print('******************************************************')
     print(failed_connections_batches)

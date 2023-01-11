@@ -43,7 +43,10 @@ import logging
 
 from http.client import IncompleteRead
 
-from Bio import Entrez
+from Bio import Entrez, SeqIO
+from Bio.Entrez.Parser import NotXMLError
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 from Bio.Entrez.Parser import NotXMLError
 from saintBioutils.genbank import entrez_retry
 from saintBioutils.misc import get_chunks_list
@@ -137,7 +140,7 @@ def post_accessions_to_entrez(batch, args):
 
     except Exception as err:  # if no record is returned from call to Entrez
         logger.warning(
-            f"Error occurenced when batch quering NCBI\n"
+            f"Error occurenced when posting IDs to NCBI\n"
             "Error retrieved:\n"
             f"{repr(err)}\n"
             "Will retry batch later"
@@ -278,7 +281,7 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
 
     except Exception as err:  # if no record is returned from call to Entrez
         logger.warning(
-            f"Error occurenced when batch quering NCBI\n"
+            f"Error occurenced when fetching sequences from NCBI\n"
             "Error retrieved:\n"
             f"{repr(err)}\n"
             "Will retry batch later"
