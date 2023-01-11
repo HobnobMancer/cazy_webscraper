@@ -8,5 +8,5 @@ numpy
 pandas
 requests
 saintBioutils>=0.0.19
-sqlalchemy>=1.4.20
+sqlalchemy==1.4.20
 tqdm
