@@ -188,7 +188,7 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
 
                 # check if multiple items returned in ID
                 try:
-                    retrieved_accession = [_ for _ in record.id.split("|") if _.strip() in gbk_acc_to_retrieve][0]
+                    retrieved_accession = [_ for _ in record.id.split("|") if _.strip() in acc_to_retrieve][0]
                 except IndexError:
                     # try re search for accession in string
                     try:
