@@ -33,22 +33,21 @@ The table contains the following columns and data:
 
 The 'Logs' table allows any one who uses the database to see how the dataset was compiled.
 
------------
-Cache files
------------
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+------------------------------------------
 Cache files when retrieving data from CAZy
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------------
 
 ``cazy_webscraper`` writes out 2 cache files. These are:
 
 * ``cazy_db_<date-time>.zip`` which is the txt file downloaded from CAZy containing all CAZy Data
 * ``<db_name>_<date-time>_connection_failures.log`` which contains a list of proteins for which data was unsuccessfully parsed, and CAZy families for which the family member population could not be retrieved (if the 'validation' option is used).
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+---------------------------------------------
 Cache files when retrieving data from UniProt
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------------------
 
 The dataframes retrieved with each query to UniProt are cached.
 
@@ -56,7 +55,9 @@ In addition two JSON files are created:
 * ``uniprot_accessions_YYYY-MM-DD_HH-MM-SS.json``
 * ``uniprot_data_YYYY-MM-DD_HH-MM-SS.json``
 
-**UniProt accessions:**
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UniProt accessions JSON file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The first file (``uniprot_accessions``) contains the UniProt accessions/IDs for each GenBank accession retrieved 
 from the local CAZyme database that matches the provided criteria. These UniProt IDs are used to query 
@@ -72,7 +73,10 @@ containing the GenBank accession the corresponding ID of its record in the local
 This file can be used to skip the retrieval of UniProt IDs from UniProt (which is the first step performed by ``cw_get_uniprot_data``). To 
 do this use the ``--skip_uniprot_accessions`` flag followed by the path to the corresponding ``uniprot_accessions_YYYY-MM-DD_HH-MM-SS.json`` file.
 
-**UniProt data:**
+
+^^^^^^^^^^^^^^^^^^^^^^
+UniProt data JSON file
+^^^^^^^^^^^^^^^^^^^^^^
 
 The second json file (``uniprot_data``) contains all data retrieved from UniProt for all proteins in the local 
 CAZyme database that match the specified criteria. The data retrieved from UniProt was parsed into a Python dictionary 
@@ -85,19 +89,27 @@ To use the data cached in the ``uniprot_data`` file, using the ``--use_uniprot_c
 path pointing to the corresponding file. Using this flag, skips the retrieval of protein data from UniProt, and only adds 
 data from the cache file into the local CAZyme database.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Cache files when retrieving data from GenBank
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------------------------------------
+Cache files when retrieving protein sequences from GenBank
+----------------------------------------------------------
 
-When retrieving protein sequences from GenBank three cache file are produced:
+When retrieving protein sequences from GenBank, all cache files will be contained in the 
+``genbank_seq_retrieval.tar`` compressed file. The cache files that will be generated are:
 
-* ``genbank_sequence_retrieved_YYYY-MM-DD_HH-MM-SS.txt`` contains the GenBank protein accessions for which a protein sequence **was** successfully retrieved
-* ``genbank_no_sequence_YYYY-MM-DD_HH-MM-SS.txt`` contains the GenBank protein accessions for which a protein sequence was not retrieved, as well as the possible reason
-* ``gennbank_seqs_YYYY-MM-DD_HH-MM-SS.json``, which contains the GenBank accessions of proteins matching the provided criteria and the retrieved protein sequences.
+ three cache file are produced:
+
+* ``cw_genbanks_seqs_<cache_time>.fasta`` contains the protein sequences downloaded from GenBank
+* ``failed_retrieve_ids`` contains the GenBank accessions containing the IDs of **all** proteins for whom no protein sequence was retrieved
+* ``failed_entrez_connection_accessions`` contains the GenBank accessions of proteins whom no protein sequence was retrieved owing to failure to connect to NCBI
+* ``invalid_ids`` contains GenBank protein version accessions that were retrieved from CAZy, but are no longer listed in NCBI
 
 .. NOTE::
-    Future features for ``cazy_webscraper`` will include the ability to use this cached protein sequences, to (i) skip the 
+    ``cazy_webscraper`` includes the option to use cached protein sequences, to (i) skip the 
     retrieval of data from GenBank and (ii) facilitate the reproduction of local CAZyme databases.
+
+-----------------------------------------------------------
+Cache files when retrieving taxonomic information from NCBI
+-----------------------------------------------------------
 
 When retrieving taxonomic classifications the following cache files are generated:
 * ``failed_protein_accs.txt`` - list the version accession of all proteins for which not taxonomy data could be retrieved from NCBI (possibly the protein record has been removed)
@@ -109,12 +121,32 @@ When retrieving taxonomic classifications the following cache files are generate
 When retrieving genomic assembly data a file listing all protein sequence accessions for which no data was retrieved is cached (``failed_protein__accessions.txt``). 
 Additionally, the downloaded genomic assemlby feature tables are retained in their compress format and cached.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------------
 Cache files when retrieving data from PDB
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------------
 
 One cache file is created when using ``cazy_webscraper`` to retrieval protein structure files from PDB: ``pdb_retrieval_YYYY-MM-DD_HH-MM-SS.txt``, which 
 lists the PDB accessions of all files that were successfully downloaded from PDB using ``cazy_webscraper`` and ``BioPython``.
+
+
+---------------------------------------------------------
+Cache files when retrieving genomic information from NCBI
+---------------------------------------------------------
+
+All genomic assembly feature tables are cached in the cache directory. In addition, two other cache files 
+are generated to list proteins and genomes for whom data could not be retrieved from NCBI:
+
+* ``no_assembly_urls.txt`` contains the NCBI Assembly Name of genomic assemlbies for whom a feature table could not be downloaded from the NCBI FTTP server - typically because a feature table is not available
+* ``failed_protein_accessions.txt`` contains the NCBI protein version accessions for whom genomic assembly information
+
+-----------------------------------------------------------
+Cache files when retrieving taxonomic information from GTDB
+-----------------------------------------------------------
+
+The GTDB database dumbs are downloaded and written to the cache directory:
+
+* ``archaea_data-{release_number}.gz``
+* ``bacteria_data-{release_number}.gz``
 
 ---------------
 Cache directory
