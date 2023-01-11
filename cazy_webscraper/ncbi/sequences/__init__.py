@@ -171,7 +171,7 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
     Return updated list of SeqRecords and string marking success/failure or seq retrieval.
     """
     logger = logging.getLogger(__name__)
-    success, successful_accessions = None, []
+    success, successful_accessions = None, set()
 
     try:
         with entrez_retry(
@@ -288,4 +288,4 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
         )
         success = "Failed connection"
 
-    return seq_records, success, successful_accessions
+    return seq_records, success, list(successful_accessions)
