@@ -288,4 +288,4 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
         )
         success = "Failed connection"
 
-    return seq_records, success, success_accessions
+    return seq_records, success, successful_accessions
