@@ -54,7 +54,7 @@ from saintBioutils.utilities.file_io import make_output_directory
 from cazy_webscraper.sql import sql_orm
 
 
-__version__ = "2.2.3"
+__version__ = "2.2.4"
 
 
 VERSION_INFO = f"cazy_webscraper version: {__version__}"
@@ -126,6 +126,9 @@ def closing_message(job, start_time, args, early_term=False):
         logger.info(message)
     else:
         print(message)
+
+    if early_term:
+        sys.exit(1)
 
 
 def display_citation_info():

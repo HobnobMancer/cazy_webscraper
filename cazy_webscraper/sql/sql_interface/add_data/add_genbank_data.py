@@ -48,28 +48,52 @@ from tqdm import tqdm
 from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import get_gbk_table_seq_dict
 
 
-def add_gbk_seqs_to_db(seq_dict, retrieval_date, gbk_dict, connection, args, unit_test=False):
+def add_gbk_seqs_to_db(seq_dict, retrieval_date, gbk_dict, connection, cache_dir, args, unit_test=False):
     """Add sequences retrieved from GenBank to the local CAZyme db
-    
+
     :param seq_dict: dict of retrieved seq {gbk_acc: seq}
     :param retrieval_date: str, date seqs were retrieved in ISO format
     :param gbk_dict: dict {gbk_acc: db_id}
     :param connection: open sqlalchemy connection to a SQLite db
+    :param cache_dir: path to cache directory
     :param args: cmd-line args parser
-    
+
     Return nothing
     """
     logger = logging.getLogger(__name__)
-    
+    cache_path = cache_dir / "seqs_with_no_db_id"
+
     # load the current Genbanks table into a dict
     gbk_table_dict = get_gbk_table_seq_dict(connection)
 
     records = set()  # records to update, contains tuples (gbk_acc, seq, )
 
     for gbk_accession in tqdm(seq_dict, desc="Compiling records for db insertion"):
-        existing_record = gbk_table_dict[gbk_accession]
+        try:
+            existing_record = gbk_table_dict[gbk_accession]
+        except KeyError:
+            logger.error(
+                f"Could not retrieve Genbanks table record for acc {gbk_accession}\n"
+                f"with seq:\n{seq_dict[gbk_accession]}\n"
+                "Not adding sequence to the local CAZyme database"
+            )
+            with open(cache_path, "a") as fh:
+                fh.write(f"{gbk_accession}\n")
+            continue
         seq = seq_dict[gbk_accession]
-        db_id = gbk_dict[gbk_accession]
+        try:
+            db_id = gbk_dict[gbk_accession]
+        except KeyError:
+            logger.error(
+                f"Could not retrieve record with accessions '{gbk_accession}'\n"
+                "from the local CAZyme database.\n"
+                "Not adding this protein to the local CAZyme database."
+                "Logging accessoin in:\n"
+                f"{cache_path}"
+            )
+            with open(cache_path, "a") as fh:
+                fh.write(f"{gbk_accession}\n")
+            continue
 
         if existing_record['sequence'] is None:
             records.add( (db_id, seq) )
@@ -87,7 +111,7 @@ def add_gbk_seqs_to_db(seq_dict, retrieval_date, gbk_dict, connection, args, uni
                         f"WHERE genbank_id = '{record[0]}'"
                     )
                 )
-                #, seq_update_date = {retrieval_date} 
+                # seq_update_date = {retrieval_date} 
                 connection.execute(
                     text(
                         "UPDATE Genbanks "

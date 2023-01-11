@@ -68,14 +68,17 @@ CLASS_ABBREVIATIONS = {
 }
 
 
-def get_ids(genbank_accessions, connection):
+def get_ids(genbank_accessions, connection, cache_dir):
     """Get the local CAZyme database IDs for the list of provided GenBank accessions.
     
     :param genbank_accessions: set of GenBank accessions
     :param connection: open sqlalchemy engine connection
+    :param cache_dir: path to cache directory
     
     Return dict, keyed by GenBank accession and valued by database record ID.
     """
+    cache_path = cache_dir / "seqs_with_no_db_id"
+    logger = logging.getLogger(__name__)
     gbk_dict = {}
 
     for accession in tqdm(genbank_accessions, desc="Getting local db record IDs"):
@@ -84,7 +87,18 @@ def get_ids(genbank_accessions, connection):
                 filter(Genbank.genbank_accession == accession).\
                 first()
         
-        gbk_dict[accession] = gbk_query.genbank_id
+        try:
+            gbk_dict[accession] = gbk_query.genbank_id
+        except AttributeError:
+            logger.error(
+                f"Could not retrieve record with accessions {accession}\n"
+                "from the local CAZyme database.\n"
+                "Not adding this protein to the local CAZyme database."
+                "Logging accessoin in:\n"
+                f"{cache_path}"
+            )
+            with open(cache_path, "a") as fh:
+                fh.write(f"{accession}\n")
 
     return gbk_dict
     

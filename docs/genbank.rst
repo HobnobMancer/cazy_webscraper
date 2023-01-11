@@ -60,6 +60,8 @@ Command line options
 
 ``--force``, ``-f`` - Force writing cachce to exiting cache directory.
 
+``--file_only``, ``-F`` - Only add seqs provided via JSON and/or FASTA file. Do not retrieved data from NCBI.
+
 ``--families`` - List of CAZy (sub)families to retrieve UniProt protein data for.
 
 ``--genbank_accessions`` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
@@ -76,7 +78,9 @@ Command line options
 
 ``--retries``, ``-r`` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
 
-``--seq_dict``, - Path to a JSON file, keyed by GenBank accessions and valued by protein sequence. This file is created as part of the cache, after all protein sequences are retrieved from GenBank. This skips the retrieval of the protein sequences from GenBank.
+``--seq_dict``, - Path to a JSON file, keyed by GenBank accessions and valued by protein sequence. This file is created as part of the cache, after all protein sequences are retrieved from GenBank. This skips the retrieval of the protein sequences from GenBank only for those seqs included in the file.
+
+``--seq_file``, - Path to a JSON file, keyed by GenBank accessions and valued by protein sequence. This file is created as part of the cache, after all protein sequences are retrieved from GenBank. This skips the retrieval of the protein sequences from GenBank only for those seqs included in the file.
 
 ``--seq_update`` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 

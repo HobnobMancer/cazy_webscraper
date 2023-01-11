@@ -255,7 +255,7 @@ def get_db_gbk_accs(
         with open(args.genbank_accessions, "r") as fh:
             lines = fh.read().splitlines()
         
-        accessions = [line.strip() for line in lines]
+        accessions = [line.strip() for line in lines if len(line) != 0]
         accessions = set(accessions)
 
         gbk_dict = get_selected_gbks.get_ids(accessions, connection)
@@ -341,6 +341,8 @@ def get_uniprot_data(gbk_data_to_download, cache_dir, args):
         gbk_data_to_download,
         args.uniprot_batch_size,
     )
+
+    print(bioservices_queries)
 
     for query in tqdm(bioservices_queries, "Batch retrieving protein data from UniProt"):
         uniprot_df = UniProt().get_df(entries=query, limit=args.uniprot_batch_size)

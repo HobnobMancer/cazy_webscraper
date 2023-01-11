@@ -286,3 +286,26 @@ CAZymes of interest.
    Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cw_get_genbank_seqs`` will ignore 
    the ``--classes`` flag and only retrieve protein sequences for the proteins listed in the file provided via 
    the ``--genbank_accessions``.
+
+
+-------------------------------
+Providing sequences from a file
+-------------------------------
+
+While ``cw_get_genbank_seqs`` is retrieving protein sequences from NCBI, the retrieved protein sequences 
+are written to a FASTA file in the cache directory.
+
+To add sequences from a cached FASTA file (e.g. to continue a download that was previously interrupted) and/or 
+add GenBank sequences from a previous download (e.g. by a colleage), use the ``--seq_file`` flag followed by 
+the path to the FASTA containing the protein sequences to be added to the database. The ID for 
+each sequence **must** be the NCBI protein version accession.
+
+``cw_get_genbank_seqs`` also generates a JSON file of the cached sequences. To add sequences from the 
+cached JSON file to the local CAZyme database, use the ``--seq_dict`` flag followed by the path to the 
+JSON file.
+
+By default ``cw_get_genbank_seqs`` will add sequences retrieved from the FASTA and/or JSON file **and** will retrieve 
+protein sequences from NCBI for proteins matching the provided criteria to define proteins of interest. 
+
+To add **only** the sequences from a FASTA and/or JSON file, and **not** download any sequences from NCBI, use 
+the ``--file_only`` flag.
