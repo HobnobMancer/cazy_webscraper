@@ -98,7 +98,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_dir = args.cache_dir
         make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
-        cache_dir = cache_dir / "genbank_data_retrieval"
+        cache_dir = cache_dir / "genbank_seq_retrieval"
         make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     (
@@ -366,7 +366,6 @@ def get_seqs_from_ncbi(
         (
             seq_records,
             batches_with_invalid_ids,
-            accs_still_to_fetch,
         ) = parse_failed_connections(
             failed_connections_batches,
             seq_records,
@@ -374,7 +373,7 @@ def get_seqs_from_ncbi(
             cache_dir,
             cache_path,
             batches_with_invalid_ids,
-            invalid_ids_cache, 
+            invalid_ids_cache,
             args,
         )
 
@@ -385,7 +384,7 @@ def get_seqs_from_ncbi(
         for batch in batches_with_invalid_ids:
             for acc in batch:
                 individual_batches.append([acc])
-        
+
         seq_records, accs_still_to_fetch = parse_invalid_id_batches(
             batches_with_invalid_ids,
             cache_path,
@@ -426,7 +425,7 @@ def get_seqs_from_ncbi(
                 fh.write(f"{acc}\n")
 
     logger.warning(f"Retrieved {len(seq_records)} from NCBI")
-    
+
     return seq_dict
 
 
@@ -549,12 +548,6 @@ def parse_failed_connections(
     for batch_name in failed_connections_batches:
         failed_batches.append(failed_connections_batches[batch_name]['batch'])
 
-    print('******************************************************')
-    print(failed_connections_batches)
-    print('------------------------------------------------------')
-    print(failed_batches)
-    print('******************************************************')
-
     while len(list(failed_connections_batches.keys())) != 0:
         # remove processed batches from failed_batches
         for batch in failed_batches:
@@ -589,7 +582,6 @@ def parse_failed_connections(
                 if (batch not in new_batches_with_invalid_ids) and (batch not in list(new_failed_connections_batches.keys())):
                     # not in invalid IDs or new failed batches, presume batch was processed
                     failed_batches.remove(batch)
-                    del failed_connections_batches["_".join(batch)]
 
             batches_with_invalid_ids += new_batches_with_invalid_ids
             # remove batches with invalid IDs, so don't retry connection
@@ -599,10 +591,8 @@ def parse_failed_connections(
 
             # remove batches that were processed successfully and 
             # increate attempt count for batches whose connections failed
-            for batch in new_failed_connections_batches:
-                failed_connections_batches["_".join(batch)]
-
-                if failed_connections_batches["_".join(batch)]['#_of_attempts'] >= args.retries:
+            for batch_name in new_failed_connections_batches:
+                if failed_connections_batches[batch_name]['#_of_attempts'] >= args.retries:
                     logger.error(
                         "Ran out of connection attempts for the following batch:\n"
                         f"{batch}\n"
@@ -611,10 +601,10 @@ def parse_failed_connections(
                     with open(failed_connection_cache, "a") as fh:
                         for protein_acc in batch:
                             fh.write(f"{protein_acc}\n")
-                    del failed_connections_batches["_".join(batch)]
+                    del failed_connections_batches[batch_name]
 
                 else:
-                    failed_connections_batches["_".join(batch)]['#_of_attempts'] += 1
+                    failed_connections_batches[batch_name]['#_of_attempts'] += 1
 
     return seq_records, batches_with_invalid_ids
 
