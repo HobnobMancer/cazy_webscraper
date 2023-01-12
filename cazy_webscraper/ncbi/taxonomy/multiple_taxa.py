@@ -134,7 +134,7 @@ def replace_multiple_tax(cazy_data, genbank_accessions, replaced_taxa_logger, ar
             # first time replace_multiple_tax was called
             cazy_data, success = replace_multiple_tax_with_invalid_ids(
                 cazy_data,
-                gbk_accessions,
+                genbank_accessions,
                 replaced_taxa_logger,
                 args,
             )
