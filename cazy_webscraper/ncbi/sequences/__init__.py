@@ -40,6 +40,7 @@
 
 
 import logging
+import re
 
 from http.client import IncompleteRead
 
