@@ -198,77 +198,77 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
                 seq_records.append(record)
                 successful_accessions.add(retrieved_accession)
 
-                except RuntimeError as err:
-                    if repr(err).startswith("RuntimeError('Some IDs have invalid value and were omitted.") or repr(err).startswith("RuntimeError('Empty ID list; Nothing to store')"):
-                        
-                        if len(batch) == 1:
-                            logger.warning(
-                                f"Accession '{batch[0]}' not listed in NCBI. Querying NCBI returns the error:\n"
-                                f"{repr(err)}\n"
-                                f"Not retrieving seq for '{batch[0]}'"
-                            )
-                            success = "Invalid ID"
-                        
-                        else:
-                            logger.warning(
-                                "Batch contains an accession no longer listed in NCBI\n"
-                                f"Querying NCBI returns the error:\n{err}\n"
-                                "Will identify invalid ID(s) later"
-                            )
-                            success = "Contains invalid ID"
+    except RuntimeError as err:
+        if repr(err).startswith("RuntimeError('Some IDs have invalid value and were omitted.") or repr(err).startswith("RuntimeError('Empty ID list; Nothing to store')"):
+            
+            if len(batch) == 1:
+                logger.warning(
+                    f"Accession '{batch[0]}' not listed in NCBI. Querying NCBI returns the error:\n"
+                    f"{repr(err)}\n"
+                    f"Not retrieving seq for '{batch[0]}'"
+                )
+                success = "Invalid ID"
+            
+            else:
+                logger.warning(
+                    "Batch contains an accession no longer listed in NCBI\n"
+                    f"Querying NCBI returns the error:\n{err}\n"
+                    "Will identify invalid ID(s) later"
+                )
+                success = "Contains invalid ID"
 
-                    else:  # unrecognised Runtime error
-                        if len(batch) == 1:
-                            logger.warning(
-                                f"Runtime error occured when fetching record from NCBI for accession '{batch[0]}'\n"
-                                f"Error returned:\n{err}\n"
-                                "Interrupting error as recognition of an invalid ID. Therefore,\n"
-                                f"not adding seq for '{batch[0]} to the local CAZyme db'"
-                            )
-                            success = "Invalid ID"
+        else:  # unrecognised Runtime error
+            if len(batch) == 1:
+                logger.warning(
+                    f"Runtime error occured when fetching record from NCBI for accession '{batch[0]}'\n"
+                    f"Error returned:\n{err}\n"
+                    "Interrupting error as recognition of an invalid ID. Therefore,\n"
+                    f"not adding seq for '{batch[0]} to the local CAZyme db'"
+                )
+                success = "Invalid ID"
 
-                        else:
-                            logger.warning(
-                                f"Runtime error occured when fetching records from NCBI\n"
-                                f"Error returned:\n{err}\n"
-                                "Interrupting error as batch containing invalid ID.\n"
-                                "Will identify invalid ID(s) later"
-                            )
-                            success = "Contains invalid ID"
+            else:
+                logger.warning(
+                    f"Runtime error occured when fetching records from NCBI\n"
+                    f"Error returned:\n{err}\n"
+                    "Interrupting error as batch containing invalid ID.\n"
+                    "Will identify invalid ID(s) later"
+                )
+                success = "Contains invalid ID"
 
-                except IncompleteRead as err:
-                    logger.warning(
-                        "IncompleteRead error raised when fetching record from NCBI:\n"
-                        f"{err}\n"
-                        "Will reattempt NCBI query later"
-                    )
-                    success = "Failed connection"
+    except IncompleteRead as err:
+        logger.warning(
+            "IncompleteRead error raised when fetching record from NCBI:\n"
+            f"{err}\n"
+            "Will reattempt NCBI query later"
+        )
+        success = "Failed connection"
 
-                except NotXMLError as err:
-                    logger.warning(
-                        "NotXMLError raised when fetching record(s) from NCBI:\n"
-                        f"{err}\n"
-                        "Will reattempt NCBI query later"
-                    )
-                    success = "Failed connection"
+    except NotXMLError as err:
+        logger.warning(
+            "NotXMLError raised when fetching record(s) from NCBI:\n"
+            f"{err}\n"
+            "Will reattempt NCBI query later"
+        )
+        success = "Failed connection"
 
-                except (TypeError, AttributeError) as err:  # if no record is returned from call to Entrez
-                    logger.warning(
-                        f"Error occurenced when fetching records from NCBI\n"
-                        "Error retrieved:\n"
-                        f"{repr(err)}\n"
-                        "Will retry batch later"
-                    )
-                    success = "Failed connection"
+    except (TypeError, AttributeError) as err:  # if no record is returned from call to Entrez
+        logger.warning(
+            f"Error occurenced when fetching records from NCBI\n"
+            "Error retrieved:\n"
+            f"{repr(err)}\n"
+            "Will retry batch later"
+        )
+        success = "Failed connection"
 
-                except Exception as err:  # if no record is returned from call to Entrez
-                    logger.warning(
-                        f"Error occurenced when fetching sequences from NCBI\n"
-                        "Error retrieved:\n"
-                        f"{repr(err)}\n"
-                        "Will retry batch later"
-                    )
-                    success = "Failed connection"
+    except Exception as err:  # if no record is returned from call to Entrez
+        logger.warning(
+            f"Error occurenced when fetching sequences from NCBI\n"
+            "Error retrieved:\n"
+            f"{repr(err)}\n"
+            "Will retry batch later"
+        )
+        success = "Failed connection"
 
     return seq_records, success, list(successful_accessions)
 
