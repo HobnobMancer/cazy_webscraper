@@ -60,7 +60,7 @@ from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
-from cazy_webscraper.ncbi.sequences import post_accessions_to_entrez, fetch_ncbi_seqs
+from cazy_webscraper.ncbi.sequences import post_accessions_to_entrez, fetch_ncbi_seqs, get_protein_accession
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_data import add_genbank_data
@@ -227,19 +227,29 @@ def get_cache_seqs(start_time, args):
 
         try:
             for record in SeqIO.parse(args.seq_file, "fasta"):
+                retrieved_accession = get_protein_accession(record)
+
+                if retrieved_accession is None:
+                    logger.error(
+                        "Could not retrieve a NCBI protein version accession from cache\n"
+                        f"from the record id '{record.id}'\n"
+                        "The sequence from this record will not be added to the db"
+                    )
+                    continue
+
                 try:
-                    seq_dict[record.id]
-                    if seq_dict[record.id] != record.seq:
+                    seq_dict[retrieved_accession]
+                    if seq_dict[retrieved_accession] != record.seq:
                         logger.warning(
-                            f"Retrieved seq for {record.id} from JSON file which does NOT match "
+                            f"Retrieved seq for {retrieved_accession} from JSON file which does NOT match "
                             "the seq in the FASTA file.\n"
                             "Adding seq from the FASTA file to the local CAZyme database\n"
-                            f"JSON seq: {seq_dict[record.id]}\n"
+                            f"JSON seq: {seq_dict[retrieved_accession]}\n"
                             f"FASTA seq: {record.seq}"
                         )
-                        seq_dict[record.id] = record.seq
+                        seq_dict[retrieved_accession] = record.seq
                 except KeyError:
-                    seq_dict[record.id] = record.seq
+                    seq_dict[retrieved_accession] = record.seq
 
         except FileNotFoundError:
             logger.error(
@@ -398,6 +408,7 @@ def get_seqs_from_ncbi(
                 individual_batches.append([acc])
 
         seq_records, accs_still_to_fetch = parse_invalid_id_batches(
+            seq_records,
             batches_with_invalid_ids,
             cache_path,
             invalid_ids_cache,
@@ -581,6 +592,7 @@ def parse_failed_connections(
                 new_failed_connections_batches,
                 new_accs_still_to_fetch,
             ) = get_seqs(
+                seq_records,
                 failed_batches,
                 cache_path,
                 invalid_ids_cache,
@@ -657,6 +669,7 @@ def parse_invalid_id_batches(
         failed_connections_batches,
         accs_still_to_fetch,
     ) = get_seqs(
+        seq_records,
         batches,
         cache_path,
         invalid_ids_cache,
