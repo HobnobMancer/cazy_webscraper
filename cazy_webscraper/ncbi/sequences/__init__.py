@@ -185,7 +185,7 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
             retmode="text",
         ) as seq_handle:
             for record in SeqIO.parse(seq_handle, "fasta"):
-                retrieved_accession = get_protein_accession(record)
+                retrieved_accession = get_protein_accession(record, acc_to_retrieve=acc_to_retrieve)
 
                 if retrieved_accession not in acc_to_retrieve:
                     retrieved_accession = None
@@ -276,10 +276,11 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
     return seq_records, success, list(successful_accessions)
 
 
-def get_protein_accession(record):
+def get_protein_accession(record, acc_to_retrieve=None):
     """Extract NCBI Protein accession from SeqRecord.
 
     :param record: BioPython SeqRecord obj
+    :param acc_to_retrieve: list of acc to retrieve seqs for
 
     Return str (accession) or None:
     """
@@ -296,9 +297,10 @@ def get_protein_accession(record):
             retrieved_accession = re.match(r"\D{2}_\d+\.\d+", record.id).group()
 
         except AttributeError:
-            for acc in acc_to_retrieve:
-                if record.id.find(acc) != -1:
-                    retrieved_accession = acc
+            if acc_to_retrieve is not None:
+                for acc in acc_to_retrieve:
+                    if record.id.find(acc) != -1:
+                        retrieved_accession = acc
 
     if retrieved_accession is None:
         # Accession may be a UniProt entry name or ID
