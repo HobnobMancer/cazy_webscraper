@@ -187,6 +187,9 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
             for record in SeqIO.parse(seq_handle, "fasta"):
                 retrieved_accession = get_protein_accession(record)
 
+                if retrieved_accession not in acc_to_retrieve:
+                    retrieved_accession = None
+
                 if retrieved_accession is None:
                     logger.error(
                         "Could not retrieve a NCBI protein version accession matching\n"
@@ -273,11 +276,10 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
     return seq_records, success, list(successful_accessions)
 
 
-def get_protein_accession(record, acc_to_retrieve):
+def get_protein_accession(record):
     """Extract NCBI Protein accession from SeqRecord.
 
     :param record: BioPython SeqRecord obj
-    :param acc_to_retrieve: list of NCBI protein version accessions to retrieved from NCBI
 
     Return str (accession) or None:
     """
@@ -315,8 +317,5 @@ def get_protein_accession(record, acc_to_retrieve):
                         for acc in acc_to_retrieve:
                             if record.id.find(acc) != -1:
                                 retrieved_accession = acc
-    
-    if retrieved_accession not in acc_to_retrieve:
-        retrieved_accession = None
     
     return retrieved_accession
