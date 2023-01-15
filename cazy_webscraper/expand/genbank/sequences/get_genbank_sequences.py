@@ -251,7 +251,7 @@ def get_cache_seqs(start_time, args):
             closing_message("Get GenBank seqs", start_time, args, early_term=True)
 
     for key in seq_dict:
-        seq_records.append(SeqRecord(id=key, seq=Seq(seq_dict[key]))
+        seq_records.append(SeqRecord(id=key, seq=Seq(seq_dict[key])))
 
     return seq_dict
 
