@@ -287,35 +287,31 @@ def get_protein_accession(record):
     retrieved_accession = None
 
     # check if multiple items returned in ID
+    # try re search for accession in string
     try:
-        retrieved_accession = [_.strip() for _ in record.id.split("|") if _.strip() in acc_to_retrieve][0]
+        retrieved_accession = re.match(r"\D{3}\d+\.\d+", record.id).group()
 
-    except IndexError:
-        # try re search for accession in string
+    except AttributeError:
         try:
-            retrieved_accession = re.match(r"\D{3}\d+\.\d+", record.id).group()
+            retrieved_accession = re.match(r"\D{2}_\d+\.\d+", record.id).group()
 
         except AttributeError:
-            try:
-                retrieved_accession = re.match(r"\D{2}_\d+\.\d+", record.id).group()
+            for acc in acc_to_retrieve:
+                if record.id.find(acc) != -1:
+                    retrieved_accession = acc
 
-            except AttributeError:
-                # Accession may be a UniProt entry name or ID
-                # e.g. 'prf||2109195A'or 'sp|B2FSW8.1|EALGL_STRMK'
-                if len(record.id.split("|")) == 3:
+    if retrieved_accession is None:
+        # Accession may be a UniProt entry name or ID
+        # e.g. 'prf||2109195A'or 'sp|B2FSW8.1|EALGL_STRMK'
+        if len(record.id.split("|")) == 3:
 
-                    if record.id.startswith("sp"):
-                        if len(record.id.split("|")[1]) == 0:
-                            retrieved_accession = record.id.split("|")[2]
-                        else:
-                            retrieved_accession = record.id.split("|")[1]
-                    
-                    elif len(record.id.split("|")[1]) == 0:
-                        retrieved_accession = record.id.split("|")[2]
-
-                    else:
-                        for acc in acc_to_retrieve:
-                            if record.id.find(acc) != -1:
-                                retrieved_accession = acc
+            if record.id.startswith("sp"):
+                if len(record.id.split("|")[1]) == 0:
+                    retrieved_accession = record.id.split("|")[2]
+                else:
+                    retrieved_accession = record.id.split("|")[1]
+            
+            elif len(record.id.split("|")[1]) == 0:
+                retrieved_accession = record.id.split("|")[2]
     
     return retrieved_accession
