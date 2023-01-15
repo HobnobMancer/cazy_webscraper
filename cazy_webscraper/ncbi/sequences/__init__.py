@@ -185,27 +185,8 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
             retmode="text",
         ) as seq_handle:
             for record in SeqIO.parse(seq_handle, "fasta"):
-                retrieved_accession = None
+                retrieved_accession = get_protein_accession(record)
 
-                # check if multiple items returned in ID
-                try:
-                    retrieved_accession = [_.strip() for _ in record.id.split("|") if _.strip() in acc_to_retrieve][0]
-                except IndexError:
-                    # try re search for accession in string
-                    try:
-                        retrieved_accession = re.match(r"\D{3}\d+\.\d+", record.id).group()
-                    except AttributeError:
-                        try:
-                            retrieved_accession = re.match(r"\D{2}_\d+\.\d+", record.id).group()
-                        except AttributeError:
-                            logger.warning(
-                                f"Could not fetch protein acc from record id '{record.id}'.\n"
-                                "Will search all target accessions against record id"
-                            )
-                            for acc in acc_to_retrieve:
-                                if record.id.find(acc) != -1:
-                                    retrieved_accession = acc
-                
                 if retrieved_accession is None:
                     logger.error(
                         "Could not retrieve a NCBI protein version accession matching\n"
@@ -213,80 +194,129 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
                         "The sequence from this record will not be added to the db"
                     )
                     continue
-
+    
                 seq_records.append(record)
                 successful_accessions.add(retrieved_accession)
 
-    except RuntimeError as err:
-        if repr(err).startswith("RuntimeError('Some IDs have invalid value and were omitted.") or repr(err).startswith("RuntimeError('Empty ID list; Nothing to store')"):
-            
-            if len(batch) == 1:
-                logger.warning(
-                    f"Accession '{batch[0]}' not listed in NCBI. Querying NCBI returns the error:\n"
-                    f"{repr(err)}\n"
-                    f"Not retrieving seq for '{batch[0]}'"
-                )
-                success = "Invalid ID"
-            
-            else:
-                logger.warning(
-                    "Batch contains an accession no longer listed in NCBI\n"
-                    f"Querying NCBI returns the error:\n{err}\n"
-                    "Will identify invalid ID(s) later"
-                )
-                success = "Contains invalid ID"
+                except RuntimeError as err:
+                    if repr(err).startswith("RuntimeError('Some IDs have invalid value and were omitted.") or repr(err).startswith("RuntimeError('Empty ID list; Nothing to store')"):
+                        
+                        if len(batch) == 1:
+                            logger.warning(
+                                f"Accession '{batch[0]}' not listed in NCBI. Querying NCBI returns the error:\n"
+                                f"{repr(err)}\n"
+                                f"Not retrieving seq for '{batch[0]}'"
+                            )
+                            success = "Invalid ID"
+                        
+                        else:
+                            logger.warning(
+                                "Batch contains an accession no longer listed in NCBI\n"
+                                f"Querying NCBI returns the error:\n{err}\n"
+                                "Will identify invalid ID(s) later"
+                            )
+                            success = "Contains invalid ID"
 
-        else:  # unrecognised Runtime error
-            if len(batch) == 1:
-                logger.warning(
-                    f"Runtime error occured when fetching record from NCBI for accession '{batch[0]}'\n"
-                    f"Error returned:\n{err}\n"
-                    "Interrupting error as recognition of an invalid ID. Therefore,\n"
-                    f"not adding seq for '{batch[0]} to the local CAZyme db'"
-                )
-                success = "Invalid ID"
+                    else:  # unrecognised Runtime error
+                        if len(batch) == 1:
+                            logger.warning(
+                                f"Runtime error occured when fetching record from NCBI for accession '{batch[0]}'\n"
+                                f"Error returned:\n{err}\n"
+                                "Interrupting error as recognition of an invalid ID. Therefore,\n"
+                                f"not adding seq for '{batch[0]} to the local CAZyme db'"
+                            )
+                            success = "Invalid ID"
 
-            else:
-                logger.warning(
-                    f"Runtime error occured when fetching records from NCBI\n"
-                    f"Error returned:\n{err}\n"
-                    "Interrupting error as batch containing invalid ID.\n"
-                    "Will identify invalid ID(s) later"
-                )
-                success = "Contains invalid ID"
+                        else:
+                            logger.warning(
+                                f"Runtime error occured when fetching records from NCBI\n"
+                                f"Error returned:\n{err}\n"
+                                "Interrupting error as batch containing invalid ID.\n"
+                                "Will identify invalid ID(s) later"
+                            )
+                            success = "Contains invalid ID"
 
-    except IncompleteRead as err:
-        logger.warning(
-            "IncompleteRead error raised when fetching record from NCBI:\n"
-            f"{err}\n"
-            "Will reattempt NCBI query later"
-        )
-        success = "Failed connection"
+                except IncompleteRead as err:
+                    logger.warning(
+                        "IncompleteRead error raised when fetching record from NCBI:\n"
+                        f"{err}\n"
+                        "Will reattempt NCBI query later"
+                    )
+                    success = "Failed connection"
 
-    except NotXMLError as err:
-        logger.warning(
-            "NotXMLError raised when fetching record(s) from NCBI:\n"
-            f"{err}\n"
-            "Will reattempt NCBI query later"
-        )
-        success = "Failed connection"
+                except NotXMLError as err:
+                    logger.warning(
+                        "NotXMLError raised when fetching record(s) from NCBI:\n"
+                        f"{err}\n"
+                        "Will reattempt NCBI query later"
+                    )
+                    success = "Failed connection"
 
-    except (TypeError, AttributeError) as err:  # if no record is returned from call to Entrez
-        logger.warning(
-            f"Error occurenced when fetching records from NCBI\n"
-            "Error retrieved:\n"
-            f"{repr(err)}\n"
-            "Will retry batch later"
-        )
-        success = "Failed connection"
+                except (TypeError, AttributeError) as err:  # if no record is returned from call to Entrez
+                    logger.warning(
+                        f"Error occurenced when fetching records from NCBI\n"
+                        "Error retrieved:\n"
+                        f"{repr(err)}\n"
+                        "Will retry batch later"
+                    )
+                    success = "Failed connection"
 
-    except Exception as err:  # if no record is returned from call to Entrez
-        logger.warning(
-            f"Error occurenced when fetching sequences from NCBI\n"
-            "Error retrieved:\n"
-            f"{repr(err)}\n"
-            "Will retry batch later"
-        )
-        success = "Failed connection"
+                except Exception as err:  # if no record is returned from call to Entrez
+                    logger.warning(
+                        f"Error occurenced when fetching sequences from NCBI\n"
+                        "Error retrieved:\n"
+                        f"{repr(err)}\n"
+                        "Will retry batch later"
+                    )
+                    success = "Failed connection"
 
     return seq_records, success, list(successful_accessions)
+
+
+def get_protein_accession(record, acc_to_retrieve):
+    """Extract NCBI Protein accession from SeqRecord.
+
+    :param record: BioPython SeqRecord obj
+    :param acc_to_retrieve: list of NCBI protein version accessions to retrieved from NCBI
+
+    Return str (accession) or None:
+    """
+    logger = logging.getLogger(__name__)
+    retrieved_accession = None
+
+    # check if multiple items returned in ID
+    try:
+        retrieved_accession = [_.strip() for _ in record.id.split("|") if _.strip() in acc_to_retrieve][0]
+
+    except IndexError:
+        # try re search for accession in string
+        try:
+            retrieved_accession = re.match(r"\D{3}\d+\.\d+", record.id).group()
+
+        except AttributeError:
+            try:
+                retrieved_accession = re.match(r"\D{2}_\d+\.\d+", record.id).group()
+
+            except AttributeError:
+                # Accession may be a UniProt entry name or ID
+                # e.g. 'prf||2109195A'or 'sp|B2FSW8.1|EALGL_STRMK'
+                if len(record.id.split("|")) == 3:
+
+                    if record.id.startswith("sp"):
+                        if len(record.id.split("|")[1]) == 0:
+                            retrieved_accession = record.id.split("|")[2]
+                        else:
+                            retrieved_accession = record.id.split("|")[1]
+                    
+                    elif len(record.id.split("|")[1]) == 0:
+                        retrieved_accession = record.id.split("|")[2]
+
+                    else:
+                        for acc in acc_to_retrieve:
+                            if record.id.find(acc) != -1:
+                                retrieved_accession = acc
+    
+    if retrieved_accession not in acc_to_retrieve:
+        retrieved_accession = None
+    
+    return retrieved_accession
