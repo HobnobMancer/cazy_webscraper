@@ -253,7 +253,9 @@ def get_cache_seqs(start_time, args):
     for key in seq_dict:
         seq_records.append(SeqRecord(id=key, seq=Seq(seq_dict[key])))
 
-    return seq_dict
+    logger.warning(f"Retrieved {len(seq_records)} from cache")
+
+    return seq_dict, seq_records
 
 
 def get_records_to_retrieve(
