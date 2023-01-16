@@ -154,7 +154,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         )
 
     else:  # retrieve data from NCBI for seqs in the local db
-        seq_dict, seq_records = get_seqs_from_ncbi(
+        seq_dict = get_seqs_from_ncbi(
             seq_records,
             accs_seqs_to_retrieve,
             seq_dict,
@@ -407,7 +407,7 @@ def get_seqs_from_ncbi(
             for acc in batch:
                 individual_batches.append([acc])
 
-        seq_records, accs_still_to_fetch = parse_invalid_id_batches(
+        seq_records = parse_invalid_id_batches(
             seq_records,
             batches_with_invalid_ids,
             cache_path,
@@ -642,7 +642,8 @@ def parse_invalid_id_batches(
     """Separate accessions in batches containing invalid IDs. Retrieve seqs for valid IDs.
 
     :param seq_records: list of Bio.SeqRecords
-    :param batches_with_invalid_ids: list of batches containing invalid IDs
+    :param batches_with_invalid_ids: list of accessions from batches containing invalid IDs
+        NOT NESTED LISTS
     :param cache_path: path to cache downloaded seqs
     :param invalid_ids_cache: path to cache invalid IDs
     :param args: CLI args parser
@@ -651,11 +652,8 @@ def parse_invalid_id_batches(
     """
     logger = logging.getLogger(__name__)
 
-    # separaet accessions into individual batches to identify invalid IDs
-    batches = []
-    for batch in batches_with_invalid_ids:
-        for acc in batch:
-            batches.append([acc])
+    # turn into list of lists of len 1
+    batches = [acc for acc in batches_with_invalid_ids]
 
     logger.warning(
         "Separted accessions in batches containing invalid IDs.\n"
