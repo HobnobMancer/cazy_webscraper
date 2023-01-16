@@ -315,5 +315,25 @@ def get_protein_accession(record, acc_to_retrieve=None):
             
             elif len(record.id.split("|")[1]) == 0:
                 retrieved_accession = record.id.split("|")[2]
+
+        if retrieved_accession is None:  # Accept Uniprot-style accessions which ar sometimes used
+            try:
+                retrieved_accession = re.match(r"\D\d+\.\d+", record.id).group()
+            except AttributeError:
+                try:
+                    retrieved_accession = re.match(r"\D\d{2}\D+\d+\.\d+", record.id).group()
+                except AttributeError:
+                    try:
+                        retrieved_accession = re.match(r"\D\d+\.\d+", record.id).group()
+                    except AttributeError:
+                        try:
+                            if record.id == re.match(r"\D\d{2}\D+\d+", record.id).group():
+                                retrieved_accession = re.match(r"\D\d{2}\D+\d+", record.id).group()
+                        except AttributeError:
+                            try:
+                                if record.id == re.match(r"\D\d+", record.id).group():
+                                    retrieved_accession = re.match(r"\D\d+", record.id).group()
+                            except AttributeError:
+                                retrieved_accession = None
     
     return retrieved_accession
