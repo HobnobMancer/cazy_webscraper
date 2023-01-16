@@ -60,7 +60,7 @@ from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
-from cazy_webscraper.ncbi.sequences import post_accessions_to_entrez, fetch_ncbi_seqs
+from cazy_webscraper.ncbi.sequences import post_accessions_to_entrez, fetch_ncbi_seqs, get_protein_accession
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_data import add_genbank_data
@@ -126,7 +126,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             args,
         )
 
-    seq_dict = get_cache_seqs(start_time, args)  # {genbank_acc: Bio.Seq}
+    seq_dict, seq_records = get_cache_seqs(start_time, args)
+    # seq_dict = {genbank_acc: Bio.Seq}
+    # seq_records = list of BioPython SeqRecords
+
     # Get GenBank accessions from a file or records matching the provided criteria, and get list
     # of genbank accesions for proteins for whom seqs need to be downloaded from NCBI
     # gbk_dict = {gbk_acc: db id}
@@ -152,6 +155,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     else:  # retrieve data from NCBI for seqs in the local db
         seq_dict = get_seqs_from_ncbi(
+            seq_records,
             accs_seqs_to_retrieve,
             seq_dict,
             start_time,
@@ -191,11 +195,12 @@ def get_cache_seqs(start_time, args):
 
     :param seq_dict: dict, {genbank_acc: Bio.Seq}
 
-    Return update seq_dict
+    Return update seq_dict and list of SeqRecords
     """
     logger = logging.getLogger(__name__)
 
     seq_dict = {}
+    seq_records = []
 
     if args.seq_dict:
         logger.warning(f"Getting sequences from JSON cache:\n{args.seq_dict}")
@@ -222,19 +227,29 @@ def get_cache_seqs(start_time, args):
 
         try:
             for record in SeqIO.parse(args.seq_file, "fasta"):
+                retrieved_accession = get_protein_accession(record)
+
+                if retrieved_accession is None:
+                    logger.error(
+                        "Could not retrieve a NCBI protein version accession from cache\n"
+                        f"from the record id '{record.id}'\n"
+                        "The sequence from this record will not be added to the db"
+                    )
+                    continue
+
                 try:
-                    seq_dict[record.id]
-                    if seq_dict[record.id] != record.seq:
+                    seq_dict[retrieved_accession]
+                    if seq_dict[retrieved_accession] != record.seq:
                         logger.warning(
-                            f"Retrieved seq for {record.id} from JSON file which does NOT match "
+                            f"Retrieved seq for {retrieved_accession} from JSON file which does NOT match "
                             "the seq in the FASTA file.\n"
                             "Adding seq from the FASTA file to the local CAZyme database\n"
-                            f"JSON seq: {seq_dict[record.id]}\n"
+                            f"JSON seq: {seq_dict[retrieved_accession]}\n"
                             f"FASTA seq: {record.seq}"
                         )
-                        seq_dict[record.id] = record.seq
+                        seq_dict[retrieved_accession] = record.seq
                 except KeyError:
-                    seq_dict[record.id] = record.seq
+                    seq_dict[retrieved_accession] = record.seq
 
         except FileNotFoundError:
             logger.error(
@@ -245,7 +260,12 @@ def get_cache_seqs(start_time, args):
             )
             closing_message("Get GenBank seqs", start_time, args, early_term=True)
 
-    return seq_dict
+    for key in seq_dict:
+        seq_records.append(SeqRecord(id=key, seq=Seq(seq_dict[key])))
+
+    logger.warning(f"Retrieved {len(seq_records)} from cache")
+
+    return seq_dict, seq_records
 
 
 def get_records_to_retrieve(
@@ -323,6 +343,7 @@ def get_records_to_retrieve(
 
 
 def get_seqs_from_ncbi(
+    seq_records,
     accs_seqs_to_retrieve,
     seq_dict,
     start_time,
@@ -331,6 +352,7 @@ def get_seqs_from_ncbi(
 ):
     """Coordinate retrieving sequence data from NCBI for proteins not retrieved from cache files
 
+    :param seq_records: list of BioPython SeqRecords
     :param accs_seqs_to_retrieve: list of gbk accs of protein seqs to retrieve from ncbi
     :param seq_dict: dict {id: seq} of seqs retrieved from cache json/fasta files
     :param start_time: str: time program was called
@@ -358,7 +380,7 @@ def get_seqs_from_ncbi(
         batches_with_invalid_ids,
         failed_connections_batches,
         accs_still_to_fetch,
-    ) = get_seqs(batches, cache_path, invalid_ids_cache, args)
+    ) = get_seqs(seq_records, batches, cache_path, invalid_ids_cache, args)
 
     if len(list(failed_connections_batches.keys())) > 0:
         # Retry failed batches before parsing invalid IDs as the failed connections
@@ -385,7 +407,8 @@ def get_seqs_from_ncbi(
             for acc in batch:
                 individual_batches.append([acc])
 
-        seq_records, accs_still_to_fetch = parse_invalid_id_batches(
+        seq_records = parse_invalid_id_batches(
+            seq_records,
             batches_with_invalid_ids,
             cache_path,
             invalid_ids_cache,
@@ -429,9 +452,10 @@ def get_seqs_from_ncbi(
     return seq_dict
 
 
-def get_seqs(batches, cache_path, invalid_ids_cache, args, disable_prg_bar=False):
+def get_seqs(seq_records, batches, cache_path, invalid_ids_cache, args, disable_prg_bar=False):
     """Retrieve protein sequences from Entrez.
 
+    :param seq_records: list of Bio SeqRecords
     :param batches: list of lists, one list be batch of gbk acc to query against NCBI
     :param cache_path: Path, to cache fasta file or protein seqs
     :param invalid_id_cache: Path to file to cache invalid IDs
@@ -453,8 +477,6 @@ def get_seqs(batches, cache_path, invalid_ids_cache, args, disable_prg_bar=False
     invalid_ids = set()
     batches_with_invalid_ids = []  # nested lists of batches with invalid IDs
     failed_connections_batches = {}  # dict of batches during the querying of which the connection failed
-
-    seq_records = []
 
     successful_accessions = []  # accessions for which seqs were retrieved
 
@@ -570,6 +592,7 @@ def parse_failed_connections(
                 new_failed_connections_batches,
                 new_accs_still_to_fetch,
             ) = get_seqs(
+                seq_records,
                 failed_batches,
                 cache_path,
                 invalid_ids_cache,
@@ -619,7 +642,8 @@ def parse_invalid_id_batches(
     """Separate accessions in batches containing invalid IDs. Retrieve seqs for valid IDs.
 
     :param seq_records: list of Bio.SeqRecords
-    :param batches_with_invalid_ids: list of batches containing invalid IDs
+    :param batches_with_invalid_ids: list of accessions from batches containing invalid IDs
+        NOT NESTED LISTS
     :param cache_path: path to cache downloaded seqs
     :param invalid_ids_cache: path to cache invalid IDs
     :param args: CLI args parser
@@ -628,11 +652,8 @@ def parse_invalid_id_batches(
     """
     logger = logging.getLogger(__name__)
 
-    # separaet accessions into individual batches to identify invalid IDs
-    batches = []
-    for batch in batches_with_invalid_ids:
-        for acc in batch:
-            batches.append([acc])
+    # turn into list of lists of len 1
+    batches = [acc for acc in batches_with_invalid_ids]
 
     logger.warning(
         "Separted accessions in batches containing invalid IDs.\n"
@@ -646,6 +667,7 @@ def parse_invalid_id_batches(
         failed_connections_batches,
         accs_still_to_fetch,
     ) = get_seqs(
+        seq_records,
         batches,
         cache_path,
         invalid_ids_cache,
