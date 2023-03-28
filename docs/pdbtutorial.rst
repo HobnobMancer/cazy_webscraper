@@ -19,6 +19,9 @@ the retrieval of protein structured from PDB. These tutorials are designed for t
 .. NOTE::
   If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve PDB data call it using ``cw_get_pdb_structures`` - this is the method used in this tutorial.  
   If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/expand/pdb/get_pdb_structures.py``.
+  
+.. note::
+    PDB structure files are retrieved for the PDB accessions that are *in* a local CAZyme database created using ``cazy_webscraper``. A freshly built CAZyme database only contains NCBI protein accessions, taxonomic kingdoms, source organisms, and CAZy family annotations. Therefore, the ``cw_get_uniprot_data`` command must be used to retrieve PDB accessions from the UniProt database **prior** tousing the ``cw_get_pdb_structures`` command.
 
 From this point on, we will be discussed the ``cw_get_pdb_structures``, which is the entry point for 
 retrieving data from PDB. We also presume you are comfortable configuring ``cazy_webscraper`` for the 
