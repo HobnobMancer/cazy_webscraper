@@ -205,6 +205,8 @@ To extract GenBank and/or UniProt protein sequences from a local CAZyme database
 
 To protein structure files from PDB use the `cw_get_pdb_structures` command.
 
+**Note:** PDB structure files are retrieved for the PDB accessions that are *in* a local CAZyme database created using `cazy_webscraper`. A freshly built CAZyme database only contains NCBI protein accessions, taxonomic kingdoms, source organisms, and CAZy family annotations. Therefore, the `cw_get_uniprot_data` command must be used to retrieve PDB accessions from the UniProt database **prior** to using the `cw_get_pdb_structures` command.
+
 #### Interrogate the database
 
 To interrogate the database, use the `cw_query_database` command.

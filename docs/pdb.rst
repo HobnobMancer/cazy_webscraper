@@ -12,7 +12,7 @@ For specific information of the ``Bio.PDB`` module please see the
         opretional outside peak times.
 
 .. note::
-    PDB structure files are retrieved for the PDB accessions *in* a local CAZyme database created using ``cazy_webscraper``.
+    PDB structure files are retrieved for the PDB accessions that are *in* a local CAZyme database created using ``cazy_webscraper``. A freshly built CAZyme database only contains NCBI protein accessions, taxonomic kingdoms, source organisms, and CAZy family annotations. Therefore, the ``cw_get_uniprot_data`` command must be used to retrieve PDB accessions from the UniProt database **prior** to using the ``cw_get_pdb_structures`` command.
 
 -----------
 Quick Start
