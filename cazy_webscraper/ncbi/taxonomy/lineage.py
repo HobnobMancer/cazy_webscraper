@@ -42,12 +42,11 @@
 
 import logging
 
-from copy import copy
-
+from Bio import Entrez
 from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
 
-from Bio import Entrez
+from cazy_webscraper.ncbi import post_ids
 
 
 def fetch_lineages(tax_ids, query_key, web_env, args):
