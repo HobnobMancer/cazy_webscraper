@@ -123,6 +123,19 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         ec_filters,
     ) = get_expansion_configuration(args)
 
+    with sql_orm.Session(bind=connection) as session:
+        sql_interface.log_scrape_in_db(
+            time_stamp,
+            config_dict,
+            kingdom_filters,
+            taxonomy_filter_dict,
+            ec_filters,
+            'Genome Taxonomy DataBase (GTDB)',
+            'GTDB taxonomc lineages',
+            session,
+            args,
+        )
+
     # get the GenBank verion accessions and local db IDs of proteins matching the config criteria
     gbk_dict = get_gbks_of_interest(
         class_filters,
