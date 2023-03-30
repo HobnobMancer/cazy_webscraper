@@ -520,7 +520,7 @@ def get_prot_ids(query_key, web_env, args):
     for record in prot_records:
         prot_id = record['Id']
         prot_acc = record['AccessionVersion']
-        new_prot_ids{prot_id} = prot_acc
+        new_prot_ids[prot_id] = prot_acc
 
     return new_prot_ids
 
