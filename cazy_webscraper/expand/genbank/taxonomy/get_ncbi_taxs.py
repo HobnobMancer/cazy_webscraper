@@ -661,7 +661,7 @@ def get_lineage_data(tax_ids, args):
     * set of tax ids for which data could not be retrieved from NCBI
     """
     all_tax_lineage_dict = {}  # {ncbi tax id: {rank: str}}
-    og_batches = get_chunks_list(tax_ids, args.batch_size)
+    og_batches = get_chunks_list(list(tax_ids), args.batch_size)
 
     tax_lineage_dict, failed_batches, unlisted_id_batches = get_taxid_lineages(
         og_batches,
