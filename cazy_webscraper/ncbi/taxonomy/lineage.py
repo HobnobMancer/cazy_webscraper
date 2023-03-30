@@ -68,7 +68,7 @@ def fetch_lineages(tax_ids, query_key, web_env, args):
             Entrez.efetch,
             db="Taxonomy",
             query_key=query_key,
-            WebEnv=we,
+            WebEnv=web_env,
         ) as handle:
             batched_tax_records = Entrez.read(handle, validate=False)
 
