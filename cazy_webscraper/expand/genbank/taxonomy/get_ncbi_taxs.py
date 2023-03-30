@@ -131,6 +131,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_dir = cache_dir / "ncbi_tax_retrieval"
         make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
+    # Use Cache
     if args.use_lineage_cache is not None:
         logger.info("Adding cached lineages to local CAZyme db")
         try:
@@ -145,6 +146,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             )
             sys.exit(1)
 
+    # Don't use cache
     else:
         gbk_dict = get_db_proteins(
             class_filters,
@@ -275,75 +277,21 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
     logger = logging.getLogger(__name__)
 
     if (args.use_tax_ids is not None) and (args.use_protein_ids is not None):
-        logger.info("Using only cached NCBI Tax and Protein IDs")
-        try:
-            with open(args.use_tax_ids, "r") as fh:
-                tax_ids = [_.replace("\n", "") for _ in fh.read().splitlines() if _ != "\n"]
-        except FileNotFoundError:
-            logger.error(
-                f"Could not find Tax ID cache at:\n{str(args.use_tax_ids)}\n"
-                "Check path is correct\n"
-                "Terminating program"
-            )
-            sys.exit(1)
-
-        try:
-            with open(args.use_protein_ids, "r") as fh:
-                cached_prot_data = fh.read().splitlines()
-        except FileNotFoundError:
-            logger.error(
-                f"Could not find NCBI Protein ID cache at:\n{str(args.use_protein_ids)}\n"
-                "Check path is correct\n"
-                "Terminating program"
-            )
-            sys.exit(1)
-
-        prot_id_dict = {}
-        for line in cached_prot_data:
-            if line == "\n":
-                continue
-            prot_id_dict[line.split("\t")[0].strip()] = line.split("\t")[1].strip().replace("\n", "")
+        # only use ids in files
+        tax_ids = load_tax_ids(args.use_tax_ids)
+        protein_id_dict = load_protein_ids(args.use_protein_ids)
 
         return tax_ids, prot_id_dict
 
-    else:
-        tax_ids, prot_id_dict = get_ncbi_tax_prot_ids(list(gbk_dict.keys()), cache_dir, args)
+    tax_ids, prot_id_dict = get_ncbi_tax_prot_ids(list(gbk_dict.keys()), cache_dir, args)
 
-        if args.use_tax_ids is not None:
-            logger.info("Using cached NCBI Tax IDs")
-            try:
-                with open(args.use_tax_ids, "r") as fh:
-                    tax_ids = [_.replace("\n", "") for _ in fh.read().splitlines() if _ != "\n"]
-            except FileNotFoundError:
-                logger.error(
-                    f"Could not find Tax ID cache at:\n{str(args.use_tax_ids)}\n"
-                    "Check path is correct\n"
-                    "Terminating program"
-                )
-                sys.exit(1)
+    if args.use_tax_ids is not None:
+        tax_ids = load_tax_ids(args.use_tax_ids)
 
-        if args.use_protein_ids is not None:
-            logger.info("Using cached NCBI Protein IDs")
-            try:
-                with open(args.use_protein_ids, "r") as fh:
-                    cached_prot_data = fh.read().splitlines()
-            except FileNotFoundError:
-                logger.error(
-                    f"Could not find NCBI Protein ID cache at:\n{str(args.use_protein_ids)}\n"
-                    "Check path is correct\n"
-                    "Terminating program"
-                )
-                sys.exit(1)
+    if args.use_protein_ids is not None:
+        protein_id_dict = load_protein_ids(args.use_protein_ids)
 
-            prot_id_dict = {}
-            for line in cached_prot_data:
-                if line == "\n":
-                    continue
-                prot_id_dict[line.split("\t")[0].strip()] = line.split("\t")[1].strip().replace("\n", "")
-
-    # Returns a set of NCBI Tax ids and dict {ncbi prot id: prot acc}
-
-    logger.info("Logging retrieved NCBI Taxonomy and Protein IDs")
+    logger.info("caching retrieved NCBI Taxonomy and Protein IDs")
     with open((cache_dir/"tax_ids.out"), "a") as fh:
         for tax_id in tax_ids:
             fh.write(f"{tax_id}\n")
@@ -353,6 +301,58 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
             fh.write(f"{ncbi_prot_id}\t{prot_id_dict[ncbi_prot_id]}\n")
 
     return tax_ids, prot_id_dict
+
+
+def load_tax_ids(tax_id_path):
+    """Load NCBI taxonomy ids from plain text file
+
+    :param tax_id_path: Path, path to file of tax ids
+
+    Return list of tax ids
+    """
+    logger = logging.getLogger(__name__)
+    logger.warning(f"Use Tax IDs in {tax_id_path}")
+    try:
+        with open(tax_id_path, "r") as fh:
+            tax_ids = [_.replace("\n", "") for _ in fh.read().splitlines() if _ != "\n"]
+    except FileNotFoundError:
+        logger.error(
+            f"Could not find Tax ID cache at:\n{str(tax_id_path)}\n"
+            "Check path is correct\n"
+            "Terminating program"
+        )
+        sys.exit(1)
+
+    return tax_ids
+
+
+def load_protein_ids(prot_id_path):
+    """Load protein IDs and accessions from tab delimited file
+
+    :param prot_id_path: Path, path to tab delimited file
+
+    Return dict {ID: accession}
+    """
+    logger = logging.getLogger(__name__)
+    logger.warning(f"Use Protein IDs and accessions in {prot_id_path}")
+    try:
+        with open(args.use_protein_ids, "r") as fh:
+            cached_prot_data = fh.read().splitlines()
+    except FileNotFoundError:
+        logger.error(
+            f"Could not find NCBI Protein ID cache at:\n{str(args.use_protein_ids)}\n"
+            "Check path is correct\n"
+            "Terminating program"
+        )
+        sys.exit(1)
+
+    prot_id_dict = {}
+    for line in cached_prot_data:
+        if line == "\n":
+            continue
+        prot_id_dict[line.split("\t")[0].strip()] = line.split("\t")[1].strip().replace("\n", "")
+
+    prot_id_dict
 
 
 def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
