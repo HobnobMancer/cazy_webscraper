@@ -115,7 +115,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             config_dict,
             kingdom_filters,
             taxonomy_filter_dict,
-            set(),  # ec_filters not applied when scraping CAZy
+            ec_filters,  # ec_filters not applied when scraping CAZy
             'NCBI Taxonomy',
             'NCBI taxonomc lineages',
             session,
