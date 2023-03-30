@@ -468,12 +468,16 @@ def get_ids_from_ncbi(prots, args, failed_batches):
     try:
         query_key, web_env = post_ids(prots, 'Protein', args)
     except RuntimeError:
-        logger.warning(f"Batch contained invalid protein version accession.\nBatch:\n{prots}")
-        key = str(prots)
-        try:
-            failed_batches[key]['tries'] += 1
-        except KeyError:
-            failed_batches[key] = {'proteins': prots, 'tries': 1}
+        logger.warning(
+            "Batch contained invalid protein version accession.\n"
+            "Will retry ids individually later to identify the invalid id\n"
+            f"Batch:\n{prots}"
+        )
+        for protein in prots:
+            try:
+                failed_batches[protein]['tries'] += 1
+            except KeyError:
+                failed_batches[protein] = {'proteins': protein, 'tries': 1}
 
         return new_tax_ids, new_protein_ids, failed_batches
 
@@ -571,7 +575,7 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
     lineage_dict, failed_ids = get_lineage_data(tax_ids, args)
     logger.warning(
         f"Queried NCBI with {len(tax_ids)} tax ids\n"
-        f"Retrieving lineages for {len(list(all_tax_lineage_dict.keys()))} tax ids"
+        f"Retrieving lineages for {len(list(lineage_dict.keys()))} tax ids"
     )
 
     if len(list(lineage_dict.keys())) == 0:
@@ -662,6 +666,7 @@ def get_lineage_data(tax_ids, args):
     """
     all_tax_lineage_dict = {}  # {ncbi tax id: {rank: str}}
     og_batches = get_chunks_list(list(tax_ids), args.batch_size)
+    all_failed_ids = set()
 
     tax_lineage_dict, failed_batches, unlisted_id_batches = get_taxid_lineages(
         og_batches,
