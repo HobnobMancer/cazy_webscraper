@@ -166,7 +166,17 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args, unit_test=False):
                             "Will not update the respective records in the Genbanks table"
                         )
                         continue
-                tax_db_id = db_ncbi_tax_table[tax_id]
+                try:    
+                    tax_db_id = db_ncbi_tax_table[int(tax_id)]
+                except KeyError:
+                    try:
+                        tax_db_id = db_ncbi_tax_table[str(tax_id)]
+                    except KeyError:
+                        logger.warning(
+                            f"Could not retrieve the local db ID for the NCBI tax id {tax_id}\n"
+                            "Will not update the respective records in the Genbanks table"
+                        )
+                        continue
                 for prot_db_id in proteins:
                     connection.execute(
                         text(
