@@ -42,6 +42,8 @@
 
 import logging
 
+from copy import copy
+
 from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
 
@@ -66,7 +68,7 @@ def fetch_lineages(tax_ids, query_key, web_env, args):
             10,
             Entrez.efetch,
             db="Taxonomy",
-            query_key=qk,
+            query_key=query_key,
             WebEnv=we,
         ) as handle:
             batched_tax_records = Entrez.read(handle, validate=False)
@@ -137,3 +139,230 @@ def fetch_lineages(tax_ids, query_key, web_env, args):
         }
 
     return lineage_dict
+
+
+def get_taxid_lineages(batches, tax_ids, args):
+    """Batch query NCBI to retrieve lineage data for each tax_id
+
+    :param batches: list of nested lists
+    :param tax_ids: list of str (ncbi tax id)
+    :param args: CLI args parser
+
+    return dict {ncbi tax id: {rank: str}}
+    """
+    failed_batches = {}  # {str(batch): {'batch': list(batch), 'tries': int(num of failed attempts)}}
+    unlisted_id_batches = []
+
+    tax_lineage_dict = {}  # {ncbi_tax_id: {rank: str/lineage}}
+
+    for batch in tqdm(batches, desc="Batch retrieving lineage data from NCBI"):
+        # post the ids
+        try:
+            query_key, web_env = post_ids(batch, 'Taxonomy', args)
+        except (RuntimeError) as err:
+            logger.warning(
+                "RunTime error occurred when querying NCBI.\n"
+                "Likely caused by batch containing invalid ID.\n"
+                "Will try individual IDs later\n"
+                f"Error message:\n{err}"
+            )
+            unlisted_id_batches += batch
+            continue
+        
+        if query_key is None:
+            failed_batches[str(batch)] = {'batch': batch, 'tries': 1}
+            continue
+        
+        # fetch the lineage data
+        try:
+            lineage_dict = fetch_lineages(tax_ids, query_key, web_env, args)  # {ncbi_tax_id: {rank: str/lineage}}
+        except RuntimeError as errr:
+            logger.warning(
+                "RunTime error occurred when querying NCBI.\n"
+                "Likely caused by batch containing invalid ID.\n"
+                "Will try individual IDs later\n"
+                f"Error message:\n{err}"
+            )
+            unlisted_id_batches += batch
+            continue
+            
+        if lineage_dict is None:  # failed connection
+            failed_batches[str(batch)] = {'batch': batch, 'tries': 1}
+            continue
+
+        tax_lineage_dict.update(lineage_dict)
+
+    return tax_lineage_dict, failed_batches, unlisted_id_batches
+
+
+def retry_get_tax_lineages(failed_batches, tax_ids, args):
+    """Retry batches were the connection files previously
+
+    :param failed_batches: dict, {str(batch): {'batch': list(batch), 'tries': int(num of failed attempts)}}
+    :param tax_ids: list of tax ids
+    :param args: CLI args parser
+
+    Return 
+    * lineage_dict {ncbi tax id: {rank: str}}
+    * list of unlisted IDs
+    * list of tax ids for who data could not be retrieved from NCBI
+    """
+    tax_lineage_dict = {}
+    batches = [failed_batches[batch_name]['batch'] for batch_name in failed_batches] # [[b1], [b2]]
+    unlisted_id_batches = []
+    failed_ids = []
+
+    while len(list(failed_batches.keys())) != 0:
+        for batch in tqdm(batches, "Retrying failed batches"):
+            # check if batch in failed_batches
+            try:
+                failed_batches[str(batch)]
+            except KeyError:
+                continue  # batch no longer in failed_batches
+
+            # batch still in failed_batches so need to try to gather data again
+
+            # post the ids
+            try:
+                query_key, web_env = post_ids(batch, 'Taxonomy', args)
+            except (RuntimeError) as err:
+                logger.warning(
+                    "RunTime error occurred when querying NCBI.\n"
+                    "Likely caused by batch containing invalid ID.\n"
+                    "Will try individual IDs later\n"
+                    f"Error message:\n{err}"
+                )
+                unlisted_id_batches += batch
+                continue
+            
+            if query_key is None:
+                failed_batches[str(batch)]['tries'] += 1
+
+                if failed_batches[str(batch)]['tries'] >= args.retries:
+                    logger.warning(
+                        f"Reached maximum number of connection reattempts ({args.retries} tries) for batch\n"
+                        f"of tax ids to retrieve the lineage data from NCBI:\n{batch}\n"
+                        "But could not connect to NCBI.\n"
+                        "Therefore, not retrieving lineage data for these taxonomy ids"
+                    )
+                    del failed_batches[str(batch)]
+                    failed_ids += batch
+                    continue
+
+            # fetch the lineage data
+            try:
+                lineage_dict = fetch_lineages(tax_ids, query_key, web_env, args)  # {ncbi_tax_id: {rank: str/lineage}}
+            except RuntimeError as errr:
+                logger.warning(
+                    "RunTime error occurred when querying NCBI.\n"
+                    "Likely caused by batch containing invalid ID.\n"
+                    "Will try individual IDs later\n"
+                    f"Error message:\n{err}"
+                )
+                unlisted_id_batches += batch
+                continue
+                
+            if lineage_dict is None:  # failed connection
+                failed_batches[str(batch)]['tries'] += 1
+
+                if failed_batches[str(batch)]['tries'] >= args.retries:
+                    logger.warning(
+                        f"Reached maximum number of connection reattempts ({args.retries} tries) for batch\n"
+                        f"of tax ids to retrieve the lineage data from NCBI:\n{batch}\n"
+                        "But could not connect to NCBI.\n"
+                        "Therefore, not retrieving lineage data for these taxonomy ids"
+                    )
+                    del failed_batches[str(batch)]
+                    failed_ids += batch
+                    continue
+
+            tax_lineage_dict.update(lineage_dict)
+
+    return tax_lineage_dict, unlisted_id_batches, failed_ids
+
+
+def parse_unlised_taxid_lineages(batches, tax_ids, args):
+    """Batch query NCBI to retrieve lineage data for each tax_id
+
+    :param batches: list of nested lists, one item per nested list
+    :param tax_ids: list of str (ncbi tax id)
+    :param args: CLI args parser
+
+    return
+    * dict {ncbi tax id: {rank: str}}
+    * list of unlisted ids
+    """
+    failed_ids = {}  # {id: int(num of failed attempts)}}
+    unlisted_ids = []
+    tax_lineage_dict = {}  # {ncbi_tax_id: {rank: str/lineage}}
+
+    all_ids_to_parse = [_[0] for _ in batches]
+
+    for batch in batches:
+        failed_ids[batch[0]] = 0  # {id: num of tries}
+
+    while len(all_ids_to_parse) != 0:
+        for batch in tqdm(failed_ids, desc="Batch retrieving lineage data from NCBI"):
+            # post the ids
+            try:
+                query_key, web_env = post_ids([batch], 'Taxonomy', args)
+            except (RuntimeError) as err:
+                logger.warning(
+                    "RunTime error occurred when queryig NCBI.\n"
+                    f"Likely caused by ID {batch} containing invalid ID.\n"
+                    "Will not retrieve linage data for this ID\n"
+                    f"Error message:\n{err}"
+                )
+                unlisted_ids += batch
+                all_ids_to_parse.remove(batch)
+                del failed_ids[batch]
+                continue
+            
+            if query_key is None:
+                failed_ids[batch] += 1
+
+                if failed_ids[batch] >= args.retries:
+                    logger.warning(
+                        f"Reached maximum number of connection reattempts ({args.retries} tries) when\n"
+                        f"retrieving lineage data for tax id {batch}\n"
+                        "Could not connect to NCBI. Therefore, not retrieving lineage data for these taxonomy ids"
+                    )
+                    unlisted_ids += batch
+                    all_ids_to_parse.remove(batch)
+                    del failed_ids[batch]
+
+                continue
+            
+            # fetch the lineage data
+            try:
+                lineage_dict = fetch_lineages(tax_ids, query_key, web_env, args)  # {ncbi_tax_id: {rank: str/lineage}}
+            except (RuntimeError) as err:
+                    logger.warning(
+                        "RunTime error occurred when queryig NCBI.\n"
+                        f"Likely caused by ID {batch} containing invalid ID.\n"
+                        "Will not retrieve linage data for this ID\n"
+                        f"Error message:\n{err}"
+                    )
+                    unlisted_ids += batch
+                    all_ids_to_parse.remove(batch)
+                    del failed_ids[batch]
+                    continue
+                    
+            if lineage_dict is None:  # failed connection
+                failed_ids[batch] += 1
+
+                if failed_ids[batch] >= args.retries:
+                    logger.warning(
+                        f"Reached maximum number of connection reattempts ({args.retries} tries) when\n"
+                        f"retrieving lineage data for tax id {batch}\n"
+                        "Could not connect to NCBI. Therefore, not retrieving lineage data for these taxonomy ids"
+                    )
+                    unlisted_ids += batch
+                    all_ids_to_parse.remove(batch)
+                    del failed_ids[batch]
+
+                continue
+
+            tax_lineage_dict.update(lineage_dict)
+
+    return tax_lineage_dict, unlisted_ids
