@@ -47,9 +47,11 @@ import sys
 import pandas as pd
 
 from datetime import datetime
+from http.client import IncompleteRead
 from typing import List, Optional
 
 from Bio import Entrez
+from Bio.Entrez.Parser import NotXMLError
 from saintBioutils.utilities.logger import config_logger
 from saintBioutils.utilities import file_io
 from saintBioutils.utilities.file_io import make_output_directory
@@ -363,6 +365,11 @@ def load_protein_ids(prot_id_path):
 def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
     """Retrieve NCBI Taxonomy and Protein database IDs
 
+    Post the protein accession.
+    Then entrez.efetch the protein records to associate each accession with the correct id
+    Then entrez.elink to retrieve all linked taxonomy records - do no associated with the correct 
+    protein accesion at this point.
+
     :param protein_accessions: list of NCBI protein version accessions
     :param cache_dir: Path, path to cache directory
     :param args: cmd-line args parser
@@ -374,145 +381,148 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
     # break up list into batches
     batches = get_chunks_list(protein_accessions, args.batch_size)
 
-    failed_batches = {}  # {batch: # of tries}
+    failed_batches = {}  # {protein: tries}
 
     tax_ids = set()
 
     protein_ncbi_ids = {}
 
-    for batch in tqdm(batches, desc="Getting NCBI Tax IDs"):
+    for batch in tqdm(batches, desc="Getting NCBI Protein and Taxonomy IDs"):
+        # post the IDs
+        try:
+            query_key, web_env = post_ids(batch, 'Protein', args)
+        except RuntimeError as err:
+            logger.warning(
+                "The batch of protein accessions contains an accession not in NCBI\n"
+                "Will parse the accessions individually later to identify the offending accession\n"
+                f"Batch:\n{batch}"
+            )
+            for protein in batch:
+                failed_batches[protein] = 0
+            continue
+        
+        if query_key is None:
+            for protein in batch:
+                failed_batches[protein] = 0
+            continue
+        
+        # fetch protein ids - associate prot id with prot acc
+        new_protein_ids = get_prot_ids(query_key, web_env, args)
 
-        new_tax_ids, new_prot_ids, failed_batches = get_ids_from_ncbi(batch, args, failed_batches)
+        if new_prot_ids is None:
+            for protein in batch:
+                failed_batches[protein] = 0
+            continue
 
+        protein_ncbi_ids.update(new_protein_ids)
+
+        new_tax_ids = link_prot_taxs(query_key, web_env, args)
+
+        if new_tax_ids is None:
+            for protein in batch:
+                failed_batches[protein] = 0
+            continue
+        
         tax_ids = tax_ids.union(new_tax_ids)
-        protein_ncbi_ids.update(new_prot_ids)
 
-    failed_individuals = {}  # prot_acc: tries
-
-    if len(failed_batches.keys()) != 0:
-        for batch in tqdm(failed_batches, "Retrying failed batches"):
-            batch_proteins = failed_batches[batch]['proteins']
-            for prot in batch_proteins:
-                new_tax_ids, new_prot_ids, failed_individuals = get_ids_from_ncbi(
-                    [prot],
-                    args,
-                    failed_individuals,
-                )
-
-                tax_ids = tax_ids.union(new_tax_ids)
-                protein_ncbi_ids.update(new_prot_ids)
-
-    failed_proteins = set()
-
-    if len(list(failed_individuals.keys())) != 0:
-        prots_to_retry = [failed_individuals[_]['proteins'] for _ in failed_individuals]
-
-        logger.warning(f"Retrying individual failed protein IDs")
-
-        while len(list(failed_individuals.keys())) > 0:
-            for prot in prots_to_retry:
+    # retry failed batches
+    if len(list(failed_batches.keys())) != 0:
+        logger.warning(
+            f"Retrying to retrieve Protein IDs and Taxonomy IDs for {len(list(failed_batches.keys()))} proteins"
+        )
+        while len(list(failed_batches.keys())):
+            for protein in failed_batches:
+                # post ids
                 try:
-                    failed_individuals[prot]
-                except KeyError:
+                    query_key, web_env = post_ids([protein], 'Protein', args)
+                except RuntimeError as err:
+                    logger.warning(
+                        f"The protein accessions {protein} is not listed in NCBI\n"
+                        "Therefore not retrieve taxonomy data for this protein.\n"
+                        f"Error:\n{err}"
+                    )
+                    del failed_batches[protein]
                     continue
-                except TypeError:
-                    try:
-                        failed_individuals[str(prot)]
-                    except KeyError:
-                        continue
+                
+                if query_key is None:
+                    failed_batches[protein] += 1
+                    if failed_batches[protein] >= args.retries:
+                        logger.warning(
+                            f"Ran out of connection reattempt for protein accession {protein} while posting IDs\n"
+                            "Therefore not retrieve taxonomy data for this protein."
+                        )
+                        del failed_batches[protein]
+                    continue
 
-                new_tax_ids, new_prot_ids, failed_individuals = get_ids_from_ncbi(
-                    prot,
-                    args,
-                    failed_individuals,
-                )
+                # fetch prot ids - linked to acc
+                new_protein_ids = get_prot_ids(query_key, web_env, args)
 
+                if new_prot_ids is None:
+                    failed_batches[protein] += 1
+                    if failed_batches[protein] >= args.retries:
+                        logger.warning(
+                            f"Ran out of connection reattempt for protein accession {protein} while fetching Protein IDs\n"
+                            "Therefore not retrieve taxonomy data for this protein."
+                        )
+                        del failed_batches[protein]
+                    continue
+
+                protein_ncbi_ids.update(new_protein_ids)
+
+                # fetch linked tax ids - not linked to acc
+                new_tax_ids = link_prot_taxs(query_key, web_env, args)
+
+                if new_tax_ids is None:
+                    failed_batches[protein] += 1
+                    if failed_batches[protein] >= args.retries:
+                        logger.warning(
+                            f"Ran out of connection reattempt for protein accession {protein} while fetching Tax IDs\n"
+                            "Therefore not retrieve taxonomy data for this protein."
+                        )
+                        del failed_batches[protein]
+                    continue
+                
                 tax_ids = tax_ids.union(new_tax_ids)
-                protein_ncbi_ids.update(new_prot_ids)
-
-                try:
-                    if failed_individuals[prot] >= args.retries:
-                        del failed_individuals[prot]
-                        failed_proteins.add(prot)
-                except TypeError:
-                    if failed_individuals[str(prot)]['tries'] >= args.retries:
-                        del failed_individuals[str(prot)]
-                        failed_proteins.add(str(prot))
-
-    if len(failed_proteins) != 0:
-        logger.warning(f"Failed to retrieve lineage data for {len(failed_proteins)} proteins")
-        with open((cache_dir / "failed_protein_accs.txt"), "a") as fh:
-            for prot in failed_proteins:
-                fh.write(f"{prot}\n")
-
-    logger.info(f"Retrieved {len(tax_ids)} NCBI Taxonomy IDs")
 
     return tax_ids, protein_ncbi_ids
 
 
-def get_ids_from_ncbi(prots, args, failed_batches):
-    """Retrieve NCBI Taxonomy and Protein database IDs, for first time or retried attempts.
+def get_prot_ids(query_key, web_env, args):
+    """Retrieve protein records ids from the NCBI Protein database
 
-    :param protein_accessions: list of NCBI protein version accessions
-    :param args: cmd-line args parser
-    :param round: int, (1) first time, (2) second, (3) continued until reach retry limit
-    :param failed_batches: dict {batch/prots: #ofTries}
+    :param query_key: str, query key from entrez.epost of protein accessions
+    :param web_env: str, web environment from entrez.epost of protein accessions
+    :param args: CLI args parser
 
-    Return set of NCBI Tax ids and set of NCBI Prot ids, and failed_batches dict
+    Return dict {protein ID: protein accession} or None if fails
     """
     logger = logging.getLogger(__name__)
-
-    new_tax_ids, new_protein_ids = set(), set()
-
-    # post protein accessions
+    new_prot_ids = {}  # {id: acc}
     try:
-        query_key, web_env = post_ids(prots, 'Protein', args)
-    except RuntimeError:
+        with entrez_retry(
+            10,
+            Entrez.efetch,
+            query_key=query_key,
+            WebEnv=web_env,
+            db="Protein",
+            rettype='docsum',
+        ) as handle:
+            prot_records = Entrez.read(handle, validate=False)
+
+    except (TypeError, AttributeError, RuntimeError,  NotXMLError, IncompleteRead) as err:
         logger.warning(
-            "Batch contained invalid protein version accession.\n"
-            "Will retry ids individually later to identify the invalid id\n"
-            f"Batch:\n{prots}"
+            "Could not rerieve records from the NCBI Protein database.\n"
+            "Will retry individual records later\n"
+            f"Error message retrieved:\n{err}"
         )
-        for protein in prots:
-            try:
-                failed_batches[protein]['tries'] += 1
-            except KeyError:
-                failed_batches[protein] = {'proteins': protein, 'tries': 1}
+        return None
 
-        return new_tax_ids, new_protein_ids, failed_batches
+    for record in prot_records:
+        prot_id = record['Id']
+        prot_acc = record['AccessionVersion']
+        new_prot_ids{prot_id} = prot_acc
 
-    if query_key is None:
-        key = str(prots)
-        try:
-            failed_batches[key]['tries'] += 1
-        except KeyError:
-            failed_batches[key] = {'proteins': prots, 'tries': 1}
-
-        return new_tax_ids, new_protein_ids, failed_batches
-
-    # elink proteins to tax records
-    new_tax_ids, new_protein_ids, success = link_prot_taxs(query_key, web_env, args)
-
-    if success is False:
-        logger.warning(
-            f"Could not retrieve tax link for {','.join(prots)}."
-        )
-        key = str(prots)
-        try:
-            failed_batches[key]['tries'] += 1
-        except KeyError:
-            failed_batches[key] = {'proteins': prots, 'tries': 1}
-
-        return new_tax_ids, new_protein_ids, failed_batches
-
-    new_prots_id_dict = {}  # protein ID: protein ACC
-
-    for i in range(len(new_protein_ids)):
-        prot_acc = prots[i]
-        prot_id = new_protein_ids[i]
-        new_prots_id_dict[prot_id] = prot_acc
-
-    return new_tax_ids, new_prots_id_dict, failed_batches
+    return new_prot_ids
 
 
 def link_prot_taxs(query_key, web_env, args):
@@ -522,11 +532,11 @@ def link_prot_taxs(query_key, web_env, args):
     :param web_env: str, from Entrez epost
     :param args: cmd-line args parser
 
-    Return set of NCBI tax ids, and set of NCBI protein IDS, and bool TRUE if successful
+    Return set of NCBI tax ids or None if fails
     """
     logger = logging.getLogger(__name__)
 
-    tax_ids, protein_ids = set(), set()
+    tax_ids = set()
 
     try:
         with entrez_retry(
@@ -539,21 +549,31 @@ def link_prot_taxs(query_key, web_env, args):
             linkname="protein_taxonomy",
         ) as handle:
             tax_links = Entrez.read(handle, validate=False)
-    except RuntimeError:
-        logger.warning("Batch included invalid NCBI protein ids")
-        return tax_ids, protein_ids, False
+    except RuntimeError as err:
+        logger.warning(
+            "When retrieving taxonomy IDs, the batch included invalid NCBI protein ids\n"
+            "Will try batch components individually later, to identify the offending id\n"
+            f"Batch:\n{batch}\n"
+            f"Error:\n{err}"
+        )
+        return None
+    except (TypeError, AttributeError, NotXMLError, IncompleteRead) as err:
+        logger.warning(
+            "Failed to connect to NCBI.Entrez and download the Entrez.elink result\n"
+            "Will retry later"
+            f"Batch:\n{batch}\n"
+            f"Error:\n{err}"
+        )
+        return None
+
 
     for result in tax_links:
-
-        for prot_id in result['IdList']:
-            protein_ids.add(prot_id)
-
         for item in result['LinkSetDb']:
             links = item['Link']
             for link in links:
                 tax_ids.add(link['Id'])
 
-    return tax_ids, list(protein_ids), True
+    return tax_ids
 
 
 def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
