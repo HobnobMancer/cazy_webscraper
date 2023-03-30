@@ -575,7 +575,7 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
     lineage_dict, failed_ids = get_lineage_data(tax_ids, args)
     logger.warning(
         f"Queried NCBI with {len(tax_ids)} tax ids\n"
-        f"Retrieving lineages for {len(list(lineage_dict.keys()))} tax ids"
+        f"Retrieved lineages for {len(list(lineage_dict.keys()))} tax ids"
     )
 
     if len(list(lineage_dict.keys())) == 0:
