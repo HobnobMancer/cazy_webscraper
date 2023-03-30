@@ -409,7 +409,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
         # fetch protein ids - associate prot id with prot acc
         new_protein_ids = get_prot_ids(query_key, web_env, args)
 
-        if new_prot_ids is None:
+        if new_protein_ids is None:
             for protein in batch:
                 failed_batches[protein] = 0
             continue
@@ -457,7 +457,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
                 # fetch prot ids - linked to acc
                 new_protein_ids = get_prot_ids(query_key, web_env, args)
 
-                if new_prot_ids is None:
+                if new_protein_ids is None:
                     failed_batches[protein] += 1
                     if failed_batches[protein] >= args.retries:
                         logger.warning(
