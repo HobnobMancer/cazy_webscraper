@@ -568,11 +568,14 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
     all_failed_ids = set()  # tax ids for whom data could not be retrieved
 
     # retrieve lineage data from the NCBI Taxonomy database
-    all_tax_lineage_dict, failed_ids = get_lineage_data(tax_ids, args)
+    lineage_dict, failed_ids = get_lineage_data(tax_ids, args)
     logger.warning(
         f"Queried NCBI with {len(tax_ids)} tax ids\n"
         f"Retrieving lineages for {len(list(all_tax_lineage_dict.keys()))} tax ids"
     )
+
+    if len(list(lineage_dict.keys())) == 0:
+        return lineage_dict
 
     all_failed_ids = all_failed_ids.union(failed_ids)
 
@@ -580,23 +583,16 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
     with open((cache_dir/"ncbi_lineages.json"), "w") as fh:
         json.dump(lineage_dict, fh)
 
-    #
-    #
-
     # retrieve proteins linked to taxon record in NCBI - for only tax ids where lineage data was retrieved
-    tax_prot_dict = {}  # {}
+    tax_prot_dict = {}  # {tax_id: {local db protein ids}}
     failed_linked_ids = {}
 
-    tax_id_batches = get_chunks_list(list(all_tax_lineage_dict.keys()), args.batch_size)
-
-    for tax_id in tqdm(tax_id_batches, desc="Link proteins to NCBI Tax record"):
-        if tax_id in completely_failed_tax_ids:
-            logger.warning(
-                f"Could not retrieved lineage for ncbi tax id {tax_id} "
-                "so not retrieving linked proteins for tax id"
-            )
-            continue
-        tax_prot_dict, success = get_tax_proteins(
+    # must query each tax id individually
+    # Batch querying Entrez.elink combines all the protein ids together for all tax ids
+    # therefore, could not separate out the protein ids for each tax id
+    # batch query returns ... DbFrom': 'taxonomy', 'IdList': ['55207', '204038', '1421545']}]
+    for tax_id in tqdm(lineage_dict, desc="Link proteins to NCBI Tax record"):    
+        new_tax_prot_dict, success = get_tax_proteins(
             tax_id,
             tax_prot_dict,
             prot_id_dict,
@@ -605,6 +601,7 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
             args,
         )
         # {tax_id: {local db protein ids}}
+        tax_prot_dict.update(new_tax_prot_dict)        
 
         if success is False:
             failed_linked_ids[tax_id] = 1  # first attempt to conenct failed
@@ -630,7 +627,7 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
                         f"Ran out of reattempts to get linked proteins data for ncbi tax {tax_id}"
                     )
                     del failed_linked_ids[tax_id]
-                    completely_failed_tax_ids.add(f"{tax_id}\tCould not retrieve linked proteins")
+                    all_failed_ids.add(f"{tax_id}\tCould not retrieve linked proteins")
 
     # combine lineage data and proteins into a single dict
     for tax_id in tax_ids:
@@ -640,14 +637,14 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
             logger.error(
                 f"Did not retrieve lineage and/or linked proteins for ncbi tax id {tax_id}"
             )
-            if tax_id not in completely_failed_tax_ids:
-                completely_failed_tax_ids.add(
+            if tax_id not in all_failed_ids:
+                all_failed_ids.add(
                     f"{tax_id}\tCould not lineage data and/or retrieve linked proteins"
                 )
 
-    if len(completely_failed_tax_ids) != 0:
+    if len(all_failed_ids) != 0:
         with open((cache_dir / "failed_tax_ids.txt"), "a") as fh:
-            for tax_id in completely_failed_tax_ids:
+            for tax_id in all_failed_ids:
                 fh.write(f"{tax_id}\n")
 
     return lineage_dict
@@ -701,93 +698,6 @@ def get_lineage_data(tax_ids, args):
             all_failed_ids.add(tax_id)
 
     return all_tax_lineage_dict, all_failed_ids
-
-
-
-def get_lineage(tax_id, lineage_dict, args):
-    """Retrieve lineage from NCBI taxonomy record, and add to lineage dict
-
-    :param tax_id: str, ncbi tax db id
-    :param lineage_dict: dict, {ncbi tax ID: {rank: str}}
-    :param args: cmd-line args parser
-
-    Return dict of lineage data and bool representing if eFetch was performed successfully
-    """
-    logger = logging.getLogger(__name__)
-
-    try:
-        with entrez_retry(
-            args.retries,
-            Entrez.efetch,
-            db="Taxonomy",
-            id=tax_id,
-        ) as handle:
-            tax_records = Entrez.read(handle, validate=False)
-
-    except (TypeError, AttributeError) as err:
-        logger.warning(f"Failed to fetch tax record from NCBI tax for id '{tax_id}'':\n{err}")
-        return lineage_dict, False
-
-    for record in tax_records:
-        record_id = record['TaxId']
-
-        # set lineage data to None
-        kingdom, phylum, tax_class, order, family, genus, species, strain = None, None, None, None, None, None, None, None
-
-        for i in record['LineageEx']:
-            rank = i['Rank']
-
-            if rank == 'superkingdom':
-                kingdom = i['ScientificName']
-
-            elif rank == 'phylum':
-                phylum = i['ScientificName']
-
-            elif rank == 'class':
-                tax_class = i['ScientificName']
-
-            elif rank == 'order':
-                order = i['ScientificName']
-
-            elif rank == 'family':
-                family = i['ScientificName']
-
-            elif rank == 'genus':
-                genus = i['ScientificName']
-
-            elif rank == 'species' or 'species group':
-                species = i['ScientificName']
-
-            elif rank == 'serotype' or 'strain':
-                strain = i['ScientificName']
-
-        scientific_name = record['ScientificName']
-
-        if genus is not None:
-            # drop genus from species name
-            if species is not None:
-                species = species.replace(genus, "").strip()
-
-            # extract strain from scientific name if not retrieved as rank
-            if species is not None and strain is None:
-                strain = scientific_name.replace(f"{genus} {species}", "").strip()
-
-            # extract species from the scientific name if not retrieved as rank
-            elif species is None:
-                species = scientific_name.replace(genus, "").strip()
-
-        lineage_dict[record_id] = {
-            'kingdom': kingdom,
-            'phylum': phylum,
-            'class': tax_class,
-            'order': order,
-            'family': family,
-            'genus': genus,
-            'species': species,
-            'strain': strain,
-        }
-
-    return lineage_dict, True
 
 
 def get_tax_proteins(tax_id, tax_prot_dict, prot_id_dict, gbk_dict, cache_dir, args):
