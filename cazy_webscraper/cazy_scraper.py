@@ -330,7 +330,7 @@ def get_cazy_data(
         (len(fam_filters) == 0) and \
             (len(kingdom_filters) == 0) and \
                 (len(taxonomy_filters) == 0):
-        cazy_data = parse_all_cazy_data(cazy_txt_lines, cazy_fam_populations)
+        cazy_data = parse_all_cazy_data(cazy_txt_lines, cazy_fam_populations, args)
 
     else:
         cazy_data = parse_cazy_data_with_filters(
@@ -340,6 +340,7 @@ def get_cazy_data(
             kingdom_filters,
             taxonomy_filters,
             cazy_fam_populations,
+            args,
         )
 
     logger.info(

@@ -127,25 +127,76 @@ def test_failed_download(monkeypatch):
     assert pytest_wrapped_e.type == SystemExit
 
 
-def test_parse_all_cazy_data(cazy_file_path):
+def test_parse_all_cazy_data_subfams(cazy_file_path):
+    argsdict = {
+        "args": Namespace(
+            subfamilies=True,
+        )
+    }
+
     with open(cazy_file_path, "r") as fh:
         cazy_lines = fh.read().splitlines()
 
-    assert cazy.parse_all_cazy_data(cazy_lines, None) == {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'BAX82587.1': {'kingdom': {'Bacteria'}, 'organism': {'Labilibaculum antarcticum SPP2'}, 'families': {'GH157': {None}}}, 'SDR68055.1': {'kingdom': {'Bacteria'}, 'organism': {'Polaribacter sp. KT25b'}, 'families': {'GH157': {None}}}, 'QXP79022.1': {'kingdom': {'Bacteria'}, 'organism': {'Winogradskyella sp. HaHa_3_26'}, 'families': {'GH157': {None}}}, 'QNK77973.1': {'kingdom': {'Bacteria'}, 'organism': {'Winogradskyella sp. PAMC22761'}, 'families': {'GH157': {None}}}, 'BCJ46567.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes ianthinogenes NBRC 13996'}, 'families': {'AA5': {'AA5_2'}, 'GH1': {None}}}, 'ATO81963.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes sp. SE50'}, 'families': {'AA5': {'AA5_2'}}}, 'AEV83893.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes sp. SE50/110'}, 'families': {'AA5': {'AA5_2'}}}, 'SLL99371.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes sp. SE50/110'}, 'families': {'AA5': {'AA5_2'}}}, 'CRK61066.1': {'kingdom': {'Bacteria'}, 'organism': {'Alloactinosynnema sp. L-07'}, 'families': {'AA5': {'AA5_2'}}}, 'AUZ88908.1': {'kingdom': {'Bacteria'}, 'organism': {'Arthrobacter agilis UMCV2'}, 'families': {'AA5': {'AA5_2'}}}, 'UKA55327.1': {'kingdom': {'Bacteria'}, 'organism': {'Arthrobacter sp. FW305-BF8'}, 'families': {'AA5': {'AA5_2'}}}, 'QMW46863.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus AF13'}, 'families': {'AA5': {'AA5_2'}}}, 'QMW38907.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus AF13'}, 'families': {'AA5': {'AA5_2'}}}, 'UCK59454.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus CA14'}, 'families': {'AA5': {'AA5_2'}}}, 'UDD63818.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus CA14'}, 'families': {'AA5': {'AA5_2'}}}, 'QRD87005.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL 3357'}, 'families': {'AA5': {'AA5_2'}}}, 'QRD91111.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL 3357'}, 'families': {'AA5': {'AA5_2'}}}, 'QMW26827.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL3357'}, 'families': {'AA5': {'AA5_2'}}}, 'QMW34793.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL3357'}, 'families': {'AA5': {'AA5_2'}}}, 'BAE64583.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus oryzae RIB40'}, 'families': {'AA5': {'AA5_2'}}}, 'BAE56565.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus oryzae RIB40'}, 'families': {'AA5': {'AA5_2'}}}, 'BCS28434.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus puulaauensis MK2'}, 'families': {'AA5': {'AA5_2'}}}, 'BCS18659.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus puulaauensis MK2'}, 'families': {'AA5': {'AA5_2'}}}, 'BAW27603.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus stellatus NBRC 32302'}, 'families': {'AA5': {'AA5_2'}}}}
+    output = cazy.parse_all_cazy_data(cazy_lines, None, argsdict['args']) 
+    assert output == {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'BAX82587.1': {'kingdom': {'Bacteria'}, 'organism': {'Labilibaculum antarcticum SPP2'}, 'families': {'GH157': {None}}}, 'SDR68055.1': {'kingdom': {'Bacteria'}, 'organism': {'Polaribacter sp. KT25b'}, 'families': {'GH157': {None}}}, 'QXP79022.1': {'kingdom': {'Bacteria'}, 'organism': {'Winogradskyella sp. HaHa_3_26'}, 'families': {'GH157': {None}}}, 'QNK77973.1': {'kingdom': {'Bacteria'}, 'organism': {'Winogradskyella sp. PAMC22761'}, 'families': {'GH157': {None}}}, 'BCJ46567.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes ianthinogenes NBRC 13996'}, 'families': {'AA5': {'AA5_2'}, 'GH1': {None}}}, 'ATO81963.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes sp. SE50'}, 'families': {'AA5': {'AA5_2'}}}, 'AEV83893.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes sp. SE50/110'}, 'families': {'AA5': {'AA5_2'}}}, 'SLL99371.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes sp. SE50/110'}, 'families': {'AA5': {'AA5_2'}}}, 'CRK61066.1': {'kingdom': {'Bacteria'}, 'organism': {'Alloactinosynnema sp. L-07'}, 'families': {'AA5': {'AA5_2'}}}, 'AUZ88908.1': {'kingdom': {'Bacteria'}, 'organism': {'Arthrobacter agilis UMCV2'}, 'families': {'AA5': {'AA5_2'}}}, 'UKA55327.1': {'kingdom': {'Bacteria'}, 'organism': {'Arthrobacter sp. FW305-BF8'}, 'families': {'AA5': {'AA5_2'}}}, 'QMW46863.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus AF13'}, 'families': {'AA5': {'AA5_2'}}}, 'QMW38907.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus AF13'}, 'families': {'AA5': {'AA5_2'}}}, 'UCK59454.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus CA14'}, 'families': {'AA5': {'AA5_2'}}}, 'UDD63818.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus CA14'}, 'families': {'AA5': {'AA5_2'}}}, 'QRD87005.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL 3357'}, 'families': {'AA5': {'AA5_2'}}}, 'QRD91111.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL 3357'}, 'families': {'AA5': {'AA5_2'}}}, 'QMW26827.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL3357'}, 'families': {'AA5': {'AA5_2'}}}, 'QMW34793.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL3357'}, 'families': {'AA5': {'AA5_2'}}}, 'BAE64583.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus oryzae RIB40'}, 'families': {'AA5': {'AA5_2'}}}, 'BAE56565.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus oryzae RIB40'}, 'families': {'AA5': {'AA5_2'}}}, 'BCS28434.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus puulaauensis MK2'}, 'families': {'AA5': {'AA5_2'}}}, 'BCS18659.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus puulaauensis MK2'}, 'families': {'AA5': {'AA5_2'}}}, 'BAW27603.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus stellatus NBRC 32302'}, 'families': {'AA5': {'AA5_2'}}}}
 
 
-def test_parse_cazy_data(cazy_file_path):
+def test_parse_all_cazy_data_fams_only(cazy_file_path):
+    argsdict = {
+        "args": Namespace(
+            subfamilies=False,
+        )
+    }
+
     with open(cazy_file_path, "r") as fh:
         cazy_lines = fh.read().splitlines()
 
-    assert cazy.parse_cazy_data_with_filters(
+    output = cazy.parse_all_cazy_data(cazy_lines, None, argsdict['args'])
+    assert output == {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'BAX82587.1': {'kingdom': {'Bacteria'}, 'organism': {'Labilibaculum antarcticum SPP2'}, 'families': {'GH157': {None}}}, 'SDR68055.1': {'kingdom': {'Bacteria'}, 'organism': {'Polaribacter sp. KT25b'}, 'families': {'GH157': {None}}}, 'QXP79022.1': {'kingdom': {'Bacteria'}, 'organism': {'Winogradskyella sp. HaHa_3_26'}, 'families': {'GH157': {None}}}, 'QNK77973.1': {'kingdom': {'Bacteria'}, 'organism': {'Winogradskyella sp. PAMC22761'}, 'families': {'GH157': {None}}}, 'BCJ46567.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes ianthinogenes NBRC 13996'}, 'families': {'AA5_2': {None}, 'GH1': {None}}}, 'ATO81963.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes sp. SE50'}, 'families': {'AA5_2': {None}}}, 'AEV83893.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes sp. SE50/110'}, 'families': {'AA5_2': {None}}}, 'SLL99371.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes sp. SE50/110'}, 'families': {'AA5_2': {None}}}, 'CRK61066.1': {'kingdom': {'Bacteria'}, 'organism': {'Alloactinosynnema sp. L-07'}, 'families': {'AA5_2': {None}}}, 'AUZ88908.1': {'kingdom': {'Bacteria'}, 'organism': {'Arthrobacter agilis UMCV2'}, 'families': {'AA5_2': {None}}}, 'UKA55327.1': {'kingdom': {'Bacteria'}, 'organism': {'Arthrobacter sp. FW305-BF8'}, 'families': {'AA5_2': {None}}}, 'QMW46863.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus AF13'}, 'families': {'AA5_2': {None}}}, 'QMW38907.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus AF13'}, 'families': {'AA5_2': {None}}}, 'UCK59454.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus CA14'}, 'families': {'AA5_2': {None}}}, 'UDD63818.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus CA14'}, 'families': {'AA5_2': {None}}}, 'QRD87005.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL 3357'}, 'families': {'AA5_2': {None}}}, 'QRD91111.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL 3357'}, 'families': {'AA5_2': {None}}}, 'QMW26827.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL3357'}, 'families': {'AA5_2': {None}}}, 'QMW34793.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL3357'}, 'families': {'AA5_2': {None}}}, 'BAE64583.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus oryzae RIB40'}, 'families': {'AA5_2': {None}}}, 'BAE56565.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus oryzae RIB40'}, 'families': {'AA5_2': {None}}}, 'BCS28434.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus puulaauensis MK2'}, 'families': {'AA5_2': {None}}}, 'BCS18659.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus puulaauensis MK2'}, 'families': {'AA5_2': {None}}}, 'BAW27603.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus stellatus NBRC 32302'}, 'families': {'AA5_2': {None}}}}
+
+
+def test_parse_cazy_data_subfam(cazy_file_path):
+    argsdict = {
+        "args": Namespace(
+            subfamilies=True,
+        )
+    }
+
+    with open(cazy_file_path, "r") as fh:
+        cazy_lines = fh.read().splitlines()
+
+    output = cazy.parse_cazy_data_with_filters(
         cazy_lines,
         {'GH'},
         {'Bacteria'},
         {'GH157', 'AA5_2'},
         {'Bacteroides', 'Aspergillus oryzae', 'Aspergillus flavus NRRL3357'},
         None,
-    ) == {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}
+        argsdict['args'],
+    ) 
+    assert output == {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}
+
+
+def test_parse_cazy_data_fam_only(cazy_file_path):
+    argsdict = {
+        "args": Namespace(
+            subfamilies=False,
+        )
+    }
+
+    with open(cazy_file_path, "r") as fh:
+        cazy_lines = fh.read().splitlines()
+
+    output = cazy.parse_cazy_data_with_filters(
+        cazy_lines,
+        {'GH'},
+        {'Bacteria'},
+        {'GH157', 'AA5_2'},
+        {'Bacteroides', 'Aspergillus oryzae', 'Aspergillus flavus NRRL3357'},
+        None,
+        argsdict['args'],
+    )
+    assert output == {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}
 
 
 def test_build_tax_dict():
