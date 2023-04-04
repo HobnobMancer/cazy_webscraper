@@ -111,12 +111,7 @@ def closing_message(job, start_time, args, early_term=False):
     For help with trouble shooting and operating cazy_webscraper please see the documentation:
     README: {WEBSITE}
     Documentation (including tutorials): {DOCUMENTATION}
-
-    We are interested in your views on the operation and addition of new features
-    to cazy_webscraper. Please get in touch with any issues, thanks, recommendations and
-    suggestions. Please submit your suggestions and comments at:
-    GitHub issues: {GITHUB_ISSUES}
-    Email: {AUTHOR_EMAIL}
+    GitHub Issues: {GITHUB_ISSUES}
 
     When publishing work that uses cazy_webscraper please cite:
     Citation: {CITATION_INFO}
