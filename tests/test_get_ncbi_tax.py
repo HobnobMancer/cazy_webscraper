@@ -397,7 +397,7 @@ def test_get_lineage_fails(monkeypatch):
 
     monkeypatch.setattr(get_ncbi_taxs, "entrez_retry", mock_entrez_tax_call)
 
-    output = lineage.fetch_lineages('2700054', {}, argsdict['args'])
+    output = lineage.fetch_lineages(['2700054'], 'QK', 'Webenv', argsdict['args'])
     assert output == ({}, False)
 
 
