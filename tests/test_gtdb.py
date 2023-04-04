@@ -56,6 +56,7 @@ from saintBioutils.utilities import logger as saint_logger
 
 from cazy_webscraper.expand.gtdb import get_gtdb_tax
 from cazy_webscraper.expand import gtdb
+from cazy_webscraper.sql import sql_orm
 from cazy_webscraper.sql.sql_interface.add_data import add_gtdb_tax
 from cazy_webscraper.utilities.parsers import get_gtdb_parser
 
