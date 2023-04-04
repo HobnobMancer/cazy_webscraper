@@ -281,6 +281,7 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
 
     Return set of NCBI Tax IDs, and dict of NCBI Prot ID valued by Gbk sequence accession
     """
+    tax_ids, prot_id_dict = set(), {}
     logger = logging.getLogger(__name__)
 
     if (args.use_tax_ids is not None) and (args.use_protein_ids is not None):
