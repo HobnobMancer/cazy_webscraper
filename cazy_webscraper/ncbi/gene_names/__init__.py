@@ -76,6 +76,7 @@ def get_linked_ncbi_accessions(uniprot_dict, args):
 
     invalid_gene_names = {'nan'}   # gene names no longer listed in NCBI
     failed_batches = []
+    failed_names = {}
 
     for batch in tqdm(ncbi_queries, desc="Batch quering NCBI to get protein accesions for gene names"):
         batch = list(set(batch).difference(set(invalid_gene_names)))
@@ -88,8 +89,6 @@ def get_linked_ncbi_accessions(uniprot_dict, args):
         )
 
     if len(failed_batches) != 0:
-        failed_names = {}
-
         # remove invalid IDs
         for batch in tqdm(failed_batches, desc="Retrying failed batches"):
             batch = list(set(batch).difference(set(invalid_gene_names)))
