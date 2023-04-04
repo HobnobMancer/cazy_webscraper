@@ -60,6 +60,7 @@ def fetch_lineages(tax_ids, query_key, web_env, args):
     Return dict of lineage data {ncbi_tax_id: {rank: str/lineage}}
         or None if connection fails
     """
+    logger = logging.getLogger(__name__)
     lineage_dict = {}  # {ncbi_tax_id: {rank: str/lineage}}
 
     try:
