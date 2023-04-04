@@ -74,7 +74,7 @@ def fetch_lineages(tax_ids, query_key, web_env, args):
             batched_tax_records = Entrez.read(handle, validate=False)
 
     except (TypeError, AttributeError) as err:
-        logger.warning(f"Failed to fetch tax record from NCBI tax for id '{tax_id}'':\n{err}")
+        logger.warning(f"Failed to fetch tax records from NCBI tax for ids '{tax_ids}'':\n{err}")
         return
 
     for record in batched_tax_records:
