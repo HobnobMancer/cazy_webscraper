@@ -205,6 +205,8 @@ def add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args):
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+    
     # load EC records in the local CAZyme db
     ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
 
