@@ -343,11 +343,11 @@ def load_protein_ids(prot_id_path):
     logger = logging.getLogger(__name__)
     logger.warning(f"Use Protein IDs and accessions in {prot_id_path}")
     try:
-        with open(args.use_protein_ids, "r") as fh:
+        with open(prot_id_path, "r") as fh:
             cached_prot_data = fh.read().splitlines()
     except FileNotFoundError:
         logger.error(
-            f"Could not find NCBI Protein ID cache at:\n{str(args.use_protein_ids)}\n"
+            f"Could not find NCBI Protein ID cache at:\n{str(prot_id_path)}\n"
             "Check path is correct\n"
             "Terminating program"
         )
