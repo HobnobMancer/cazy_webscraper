@@ -100,7 +100,7 @@ def get_cazy_txt_file_data(cache_dir, time_stamp, args):
     return cazy_txt_lines
 
 
-def parse_all_cazy_data(lines, cazy_fam_populations):
+def parse_all_cazy_data(lines, cazy_fam_populations, args):
     """Extract ALL GenBank accession, taxonomy data and CAZy (sub)family annotations from CAZy txt file.
     
     This is when no filters are applied.
@@ -108,6 +108,7 @@ def parse_all_cazy_data(lines, cazy_fam_populations):
     :param lines: list of str, lines from CAZy txt file, one unqiue line is one item in the list
     :param cazy_fam_populations: None if args.validate is False, or dict of CAZy listed CAZy 
         (sub)fam population sizes if args.validate is True
+    :param args: CLI args parser
     
     Return cazy_data: dict, {gbk: {"organism": set(str), "families": {'fam': set (subfam)}}}
     """
@@ -134,10 +135,13 @@ def parse_all_cazy_data(lines, cazy_fam_populations):
 
         # retrieve CAZyme data
         cazy_fam = line_data[0]
-        if cazy_fam.find("_") != -1:
-            cazy_subfam = cazy_fam
-            cazy_fam = cazy_fam[:cazy_fam.find("_")]
-        else:
+        if cazy_fam.find("_") != -1: # is subfamily annotation present
+            if args.subfamilies:  # retrieve subfamily annotation if present
+                cazy_subfam = cazy_fam
+                cazy_fam = cazy_fam[:cazy_fam.find("_")]
+            else:  # no retrieving subfam annotations
+                cazy_subfam = None
+        else: # no sub fam annotation present
             cazy_subfam = None
         
         fam_annotations.add( (cazy_fam, cazy_subfam) )
@@ -174,6 +178,7 @@ def parse_cazy_data_with_filters(
     kingdom_filter,
     tax_filter,
     cazy_fam_populations,
+    args,
 ):
     """Extract GenBank accession, taxonomy data and CAZy (sub)family annotations from CAZy txt file.
     
@@ -184,6 +189,7 @@ def parse_cazy_data_with_filters(
     :param tax_filter: set of tax (genus, species, strains) filters to limit scrape to
     :param cazy_fam_populations: None if args.validate is False, or dict of CAZy listed CAZy 
         (sub)fam population sizes if args.validate is True
+    :param args: CLI args parser
     
     Return cazy_data: dict, {gbk: {"organism": set(str), "families": {'fam': set (subfam)}}}
     """
@@ -216,10 +222,13 @@ def parse_cazy_data_with_filters(
 
         # retrieve CAZyme data
         cazy_fam = line_data[0]
-        if cazy_fam.find("_") != -1:
-            cazy_subfam = cazy_fam
-            cazy_fam = cazy_fam[:cazy_fam.find("_")]
-        else:
+        if cazy_fam.find("_") != -1: # is subfamily annotation present
+            if args.subfamilies:  # retrieve subfamily annotation if present
+                cazy_subfam = cazy_fam
+                cazy_fam = cazy_fam[:cazy_fam.find("_")]
+            else:  # no retrieving subfam annotations
+                cazy_subfam = None
+        else: # no sub fam annotation present
             cazy_subfam = None
             
         # check if protein previously matched filter criteria, and additional CAZy (sub)fam annotations
