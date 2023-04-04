@@ -65,7 +65,7 @@ def fetch_lineages(tax_ids, query_key, web_env, args):
 
     try:
         with entrez_retry(
-            10,
+            args.retries,
             Entrez.efetch,
             db="Taxonomy",
             query_key=query_key,
