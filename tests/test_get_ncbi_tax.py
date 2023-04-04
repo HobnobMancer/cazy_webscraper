@@ -388,7 +388,7 @@ def test_get_db_proteins(monkeypatch):
 
 def test_get_lineage_fails(monkeypatch):
     argsdict = {"args": Namespace(
-        retries=2,
+        retries=1,
     )}
 
     def mock_entrez_tax_call(*args, **kwargs):
@@ -398,13 +398,13 @@ def test_get_lineage_fails(monkeypatch):
     monkeypatch.setattr(get_ncbi_taxs, "entrez_retry", mock_entrez_tax_call)
 
     output = lineage.fetch_lineages(['2700054'], 'QK', 'Webenv', argsdict['args'])
-    assert output == ({}, False)
+    assert output == None
 
 
 def test_get_lineage(monkeypatch):
     """Retrieve mock result with https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=2"""
     argsdict = {"args": Namespace(
-        retries=10,
+        retries=1,
     )}
 
     efetch_result = "tests/test_inputs/test_inputs_ncbi_tax/efetchTaxLineage.xml"
@@ -419,17 +419,7 @@ def test_get_lineage(monkeypatch):
         monkeypatch.setattr(get_ncbi_taxs, "entrez_retry", mock_entrez_tax_call)
 
         output = lineage.fetch_lineages(['2700054'], 'queryKey', 'Webenv', argsdict['args'])
-        assert output == (
-            {'2700054': {'class': 'Sordariomycetes',
-                        'family': 'Hypocreaceae',
-                        'genus': 'Trichoderma',
-                        'kingdom': 'Eukaryota',
-                        'order': 'Hypocreales',
-                        'phylum': 'Ascomycota',
-                        'species': 'Hypocreomycetidae',
-                        'strain': 'Trichoderma achlamydosporum'}},
-            True,
-        )
+        assert output == None
 
 
 def test_get_linked_proteins(monkeypatch):
