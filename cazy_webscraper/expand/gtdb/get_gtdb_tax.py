@@ -67,6 +67,7 @@ from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.expand.gtdb import get_gtdb_data
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 from cazy_webscraper.sql import sql_orm
+from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
     get_gbk_table_dict,
     get_uniprot_table_dict,
