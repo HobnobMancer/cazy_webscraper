@@ -14,7 +14,7 @@
 
 -------------------------------
 
-> `cazy_webscraper` version 1 is depracted. Please ensure you are using `cazy_webscraper` version 2 or newer.  
+> `cazy_webscraper` version 1 is depracted. Please ensure you are using version 2 or newer.  
 > `bioconda` installation is fixed for >= v2.1.3.1
 
 ## cazy_webscraper
