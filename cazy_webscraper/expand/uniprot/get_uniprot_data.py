@@ -43,11 +43,12 @@
 
 import json
 import logging
-
-import pandas as pd
+import time
 
 from datetime import datetime
 from typing import List, Optional
+
+import pandas as pd
 
 from Bio import Entrez
 from bioservices import UniProt
@@ -176,9 +177,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     add_uniprot_accessions(uniprot_dict, connection, args)
 
     # add ec numbers
-    if (args.ec) and (len(all_ecs) != 0):
+    if (args.ec):
         logger.warning("Adding EC numbers to the local CAZyme database")
-        add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args)
+        add_ec_numbers(uniprot_dict, connection, args)
 
     # add pdb accessions
     if args.pdb:
@@ -409,6 +410,7 @@ def mapping_decorator(func):
                     "Retrying in 10 seconds"
                 )
                 tries += 1
+                time.sleep(10)
 
         return response
     
