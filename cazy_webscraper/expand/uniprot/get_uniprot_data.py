@@ -173,7 +173,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # add uniprot accessions (and sequences if seq retrieval is enabled)
     logger.warning("Adding data to the local CAZyme database")
-    add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args)
+    add_uniprot_accessions(uniprot_dict, connection, args)
 
     # add ec numbers
     if (args.ec) and (len(all_ecs) != 0):
