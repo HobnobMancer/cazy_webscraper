@@ -171,21 +171,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if len(list(downloaded_uniprot_data.keys())) != 0:
         cache_uniprot_data(uniprot_dict, cache_dir, time_stamp)
 
-    acc_to_remove = set()
-    for uniprot_acc in uniprot_dict:
-        try:
-            uniprot_dict[uniprot_acc]['genbank_accession']
-        except KeyError:
-            logger.error(
-                f"Could not map the UniProt accession '{uniprot_acc}' to a GenBank accession\n"
-                "directly via the UniProt mapping service or via its gene name.\n"
-                f"Not adding protein data for the UniProt accession '{uniprot_acc}' to the\n"
-                "local CAZyme database."
-            )
-            acc_to_remove.add(uniprot_acc)
-    for uniprot_acc in acc_to_remove:
-        del uniprot_dict[uniprot_acc]
-
     # add uniprot accessions (and sequences if seq retrieval is enabled)
     logger.warning("Adding data to the local CAZyme database")
     add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args)
