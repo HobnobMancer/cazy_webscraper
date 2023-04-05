@@ -380,8 +380,6 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--sequence`, `-s` - Retrieve protein amino acid sequences from UniProt
 
-`--seq_update` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
-
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
 `--species` - List of species written as Genus Species) to restrict the scraping of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
@@ -389,6 +387,10 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--strains` - List of specific species strains to restrict the scraping of CAZymes to.
 
 `--timeout`, `-t` - Connection timout limit (seconds). Default: 45.
+
+`--update_name` - If a newer version of the protein name is available, overwrite the existing name for the protein in the database. Default is false, the protein name is **not** overwritten and updated.
+
+`--update_seq` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
 `--use_uniprot_cache` - Path to JSON file containing data previosuly retrieved from UniProt by `cazy_webscraper`, use if an error occurred while adding the data to the local CAZyme database. This will skip the retrieval of data from UniProt, and the cached data will be added to the local CAZyme database. This can also be shared with others to add the same data to their local CAZyme database.
 
