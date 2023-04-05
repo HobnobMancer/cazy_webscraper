@@ -248,18 +248,6 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--seq_update",
-        dest="seq_update",
-        action="store_true",
-        default=False,
-        help=(
-            "Retrieve protein Aa sequences from UniProt for records and overwrite the existing\n"
-            "sequence in the local CAZyme database if a newer sequence is retireved from UniProt"
-        ),
-    )
-
-
-    parser.add_argument(
         "--skip_download",
         dest="skip_download",
         action="store_true",
@@ -303,6 +291,30 @@ def build_parser(argv: Optional[List] = None):
         type=int,
         default=45,
         help="Connection timeout limit (seconds)"
+    )
+
+    parser.add_argument(
+        "--update_name",
+        dest="update_name",
+        action="store_true",
+        default=False,
+        help=(
+            "Update protein name in local CAZyme database Uniprots table.\n
+            "Retrieve protein name from UniProt for records and overwrite the existing\n"
+            "protein name in the local CAZyme database if a new/different name is retireved from UniProt"
+        ),
+    )
+
+    parser.add_argument(
+        "--update_seq",
+        dest="update_seq",
+        action="store_true",
+        default=False,
+        help=(
+            "Update sequences in local CAZyme database Uniprots table\n
+            "Retrieve protein Aa sequences from UniProt for records and overwrite the existing\n"
+            "sequence in the local CAZyme database if a newer sequence is retireved from UniProt"
+        ),
     )
 
     parser.add_argument(
