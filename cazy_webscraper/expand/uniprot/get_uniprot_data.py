@@ -59,6 +59,7 @@ from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.ncbi.gene_names import get_linked_ncbi_accessions
+from cazy_webscraper.expand.uniprot.uniprot_cache import get_uniprot_cache, cache_uniprot_data
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_data.add_uniprot_data import (
@@ -145,7 +146,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     #####
     uniprot_dict, all_ecs, gbk_data_to_download = get_uniprot_cache(gbk_dict, args)
 
-    # uniprot_dict = {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
+    # uniprot_data[ncbi_acc] = {
+    #     'uniprot_acc': uniprot_acc,
+    #     'uniprot_entry_id': uniprot_entry_id,
+    #     'protein_name': protein_name,
+    #     'ec_numbers': ec_numbers,
+    #     'sequence': sequence,
+    #     'pdbs': all_pdbs,
+    # }
+
     # all_ecs = set of EC numers
     # gbk_data_to_download = list of GenBank accs to download data for
 
@@ -161,11 +170,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     if len(list(downloaded_uniprot_data.keys())) != 0:
         cache_uniprot_data(uniprot_dict, cache_dir, time_stamp)
-
-    # get genbank accessions by mapping uniprot accession to ncbi
-    # if can't get genbank accession and did not retrieve a gene name from uniprot
-    # map the uniprot acc to the gene name and then retrieve the genbank accession from ncbi
-    uniprot_dict = get_mapped_genbank_accessions(uniprot_dict, cache_dir, args)
 
     acc_to_remove = set()
     for uniprot_acc in uniprot_dict:
@@ -281,47 +285,6 @@ def get_db_gbk_accs(
     logger.warning(f"Retrieving UniProt data for {len(gbk_dict.keys())}")
 
     return gbk_dict
-
-
-def get_uniprot_cache(gbk_dict, args):
-    """Get cached UniProt data, or return empty dict and set.
-    
-    :param gbk_dict: {gbk acc: local db id}
-    :param args: CLI args parser
-
-    Return dict {uniprot: {genbank_accession: str, uniprot_name: str, pdb: set, ec: set}}
-    and set of EC numbers
-    and list of GenBank accessions to download UniProt data for
-    """
-    # if using cachce skip accession retrieval
-    uniprot_dict = {}  # {uniprot: {genbank_accession: str, uniprot_name: str, pdb: set, ec: set}}
-    all_ecs = set()
-    gbk_data_to_download = []
-
-    logger = logging.getLogger(__name__)
-
-    if args.use_uniprot_cache is not None:
-        logger.warning(f"Getting UniProt data from cache: {args.use_uniprot_cache}")
-
-        with open(args.use_uniprot_cache, "r") as fh:
-            uniprot_dict = json.load(fh)
-
-        if args.ec:
-            all_ecs = get_ecs_from_cache(uniprot_dict)
-    
-    if args.skip_download:  # only use cached data
-        return uniprot_dict, all_ecs, gbk_data_to_download
-
-    # else: check for which GenBank accessions data still needs be retrieved from UniProt
-    # if some of the data is used from a cache, if no data is provided from a cache
-    # retrieve data for all GenBank accesisons matching the provided criteria
-    if len(list(uniprot_dict.keys())) != 0: 
-        for uniprot_acc in tqdm(uniprot_dict):
-            gbk_data_to_download.append(uniprot_dict[uniprot_acc]['genbank_accession'])
-    else:  # get data for all GenBank accessions from the local db matching the user criteria
-        gbk_data_to_download = list(gbk_dict.keys())
-    
-    return uniprot_dict, all_ecs, gbk_data_to_download
 
 
 def get_uniprot_data(ncbi_accessions, cache_dir, args):
@@ -485,203 +448,6 @@ def map_to_uniprot(accessions):
     )
     
     return mapping_results
-
-
-
-def get_ecs_from_cache(uniprot_dict):
-    """Extract all unique EC numbers from the UniProt data cache.
-    
-    :param uniprot_dict: dict of data retrieved from UniProt.
-    
-    Return set of EC numbers.
-    """
-    all_ecs = set()
-
-    for uniprot_acc in tqdm(uniprot_dict, desc="Getting EC numbers from cached data"):
-        try:
-            ecs = uniprot_dict[uniprot_acc]["ec"]
-            for ec in ecs:
-                all_ecs.add( (ec,) )
-        except (ValueError, TypeError, KeyError):
-            pass
-
-    return all_ecs
-
-
-def cache_uniprot_data(uniprot_dict, cache_dir, time_stamp):
-    """Cache data retrieved from UniProt.
-
-    :param
-
-    Return nothing
-    """
-    # cache updated UniProt data
-    for uniprot_accession in uniprot_dict:
-        try:
-            uniprot_dict[uniprot_accession]['ec'] = list(uniprot_dict[uniprot_accession]['ec'])
-        except KeyError:
-            pass
-        try:
-            uniprot_dict[uniprot_accession]['pdb'] = list(uniprot_dict[uniprot_accession]['pdb'])
-        except KeyError:
-            pass
-
-    uniprot_acc_cache = cache_dir / f"uniprot_data_{time_stamp}.json"
-    with open(uniprot_acc_cache, "w") as fh:
-        json.dump(uniprot_dict, fh) 
-
-
-def get_mapped_genbank_accessions(uniprot_dict, cache_dir, args):
-    """Map uniprot accessions to GenBank protein version accessions.
-    
-    :param uniprot_dict: {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
-    :param cache_dir: path to cache directory
-    :param args: CLI parser
-
-    Return uniprot_dict with GenBank accessions
-    """
-    logger = logging.getLogger(__name__)
-    mapping_batch_size = 25
-    cache_path = cache_dir / "failed_mapped_uniprot_ids"
-
-    bioservices_queries = get_chunks_list(
-        list(uniprot_dict.keys()),
-        mapping_batch_size,
-    )
-
-    failed_ids = set()
-
-    for batch in tqdm(bioservices_queries, desc="Mapping UniProt acc to GenBank acc"):
-        mapping_dict = UniProt().mapping(
-            fr="UniProtKB_AC-ID",
-            to="EMBL-GenBank-DDBJ_CDS",
-            query=batch,
-        )
-        try:
-            for mapped_pair in mapping_dict['results']:
-                uniprot_acc = mapped_pair['from']
-                gbk_acc = mapped_pair['to']
-
-                try:
-                    uniprot_dict[uniprot_acc]['genbank_accession'] = gbk_acc
-                except KeyError:
-                    logger.error(
-                        f"Retrieved UniProt accessions {uniprot_acc} from UniProt but accession was\n"
-                        "not retrieved when quering by GenBank accession"
-                    )
-                    pass
-        except KeyError:
-            pass
-
-        try:
-            for acc in mapping_dict['failedIds']:
-                if acc in (list(uniprot_dict.keys())):
-                    failed_ids.add(acc)
-        except KeyError:
-            pass
-
-    if len(failed_ids) != 0:
-        logger.warning(f"Could not map {len(failed_ids)} UniProt accessions to GenBank accessions")
-
-        failed_ids_to_parse = set()
-
-        for failed_id in failed_ids:
-            if uniprot_dict[failed_id]['gene_name'] == 'nan':
-                failed_ids_to_parse.add(failed_id)
-
-        if len(failed_ids_to_parse) != 0:
-            failed_ids = set()
-
-            logger.warning(
-                f"Could not map {len(failed_ids_to_parse)} UniProt accessions to GenBank accessions\n"
-                "and could did not retrieve a gene name from UniProt.\n"
-                "Will try mapping the UniProt acc to the gene name"
-            )
-
-            # retry getting gene names if did not have gene names before
-            bioservices_queries = get_chunks_list(
-                list(failed_ids_to_parse),
-                mapping_batch_size,
-            )
-
-            for batch in tqdm(bioservices_queries, desc="Getting gene names"):
-                mapping_dict = UniProt().mapping(
-                    fr="UniProtKB_AC-ID",
-                    to="EMBL-GenBank-DDBJ",
-                    query=batch,
-                )
-
-                try:
-                    for mapped_pair in mapping_dict['results']:
-                        uniprot_acc = mapped_pair['from']
-                        gene_name = mapped_pair['to']
-
-                        try:
-                            uniprot_dict[uniprot_acc]['gene_name'] = gene_name
-                        except KeyError:
-                            logger.error(
-                                f"Retrieved UniProt accessions {uniprot_acc} from UniProt but accession was\n"
-                                "not retrieved when quering by GenBank accession"
-                            )
-                            pass
-                except KeyError:
-                    pass
-
-                try:
-                    for acc in mapping_dict['failedIds']:
-                        if acc in list(uniprot_dict.keys()):
-                            failed_ids.add(acc)
-                except KeyError:
-                    pass
-
-    if len(failed_ids) != 0:
-        with open(cache_path, "w") as fh:
-            for acc in failed_ids:
-                if acc in list(uniprot_dict.keys()):
-                    if uniprot_dict[acc]['gene_name'] == 'nan':
-                        logger.error(
-                            f"Could not map the UniProt accession '{acc}' to a NCBI GenBank protein\n"
-                            "accession or gene name, so can't map the UniProt accession to a GenBank\n"
-                            "accession in the local CAZyme database.\n"
-                            f"Not adding protein data for UniProt accession '{acc}' to the local\n"
-                            "CAZyme database"
-                        )
-                        del uniprot_dict[acc]
-                        fh.write(f"Could not map UniProt accession '{acc}' to a GenBank accession or gene name\n")
-
-    uniprot_dict = get_linked_ncbi_accessions(uniprot_dict, args)
-    
-    return uniprot_dict
-    
-
-
-def get_gene_names(uniprot_dict, args):
-    """Map UniProt accessions to Ensemble-GenBank gene name
-    
-    :param uniprot_dict: {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
-    :param args: CLI parser
-    
-    Return UniProt dict
-    """
-    uniprot_acc_to_parse = [acc for acc in uniprot_dict if uniprot_dict[acc]['gene_name'] == 'nan']
-
-    bioservices_queries = get_chunks_list(
-        uniprot_acc_to_parse,
-        args.uniprot_batch_size,
-    )
-
-    for batch in tqdm(bioservices_queries, "Getting gene names from UniProt"):
-        mapping_dict = UniProt().mapping(
-            fr="UniProtKB_AC-ID",
-            to="EMBL-GenBank-DDBJ",
-            query=batch,
-        )
-        for result in mapping_dict['results']:
-            uniprot_acc = result['from']
-            gene_name = result['to']
-            uniprot_dict[uniprot_acc]['gene_name'] = gene_name
-    
-    return uniprot_dict
 
 
 if __name__ == "__main__":
