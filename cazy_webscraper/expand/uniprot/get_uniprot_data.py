@@ -444,6 +444,49 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
     return uniprot_data
 
 
+def mapping_decorator(func):
+    """Decorator to retry the wrapped function up, up to 'retries' times"""
+
+    def wrapper(*args, retries=10, **kwards):
+        tries, success, response = 0, False, None
+        
+        while not success and (tries < retries):
+            response = func(*args, **kwards)
+            
+            if response is not None:
+                success = True
+            else:
+                print(
+                    f"Could not connect to UniProt on attempt no.{tries} of {retries} tries.\n"
+                    "Retrying in 10 seconds"
+                )
+                tries += 1
+
+        return response
+    
+    return wrapper
+
+
+@mapping_decorator
+def map_to_uniprot(accessions):
+    """Map accessions to records in UniProt
+    
+    :param accessions: list, list of NCBI protein version accessions
+    
+    Return dict. Successful mappings under 'results', and failed mappings under 'failedIds' 
+    Failed mappings are NCBI accessions that are not listed in UniProt
+    
+    Or returns None if connection could not be made
+    """
+    mapping_results = UniProt().mapping(
+        fr="EMBL-GenBank-DDBJ_CDS",
+        to="UniProtKB",
+        query=",".join(accessions),  # str of ids, separated by commas
+    )
+    
+    return mapping_results
+
+
 
 def get_ecs_from_cache(uniprot_dict):
     """Extract all unique EC numbers from the UniProt data cache.
