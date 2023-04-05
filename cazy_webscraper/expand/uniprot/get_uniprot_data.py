@@ -136,7 +136,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     )
 
     # get cached data, or return an empty dict and set
+    #####
+    ####
+    ####
+    ### NEEDS UPDATING
+    ####
+    ####
+    #####
     uniprot_dict, all_ecs, gbk_data_to_download = get_uniprot_cache(gbk_dict, args)
+
     # uniprot_dict = {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
     # all_ecs = set of EC numers
     # gbk_data_to_download = list of GenBank accs to download data for
@@ -316,35 +324,128 @@ def get_uniprot_cache(gbk_dict, args):
     return uniprot_dict, all_ecs, gbk_data_to_download
 
 
-def get_uniprot_data(gbk_data_to_download, cache_dir, args):
+def get_uniprot_data(ncbi_accessions, cache_dir, args):
     """Batch query UniProt to retrieve protein data. Save data to cache directory.
     
     Bioservices requests batch queries no larger than 200.
 
-    :param gbk_data_to_download: list of NCBI protein accessions to query UniProt with
+    Note that according to Uniprot (June 2022), there are various limits on ID Mapping Job Submission:
+
+    ========= =====================================================================================
+    Limit	  Details
+    ========= =====================================================================================
+    100,000	  Total number of ids allowed in comma separated param ids in /idmapping/run api
+    500,000	  Total number of "mapped to" ids allowed
+    100,000	  Total number of "mapped to" ids allowed to be enriched by UniProt data
+    10,000	  Total number of "mapped to" ids allowed with filtering
+    ========= =====================================================================================
+
+    :param ncbi_accessions: list of NCBI protein accessions to query UniProt with
     :param cache_dir: path to directory to write out cache
     :param args: cmd-line args parser
     
     Return
     Dict of data retrieved from UniProt and to be added to the db 
-        {uniprot_acccession: {gene_name: str, uniprot_name: str, pdb: set, ec: set}}
-    Set of all retrieved EC numbers
-    Set of gene names
+        uniprot_data[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc,
+            'uniprot_entry_id': uniprot_entry_id,
+            'protein_name': protein_name,
+            'ec_numbers': ec_numbers,
+            'sequence': sequence,
+            'pdbs': all_pdbs,
+        }
     """
     logger = logging.getLogger(__name__)
 
-    uniprot_dict = {}  # {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
-    all_ecs = set()  # store all retrieved EC numbers as one tuple per unique EC number
-    ncbi_gene_names = set()
-    
+    failed_ids_cache = cache_dir / "ncbi_acc_not_in_uniprot"
+    failed_connections_cache = cache_dir / "failed_connections_ncbi_acc"
+
+    uniprot_dict = {}  # see doc string
+    all_batches = {}  # {batch: int(tries)}
+
     bioservices_queries = get_chunks_list(
-        gbk_data_to_download,
+        ncbi_accessions,
         args.uniprot_batch_size,
     )
 
-    print(bioservices_queries)
+    for batch in bioservices_queries:
+        all_batches[",".join(batch)] = 0  # num of attempts at connecting to UniProt
 
-    for query in tqdm(bioservices_queries, "Batch retrieving protein data from UniProt"):
+    while len(list(all_batches.keys())) > 0:
+        batches_to_process = copy(all_batches)
+
+        for batch in tqdm(batches_to_process, "Batch retrieving protein data from UniProt"):
+            # batch is a string of comma separated NCBI protein version accessions
+            mappings = map_to_uniprot(batch)
+
+            if mappings is None:  # could not connect to UniProt
+                all_batches[batch] += 1
+
+                if all_batches[batch] > args.retries:  # run out of attempts to retry the connection
+                    del all_batches[batch]
+                    logger.warning(
+                        f"Failed to retrieve data for batch after {args.retries} attemps\n"
+                        "Out of retries.\n"
+                        "NCBI accessions will be written to cache"
+                    )
+                    failed_acc = batch.split(",")
+                    with open("failed_connections_cache", a) as fh:
+                        for acc in failed_acc:
+                            fh.write(f"{acc}\n")
+                        
+                else:  # still attempts remaining
+                    logger.warning(
+                        f"Failled to retrieve data from UniProt for batch after {all_batches[batch]}"
+                        f"/{args.retries} attemtps\n"
+                        "Will retry later."
+                    )
+
+                continue
+
+            try:  # some NCBI accessions could not be mapped to a record in UniProt
+                with open(failed_ids_cache, "a") as fh:
+                    for not_catalogued_acc in mappings['failedIds']:
+                        fh.write(f"{not_catalogued_acc}\n")
+            except KeyError:  # may not be any failed Ids
+                pass
+            
+            try:  # Mapped UniProt records
+                mapping_results = mappings['results']  # used mostly for try/except
+
+                for mapping result in mapping_results:
+                    ncbi_acc = mapping_result['from']
+                    mapped_record = mapping_result['to']
+
+                    (
+                        uniprot_acc,
+                        uniprot_entry_id,
+                        protein_name,
+                        ec_numbers,
+                        sequence,
+                        all_pdbs,
+                        matching_record,
+                    ) = extract_protein_data(mapped_record, ncbi_acc)
+
+                    if matching_record is False:  # bool, if mapped record contains ncbi accession
+                        continue
+                    
+                    uniprot_data[ncbi_acc] = {
+                        'uniprot_acc': uniprot_acc,
+                        'uniprot_entry_id': uniprot_entry_id,
+                        'protein_name': protein_name,
+                        'ec_numbers': ec_numbers,
+                        'sequence': sequence,
+                        'pdbs': all_pdbs,
+                    }
+
+            except KeyError: # may not be any ncbi acc that mapped to a UniProt record
+                pass
+
+    return uniprot_data
+
+
+
+
         uniprot_df = UniProt().get_df(entries=query, limit=args.uniprot_batch_size)
 
         # cache UniProt response
