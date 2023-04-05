@@ -174,12 +174,18 @@ def add_uniprot_accessions(uniprot_dict, connection, args):
     return
 
 
-def add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args):
+def add_ec_numbers(uniprot_dict, connection, args):
     """Add EC numbers to the local CAZyme database
 
     :param uniprot_dict: dict containing data retrieved from UniProt
-    :param all_ecs: set of all EC numbers retrieved from UniProt
-    :param gbk_dict: dict representing data from the Genbanks table
+        uniprot_data[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc, - str
+            'protein_name': protein_name, -str
+            'ec_numbers': ec_numbers, - set
+            'sequence': sequence, - str
+            'sequence_date': date seq was last updated yyyy-mm-dd
+            'pdbs': all_pdbs, - set
+        }
     :param connection: open sqlalchemy conenction to an SQLite db engine
     :param args: cmd-line args parser
 
@@ -194,15 +200,21 @@ def add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args):
     existing_ecs = list(ec_table_dict.keys())
     ec_insert_values = set()
 
-    for ec in all_ecs:
-        if ec[0] not in existing_ecs:
-            ec_insert_values.add( ec )
+    for ncbi_acc in tqdm(uniprot_dict, desc="Identifying EC numbers to add to the local CAZyme db"):
+        for ec_num in uniprot_dict[ncbi_acc]['ec_numbers']:
+            if ec_num not in existing_ecs:
+                ec_insert_values.add((ec_num))
 
     if len(ec_insert_values) != 0:
         insert_data(connection, "Ecs", ["ec_number"], list(ec_insert_values))
 
         # load in the newly updated EC table from the local CAZyme db
         ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
+
+
+def add_genbank_ec_relationships(uniprot_dict, connection, args):
+    # load in EC records in the local CAZyme db
+    ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
     
     # load in gbk_ec table, contains the gbk-ec number relationships
     ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)  # {ec_id: {gbk ids}}
