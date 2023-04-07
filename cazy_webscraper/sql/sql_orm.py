@@ -205,6 +205,12 @@ class Genbank(Base):
     seq_update_date = Column(ReString)
     taxonomy_id = Column(Integer, ForeignKey("Taxs.taxonomy_id"))
     ncbi_tax_id = Column(Integer, ForeignKey("NcbiTaxs.ncbi_tax_id"))
+    uniprot_id = Column(Integer, ForeignKey("Uniprots.uniprot_id"))
+
+    uniprot = relationship(
+        "Uniprot",
+        back_populates="genbank",
+    )p
 
     ncbi_taxs = relationship(
         "NcbiTax",
@@ -243,12 +249,6 @@ class Genbank(Base):
         back_populates="genbank",
         lazy="dynamic",
     )
-
-    uniprot = relationship(
-        "Uniprot",
-        back_populates="genbank",
-        # uselist=False,
-    )  # 1-1 relationship
 
     def __str__(self):
         return f"-Genbank accession={self.genbank_accession}-"
@@ -464,7 +464,6 @@ class Uniprot(Base):
         Index("uniprot_option", "uniprot_id", "uniprot_accession")
     )
 
-    genbank_id = Column(Integer, ForeignKey('Genbanks.genbank_id'))
     uniprot_id = Column(Integer, primary_key=True)
     uniprot_accession = Column(String)
     uniprot_name = Column(ReString)
