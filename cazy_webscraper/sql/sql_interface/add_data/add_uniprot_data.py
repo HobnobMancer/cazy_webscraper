@@ -273,9 +273,13 @@ def delete_old_ecs(connection, args):
     # {ec_id: {gbk ids}}
     ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)  
 
+    # identify ecs that are linked to a Genbanks table records
+
     ecs_to_delete = set()
-    for ec_id in tqdm(ec_gbk_table_dict, desc="Identifying EC numbers to delete"):
-        if ec_id not in all_db_ec_ids:
+    for ec_id in tqdm(all_db_ec_ids, desc="Identifying EC numbers to delete"):
+        try:
+            ec_gbk_table_dict[ec_id]
+        except KeyError:  # ec id not linked to any Genbanks (protein) records
             ecs_to_delete.add(ec_id)
     
     if len(ecs_to_delete) != 0:
