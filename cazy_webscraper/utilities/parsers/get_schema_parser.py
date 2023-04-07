@@ -76,6 +76,24 @@ def build_parser(argv: Optional[List] = None):
         help="Defines log file name and/or path",
     )
 
+    # Add option to force file over writting
+    parser.add_argument(
+        "--sql_echo",
+        dest="sql_echo",
+        action="store_true",
+        default=False,
+        help="Set SQLite engine echo to True (SQLite will print its log messages)",
+    )
+
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        default=False,
+        help="Set logger level to 'INFO'",
+    )
+
     if argv is None:
         # parse command-line
         return parser
