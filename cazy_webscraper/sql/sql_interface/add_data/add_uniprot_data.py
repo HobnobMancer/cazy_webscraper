@@ -47,7 +47,7 @@ from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_interface import insert_data
 from cazy_webscraper.sql.sql_interface.get_data import get_table_dicts
-from cazy_webscraper.sql.sql_orm import genbanks_ecs
+from cazy_webscraper.sql.sql_orm import genbanks_ecs, Ec
 
 
 def add_uniprot_accessions(uniprot_dict, connection, args):
@@ -208,23 +208,105 @@ def add_ec_numbers(uniprot_dict, connection, args):
     if len(ec_insert_values) != 0:
         insert_data(connection, "Ecs", ["ec_number"], list(ec_insert_values))
 
-        # load in the newly updated EC table from the local CAZyme db
-        ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
 
 
-def add_genbank_ec_relationships(uniprot_dict, connection, args):
+def add_genbank_ec_relationships(uniprot_dict, gbk_dict, connection, args):
+    """Add and update relationships between the Genbanks and Ecs table.
+
+    :param uniprot_dict: dict containing data retrieved from UniProt
+        uniprot_data[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc, - str
+            'protein_name': protein_name, -str
+            'ec_numbers': ec_numbers, - set
+            'sequence': sequence, - str
+            'sequence_date': date seq was last updated yyyy-mm-dd
+            'pdbs': all_pdbs, - set
+        }
+    :param gbk_dict: {gbk_acc: gbk_id}
+    :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param args: cmd-line args parser
+
+    Return nothing
+    """
     # load in EC records in the local CAZyme db
+    # {ec_number: ec_id}
     ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
     
     # load in gbk_ec table, contains the gbk-ec number relationships
-    ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)  # {ec_id: {gbk ids}}
+    # {ec_id: {gbk ids}}
+    ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)  
 
-    if args.delete_old_ec:
-        gbk_ec_table_dict = get_table_dicts.get_gbk_ec_table_dict(connection)  # {gbk_id: {ec ids}}
-        ecs_rel_to_delete = set()  # set of tuples (gbk_id, ec_id)
-
-    # compile list of tuples to insert into the Genbanks_Ecs table
+    # compile list of tuples to insert or delete into the Genbanks_Ecs table
     gbk_ec_insert_values = set()
+
+    for ncbi_acc in tqdm(uniprot_dict, desc="Adding and updating EC-Genbanks relationships"):
+        for ec_number in uniprot_dict[ncbi_acc]['ec_numbers']:
+            gbk_db_id = gbk_dict[ncbi_acc]
+            ec_id = ec_table_dict[ec_number]
+
+            try:
+                existing_relationships = ec_gbk_table_dict[ec_id]
+                if gbk_db_id not in existing_relationships:
+                    gbk_ec_insert_values.add( (gbk_id, ec_id) )
+
+            except KeyError: # EC number is not linked to any gbk records so add new records
+                gbk_ec_insert_values.add( (gbk_id, ec_id) )
+
+    if len(gbk_ec_insert_values) != 0:
+        insert_data(connection, "Genbanks_Ecs", ["genbank_id", "ec_id"], list(gbk_ec_insert_values))
+
+
+def delete_old_ecs(connection, args):
+    """Delete EC number records in the local CAZyme database that are not linked to any records in 
+    the Genbanks table.
+
+    :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param args: cmd-line args parser
+
+    Return nothing
+    """
+    # load in EC records in the local CAZyme db
+    # {ec_number: ec_id}
+    ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
+    all_db_ec_ids = list(ec_table_dict.values())
+    
+    # load in gbk_ec table, contains the gbk-ec number relationships
+    # {ec_id: {gbk ids}}
+    ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)  
+
+    ecs_to_delete = set()
+    for ec_id in tqdm(ec_gbk_table_dict, desc="Identifying EC numbers to delete"):
+        if ec_id not in all_db_ec_ids:
+            ecs_to_delete.add(ec_id)
+    
+    if len(ecs_to_delete) != 0:
+        logger.warning(
+            f"Identified {len(ecs_to_delete)} EC numbers in the Ecs table that are not linked\n"
+            "to any records in the Genbanks table"
+        )
+
+        with connection.begin():
+            for ec_id in tqdm(ecs_to_delete, desc="Deleteing old EC numbers"):
+                connection.execute(text(f"DELETE FROM Ecs WHERE ec_id='{ec_id}'"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     for uniprot_acc in tqdm(uniprot_dict, desc="Updating EC numbers"):
         genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
