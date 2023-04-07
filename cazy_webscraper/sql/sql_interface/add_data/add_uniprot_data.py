@@ -54,7 +54,7 @@ def add_uniprot_accessions(uniprot_dict, connection, args):
     """Add UniProt data to the local CAZyme database
     
     :param uniprot_dict: dict containing data retrieved from UniProt
-        uniprot_data[ncbi_acc] = {
+        uniprot_dict[ncbi_acc] = {
             'uniprot_acc': uniprot_acc, - str
             'protein_name': protein_name, -str
             'ec_numbers': ec_numbers, - set
@@ -178,7 +178,7 @@ def add_ec_numbers(uniprot_dict, connection, args):
     """Add EC numbers to the local CAZyme database
 
     :param uniprot_dict: dict containing data retrieved from UniProt
-        uniprot_data[ncbi_acc] = {
+        uniprot_dict[ncbi_acc] = {
             'uniprot_acc': uniprot_acc, - str
             'protein_name': protein_name, -str
             'ec_numbers': ec_numbers, - set
@@ -203,18 +203,17 @@ def add_ec_numbers(uniprot_dict, connection, args):
     for ncbi_acc in tqdm(uniprot_dict, desc="Identifying EC numbers to add to the local CAZyme db"):
         for ec_num in uniprot_dict[ncbi_acc]['ec_numbers']:
             if ec_num not in existing_ecs:
-                ec_insert_values.add((ec_num))
+                ec_insert_values.add((ec_num,))
 
     if len(ec_insert_values) != 0:
         insert_data(connection, "Ecs", ["ec_number"], list(ec_insert_values))
-
 
 
 def add_genbank_ec_relationships(uniprot_dict, gbk_dict, connection, args):
     """Add and update relationships between the Genbanks and Ecs table.
 
     :param uniprot_dict: dict containing data retrieved from UniProt
-        uniprot_data[ncbi_acc] = {
+        uniprot_dict[ncbi_acc] = {
             'uniprot_acc': uniprot_acc, - str
             'protein_name': protein_name, -str
             'ec_numbers': ec_numbers, - set
@@ -294,6 +293,14 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
     """Add PDB accessions to the local CAZyme database
 
     :param uniprot_dict: dict containing data retrieved from UniProt
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc, - str
+            'protein_name': protein_name, -str
+            'ec_numbers': ec_numbers, - set
+            'sequence': sequence, - str
+            'sequence_date': date seq was last updated yyyy-mm-dd
+            'pdbs': all_pdbs, - set
+        }
     :param gbk_dict: dict representing data from the Genbanks table
     :param connection: open sqlalchemy conenction to an SQLite db engine
     :param args: cmd-line args parser
@@ -312,7 +319,7 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
     # First, identify new PDB accessions to add to the database
     pdb_insert_values = set()
     for ncbi_acc in tqdm(ncbi_acc, desc="Identifying new PDBs to add to db"):
-        for pdb in uniprot_dict[uniprot_acc]["pdb"]:
+        for pdb in uniprot_dict[ncbi_acc]["pdbs"]:
             try:
                 pdb_table_dict[pdb]
             except KeyError:
@@ -321,103 +328,114 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
     if len(pdb_insert_values) != 0:
         logger.warning(f"Adding {len(pdb_insert_values)} PDB accessions to the database")
         insert_data(connection, "Pdbs", ["pdb_accession"], list(pdb_insert_values))
-        # reload the updated pdb table
-        pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
+
+
+def add_pdb_gbk_relationships(uniprot_dict, gbk_dict, connection, args):
+    """Add relationships between PDB accessions and proteins in the Genbanks table
+
+    :param uniprot_dict: dict containing data retrieved from UniProt
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc, - str
+            'protein_name': protein_name, -str
+            'ec_numbers': ec_numbers, - set
+            'sequence': sequence, - str
+            'sequence_date': date seq was last updated yyyy-mm-dd
+            'pdbs': all_pdbs, - set
+        }
+    :param gbk_dict: dict representing data from the Genbanks table
+    :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param args: cmd-line args parser
+
+    Return nothing.
+    """
+    # load the updated pdb table
+    # {pdb_acc: pdb_db_id}
+    pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
     
     # load in Genbanks_Pdbs relationship table
     gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
-    # {gbk_db_id: {pdb_db_id} }
+    # {gbk_db_id: set(pdb_db_ids) }
 
     # convert the data from UniProt into a dict of {gbk_db_id: pdb_db_id} 
     # to identify pdb-protein relationships retrieved from UniProt
     gbk_pdb_insert_values = set()
-    for uniprot_acc in tqdm(uniprot_dict, desc="Identifying new protein-PDB relationships to add to db"):
-        genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
 
+    for ncbi_acc in tqdm(uniprot_dict, desc="Identifying new protein-PDB relationships to add to db"):
+
+        if len(uniprot_dict[ncbi_acc]['pdbs']) == 0:  # not relationships to add
+            continue
+
+        uniprot_acc = uniprot_dict[ncbi_acc]['uniprot_acc']
         try:
-            gbk_db_id = gbk_dict[genbank_acc]
+            gbk_db_id = gbk_dict[ncbi_acc]
         except KeyError:
             logger.error(
-                f"Mapped the GenBank accession '{genbank_acc}' to the UniProt accession\n"
+                f"Mapped the GenBank accession '{ncbi_acc}' to the UniProt accession\n"
                 f"'{uniprot_acc}' but the GenBank accession is not in the local CAZyme database\n"
-                f"therefore, not adding protein data for GBK:{genbank_acc}/UniProt:{uniprot_acc}"
+                f"therefore, not adding protein data for GBK:{ncbi_acc}/UniProt:{uniprot_acc}"
                 "to the local CAZyme database."
             )
             continue
 
-        # set of pdb_accessions retrieved from UniProt
-        retrieved_pdbs = uniprot_dict[uniprot_acc]["pdb"]
-        if len(retrieved_pdbs) == 0:
-            continue
-
-        # set of pdb_db_ids the protein (gbk_db_id) is already related to in the db
+        # check if there any existing relationships for the gbk record
         try:
             existing_pdb_relationships = gbk_pdb_rel_table_dict[gbk_db_id]  
         except KeyError:
             existing_pdb_relationships = set()
 
-        for pdb_acc in retrieved_pdbs:
-            pdb_db_id = pdb_table_dict[pdb_acc]
-
+        for pdb_acc in uniprot_dict[uniprot_acc]["pdb"]:
             try:
-                if pdb_db_id not in existing_pdb_relationships:
-                    # genbank and pdb records not yet stored together in the relationship table
-                    gbk_pdb_insert_values.add( (gbk_db_id, pdb_db_id) )
+                pdb_db_id = pdb_table_dict[pdb_acc]
             except KeyError:
-                # genbank not listed in the Genbanks_Pdbs relationship table
+                logger.error(
+                    f"Retrieved PDB:{pdb_acc} from UniProt.\n"
+                    "Cannot link to Genbanks table records because PDB not listed in the Pdbs table"
+                )
+                continue
+            
+            if pdb_db_id not in gbk_pdb_rel_table_dict:
                 gbk_pdb_insert_values.add( (gbk_db_id, pdb_db_id) )
-
-        if args.delete_old_pdbs:
-            # convert gbk_pdb_rel_table_dict to be keyed by pdb_db_ids and valued by set of gbk_db_ids
-            pdb_gbk_relationships = {}
-            for existing_gbk_id in gbk_pdb_rel_table_dict:
-                existing_pdbs = gbk_pdb_rel_table_dict[existing_gbk_id]
-                for pdb in existing_pdbs:
-                    try:
-                        pdb_gbk_relationships[pdb].add(existing_gbk_id)
-                    except KeyError:
-                        pdb_gbk_relationships[pdb] = {existing_gbk_id}
-
-            # for each pdb_db_id related to the current protein in the db
-            # get the corresponding pdb_accession
-            all_existing_pdb_ids = list(set(pdb_table_dict.values()))
-            all_existing_pdb_accs = list(pdb_table_dict.keys())
-
-            for pdb_db_id in existing_pdb_relationships:
-                position = all_existing_pdb_ids.index(pdb_db_id)
-                pdb_acc = all_existing_pdb_accs[position]
-
-                if pdb_acc not in retrieved_pdbs:
-                    # delete genbank-pdb relationship
-                    relationships_to_delete.add( (gbk_db_id, pdb_db_id) )
-
-                    # check if can delete pdb accession because it is not linked to any other proteins
-                    if len(pdb_gbk_relationships[pdb_db_id]) != 1:  # deleting one pdb accession will not leave not related to any genbanks
-                        pdbs_to_delete.add( (pdb_acc) )
 
     if len(gbk_pdb_insert_values) != 0:
         insert_data(connection, "Genbanks_Pdbs", ["genbank_id", "pdb_id"], list(gbk_pdb_insert_values))
 
-    if args.delete_old_pdbs and len(pdbs_to_delete) != 0:
-        with connection.begin():
-            for record in tqdm(pdbs_to_delete, desc="Deleteing old PDB accessions"):
-            # record = (pdb_acc,)
-                connection.execute(
-                    text(
-                        "DELETE Pdbs "
-                        f"WHERE pdb_accession = '{record[0]}'"
-                    )
-                )
 
-    if args.delete_old_pdbs and len(relationships_to_delete) != 0:
+def delete_old_pdbs(connection, args):
+    """Delete PDB accessions from the Pdbs table that are not linked to any records in 
+    the Genbanks table.
+
+    :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param args: cmd-line args parser
+
+    Return nothing
+    """
+    # load in EC records in the local CAZyme db
+    # {ec_number: ec_id}
+    pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
+    all_db_pdb_ids = list(pdb_table_dict.values())
+    
+    # load in Genbanks_Pdbs relationship table
+    gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
+    # {gbk_db_id: set(pdb_db_ids) } 
+
+    # identify pdb ids that are linked to Genbanks table records
+    all_linked_pdb_ids = set()
+    for gbk_id in tqdm(gbk_pdb_rel_table_dict, desc="Identifying PDBs that are linked to proteins in the local db"):
+        all_linked_pdb_ids = all_linked_pdb_ids.union(gbk_pdb_rel_table_dict[gbk_id])
+
+    # identify pdb ids that are not linked to any Genbanks table records
+    for pdb_id in all_db_pdb_ids:
+        if pdb_id not in all_linked_pdb_ids:
+            pdbs_to_delete.add(pdb_id)
+        
+        pdb_ids = gbk_pdb_rel_table_dict[gbk_id]
+
+    if len(pdbs_to_delete) != 0:
+        logger.warning(
+            f"Identified {len(pdbs_to_delete)} PDB accessions in the Pdbs table that are not linked\n"
+            "to any records in the Genbanks table"
+        )
+
         with connection.begin():
-            for record in tqdm(relationships_to_delete, desc="Deleteing old Genbank-PDB relationships"):
-            # record = (pdb_acc,)
-                connection.execute(
-                    text(
-                        "DELETE Genbanks_Pdbs "
-                        f"WHERE genbank_id = '{record[0]}' AND pdb_id = '{record[1]}'"
-                    )
-                )
-                
-    return
+            for pdb_id in tqdm(pdbs_to_delete, desc="Deleteing old PDB accessions"):
+                connection.execute(text(f"DELETE FROM Pdbs WHERE pdb_id='{pdb_id}'"))
