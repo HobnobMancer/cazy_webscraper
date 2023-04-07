@@ -185,7 +185,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         if args.delete_old_ec_relationships:
             logger.warning(
                 "Deleting Genbanks-EC number annotations in the local CAZyme database\n"
-                "that were not included for the protein whose additional data was just\n
+                "that were not included for the protein whose additional data was just\n"
                 "downloaded from UniProt"
             )
             # load ec numbers and relationships with Genbanks records from the local db
@@ -222,7 +222,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         if args.delete_old_pdb_relationships:
             logger.warning(
                 "Deleting Genbanks-PDB annotations in the local CAZyme database\n"
-                "that were not included for the protein whose additional data was just\n
+                "that were not included for the protein whose additional data was just\n"
                 "downloaded from UniProt"
             )
             # load ec numbers and relationships with Genbanks records from the local db

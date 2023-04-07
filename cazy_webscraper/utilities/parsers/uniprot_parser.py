@@ -111,22 +111,6 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--delete_old_ec",
-        dest="delete_old_ec",
-        action="store_true",
-        default=False,
-        help="Delete EC numbers that are not linked to any proteins listed in the Genbanks table.",
-    )
-
-    parser.add_argument(
-        "--delete_old_pdbs",
-        dest="delete_old_pdbs",
-        action="store_true",
-        default=False,
-        help="Delete PDB accessions that are not longer listed in UniProt for a given protein",
-    )
-
-    parser.add_argument(
         "-e",
         "--ec",
         dest="ec",
@@ -166,7 +150,6 @@ def build_parser(argv: Optional[List] = None):
         default=None,
         help="Path to a text file containing a list of GenBank accessions to retrieve data for",
     )
-
 
     # Add option to restrict scrape to specific genera
     parser.add_argument(
@@ -312,6 +295,44 @@ def build_parser(argv: Optional[List] = None):
             "Retrieve protein Aa sequences from UniProt for records and overwrite the existing\n"
             "sequence in the local CAZyme database if a newer sequence is retireved from UniProt"
         ),
+    )
+
+    parser.add_argument(
+        "--delete_old_ec_relationships",
+        dest="delete_old_ec_relationships",
+        action="store_true",
+        default=False,
+        help=(
+            "Delete Genbank-EC number relationships for those proteins for whom data is downloaded from UniProt\n"
+            "and which are not included in the EC numbers listed for the respective protein reocrd in UniProt"
+        ),
+    )
+
+    parser.add_argument(
+        "--delete_old_ecs",
+        dest="delete_old_ec",
+        action="store_true",
+        default=False,
+        help="Delete EC numbers that are not linked to any proteins listed in the Genbanks table.",
+    )
+
+    parser.add_argument(
+        "--delete_old_pdb_relationships",
+        dest="delete_old_pdb_relationships",
+        action="store_true",
+        default=False,
+        help=(
+            "Delete Genbank-PDB relationships for those proteins for whom data is downloaded from UniProt\n"
+            "and which are not included in the PDB accessions listed for the respective protein reocrd in UniProt"
+        ),
+    )
+
+    parser.add_argument(
+        "--delete_old_pdbs",
+        dest="delete_old_pdbs",
+        action="store_true",
+        default=False,
+        help="Delete PDB accessions that are no longer linked to any records in the Genbanks table",
     )
 
     parser.add_argument(
