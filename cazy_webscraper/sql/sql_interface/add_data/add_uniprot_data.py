@@ -47,7 +47,7 @@ from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_interface import insert_data
 from cazy_webscraper.sql.sql_interface.get_data import get_table_dicts
-from cazy_webscraper.sql.sql_orm import genbanks_ecs, Ec
+from cazy_webscraper.sql.sql_orm import genbanks_ecs, Ec, Pdb
 
 
 def add_uniprot_accessions(uniprot_dict, connection, args):
@@ -255,44 +255,6 @@ def add_genbank_ec_relationships(uniprot_dict, gbk_dict, connection, args):
         insert_data(connection, "Genbanks_Ecs", ["genbank_id", "ec_id"], list(gbk_ec_insert_values))
 
 
-def delete_old_ecs(connection, args):
-    """Delete EC number records in the local CAZyme database that are not linked to any records in 
-    the Genbanks table.
-
-    :param connection: open sqlalchemy conenction to an SQLite db engine
-    :param args: cmd-line args parser
-
-    Return nothing
-    """
-    # load in EC records in the local CAZyme db
-    # {ec_number: ec_id}
-    ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
-    all_db_ec_ids = list(ec_table_dict.values())
-    
-    # load in gbk_ec table, contains the gbk-ec number relationships
-    # {ec_id: {gbk ids}}
-    ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)  
-
-    # identify ecs that are linked to a Genbanks table records
-
-    ecs_to_delete = set()
-    for ec_id in tqdm(all_db_ec_ids, desc="Identifying EC numbers to delete"):
-        try:
-            ec_gbk_table_dict[ec_id]
-        except KeyError:  # ec id not linked to any Genbanks (protein) records
-            ecs_to_delete.add(ec_id)
-    
-    if len(ecs_to_delete) != 0:
-        logger.warning(
-            f"Identified {len(ecs_to_delete)} EC numbers in the Ecs table that are not linked\n"
-            "to any records in the Genbanks table"
-        )
-
-        with connection.begin():
-            for ec_id in tqdm(ecs_to_delete, desc="Deleteing old EC numbers"):
-                connection.execute(text(f"DELETE FROM Ecs WHERE ec_id='{ec_id}'"))
-
-
 def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
     """Add PDB accessions to the local CAZyme database
 
@@ -402,44 +364,3 @@ def add_pdb_gbk_relationships(uniprot_dict, gbk_dict, connection, args):
 
     if len(gbk_pdb_insert_values) != 0:
         insert_data(connection, "Genbanks_Pdbs", ["genbank_id", "pdb_id"], list(gbk_pdb_insert_values))
-
-
-def delete_old_pdbs(connection, args):
-    """Delete PDB accessions from the Pdbs table that are not linked to any records in 
-    the Genbanks table.
-
-    :param connection: open sqlalchemy conenction to an SQLite db engine
-    :param args: cmd-line args parser
-
-    Return nothing
-    """
-    # load in EC records in the local CAZyme db
-    # {ec_number: ec_id}
-    pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
-    all_db_pdb_ids = list(pdb_table_dict.values())
-    
-    # load in Genbanks_Pdbs relationship table
-    gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
-    # {gbk_db_id: set(pdb_db_ids) } 
-
-    # identify pdb ids that are linked to Genbanks table records
-    all_linked_pdb_ids = set()
-    for gbk_id in tqdm(gbk_pdb_rel_table_dict, desc="Identifying PDBs that are linked to proteins in the local db"):
-        all_linked_pdb_ids = all_linked_pdb_ids.union(gbk_pdb_rel_table_dict[gbk_id])
-
-    # identify pdb ids that are not linked to any Genbanks table records
-    for pdb_id in all_db_pdb_ids:
-        if pdb_id not in all_linked_pdb_ids:
-            pdbs_to_delete.add(pdb_id)
-        
-        pdb_ids = gbk_pdb_rel_table_dict[gbk_id]
-
-    if len(pdbs_to_delete) != 0:
-        logger.warning(
-            f"Identified {len(pdbs_to_delete)} PDB accessions in the Pdbs table that are not linked\n"
-            "to any records in the Genbanks table"
-        )
-
-        with connection.begin():
-            for pdb_id in tqdm(pdbs_to_delete, desc="Deleteing old PDB accessions"):
-                connection.execute(text(f"DELETE FROM Pdbs WHERE pdb_id='{pdb_id}'"))
