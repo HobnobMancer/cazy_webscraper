@@ -210,7 +210,7 @@ class Genbank(Base):
     uniprot = relationship(
         "Uniprot",
         back_populates="genbank",
-    )p
+    )
 
     ncbi_taxs = relationship(
         "NcbiTax",
