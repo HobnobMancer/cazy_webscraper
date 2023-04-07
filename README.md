@@ -60,7 +60,7 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 ## Updates
 
 * `cazy_webscraper` version >= 2.3.0 uses a different schema for the Uniprots table in the local CAZyme database.
-    - A Genbanks \*-1 Uniprots relationship is now used instead of a Genbanks 1-\* Uniprots relationship
+    - A Genbanks \*-1 Uniprots relationship is now used, instead of  the previous Genbanks 1-\* Uniprots relationship
 
 * Faster retrieval of data from UniProt.
     - Uses `bioservices` mapping to map directly from NCBI protein version accession to UniProt
