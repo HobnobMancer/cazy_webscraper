@@ -44,10 +44,22 @@ import logging
 import os
 import sys
 
+import numpy as np
 import pandas as pd
 
 from datetime import datetime
 from pathlib import Path
+
+import Bio
+import bioservices
+import bs4
+import html5lib
+import lxml
+import mechanicalsoup
+import requests
+import saintBioutils
+import sqlalchemy
+import tqdm
 
 from saintBioutils.utilities.file_io import make_output_directory
 
@@ -134,7 +146,7 @@ def display_citation_info():
 
     message = f"""
     =====================cazy_webscraper Citation Information=====================
-    Version: {VERSION_INFO}
+    cazy_webscraper version: {VERSION_INFO}
 
     When publishing work that uses cazy_webscraper please cite:
     Citation: {CITATION_INFO}
@@ -178,9 +190,28 @@ def display_citation_info():
 def display_version_info():
     """Display package version number information"""
 
-    message = f""""
+    try:
+        saintbio_version = saintBioutils.__version__
+    except AttributeError:
+        saintbio_version = 'unknown'
+
+    message = f"""
     =====================cazy_webscraper Version Information=====================
-    Version: {VERSION_INFO}
+    cazy_webscraper version: {VERSION_INFO}
+
+    Third party tools used by cazy_webscraper:
+    beautifulsoup4: {bs4.__version__}
+    biopython: {Bio.__version__}
+    bioservices: {bioservices.version}
+    html5lib: {html5lib.__version__}
+    lxml: {lxml.__version__}
+    mechanicalsoup: {mechanicalsoup.__version__}
+    numpy: {np.__version__}
+    pandas: {pd.__version__}
+    requests: {requests.__version__}
+    saintBioutils: {saintbio_version}
+    sqlalchemy: {sqlalchemy.__version__}
+    tqdm: {tqdm.__version__}
     """
 
     print(message)
