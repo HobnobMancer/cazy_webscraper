@@ -39,13 +39,17 @@
 """Get and print schema of a local CAZyme database."""
 
 
+import logging
+import subprocess
+
+from datetime import datetime
 from typing import List, Optional
 
 import pandas as pd
 
-from sqlalchemy import text
+from saintBioutils.utilities.logger import config_logger
 
-from cazy_webscraper import closing_message, connect_existing_db
+from cazy_webscraper import closing_message
 from cazy_webscraper.utilities.parsers.get_schema_parser import build_parser
 
 
@@ -65,14 +69,10 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger = logging.getLogger(__name__)
         config_logger(args, logger_name=__name__)
 
-    connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
+    print(f"The schema for the local CAZyme database at {args.database}:")
+    subprocess.run(["sqlite3", args.database, ".schema"])
 
-    logger.info(f"Connected to local db: {args.database}")
-    connection.execute(
-        text(
-            f".schema"
-        )
-    )
+    closing_message("Get database schema", start_time, args)
 
 
 if __name__ == "__main__":
