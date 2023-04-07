@@ -290,73 +290,6 @@ def delete_old_ecs(connection, args):
                 connection.execute(text(f"DELETE FROM Ecs WHERE ec_id='{ec_id}'"))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    for uniprot_acc in tqdm(uniprot_dict, desc="Updating EC numbers"):
-        genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
-        try:
-            gbk_id = gbk_dict[genbank_acc]
-        except KeyError:
-            logger.error(
-                f"Mapped the GenBank accession '{genbank_acc}' to the UniProt accession\n"
-                f"'{uniprot_acc}' but the GenBank accession is not in the local CAZyme database\n"
-                f"therefore, not adding protein data for GBK:{genbank_acc}/UniProt:{uniprot_acc}"
-                "to the local CAZyme database."
-            )
-            continue
-        
-        retrieved_ec_numbers = uniprot_dict[uniprot_acc]["ec"]  # EC#s retrieved from UniProt
-        for ec in retrieved_ec_numbers:
-            ec_id = ec_table_dict[ec]
-
-            try:
-                existing_gbk_relationships = ec_gbk_table_dict[ec_id]
-                # check if protein-ec# relationship is already in the db
-                if gbk_id not in existing_gbk_relationships:
-                    gbk_ec_insert_values.add( (gbk_id, ec_id) )
-            except KeyError:  # when adding relationship for the first time
-                gbk_ec_insert_values.add( (gbk_id, ec_id) )
-
-        if args.delete_old_ec:
-            existing_ec_relationships = gbk_ec_table_dict[gbk_id]
-            for ec in retrieved_ec_numbers:
-                ec_id = ec_table_dict[ec]
-                if ec_id not in existing_ec_relationships:
-                    ecs_rel_to_delete.add( (gbk_id, ec_id) )
-
-    if len(gbk_ec_insert_values) != 0:
-        insert_data(connection, "Genbanks_Ecs", ["genbank_id", "ec_id"], list(gbk_ec_insert_values))
-
-    if args.delete_old_ec and len(ecs_rel_to_delete) != 0:
-        with connection.begin():
-            for record in tqdm(ecs_rel_to_delete, desc="Deleteing old GenBank-EC relationships"):
-                # record = (genbank_id, ec_id,)
-                stmt = (
-                    delete(genbanks_ecs).\
-                    where(genbanks_ecs.c.genbank_id == record[0]).\
-                    where(genbanks_ecs.c.ec_id == record[1])
-                )
-                connection.execute(stmt)
-
-    return
-
-
 def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
     """Add PDB accessions to the local CAZyme database
 
@@ -378,7 +311,7 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
 
     # First, identify new PDB accessions to add to the database
     pdb_insert_values = set()
-    for uniprot_acc in tqdm(uniprot_dict, desc="Identifying new PDBs to add to db"):
+    for ncbi_acc in tqdm(ncbi_acc, desc="Identifying new PDBs to add to db"):
         for pdb in uniprot_dict[uniprot_acc]["pdb"]:
             try:
                 pdb_table_dict[pdb]
