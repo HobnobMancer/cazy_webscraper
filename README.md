@@ -57,6 +57,27 @@ Protein sequences (retrieved from GenBank and/or UniProt) from the local CAZyme 
 
 Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest).
 
+## Updates
+
+* `cazy_webscraper` version >= 2.3.0 uses a different schema for the Uniprots table in the local CAZyme database.
+    - A Genbanks \*-1 Uniprots relationship is now used instead of a Genbanks 1-\* Uniprots relationship
+
+* Faster retrieval of data from UniProt.
+    - Uses `bioservices` mapping to map directly from NCBI protein version accession to UniProt
+    - `cw_get_uniprot_data` not longer calls to NCBI and thus no longer requires an email address as a positional argument
+
+* Improved clarrification of deleting old records when using `cw_get_uniprot_data`
+    - Separate arguments to delete Genbanks-EC number and Genbanks-PDB accession relationships that are no longer listed in UniProt for those proteins in the local CAZyme database for proteins whom data is downloaded from UniProt
+    - New args:
+        - `--delete_old_ec_relationships` = deletes Genbank(protein)-EC number relationships no longer in UniProt
+        - `--delete_old_ecs` = deletes EC numbers in the local db not linked to any proteins
+        - `--delete_old_pdb_relationships` = deletes Genbank(protein)-PDB relationships no longer in UniProt
+        - `--delete_old_pdbs` = deletes PDB accessions in the local db not linked to any proteins
+
+* Retrieve the local db schema
+    - New command `cw_get_db_schema` added.
+    - Retrieves the SQLite schema of a local CAZyme database and prints it to the terminal
+
 ## Documentation
 
 For a full description of the operation and examples of use, please see our paper in (BioRxiv)[https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1.full].
@@ -230,7 +251,7 @@ To interrogate the database, use the `cw_query_database` command.
 The schema of a local CAZyme database can be retrieved using `cazy_webscraper`:
 
 ```bash
-cw_get_schema <path to local CAZyme database>
+cw_get_db_schema <path to local CAZyme database>
 ```
 
 Alternatively, `sqlite3` can be used to retrieve the schema:
