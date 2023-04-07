@@ -167,6 +167,7 @@ For details and updates on development, please consult the `GitHub repository <h
    usage
    tutorial
    database
+   schema
    uniprot
    uniprottutorial
    genbank
