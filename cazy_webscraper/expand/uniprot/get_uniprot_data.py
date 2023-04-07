@@ -62,12 +62,13 @@ from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.ncbi.gene_names import get_linked_ncbi_accessions
 from cazy_webscraper.expand.uniprot.uniprot_cache import get_uniprot_cache, cache_uniprot_data
 from cazy_webscraper.sql import sql_interface
-from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_data.add_uniprot_data import (
     add_ec_numbers,
     add_pdb_accessions,
     add_uniprot_accessions,
 )
+from cazy_webscraper.sql.sql_interface.delete_data import delete_old_relationships, delete_old_annotations
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
 from cazy_webscraper.sql import sql_orm
 from cazy_webscraper.utilities.parsers.uniprot_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
@@ -181,11 +182,36 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger.warning("Adding Genbanks-ECnumber relationships to local CAZyme db")
         add_genbank_ec_relationships(uniprot_dict, gbk_dict, connection, args)
 
-        if args.delete_old_ec:
+        if args.delete_old_ec_relationships:
+            logger.warning(
+                "Deleting Genbanks-EC number annotations in the local CAZyme database\n"
+                "that were not included for the protein whose additional data was just\n
+                "downloaded from UniProt"
+            )
+            # load ec numbers and relationships with Genbanks records from the local db
+            ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
+            ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)
+
+            delete_old_relationships(
+                uniprot_dict,
+                gbk_dict,
+                ec_table_dict,
+                ec_gbk_table_dict,
+                'ec_numbers',
+                'Genbanks_Ecs,'
+                connection,
+                args,
+            )
+
+        if args.delete_old_ecs:
             logger.warning(
                 "Deleting EC numbers in local db that are not linked to any Genbanks table records"
             )
-            delete_old_ecs(connection, args)
+            # load ec numbers and relationships with Genbanks records from the local db
+            ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
+            ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connecti
+
+            delete_old_annotations(ec_table_dict, ec_gbk_table_dict, 'Ecs', connection, args)
 
     # add pdb accessions
     if args.pdb:
@@ -193,12 +219,36 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         add_pdb_accessions(uniprot_dict, gbk_dict, connection, args)
         add_pdb_gbk_relationships(uniprot_dict, gbk_dict, connection, args)
 
+        if args.delete_old_pdb_relationships:
+            logger.warning(
+                "Deleting Genbanks-PDB annotations in the local CAZyme database\n"
+                "that were not included for the protein whose additional data was just\n
+                "downloaded from UniProt"
+            )
+            # load ec numbers and relationships with Genbanks records from the local db
+            pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
+            gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
+
+            delete_old_relationships(
+                uniprot_dict,
+                gbk_dict,
+                pdb_table_dict,
+                gbk_pdb_rel_table_dict,
+                'pdbs',
+                'Genbanks_Pdbs',
+                connection,
+                args,
+            )
+
         if args.delete_old_pdbs:
             logger.warning(
                 "Deleting PDB accessions in local db that are not linked to any Genbanks table records"
             )
-            delete_old_pdbs(connection, args)
+            # load ec numbers and relationships with Genbanks records from the local db
+            pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
+            gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connecti
 
+            delete_old_annotations(pdb_table_dict, gbk_pdb_rel_table_dict, 'Pdbs', connection, args)
 
     closing_message("get_uniprot_data", start_time, args)
 
