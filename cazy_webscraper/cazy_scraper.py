@@ -136,6 +136,16 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         display_citation_info()
         return
 
+    if args.email is None:
+        logger.error(
+            "No email address provided.\n"
+            "Email address required by NCBI - which is required to retrieve the latest taxonomic\n"
+            "classifications for proteins listed with multiple source organisms in the CAZy database\n"
+            "Please provide your email address.\n"
+            "Terminating program."
+        )
+        return
+
     # check correct output was provided, exit if not operable
     if args.database is not None and args.db_output is not None:
         warning_message = (
