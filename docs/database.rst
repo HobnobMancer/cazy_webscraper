@@ -39,7 +39,7 @@ Retrieve the schema of a local CAZyme database
 The schema of a local CAZyme database can be retrieved using ``cazy_webscraper``:
 
 .. code-block:: bash
-    cw_get_schema <path to local CAZyme database>
+    cw_get_db_schema <path to local CAZyme database>
 
 
 Alternatively, `sqlite3` can be used to retrieve the schema:
