@@ -145,8 +145,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     ####
     ####
     #####
-    uniprot_dict, all_ecs, gbk_data_to_download = get_uniprot_cache(gbk_dict, args)
-
+    uniprot_dict, gbk_data_to_download = get_uniprot_cache(gbk_dict, args)
     # uniprot_data[ncbi_acc] = {
     #     'uniprot_acc': uniprot_acc,
     #     'uniprot_entry_id': uniprot_entry_id,
@@ -156,7 +155,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     #     'pdbs': all_pdbs,
     # }
 
-    # all_ecs = set of EC numers
     # gbk_data_to_download = list of GenBank accs to download data for
 
     if args.skip_download is False:
@@ -177,7 +175,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     add_uniprot_accessions(uniprot_dict, connection, args)
 
     # add ec numbers
-    if (args.ec):
+    if args.ec:
         logger.warning("Adding EC numbers to the local CAZyme database")
         add_ec_numbers(uniprot_dict, connection, args)
         logger.warning("Adding Genbanks-ECnumber relationships to local CAZyme db")
@@ -193,6 +191,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.pdb:
         logger.warning("Adding RSCB PDB IDs to the local CAZyme database")
         add_pdb_accessions(uniprot_dict, gbk_dict, connection, args)
+        add_pdb_gbk_relationships(uniprot_dict, gbk_dict, connection, args)
+
+        if args.delete_old_pdbs:
+            logger.warning(
+                "Deleting PDB accessions in local db that are not linked to any Genbanks table records"
+            )
+            delete_old_pdbs(connection, args)
+
 
     closing_message("get_uniprot_data", start_time, args)
 
