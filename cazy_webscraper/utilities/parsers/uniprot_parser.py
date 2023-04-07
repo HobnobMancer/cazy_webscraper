@@ -115,10 +115,7 @@ def build_parser(argv: Optional[List] = None):
         dest="delete_old_ec",
         action="store_true",
         default=False,
-        help=(
-            "Delete EC number-GenBank relationships/annotations\n"
-            "that are not longer listed in UniProt for a given protein"
-        ),
+        help="Delete EC numbers that are not linked to any proteins listed in the Genbanks table.",
     )
 
     parser.add_argument(
