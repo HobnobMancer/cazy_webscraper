@@ -84,6 +84,7 @@ setuptools.setup(
             "cw_extract_db_seqs = cazy_webscraper.expand.extract_seqs.extract_db_seqs:main",
             "cw_get_pdb_structures = cazy_webscraper.expand.pdb.get_pdb_structures:main",
             "cw_query_database = cazy_webscraper.api.cw_query_database:main",
+            "cw_get_schema = cazy_webscraper.sql.get_schema:main",
         ]
     },
     install_requires=[
