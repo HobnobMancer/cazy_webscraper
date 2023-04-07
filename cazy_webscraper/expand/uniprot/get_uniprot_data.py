@@ -180,6 +180,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if (args.ec):
         logger.warning("Adding EC numbers to the local CAZyme database")
         add_ec_numbers(uniprot_dict, connection, args)
+        logger.warning("Adding Genbanks-ECnumber relationships to local CAZyme db")
+        add_genbank_ec_relationships(uniprot_dict, gbk_dict, connection, args)
+
+        if args.delete_old_ec:
+            logger.warning(
+                "Deleting EC numbers in local db that are not linked to any Genbanks table records"
+            )
+            delete_old_ecs(connection, args)
 
     # add pdb accessions
     if args.pdb:
