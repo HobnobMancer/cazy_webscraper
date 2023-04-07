@@ -323,7 +323,7 @@ def get_gbk_pdb_table_dict(connection):
     
     :param connection: open sqlalchemy db engine connection
     
-    Return dict {gbk_db_id: {pdb_db_id} }
+    Return dict {gbk_db_id: set(pdb_db_ids) }
     """
     with Session(bind=connection) as session:
         all_gbk_pdb_records = session.query(Genbank, Pdb).\
