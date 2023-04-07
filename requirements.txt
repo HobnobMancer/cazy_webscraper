@@ -7,6 +7,6 @@ mechanicalsoup
 numpy
 pandas
 requests
-saintBioutils>=0.0.19
+saintBioutils>=0.0.25
 sqlalchemy==1.4.20
 tqdm
