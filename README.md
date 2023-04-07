@@ -12,7 +12,7 @@
 [![pyani PyPi version](https://img.shields.io/pypi/v/cazy_webscraper "PyPI version")](https://pypi.python.org/pypi/cazy_webscraper)  
 [![Downloads](https://pepy.tech/badge/cazy-webscraper)](https://pepy.tech/project/cazy-webscraper)
 
--------------------------------
+--------------------------------
 
 > `cazy_webscraper` version 1 is depracted. Please ensure you are using version 2 or newer.  
 > `bioconda` installation is fixed for >= v2.1.3.1
@@ -171,13 +171,21 @@ cazy_webscraper <user_email>
 To retrieve the version, use the following command:
 
 ```bash
-cazy_webscraper <user_email> -V
+cazy_webscraper -V
+```
+or
+```bash
+cazy_webscraper --version
 ```
 
 To retrieve the citation to use:
 
 ```bash
-cazy_webscraper <user_email> -C
+cazy_webscraper -C
+```
+or
+```bash
+cazy_webscraper --citation
 ```
 
 ### Command summary
@@ -222,6 +230,7 @@ Command line options for `cazy_webscraper`, which is used to scrape CAZy and com
 Options are written in alphabetical order.
 
 `email` - \[REQUIRED\] User email address. This is required by NCBI Entrez for querying the Entrez server.
+**Email address is not required when printing out the citation and version number information**
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 

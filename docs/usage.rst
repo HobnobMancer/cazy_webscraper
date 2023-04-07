@@ -23,6 +23,30 @@ To download the entire CAZy dataset, and save the data set to the current workin
 .. NOTE::
   Typically, downloading the entire CAZy dataset takes 10-15 minutes, although this is dependent on the amount of avaible memory.
 
+To print citation information (including the citations of third party tools used by ``cazy_webscraper``):
+
+.. code-block:: bash
+  
+   cazy_webscraper --citation
+
+Or
+
+.. code-block:: bash
+  
+   cazy_webscraper -C
+
+To print version information (including the versions of third party tools used by ``cazy_webscraper``):
+
+.. code-block:: bash
+  
+   cazy_webscraper --version
+
+Or
+
+.. code-block:: bash
+  
+   cazy_webscraper -V
+
 --------------------
 Command line options
 --------------------
@@ -30,7 +54,7 @@ Command line options
 Listed below are the required and optional command-line options when using ``cazy_webscraper`` 
 to download data from CAZy.
 
-``email`` - **REQUIRED** User email address. This is required by NCBI Entrez for querying the Entrez server.
+``email`` - **REQUIRED** User email address. This is required by NCBI Entrez for querying the Entrez server. - Not needed when printing out citation or version number information.
 
 ``--cache_dir`` - Path to cache dir to be used instead of default cache dir path.
 
