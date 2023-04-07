@@ -54,6 +54,7 @@ def delete_old_relationships(
     annotation_table,
     relationship_table,
     annotation,
+    table_name,
     connection,
     args,
 ):
