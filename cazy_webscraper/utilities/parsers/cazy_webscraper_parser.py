@@ -59,6 +59,7 @@ def build_parser(argv: Optional[List] = None):
     parser.add_argument(
         "email",
         type=str,
+        nargs='?',
         help="User email address. Requirement of Entrez, used to get source organsism data. Email is not stored be cazy_webscraper."
     )
 
