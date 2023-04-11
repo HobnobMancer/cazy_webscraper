@@ -138,14 +138,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         args,
     )
 
-    # get cached data, or return an empty dict and set
-    #####
-    ####
-    ####
-    ### NEEDS UPDATING
-    ####
-    ####
-    #####
+    # get cached data, or return an empty dict
+    # and return a list of GenBank/NCBI protein version accessions to query UniProt with
+    # to download protein data
     uniprot_dict, gbk_data_to_download = get_uniprot_cache(gbk_dict, args)
     # uniprot_data[ncbi_acc] = {
     #     'uniprot_acc': uniprot_acc,

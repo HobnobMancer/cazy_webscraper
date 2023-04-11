@@ -50,15 +50,30 @@ def get_uniprot_cache(gbk_dict, args):
     :param gbk_dict: {gbk acc: local db id}
     :param args: CLI args parser
 
-    Return dict {uniprot: {genbank_accession: str, uniprot_name: str, pdb: set, ec: set}}
-    and set of EC numbers
+    Return
+    Dict:
+    uniprot_data[ncbi_acc] = {
+        'uniprot_acc': uniprot_acc,
+        'uniprot_entry_id': uniprot_entry_id,
+        'protein_name': protein_name,
+        'ec_numbers': ec_numbers,
+        'sequence': sequence,
+        'pdbs': all_pdbs,
+    }
     and list of GenBank accessions to download UniProt data for
     """
     logger = logging.getLogger(__name__)
 
     # if using cachce skip accession retrieval
-    uniprot_dict = {}  # {uniprot: {genbank_accession: str, uniprot_name: str, pdb: set, ec: set}}
-    all_ecs = set()
+    # uniprot_data[ncbi_acc] = {
+    #     'uniprot_acc': uniprot_acc,
+    #     'uniprot_entry_id': uniprot_entry_id,
+    #     'protein_name': protein_name,
+    #     'ec_numbers': ec_numbers,
+    #     'sequence': sequence,
+    #     'pdbs': all_pdbs,
+    # }
+    uniprot_dict = {}
     gbk_data_to_download = []
 
     if args.use_uniprot_cache is not None:
@@ -66,12 +81,9 @@ def get_uniprot_cache(gbk_dict, args):
 
         with open(args.use_uniprot_cache, "r") as fh:
             uniprot_dict = json.load(fh)
-
-        if args.ec:
-            all_ecs = get_ecs_from_cache(uniprot_dict)
     
     if args.skip_download:  # only use cached data
-        return uniprot_dict, all_ecs, gbk_data_to_download
+        return uniprot_dict, gbk_data_to_download
 
     # else: check for which GenBank accessions data still needs be retrieved from UniProt
     # if some of the data is used from a cache, if no data is provided from a cache
@@ -82,27 +94,7 @@ def get_uniprot_cache(gbk_dict, args):
     else:  # get data for all GenBank accessions from the local db matching the user criteria
         gbk_data_to_download = list(gbk_dict.keys())
     
-    return uniprot_dict, all_ecs, gbk_data_to_download
-
-
-def get_ecs_from_cache(uniprot_dict):
-    """Extract all unique EC numbers from the UniProt data cache.
-    
-    :param uniprot_dict: dict of data retrieved from UniProt.
-    
-    Return set of EC numbers.
-    """
-    all_ecs = set()
-
-    for uniprot_acc in tqdm(uniprot_dict, desc="Getting EC numbers from cached data"):
-        try:
-            ecs = uniprot_dict[uniprot_acc]["ec"]
-            for ec in ecs:
-                all_ecs.add( (ec,) )
-        except (ValueError, TypeError, KeyError):
-            pass
-
-    return all_ecs
+    return uniprot_dict, gbk_data_to_download
 
 
 def cache_uniprot_data(uniprot_dict, cache_dir, time_stamp):
