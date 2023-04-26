@@ -503,6 +503,7 @@ def test_link_prot_to_tax(monkeypatch):
             'query key',
             'web env',
             argsdict['args'],
+            ['accession'],
         )
         
         assert output == {'2810347'}
@@ -526,7 +527,7 @@ def test_get_ncbi_ids_both_success(monkeypatch):
     )}
 
     output = get_ncbi_taxs.get_ncbi_ids({}, Path("tests/test_outputs/test_ncbi_tax"), argsdict['args'])
-    assert output == (['test_gbk', 'test_gbk'], {})
+    assert output == (['test_gbk', 'test_gbk'], None)
 
 
 def test_get_ncbi_ids_only_tax(monkeypatch):
@@ -575,7 +576,7 @@ def test_get_ncbi_ids_only_prots(monkeypatch):
     monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_tax_prot_ids", mock_get_ncbi_tax_prot_ids)
 
     output = get_ncbi_taxs.get_ncbi_ids({}, Path("tests/test_outputs/test_ncbi_tax"), argsdict['args'])
-    assert output == (([], {}))
+    assert output == (([], None))
 
 
 def test_get_ncbi_ids_only_prots_fails(monkeypatch):
