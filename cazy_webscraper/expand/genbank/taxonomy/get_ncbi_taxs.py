@@ -64,8 +64,7 @@ from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.ncbi import post_ids
 from cazy_webscraper.ncbi.taxonomy.lineage import (
     retry_tax_retrieval,
-    get_taxid_lineages,
-    parse_unlised_taxid_lineages,
+    get_lineage_data,
 )
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface.add_data.add_ncbi_tax_data import (
@@ -200,7 +199,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
         # tax_prot_dict = {tax_id: {linaege info, 'proteins' {local db protein ids}}
         # prot_id_dict = {ncbi prot id: prot acc}
-        tax_prot_dict = retry_tax_retrieval(failed_accessions, failed_ids, prot_id_dict, tax_prot_dict)
+        tax_prot_dict = retry_tax_retrieval(failed_accessions, failed_ids, prot_id_dict, tax_prot_dict, args, cache_dir)
 
     add_ncbi_taxonomies(tax_prot_dict, connection, args)
     logger.info("Added lineage data to db")
@@ -726,58 +725,6 @@ def get_lineage_protein_data(tax_ids, prot_id_dict, gbk_dict, cache_dir, args):
                 fh.write(f"{tax_id}\n")
 
     return lineage_dict
-
-
-def get_lineage_data(tax_ids, args):
-    """Coordinate retrieving all lineage data for all tax_ids from NCBI Taxonomy DB
-
-    :param tax_ids: list of tax ids
-    :param args: CLI args parser
-
-    Return 
-    * {ncbi tax id: {rank: str}}
-    * set of tax ids for which data could not be retrieved from NCBI
-    """
-    logger = logging.getLogger(__name__)
-    all_tax_lineage_dict = {}  # {ncbi tax id: {rank: str}}
-    og_batches = get_chunks_list(list(tax_ids), args.batch_size)
-    all_failed_ids = set()
-
-    tax_lineage_dict, failed_batches, unlisted_id_batches = get_taxid_lineages(
-        og_batches,
-        tax_ids,
-        args,
-    )
-    all_tax_lineage_dict.update(tax_lineage_dict)
-
-    if len(list(failed_batches.keys())) != 0:
-        logger.warning("Retring failed connections")
-        tax_lineage_dict, new_unlisted_id_batches, failed_ids = retry_get_tax_lineages(
-            failed_batches,
-            tax_ids,
-            args,
-        )
-        all_tax_lineage_dict.update(tax_lineage_dict)
-        unlisted_id_batches += new_unlisted_id_batches
-        for failed_id in failed_ids:
-            all_failed_ids.add(failed_id)
-    
-    if len(unlisted_id_batches) != 0:
-        logger.warning("Retrying batches with unlised IDs")
-        # makke list of nested lists [[id1], [id2]]
-        individual_ids = [[_] for _ in unlisted_id_batches] 
-
-        tax_lineage_dict, failed_ids = parse_unlised_taxid_lineages(
-            individual_ids,
-            tax_ids,
-            args,
-        )
-        
-        all_tax_lineage_dict.update(tax_lineage_dict)
-        for tax_id in failed_ids:
-            all_failed_ids.add(tax_id)
-
-    return all_tax_lineage_dict, all_failed_ids
 
 
 def get_tax_proteins(tax_id, tax_prot_dict, prot_id_dict, gbk_dict, cache_dir, args):

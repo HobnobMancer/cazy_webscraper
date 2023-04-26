@@ -473,13 +473,15 @@ def parse_unlised_taxid_lineages(batches, tax_ids, args):
     return tax_lineage_dict, unlisted_ids
 
 
-def retry_tax_retrieval(failed_accessions, failed_ids, prot_id_dict, tax_prot_dict, args):
+def retry_tax_retrieval(failed_accessions, failed_ids, prot_id_dict, tax_prot_dict, args, cache_dir):
     """Attempt to link protein IDs to tax records, where information was not retrieved previously
     
     :param failed_accessions: ncbi prot accessions for whom tax data was not retrieved
     :param failed_ids: protein ncbi ids for failed accessions
     :param prot_id_dict: {ncbi prot id: ncbi prot accession}
     :param tax_prot_dict: {tax_id: {linaege info, 'proteins' {local db protein ids}}
+    :param args: CLI args parser
+    :param cache_dir: path to cache directory
     
     return updated tax_prot_dict
     """
@@ -562,5 +564,35 @@ def retry_tax_retrieval(failed_accessions, failed_ids, prot_id_dict, tax_prot_di
 
             for rank in tax_lineage_dict[tax_id]:
                 tax_prot_dict[tax_id][rank] = tax_lineage_dict[tax_id][rank]
+
+    if len(failed_connections) != 0:
+        cache_file = cache_dir / "failed_connections_on_reattempt"
+        logger.warning(
+            "Writing to cache the protein accessions and ids whose connection to NCBI failed\n"
+            f"Cache: {cache_file}"
+        )
+        with open(cache_file, 'a') as fh:
+            for prot_acc_id_pair in failed_connections:
+                fh.write(f"{prot_acc_id_pair[0]}\t{prot_acc_id_pair[1]}\n")
+
+    if len(invalid_ids) != 0:
+        cache_file = cache_dir / "invalid_prot_ids_on_reattempt"
+        logger.warning(
+            "Writing to cache the protein ids that could not be linked to a taxonomy record in NCBI\n"
+            f"Cache: {cache_file}"
+        )
+        with open(cache_file, 'a') as fh:
+            for prot_id in invalid_ids:
+                fh.write(f"{prot_id}\n")
+
+    if len(invalid_tax_ids) != 0:
+        cache_file = cache_dir / "invalid_tax_ids_on_reattempt"
+        logger.warning(
+            "Writing to cache the tax ids whose records could not be retrieved from NCBI\n"
+            f"Cache: {cache_file}"
+        )
+        with open(cache_file, 'a') as fh:
+            for tax_id in invalid_tax_ids:
+                fh.write(f"{tax_id}\n")
 
     return tax_prot_dict
