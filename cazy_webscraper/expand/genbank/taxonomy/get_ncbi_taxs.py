@@ -287,7 +287,7 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
     if (args.use_tax_ids is not None) and (args.use_protein_ids is not None):
         # only use ids in files
         tax_ids = load_tax_ids(args.use_tax_ids)
-        protein_id_dict = load_protein_ids(args.use_protein_ids)
+        prot_id_dict = load_protein_ids(args.use_protein_ids)
 
         return tax_ids, prot_id_dict
 
@@ -297,7 +297,7 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
         tax_ids = load_tax_ids(args.use_tax_ids)
 
     if args.use_protein_ids is not None:
-        protein_id_dict = load_protein_ids(args.use_protein_ids)
+        prot_id_dict = load_protein_ids(args.use_protein_ids)
 
     logger.info("caching retrieved NCBI Taxonomy and Protein IDs")
     with open((cache_dir/"tax_ids.out"), "a") as fh:
