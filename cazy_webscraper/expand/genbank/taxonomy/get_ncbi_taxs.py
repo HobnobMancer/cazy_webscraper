@@ -63,7 +63,7 @@ from cazy_webscraper.cazy_scraper import connect_existing_db
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.ncbi import post_ids
 from cazy_webscraper.ncbi.taxonomy.lineage import (
-    fetch_lineages,
+    retry_tax_retrieval,
     get_taxid_lineages,
     parse_unlised_taxid_lineages,
 )
@@ -140,7 +140,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # Use Cache
     if args.use_lineage_cache is not None:
-        gbk_dict = None
+        gbk_dict, tax_ids, prot_id_dict = None, None, None
         logger.info("Adding cached lineages to local CAZyme db")
         try:
             with open(args.use_lineage_cache, "r") as fh:
@@ -174,7 +174,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_taxonomy(tax_prot_dict, cache_dir)
 
     # check to see for how many proteins a ncbi taxonomy record could not be retrieved
-    protein_accessions = list(gbk_dict.keys())
     if gbk_dict is None:
         logger.warning("Loading Genbanks table into dict to check for failed retrievals of tax data")
         gbk_dict = get_db_proteins(
@@ -187,37 +186,21 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             args,
         )
         # gbk_dict = {gbk acc: db id}
-    # tax_prot_dict = {tax_id: {linaege info, 'proteins' {local db protein ids}}
-    retrieved_protein_acc = []
-    for tax_id in tax_prot_dict:
-        for protein in tax_prot_dict[tax_id]['proteins']:
-            db_id = protein
-            for acc in gbk_dict:
-                if gbk_dict[acc] == db_id:
-                    protein_acc = acc
-                    break
-            
-            retrieved_protein_acc.append(protein_acc)
 
-    failed_accessions = [_ for _ in protein_accessions if _ not in retrieved_protein_acc]
+    failed_accessions = check_for_failed_accessions(tax_prot_dict, gbk_dict, cache_dir, prot_id_dict)
+
     if len(failed_accessions) != 0:
-        cache_file = cache_dir / "failed_to_retrieve_tax_data"
-        logger.warning(
-            f"Attempted to retrieve tax data for {len(protein_accessions)} proteins accessions\n"
-            f"Retrieved tax data for {len(retrieved_protein_acc)} proteins\n"
-            f"Therefore, tax data was not retrieved for {len(failed_accessions)} protein accessions\n"
-            f"Writing accessions to cache file:{cache_file}"
-        )
+        # check if failure was due to not getting a protein id from ncbi
+        
+        if prot_id_dict is not None:
+            failed_ids = [_ for _ in failed_accessions if _ not in list(prot_id_dict.values())]
+            logger.warning(f"Did not retrieved protein IDs for {failed_ids} proteins")
+        else:
+            failed_ids = []
 
-        with open(cache_file,'w') as fh:
-            for acc in failed_accessions:
-                fh.write(f"{acc}\n")
-    
-    else:
-        logger.warning(
-            f"Success: Attempted to retrieve tax data for {len(protein_accessions)} proteins accessions\n"
-            f"and retrieved tax data for {len(retrieved_protein_acc)} proteins"
-        )
+        # tax_prot_dict = {tax_id: {linaege info, 'proteins' {local db protein ids}}
+        # prot_id_dict = {ncbi prot id: prot acc}
+        tax_prot_dict = retry_tax_retrieval(failed_accessions, failed_ids, prot_id_dict, tax_prot_dict)
 
     add_ncbi_taxonomies(tax_prot_dict, connection, args)
     logger.info("Added lineage data to db")
@@ -858,6 +841,53 @@ def get_tax_proteins(tax_id, tax_prot_dict, prot_id_dict, gbk_dict, cache_dir, a
                 tax_prot_dict[tax_id].add(prot_local_db_id)
 
     return tax_prot_dict, True
+
+
+def check_for_failed_accessions(tax_prot_dict, gbk_dict, cache_dir):
+    """Check to see for how many proteins, taxonomy inforamtion could not be retrieved from NCBI
+    
+    :param tax_prot_dict: {tax_id: {linaege info, 'proteins' {local db protein ids}}
+    :param gbk_dict: dict of ncbi accessions paired with local db IDs
+    :param cache_dir: Path to cache directory
+    
+    Return list of accessions for whom tax data was not retrieved from ncbi
+    """
+    logger = logging.getLogger(__name__)
+    protein_accessions = list(gbk_dict.keys())
+
+    # tax_prot_dict = {tax_id: {linaege info, 'proteins' {local db protein ids}}
+    retrieved_protein_acc = []
+    for tax_id in tax_prot_dict:
+        for protein in tax_prot_dict[tax_id]['proteins']:
+            db_id = protein
+            for acc in gbk_dict:
+                if gbk_dict[acc] == db_id:
+                    protein_acc = acc
+                    break
+            
+            retrieved_protein_acc.append(protein_acc)
+
+    failed_accessions = [_ for _ in protein_accessions if _ not in retrieved_protein_acc]
+    if len(failed_accessions) != 0:
+        cache_file = cache_dir / "failed_to_retrieve_tax_data"
+        logger.warning(
+            f"Attempted to retrieve tax data for {len(protein_accessions)} proteins accessions\n"
+            f"Retrieved tax data for {len(retrieved_protein_acc)} proteins\n"
+            f"Therefore, tax data was not retrieved for {len(failed_accessions)} protein accessions\n"
+            f"Writing accessions to cache file:{cache_file}"
+        )
+
+        with open(cache_file,'w') as fh:
+            for acc in failed_accessions:
+                fh.write(f"{acc}\n")
+    
+    else:
+        logger.warning(
+            f"Success: Attempted to retrieve tax data for {len(protein_accessions)} proteins accessions\n"
+            f"and retrieved tax data for {len(retrieved_protein_acc)} proteins"
+        )
+
+    return failed_accessions
 
 
 if __name__ == "__main__":
