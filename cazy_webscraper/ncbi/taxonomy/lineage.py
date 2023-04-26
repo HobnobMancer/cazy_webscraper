@@ -45,8 +45,110 @@ import logging
 from Bio import Entrez
 from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
+from http.client import IncompleteRead
+from Bio.Entrez.Parser import NotXMLError
 
+from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.ncbi import post_ids
+
+
+def link_single_prot_tax(prot_id, args):
+    """Get NCBI tax IDs from linking a single NCBI protein ID
+
+    :param prot_id: str, ncbi protein record id
+    :param args: cmd-line args parser
+
+    Return set of NCBI tax ids or None if fails
+    """
+    logger = logging.getLogger(__name__)
+
+    tax_ids = set()
+
+    try:
+        with entrez_retry(
+            args.retries,
+            Entrez.elink,
+            id=prot_id,
+            dbfrom="Protein",
+            db="Taxonomy",
+            linkname="protein_taxonomy",
+        ) as handle:
+            tax_links = Entrez.read(handle, validate=False)
+    except RuntimeError as err:
+        logger.warning(
+            f"When retrieving taxonomy IDs, the NCBI protein id {prot_id} is invalid\n"
+            f"Error:\n{err}"
+        )
+        return "invalid"
+    except (TypeError, AttributeError, NotXMLError, IncompleteRead) as err:
+        logger.warning(
+            "Failed to connect to NCBI.Entrez and download the Entrez.elink result\n"
+            "Will retry later"
+            f"ID:\n{prot_id}\n"
+            f"Error:\n{err}"
+        )
+        return "connection"
+
+
+    for result in tax_links:
+        for item in result['LinkSetDb']:
+            links = item['Link']
+            for link in links:
+                tax_ids.add(link['Id'])
+
+    return tax_ids
+    
+
+def get_lineage_data(tax_ids, args):
+    """Coordinate retrieving all lineage data for all tax_ids from NCBI Taxonomy DB
+
+    :param tax_ids: list of tax ids
+    :param args: CLI args parser
+
+    Return 
+    * {ncbi tax id: {rank: str}}
+    * set of tax ids for which data could not be retrieved from NCBI
+    """
+    logger = logging.getLogger(__name__)
+    all_tax_lineage_dict = {}  # {ncbi tax id: {rank: str}}
+    og_batches = get_chunks_list(list(tax_ids), args.batch_size)
+    all_failed_ids = set()
+
+    tax_lineage_dict, failed_batches, unlisted_id_batches = get_taxid_lineages(
+        og_batches,
+        tax_ids,
+        args,
+    )
+    all_tax_lineage_dict.update(tax_lineage_dict)
+
+    if len(list(failed_batches.keys())) != 0:
+        logger.warning("Retring failed connections")
+        tax_lineage_dict, new_unlisted_id_batches, failed_ids = retry_get_tax_lineages(
+            failed_batches,
+            tax_ids,
+            args,
+        )
+        all_tax_lineage_dict.update(tax_lineage_dict)
+        unlisted_id_batches += new_unlisted_id_batches
+        for failed_id in failed_ids:
+            all_failed_ids.add(failed_id)
+    
+    if len(unlisted_id_batches) != 0:
+        logger.warning("Retrying batches with unlised IDs")
+        # makke list of nested lists [[id1], [id2]]
+        individual_ids = [[_] for _ in unlisted_id_batches] 
+
+        tax_lineage_dict, failed_ids = parse_unlised_taxid_lineages(
+            individual_ids,
+            tax_ids,
+            args,
+        )
+        
+        all_tax_lineage_dict.update(tax_lineage_dict)
+        for tax_id in failed_ids:
+            all_failed_ids.add(tax_id)
+
+    return all_tax_lineage_dict, all_failed_ids
 
 
 def fetch_lineages(tax_ids, query_key, web_env, args):
@@ -150,6 +252,7 @@ def get_taxid_lineages(batches, tax_ids, args):
 
     return dict {ncbi tax id: {rank: str}}
     """
+    logger = logging.getLogger(__name__)
     failed_batches = {}  # {str(batch): {'batch': list(batch), 'tries': int(num of failed attempts)}}
     unlisted_id_batches = []
 
@@ -207,6 +310,7 @@ def retry_get_tax_lineages(failed_batches, tax_ids, args):
     * list of unlisted IDs
     * list of tax ids for who data could not be retrieved from NCBI
     """
+    logger = logging.getLogger(__name__)
     tax_lineage_dict = {}
     batches = [failed_batches[batch_name]['batch'] for batch_name in failed_batches] # [[b1], [b2]]
     unlisted_id_batches = []
@@ -292,6 +396,7 @@ def parse_unlised_taxid_lineages(batches, tax_ids, args):
     * dict {ncbi tax id: {rank: str}}
     * list of unlisted ids
     """
+    logger = logging.getLogger(__name__)
     failed_ids = {}  # {id: int(num of failed attempts)}}
     unlisted_ids = []
     tax_lineage_dict = {}  # {ncbi_tax_id: {rank: str/lineage}}
@@ -366,3 +471,96 @@ def parse_unlised_taxid_lineages(batches, tax_ids, args):
             tax_lineage_dict.update(lineage_dict)
 
     return tax_lineage_dict, unlisted_ids
+
+
+def retry_tax_retrieval(failed_accessions, failed_ids, prot_id_dict, tax_prot_dict, args):
+    """Attempt to link protein IDs to tax records, where information was not retrieved previously
+    
+    :param failed_accessions: ncbi prot accessions for whom tax data was not retrieved
+    :param failed_ids: protein ncbi ids for failed accessions
+    :param prot_id_dict: {ncbi prot id: ncbi prot accession}
+    :param tax_prot_dict: {tax_id: {linaege info, 'proteins' {local db protein ids}}
+    
+    return updated tax_prot_dict
+    """
+    logger = logging.getLogger(__name__)
+
+    failed_connections = []
+    invalid_ids = []
+    invalid_tax_ids = []
+
+    for protein_accession in tqdm(failed_accessions, desc="Retrying failed accessions"):
+        if protein_accession not in list(prot_id_dict.values()):
+            logger.warning(
+                f"Protein {protein_accession} not listed in NCBI\n"
+                "Not retrieving tax data for this protein"
+            )
+            continue
+    
+        prot_id = None
+        for temp_id in prot_id_dict:
+            if prot_id_dict[temp_id] == protein_accession:
+                prot_id = temp_id
+                break
+        
+        if prot_id is None:
+            logger.warning(
+                f"Could not retrieved local db ID for protein {protein_accession}\n"
+                "Not retrieving tax data for this protein"
+            )
+            continue
+
+        if prot_id in failed_ids:
+            logger.warning(
+                f"Protein accession {protein_accession} ID {prot_id} listed as invalid\n"
+                "Not retrieving tax data for this protein"
+            )
+            continue
+            
+        tax_ids = link_single_prot_tax(prot_id, args)
+        if tax_ids == "connection":
+            failed_connections.append((protein_accession, prot_id))
+            logger.warning(
+                f"Connection to NCBI for protein accession {protein_accession} failed\n"
+                "Not retrieving tax data for this protein"
+            )
+            continue
+
+        if tax_ids == "invalid":
+            invalid_ids.append((protein_accession, prot_id))
+            logger.warning(
+                f"NCBI for protein accession {protein_accession} (ID:{prot_id}) could not be linked to a tax\n"
+                "record in NCBI. Potentially an invalid ID or accession.\n"
+                "Not retrieving tax data for this protein"
+            )
+            continue
+        
+        taxs_to_retrieve = []
+        for tax_id in tax_ids:
+            if tax_id not in list(tax_prot_dict.keys()):
+                taxs_to_retrieve.append(tax_id)
+                continue
+            
+            tax_prot_dict[tax_id]['proteins'].add(prot_id)
+            
+        for tax_id in taxs_to_retrieve:
+            # retrieve tax data from ncbi
+            tax_lineage_dict, failed_id = get_lineage_data([tax_id], args)
+            # {ncbi tax id: {rank: str}}
+
+            if len(failed_id) > 0:
+                invalid_tax_ids.append((tax_id))
+                logger.warning(
+                    f"Could not retrieved record from NCBI for NCBI Tax ID {tax_id}\n"
+                    f"Not retrieving lineage for linked protein {protein_accession}"
+                )
+                continue
+
+            # add to tax_prot_dict
+            # tax_prot_dict = {tax_id: {linaege info, 'proteins' {local db protein ids}} 
+            tax_prot_dict[tax_id] = {'proteins': {prot_id}}
+
+            for rank in tax_lineage_dict[tax_id]:
+                tax_prot_dict[tax_id][rank] = tax_lineage_dict[tax_id][rank]
+
+    return tax_prot_dict
