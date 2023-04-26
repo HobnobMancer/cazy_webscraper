@@ -150,6 +150,8 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args, unit_test=False):
 
     Return nothing
     """
+    logger = logging.getLogger(__name__)
+    
     db_ncbi_tax_table = get_ncbi_tax_table(connection)  # {ncbi_tax_id: local db id}
 
     if args.update_gbk:
