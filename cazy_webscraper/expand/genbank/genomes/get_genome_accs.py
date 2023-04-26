@@ -123,6 +123,19 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         ec_filters,
     ) = parse_configuration.get_expansion_configuration(args)
 
+    with sql_orm.Session(bind=connection) as session:
+        sql_interface.log_scrape_in_db(
+            time_stamp,
+            config_dict,
+            kingdom_filters,
+            taxonomy_filter_dict,
+            ec_filters,
+            'NCBI Assembly',
+            'Genomic assemly accessions',
+            session,
+            args,
+        )
+
     logger.info(f"Retrieving Genbank records from the local db:\n{str(args.database)}")
 
     gbk_dict = get_gbks_of_interest(

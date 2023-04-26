@@ -55,6 +55,7 @@ from saintBioutils.utilities import logger as saint_logger
 from sqlalchemy.exc import IntegrityError
 
 from cazy_webscraper.expand.genbank.taxonomy import get_ncbi_taxs
+from cazy_webscraper.ncbi.taxonomy import lineage
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_data import add_ncbi_tax_data
@@ -387,7 +388,7 @@ def test_get_db_proteins(monkeypatch):
 
 def test_get_lineage_fails(monkeypatch):
     argsdict = {"args": Namespace(
-        retries=10,
+        retries=1,
     )}
 
     def mock_entrez_tax_call(*args, **kwargs):
@@ -396,14 +397,14 @@ def test_get_lineage_fails(monkeypatch):
 
     monkeypatch.setattr(get_ncbi_taxs, "entrez_retry", mock_entrez_tax_call)
 
-    output = get_ncbi_taxs.get_lineage('2700054', {}, argsdict['args'])
-    assert output == ({}, False)
+    output = lineage.fetch_lineages(['2700054'], 'QK', 'Webenv', argsdict['args'])
+    assert output == None
 
 
 def test_get_lineage(monkeypatch):
     """Retrieve mock result with https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=2"""
     argsdict = {"args": Namespace(
-        retries=10,
+        retries=1,
     )}
 
     efetch_result = "tests/test_inputs/test_inputs_ncbi_tax/efetchTaxLineage.xml"
@@ -417,18 +418,8 @@ def test_get_lineage(monkeypatch):
 
         monkeypatch.setattr(get_ncbi_taxs, "entrez_retry", mock_entrez_tax_call)
 
-        output = get_ncbi_taxs.get_lineage('2700054', {}, argsdict['args'])
-        assert output == (
-            {'2700054': {'class': 'Sordariomycetes',
-                        'family': 'Hypocreaceae',
-                        'genus': 'Trichoderma',
-                        'kingdom': 'Eukaryota',
-                        'order': 'Hypocreales',
-                        'phylum': 'Ascomycota',
-                        'species': 'Hypocreomycetidae',
-                        'strain': 'Trichoderma achlamydosporum'}},
-            True,
-        )
+        output = lineage.fetch_lineages(['2700054'], 'queryKey', 'Webenv', argsdict['args'])
+        assert output == None
 
 
 def test_get_linked_proteins(monkeypatch):
@@ -512,8 +503,10 @@ def test_link_prot_to_tax(monkeypatch):
             'query key',
             'web env',
             argsdict['args'],
+            ['accession'],
         )
-        assert output == ({'2810347'}, ['1995578961'], True)
+        
+        assert output == {'2810347'}
 
 
 def test_get_ncbi_ids_both_no_files(monkeypatch):
@@ -534,12 +527,7 @@ def test_get_ncbi_ids_both_success(monkeypatch):
     )}
 
     output = get_ncbi_taxs.get_ncbi_ids({}, Path("tests/test_outputs/test_ncbi_tax"), argsdict['args'])
-    assert output == (
-        ['test_gbk', 'test_gbk'],
-        {'112031978': 'ABH99468.1',
-        '1775560016': 'QPG76914.1',
-        '1939329944': 'NP_729979.1'},
-    )
+    assert output == (['test_gbk', 'test_gbk'], None)
 
 
 def test_get_ncbi_ids_only_tax(monkeypatch):
@@ -588,12 +576,7 @@ def test_get_ncbi_ids_only_prots(monkeypatch):
     monkeypatch.setattr(get_ncbi_taxs, "get_ncbi_tax_prot_ids", mock_get_ncbi_tax_prot_ids)
 
     output = get_ncbi_taxs.get_ncbi_ids({}, Path("tests/test_outputs/test_ncbi_tax"), argsdict['args'])
-    assert output == (
-        [],
-        {'112031978': 'ABH99468.1',
-        '1775560016': 'QPG76914.1',
-        '1939329944': 'NP_729979.1'},
-    )
+    assert output == (([], None))
 
 
 def test_get_ncbi_ids_only_prots_fails(monkeypatch):

@@ -66,6 +66,8 @@ from tqdm import tqdm
 from cazy_webscraper import closing_message, connect_existing_db
 from cazy_webscraper.expand.gtdb import get_gtdb_data
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
+from cazy_webscraper.sql import sql_orm
+from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
     get_gbk_table_dict,
     get_uniprot_table_dict,
@@ -122,6 +124,19 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         taxonomy_filter_dict,
         ec_filters,
     ) = get_expansion_configuration(args)
+
+    with sql_orm.Session(bind=connection) as session:
+        sql_interface.log_scrape_in_db(
+            time_stamp,
+            config_dict,
+            kingdom_filters,
+            taxonomy_filter_dict,
+            ec_filters,
+            'Genome Taxonomy DataBase (GTDB)',
+            'GTDB taxonomc lineages',
+            session,
+            args,
+        )
 
     # get the GenBank verion accessions and local db IDs of proteins matching the config criteria
     gbk_dict = get_gbks_of_interest(

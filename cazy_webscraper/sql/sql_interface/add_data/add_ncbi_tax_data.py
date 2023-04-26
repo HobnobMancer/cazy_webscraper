@@ -150,13 +150,35 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args, unit_test=False):
 
     Return nothing
     """
+    logger = logging.getLogger(__name__)
+    
     db_ncbi_tax_table = get_ncbi_tax_table(connection)  # {ncbi_tax_id: local db id}
 
     if args.update_gbk:
         with connection.begin():
             for tax_id in tqdm(tax_prot_dict, desc="Updating Genbanks table"):
-                proteins = tax_prot_dict[int(tax_id)]['proteins']
-                tax_db_id = db_ncbi_tax_table[tax_id]
+                try:
+                    proteins = tax_prot_dict[int(tax_id)]['proteins']
+                except KeyError:
+                    try:
+                        proteins = tax_prot_dict[tax_id]['proteins']
+                    except KeyError:
+                        logger.warning(
+                            f"Could not retrieve proteins linked to tax id {tax_id}\n"
+                            "Will not update the respective records in the Genbanks table"
+                        )
+                        continue
+                try:    
+                    tax_db_id = db_ncbi_tax_table[int(tax_id)]
+                except KeyError:
+                    try:
+                        tax_db_id = db_ncbi_tax_table[str(tax_id)]
+                    except KeyError:
+                        logger.warning(
+                            f"Could not retrieve the local db ID for the NCBI tax id {tax_id}\n"
+                            "Will not update the respective records in the Genbanks table"
+                        )
+                        continue
                 for prot_db_id in proteins:
                     connection.execute(
                         text(

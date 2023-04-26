@@ -14,7 +14,7 @@
 
 -------------------------------
 
-> `cazy_webscraper` version 1 is depracted. Please ensure you are using `cazy_webscraper` version 2 or newer.  
+> `cazy_webscraper` version 1 is depracted. Please ensure you are using version 2 or newer.  
 > `bioconda` installation is fixed for >= v2.1.3.1
 
 ## cazy_webscraper
@@ -56,6 +56,12 @@ Protein sequences (retrieved from GenBank and/or UniProt) from the local CAZyme 
 **The `cazy_webscraper` API facilitates interoggating the local CAZyme database.**
 
 Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest).
+
+## Documentation
+
+For a full description of the operation and examples of use, please see our paper in (BioRxiv)[https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1.full].
+
+> Hobbs, E. E. M., Gloster, T. M., and Pritchard, L. (2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets', _bioRxiv_, [https://doi.org/10.1101/2022.12.02.518825](https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1.full)
 
 
 ## Table of Contents
