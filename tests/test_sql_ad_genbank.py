@@ -102,7 +102,7 @@ def test_add_gbk_seqs(monkeypatch, db_path):
     monkeypatch.setattr(add_genbank_data, "get_gbk_table_seq_dict", mock_gbk_table_seq_dict)
 
     cache_dir = Path("tests/test_outputs/test_outputs_sql/temp_dir")
-    cache_dir.mkdir(exist_ok=True)
+    cache_dir.mkdir(exist_ok=True, parents=True)
 
     add_genbank_data.add_gbk_seqs_to_db(
         seq_dict,
