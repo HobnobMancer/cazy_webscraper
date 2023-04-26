@@ -384,9 +384,9 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
 
     failed_batches = {}  # {protein: tries}
 
-    tax_ids = set()
+    tax_ids = set()  # set of all retrieve tax ids
 
-    protein_ncbi_ids = {}
+    protein_ncbi_ids = {}  # {ncdi prot id : ncbi prot acc}
 
     for batch in tqdm(batches, desc="Getting NCBI Protein and Taxonomy IDs"):
         # post the IDs
@@ -485,6 +485,21 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
                 
                 tax_ids = tax_ids.union(new_tax_ids)
 
+    failed_prot_accs = [_ for _ in set(protein_ncbi_ids.values()) if _ not in protein_accessions]
+
+    if len(failed_prot_accs) != len(protein_accessions):
+        cache_file = cache_dir / "failed_to_retrieve_ids"
+        logger.warning(
+            f"Attempted to retrieve Protein IDs for {len(protein_accessions)} proteins accessions\n"
+            f"Retrieved {len(list(protein_ncbi_ids.keys()))} protein IDs\n"
+            f"Therefore, protein IDs were not retrieved for {(len(protein_accessions)) - (len(list(protein_ncbi_ids.keys())))} protein accessions\n"
+            f"Writing accessions to cache file:{cache_file}"
+        )
+
+        with open(cache_file,'w') as fh:
+            for acc in failed_prot_accs:
+                fh.write(f"{acc}\n")
+
     return tax_ids, protein_ncbi_ids
 
 
@@ -501,7 +516,7 @@ def get_prot_ids(query_key, web_env, args):
     new_prot_ids = {}  # {id: acc}
     try:
         with entrez_retry(
-            10,
+            args.retries,
             Entrez.efetch,
             query_key=query_key,
             WebEnv=web_env,
