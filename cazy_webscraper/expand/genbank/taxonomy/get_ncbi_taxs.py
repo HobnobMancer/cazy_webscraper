@@ -304,9 +304,10 @@ def get_ncbi_ids(gbk_dict, cache_dir, args):
         for tax_id in tax_ids:
             fh.write(f"{tax_id}\n")
 
-    with open((cache_dir/"protein_ncbi_ids.out"), "a") as fh:
-        for ncbi_prot_id in prot_id_dict:
-            fh.write(f"{ncbi_prot_id}\t{prot_id_dict[ncbi_prot_id]}\n")
+    if prot_id_dict is not None:
+        with open((cache_dir/"protein_ncbi_ids.out"), "a") as fh:
+            for ncbi_prot_id in prot_id_dict:
+                fh.write(f"{ncbi_prot_id}\t{prot_id_dict[ncbi_prot_id]}\n")
 
     return tax_ids, prot_id_dict
 
