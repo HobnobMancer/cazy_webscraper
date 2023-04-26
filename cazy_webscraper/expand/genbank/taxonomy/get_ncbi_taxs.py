@@ -140,6 +140,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # Use Cache
     if args.use_lineage_cache is not None:
+        gbk_dict = None
         logger.info("Adding cached lineages to local CAZyme db")
         try:
             with open(args.use_lineage_cache, "r") as fh:
@@ -171,6 +172,52 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         # {tax_id: {linaege info, 'proteins' {local db protein ids}}
 
         cache_taxonomy(tax_prot_dict, cache_dir)
+
+    # check to see for how many proteins a ncbi taxonomy record could not be retrieved
+    protein_accessions = list(gbk_dict.keys())
+    if gbk_dict is None:
+        logger.warning("Loading Genbanks table into dict to check for failed retrievals of tax data")
+        gbk_dict = get_db_proteins(
+            class_filters,
+            family_filters,
+            kingdom_filters,
+            taxonomy_filter_dict,
+            ec_filters,
+            connection,
+            args,
+        )
+        # gbk_dict = {gbk acc: db id}
+    # tax_prot_dict = {tax_id: {linaege info, 'proteins' {local db protein ids}}
+    retrieved_protein_acc = []
+    for tax_id in tax_prot_dict:
+        for protein in tax_prot_dict[tax_id]['proteins']:
+            db_id = protein
+            for acc in gbk_dict:
+                if gbk_dict[acc] == db_id:
+                    protein_acc = acc
+                    break
+            
+            retrieved_protein_acc.append(protein_acc)
+
+    failed_accessions = [_ for _ in protein_accessions if _ not in retrieved_protein_acc]
+    if len(failed_accessions) != 0:
+        cache_file = cache_dir / "failed_to_retrieve_tax_data"
+        logger.warning(
+            f"Attempted to retrieve tax data for {len(protein_accessions)} proteins accessions\n"
+            f"Retrieved tax data for {len(retrieved_protein_acc)} proteins\n"
+            f"Therefore, tax data was not retrieved for {len(failed_accessions)} protein accessions\n"
+            f"Writing accessions to cache file:{cache_file}"
+        )
+
+        with open(cache_file,'w') as fh:
+            for acc in failed_accessions:
+                fh.write(f"{acc}\n")
+    
+    else:
+        logger.warning(
+            f"Success: Attempted to retrieve tax data for {len(protein_accessions)} proteins accessions\n"
+            f"and retrieved tax data for {len(retrieved_protein_acc)} proteins"
+        )
 
     add_ncbi_taxonomies(tax_prot_dict, connection, args)
     logger.info("Added lineage data to db")
@@ -417,7 +464,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
 
         protein_ncbi_ids.update(new_protein_ids)
 
-        new_tax_ids = link_prot_taxs(query_key, web_env, args)
+        new_tax_ids = link_prot_taxs(query_key, web_env, args, batch)
 
         if new_tax_ids is None:
             for protein in batch:
@@ -471,7 +518,7 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
                 protein_ncbi_ids.update(new_protein_ids)
 
                 # fetch linked tax ids - not linked to acc
-                new_tax_ids = link_prot_taxs(query_key, web_env, args)
+                new_tax_ids = link_prot_taxs(query_key, web_env, args, batch)
 
                 if new_tax_ids is None:
                     failed_batches[protein] += 1
@@ -485,20 +532,27 @@ def get_ncbi_tax_prot_ids(protein_accessions, cache_dir, args):
                 
                 tax_ids = tax_ids.union(new_tax_ids)
 
-    failed_prot_accs = [_ for _ in set(protein_ncbi_ids.values()) if _ not in protein_accessions]
+    failed_prot_accs = [_ for _ in protein_accessions if _ not in set(protein_ncbi_ids.values())]
 
-    if len(failed_prot_accs) != len(protein_accessions):
+    if len(failed_prot_accs) != 0:
         cache_file = cache_dir / "failed_to_retrieve_ids"
         logger.warning(
             f"Attempted to retrieve Protein IDs for {len(protein_accessions)} proteins accessions\n"
             f"Retrieved {len(list(protein_ncbi_ids.keys()))} protein IDs\n"
-            f"Therefore, protein IDs were not retrieved for {(len(protein_accessions)) - (len(list(protein_ncbi_ids.keys())))} protein accessions\n"
+            f"Therefore, protein IDs were not retrieved for {len(failed_prot_accs)} protein accessions\n"
             f"Writing accessions to cache file:{cache_file}"
         )
 
         with open(cache_file,'w') as fh:
             for acc in failed_prot_accs:
                 fh.write(f"{acc}\n")
+    
+    else:
+        logger.warning(
+            f"Success: Attempted to retrieve Protein IDs for {len(protein_accessions)} proteins accessions\n"
+            f"and retrieved {len(list(protein_ncbi_ids.keys()))} protein IDs\n"
+            f"Therefore, retrieved a protein ID for all protein accessions"
+        )
 
     return tax_ids, protein_ncbi_ids
 
@@ -541,12 +595,13 @@ def get_prot_ids(query_key, web_env, args):
     return new_prot_ids
 
 
-def link_prot_taxs(query_key, web_env, args):
+def link_prot_taxs(query_key, web_env, args, batch):
     """Get NCBI tax and protein IDs from elinking protein accs to tax records
 
     :param query_key: str, from Entrez epost
     :param web_env: str, from Entrez epost
     :param args: cmd-line args parser
+    :param batch: list of ncbi protein accs - used in error messages only
 
     Return set of NCBI tax ids or None if fails
     """
@@ -700,6 +755,7 @@ def get_lineage_data(tax_ids, args):
     * {ncbi tax id: {rank: str}}
     * set of tax ids for which data could not be retrieved from NCBI
     """
+    logger = logging.getLogger(__name__)
     all_tax_lineage_dict = {}  # {ncbi tax id: {rank: str}}
     og_batches = get_chunks_list(list(tax_ids), args.batch_size)
     all_failed_ids = set()
