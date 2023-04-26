@@ -172,35 +172,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
         cache_taxonomy(tax_prot_dict, cache_dir)
 
-    # check to see for how many proteins a ncbi taxonomy record could not be retrieved
-    if gbk_dict is None:
-        logger.warning("Loading Genbanks table into dict to check for failed retrievals of tax data")
-        gbk_dict = get_db_proteins(
-            class_filters,
-            family_filters,
-            kingdom_filters,
-            taxonomy_filter_dict,
-            ec_filters,
-            connection,
-            args,
-        )
-        # gbk_dict = {gbk acc: db id}
-
-    failed_accessions = check_for_failed_accessions(tax_prot_dict, gbk_dict, cache_dir, prot_id_dict)
-
-    if len(failed_accessions) != 0:
-        # check if failure was due to not getting a protein id from ncbi
-        
-        if prot_id_dict is not None:
-            failed_ids = [_ for _ in failed_accessions if _ not in list(prot_id_dict.values())]
-            logger.warning(f"Did not retrieved protein IDs for {failed_ids} proteins")
-        else:
-            failed_ids = []
-
-        # tax_prot_dict = {tax_id: {linaege info, 'proteins' {local db protein ids}}
-        # prot_id_dict = {ncbi prot id: prot acc}
-        tax_prot_dict = retry_tax_retrieval(failed_accessions, failed_ids, prot_id_dict, tax_prot_dict, args, cache_dir)
-
     add_ncbi_taxonomies(tax_prot_dict, connection, args)
     logger.info("Added lineage data to db")
 
@@ -835,6 +806,56 @@ def check_for_failed_accessions(tax_prot_dict, gbk_dict, cache_dir):
         )
 
     return failed_accessions
+
+
+def retry_failed_linkages(
+    class_filters,
+    family_filters,
+    kingdom_filters,
+    taxonomy_filter_dict,
+    ec_filters,
+    connection,
+    prot_id_dict,
+    cache_dir,
+    tax_prot_dict,
+    args,
+):
+    """Retry connecting proteins to taxonomy as single linkages
+    Used mostly for debugging retrieval of taxonomy info for all protein accessions
+    """
+    logger = logging.getLogger(__name__)
+    if gbk_dict is None:
+        logger.warning("Loading Genbanks table into dict to check for failed retrievals of tax data")
+        gbk_dict = get_db_proteins(
+            class_filters,
+            family_filters,
+            kingdom_filters,
+            taxonomy_filter_dict,
+            ec_filters,
+            connection,
+            args,
+        )
+        # gbk_dict = {gbk acc: db id}
+
+    # check to see for how many proteins a ncbi taxonomy record could not be retrieved
+    failed_accessions = check_for_failed_accessions(tax_prot_dict, gbk_dict, cache_dir)
+
+    if len(failed_accessions) != 0:
+        # check if failure was due to not getting a protein id from ncbi
+        
+        if prot_id_dict is not None:
+            failed_ids = [_ for _ in failed_accessions if _ not in list(prot_id_dict.values())]
+        else:
+            failed_ids = []
+        
+        if len(failed_ids) != 0:
+            logger.warning(f"Did not retrieved protein IDs for {len(failed_ids)} proteins:\n{failed_ids}")
+
+        # tax_prot_dict = {tax_id: {linaege info, 'proteins' {local db protein ids}}
+        # prot_id_dict = {ncbi prot id: prot acc}
+        tax_prot_dict = retry_tax_retrieval(failed_accessions, failed_ids, prot_id_dict, tax_prot_dict, args, cache_dir)
+
+    return tax_prot_dict
 
 
 if __name__ == "__main__":
