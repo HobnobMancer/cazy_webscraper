@@ -159,7 +159,7 @@ def delete_old_annotations(annotation_table, relationship_table, table_name, con
             all_linked_annotations = all_linked_annotations.union(relationship_table[gbk_db_id])
 
     if len(all_linked_annotations) == 0:
-        continue
+        return
     
     # identify annotations in the annotation table that are not linked to any records in the 
     # relationship table
@@ -171,7 +171,7 @@ def delete_old_annotations(annotation_table, relationship_table, table_name, con
     
     if len(unlinked_annotations) == 0:
         logger.warning(f"No unlinked records found in table {table_name}")
-        continue
+        return
 
     if table_name == 'Ecs':
         anno_db_id_name = 'ec_id'
