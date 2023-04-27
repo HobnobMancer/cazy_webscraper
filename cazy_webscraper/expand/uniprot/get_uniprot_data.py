@@ -193,7 +193,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
                 ec_table_dict,
                 ec_gbk_table_dict,
                 'ec_numbers',
-                'Genbanks_Ecs,'
+                'Genbanks_Ecs',
                 connection,
                 args,
             )
