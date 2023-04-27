@@ -126,8 +126,6 @@ def cache_uniprot_data(uniprot_dict, cache_dir, time_stamp):
         except KeyError:
             pass
 
-    for uniprot_accession in uniprot_dict:
-
     uniprot_acc_cache = cache_dir / f"uniprot_data_{time_stamp}.json"
     with open(uniprot_acc_cache, "w") as fh:
         json.dump(uniprot_dict, fh) 
