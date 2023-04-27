@@ -284,7 +284,7 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
 
     # First, identify new PDB accessions to add to the database
     pdb_insert_values = set()
-    for ncbi_acc in tqdm(ncbi_acc, desc="Identifying new PDBs to add to db"):
+    for ncbi_acc in tqdm(uniprot_dict, desc="Identifying new PDBs to add to db"):
         for pdb in uniprot_dict[ncbi_acc]["pdbs"]:
             try:
                 pdb_table_dict[pdb]
