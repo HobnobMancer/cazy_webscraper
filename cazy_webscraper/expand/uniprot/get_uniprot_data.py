@@ -67,6 +67,7 @@ from cazy_webscraper.sql.sql_interface.add_data.add_uniprot_data import (
     add_uniprot_accessions,
     add_genbank_ec_relationships,
     add_pdb_gbk_relationships,
+    add_uniprot_genbank_relationships,
 )
 from cazy_webscraper.sql.sql_interface.delete_data import delete_old_relationships, delete_old_annotations
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
@@ -166,10 +167,14 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         cache_uniprot_data(uniprot_dict, cache_dir, time_stamp)
 
     if len(list(uniprot_dict.keys())) != 0:
-
-        # add uniprot accessions (and sequences if seq retrieval is enabled)
         logger.warning(f"Adding data for {len(list(uniprot_dict.keys()))} NCBI accessions to the local CAZyme database")
+
+        # add data to the UniProts table
+        # add uniprot accessions (and sequences if seq retrieval is enabled)
         add_uniprot_accessions(uniprot_dict, connection, args)
+
+        # add uniprot IDs to Genbanks table
+        add_uniprot_genbank_relationships(uniprot_dict, connection)
 
         # add ec numbers
         if args.ec:

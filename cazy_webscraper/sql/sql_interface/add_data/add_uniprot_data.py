@@ -174,6 +174,53 @@ def add_uniprot_accessions(uniprot_dict, connection, args):
     return
 
 
+def add_uniprot_genbank_relationships(uniprot_dict, connection):
+    """Add Uniprots local db IDs to Genbanks table to link Genbanks and Uniprots records.
+
+    :param uniprot_dict: dict of data from uniprot
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc,
+            'uniprot_entry_id': uniprot_entry_id,
+            'protein_name': protein_name,
+            'ec_numbers': ec_numbers,
+            'sequence': sequence,
+            'pdbs': all_pdbs,
+        }
+    :param connection: open sqlite3 engine connection
+
+    Return nothing.
+    """
+    logger = logging.getLogger(__name__)
+
+    uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+    # uniprot_table_dict = {acc: {db_id: int, name: str, seq: str, seq_date:str } }
+
+    logger.warning(
+        f"Linking {len(list(uniprot_dict.keys()))} Genbank records in the local CAZyme db"
+        "to records in the Uniprots table"
+    )
+    with connection.begin():
+        for ncbi_acc in tqdm(uniprot_dict, desc="Updating Genbanks records"):
+            uniprot_acc = uniprot_dict[ncbi_acc]['uniprot_acc']
+            try:
+                uniprot_db_id = uniprot_table_dict[uniprot_acc]['db_id']
+            except KeyError:
+                logger.error(
+                    f"Could not find a local db record for UniProt accession {uniprot_acc}\n"
+                    "Not linking the accession to a record in the Genbanks table"
+                )
+                continue
+
+            connection.execute(
+                text(
+                    "UPDATE Genbanks "
+                    f"SET uniprot_id = {uniprot_db_id} "
+                    f"WHERE genbank_accession = '{ncbi_acc}'"
+                )
+            )
+    
+
+
 def add_ec_numbers(uniprot_dict, connection, args):
     """Add EC numbers to the local CAZyme database
 
