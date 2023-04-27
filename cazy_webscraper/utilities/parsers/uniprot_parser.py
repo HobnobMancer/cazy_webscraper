@@ -279,7 +279,7 @@ def build_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help=(
-            "Update protein name in local CAZyme database Uniprots table.\n
+            "Update protein name in local CAZyme database Uniprots table.\n"
             "Retrieve protein name from UniProt for records and overwrite the existing\n"
             "protein name in the local CAZyme database if a new/different name is retireved from UniProt"
         ),
