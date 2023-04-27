@@ -303,7 +303,7 @@ def build_parser(argv: Optional[List] = None):
 
     parser.add_argument(
         "--delete_old_ecs",
-        dest="delete_old_ec",
+        dest="delete_old_ecs",
         action="store_true",
         default=False,
         help="Delete EC numbers that are not linked to any proteins listed in the Genbanks table.",
