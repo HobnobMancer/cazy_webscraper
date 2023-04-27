@@ -66,6 +66,7 @@ from cazy_webscraper.sql.sql_interface.add_data.add_uniprot_data import (
     add_pdb_accessions,
     add_uniprot_accessions,
     add_genbank_ec_relationships,
+    add_pdb_gbk_relationships,
 )
 from cazy_webscraper.sql.sql_interface.delete_data import delete_old_relationships, delete_old_annotations
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
