@@ -204,7 +204,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             )
             # load ec numbers and relationships with Genbanks records from the local db
             ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
-            ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connecti
+            ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)
 
             delete_old_annotations(ec_table_dict, ec_gbk_table_dict, 'Ecs', connection, args)
 
