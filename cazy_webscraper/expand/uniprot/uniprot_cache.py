@@ -41,6 +41,7 @@
 """Retrieve data from cache files"""
 
 
+import json
 import logging
 
 
