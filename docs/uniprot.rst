@@ -14,7 +14,7 @@ the local CAZyme database, use the following command structure:
 
 .. code-block:: bash
     
-   cw_get_uniprot_data <path to local CAZyme db> <user email>
+   cw_get_uniprot_data <path to local CAZyme db>
 
 .. NOTE::
    The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
@@ -30,12 +30,12 @@ the local CAZyme database, use the following command structure:
 
 .. code-block:: bash
     
-   cw_get_uniprot_data <path to local CAZyme db> <user email> --ec --pdb --sequence
+   cw_get_uniprot_data <path to local CAZyme db> --ec --pdb --sequence
 
 For example:
 
 .. code-block:: bash
-    cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --ec --pdb --sequence
+    cw_get_uniprot_data cazy/cazyme.db --ec --pdb --sequence
 
 
 --------------------
@@ -45,8 +45,6 @@ Command line options
 Below are listed the required and optional command-line options for configuring the retrieval of data from UniProt.
 
 ``database`` - **REQUIRED** Path to a local CAZyme database to add UniProt data to.
-
-``email`` - **REQUIRED** User email address, required by NCBI Entrez.
 
 ``--ncbi_batch_size`` - Size of batch query posted to NCBI Entrez. Default 150.
 

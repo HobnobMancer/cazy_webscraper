@@ -361,7 +361,7 @@ Data can be retrieived for all proteins in the local CAZyme database, or a speci
 
 To retrieve all UniProt data for all proteins in a local CAZyme datbase, using the following command:
 ```bash
-cw_get_uniprot_data <path_to_local_CAZyme_db> <user_email> --ec --pdb --sequence
+cw_get_uniprot_data <path_to_local_CAZyme_db> --ec --pdb --sequence
 ```
 
 ### Configuring UniProt data retrieval
@@ -369,8 +369,6 @@ cw_get_uniprot_data <path_to_local_CAZyme_db> <user_email> --ec --pdb --sequence
 Below are listed the command-line flags for configuring the retrieval of UniProt data.
 
 `database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
-
-`email` - \[REQUIRED\] User email address. This is required by NCBI Entrez for querying the Entrez server.
 
 `--ncbi_batch_size` - Size of batch query posted to NCBI Entrez. Default 150.
 
