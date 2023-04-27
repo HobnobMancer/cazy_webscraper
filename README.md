@@ -372,7 +372,7 @@ Below are listed the command-line flags for configuring the retrieval of UniProt
 
 `--ncbi_batch_size` - Size of batch query posted to NCBI Entrez. Default 150.
 
-`--uniprot_batch_size` - Change the query batch size submitted via [`bioservices`](https://bioservices.readthedocs.io/en/master/) to UniProt to retrieve protein data. Default is 150. `bioservices` recommands queries not larger than 200 objects.
+`--uniprot_batch_size` - Change the query batch size submitted via [`bioservices`](https://bioservices.readthedocs.io/en/master/) to UniProt to retrieve protein data. Default is 1000. See the [UniProt REST API documentation](https://www.uniprot.org/help/id_mapping) for batch size limits.
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
