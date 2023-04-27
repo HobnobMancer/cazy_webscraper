@@ -291,7 +291,7 @@ def build_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help=(
-            "Update sequences in local CAZyme database Uniprots table\n
+            "Update sequences in local CAZyme database Uniprots table\n"
             "Retrieve protein Aa sequences from UniProt for records and overwrite the existing\n"
             "sequence in the local CAZyme database if a newer sequence is retireved from UniProt"
         ),
