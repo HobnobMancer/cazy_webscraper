@@ -105,16 +105,28 @@ def cache_uniprot_data(uniprot_dict, cache_dir, time_stamp):
 
     Return nothing
     """
+    # uniprot_dict[ncbi_acc] = {
+    #     'uniprot_acc': uniprot_acc,
+    #     'uniprot_entry_id': uniprot_entry_id,
+    #     'protein_name': protein_name,
+    #     'ec_numbers': ec_numbers,
+    #     'sequence': sequence,
+    #     'sequence_date': sequence_date,
+    #     'pdbs': all_pdbs,
+    # }
+
     # cache updated UniProt data
     for uniprot_accession in uniprot_dict:
         try:
-            uniprot_dict[uniprot_accession]['ec'] = list(uniprot_dict[uniprot_accession]['ec'])
+            uniprot_dict[uniprot_accession]['ec_numbers'] = list(uniprot_dict[uniprot_accession]['ec_numbers'])
         except KeyError:
             pass
         try:
-            uniprot_dict[uniprot_accession]['pdb'] = list(uniprot_dict[uniprot_accession]['pdb'])
+            uniprot_dict[uniprot_accession]['pdbs'] = list(uniprot_dict[uniprot_accession]['pdbs'])
         except KeyError:
             pass
+
+    for uniprot_accession in uniprot_dict:
 
     uniprot_acc_cache = cache_dir / f"uniprot_data_{time_stamp}.json"
     with open(uniprot_acc_cache, "w") as fh:
