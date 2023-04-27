@@ -140,9 +140,9 @@ def add_uniprot_accessions(uniprot_dict, connection, args):
     if len(uniprot_insert_values) != 0:
         logger.warning(f"Inserting {len(uniprot_insert_values)} ew records into the Uniprots table")
         if args.sequence:
-            columns = ['genbank_id', 'uniprot_accession', 'uniprot_name', 'sequence', 'seq_update_date']
+            columns = ['uniprot_accession', 'uniprot_name', 'sequence', 'seq_update_date']
         else:
-            columns = ['genbank_id', 'uniprot_accession', 'uniprot_name']
+            columns = ['uniprot_accession', 'uniprot_name']
     
         insert_data(connection, "Uniprots", columns, list(uniprot_insert_values))
 
