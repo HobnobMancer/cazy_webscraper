@@ -183,7 +183,7 @@ def delete_old_annotations(annotation_table, relationship_table, table_name, con
         "that are not linked to any proteins in the Genbanks table\n"
         f"Deleting these {anno_db_id_name}s"
     )
-    for anno_db_id in tqdm(unlinked_annotations, desc=f"Deleting unlinked {anno_db_id_name}s":
+    for anno_db_id in tqdm(unlinked_annotations, desc=f"Deleting unlinked {anno_db_id_name}s"):
             connection.execute(
                 text(f"DELETE FROM {table_name} WHERE {anno_db_id_name}='{anno_db_id}'")
             )
