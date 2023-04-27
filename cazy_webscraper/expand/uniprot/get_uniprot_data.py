@@ -438,8 +438,10 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
                         uniprot_acc,
                         uniprot_entry_id,
                         protein_name,
+                        gene_name,  # not used atm
                         ec_numbers,
                         sequence,
+                        sequence_date,
                         all_pdbs,
                         matching_record,
                     ) = extract_protein_data(mapped_record, ncbi_acc)
@@ -453,6 +455,7 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
                         'protein_name': protein_name,
                         'ec_numbers': ec_numbers,
                         'sequence': sequence,
+                        'sequence_date': sequence_date,
                         'pdbs': all_pdbs,
                     }
 
