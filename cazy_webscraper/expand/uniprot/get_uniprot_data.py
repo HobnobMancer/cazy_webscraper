@@ -45,6 +45,7 @@ import json
 import logging
 import time
 
+from copy import copy
 from datetime import datetime
 from typing import List, Optional
 
@@ -267,7 +268,7 @@ def add_db_log(
         retrieved_annotations += ", PDB accessions"
     if args.sequence:
         retrieved_annotations += ", Protein sequence"
-    if args.seq_update:
+    if args.update_seq:
         retrieved_annotations += ", Updated UniProt protein sequences"
 
     with sql_orm.Session(bind=connection) as session:
