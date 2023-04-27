@@ -97,6 +97,7 @@ setuptools.setup(
         "saintBioutils>=0.0.24",
         "sqlalchemy==1.4.20",
         "tqdm",
+        "html5lib",
     ],
     packages=setuptools.find_packages(),
     package_data={
