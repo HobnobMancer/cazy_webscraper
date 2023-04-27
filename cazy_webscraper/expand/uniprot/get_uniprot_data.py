@@ -65,6 +65,7 @@ from cazy_webscraper.sql.sql_interface.add_data.add_uniprot_data import (
     add_ec_numbers,
     add_pdb_accessions,
     add_uniprot_accessions,
+    add_genbank_ec_relationships,
 )
 from cazy_webscraper.sql.sql_interface.delete_data import delete_old_relationships, delete_old_annotations
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
@@ -153,7 +154,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if args.skip_download is False:
         logger.warning(f"Retrieving data for {len(gbk_data_to_download)} proteins")
 
-        downloaded_uniprot_data, all_ecs = get_uniprot_data(gbk_data_to_download, cache_dir, args)
+        downloaded_uniprot_data = get_uniprot_data(gbk_data_to_download, cache_dir, args)
 
         uniprot_dict.update(downloaded_uniprot_data)
 
