@@ -66,7 +66,7 @@ def build_parser(argv: Optional[List] = None):
     parser.add_argument(
         "--bioservices_batch_size",
         type=int,
-        default=150,
+        default=500,
         help="Batch size for queries parsed by bioservices to UniProt to retrieve protein data"
     )
 
