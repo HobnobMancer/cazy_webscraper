@@ -420,7 +420,7 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
             try:  # Mapped UniProt records
                 mapping_results = mappings['results']  # used mostly for try/except
 
-                for mapping result in mapping_results:
+                for mapping_result in mapping_results:
                     ncbi_acc = mapping_result['from']
                     mapped_record = mapping_result['to']
 
