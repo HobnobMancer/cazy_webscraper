@@ -139,7 +139,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     # and return a list of GenBank/NCBI protein version accessions to query UniProt with
     # to download protein data
     uniprot_dict, gbk_data_to_download = get_uniprot_cache(gbk_dict, args)
-    # uniprot_data[ncbi_acc] = {
+    # uniprot_dict[ncbi_acc] = {
     #     'uniprot_acc': uniprot_acc,
     #     'uniprot_entry_id': uniprot_entry_id,
     #     'protein_name': protein_name,
@@ -351,7 +351,7 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
     
     Return
     Dict of data retrieved from UniProt and to be added to the db 
-        uniprot_data[ncbi_acc] = {
+        uniprot_dict[ncbi_acc] = {
             'uniprot_acc': uniprot_acc,
             'uniprot_entry_id': uniprot_entry_id,
             'protein_name': protein_name,
@@ -366,8 +366,9 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
     failed_connections_cache = cache_dir / "failed_connections_ncbi_acc"
 
     uniprot_dict = {}  # see doc string
-    all_batches = {}  # {batch: int(tries)}
+    all_batches = {}  # {'acc,acc': int(tries), batch: int(tries)}
 
+    # [[acc, acc], [acc, acc]]
     bioservices_queries = get_chunks_list(
         ncbi_accessions,
         args.uniprot_batch_size,
@@ -378,8 +379,10 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
 
     while len(list(all_batches.keys())) > 0:
         batches_to_process = copy(all_batches)
+        logger.warning(f"{len(list(batches_to_process.keys()))} batches remaining")
 
         for batch in tqdm(batches_to_process, "Batch retrieving protein data from UniProt"):
+            success = False
             # batch is a string of comma separated NCBI protein version accessions
             mappings = map_to_uniprot(batch)
 
@@ -408,6 +411,7 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
                 continue
 
             try:  # some NCBI accessions could not be mapped to a record in UniProt
+                mappings['failedIds']
                 with open(failed_ids_cache, "a") as fh:
                     for not_catalogued_acc in mappings['failedIds']:
                         fh.write(f"{not_catalogued_acc}\n")
@@ -416,6 +420,7 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
             
             try:  # Mapped UniProt records
                 mapping_results = mappings['results']  # used mostly for try/except
+                success = True
 
                 for mapping_result in mapping_results:
                     ncbi_acc = mapping_result['from']
@@ -434,7 +439,7 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
                     if matching_record is False:  # bool, if mapped record contains ncbi accession
                         continue
                     
-                    uniprot_data[ncbi_acc] = {
+                    uniprot_dict[ncbi_acc] = {
                         'uniprot_acc': uniprot_acc,
                         'uniprot_entry_id': uniprot_entry_id,
                         'protein_name': protein_name,
@@ -445,8 +450,12 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
 
             except KeyError: # may not be any ncbi acc that mapped to a UniProt record
                 pass
+            
+            if success:
+                # do not process the batch again
+                del all_batches[batch]
 
-    return uniprot_data
+    return uniprot_dict
 
 
 def mapping_decorator(func):
