@@ -62,13 +62,6 @@ def build_parser(argv: Optional[List] = None):
         help="Path to local CAZyme database"
     )
 
-    parser.add_argument(
-        "email",
-        type=str,
-        metavar="user email address",
-        help="User email address, requirement of NCBI-Entrez",
-    )
-
     # Add optional arguments to parser
     parser.add_argument(
         "--bioservices_batch_size",

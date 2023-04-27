@@ -50,7 +50,6 @@ from typing import List, Optional
 
 import pandas as pd
 
-from Bio import Entrez
 from bioservices import UniProt
 from saintBioutils.misc import get_chunks_list
 from saintBioutils.uniprot import get_uniprot_accessions
@@ -59,7 +58,6 @@ from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
-from cazy_webscraper.ncbi.gene_names import get_linked_ncbi_accessions
 from cazy_webscraper.expand.uniprot.uniprot_cache import get_uniprot_cache, cache_uniprot_data
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface.add_data.add_uniprot_data import (
@@ -92,8 +90,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if logger is None:
         logger = logging.getLogger(__name__)
         config_logger(args)
-
-    Entrez.email = args.email
     
     # parse the configuration data (cache the uniprot data as .csv files)
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
