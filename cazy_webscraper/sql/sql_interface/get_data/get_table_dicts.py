@@ -375,7 +375,7 @@ def get_uniprot_table_dict(connection):
     
     :param connection: open sqlalchemy db engine connection
     
-    Return dict {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
+    Return dict {acc: {db_id: int, name: str, seq: str, seq_date:str } }
     """
     with Session(bind=connection) as session:
         db_uniprot_records = session.query(Uniprot).all()
@@ -384,8 +384,8 @@ def get_uniprot_table_dict(connection):
 
     for record in tqdm(db_uniprot_records, desc="Retrieving existing UniProt records from db"):
         uniprot_table_dict[record.uniprot_accession] = {
+            "db_id": record.uniprot_id,
             "name": record.uniprot_name,
-            "genbank_id": record.genbank_id,
             "seq": record.sequence,
             "seq_date": record.seq_update_date,
         }
