@@ -165,84 +165,89 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if len(list(downloaded_uniprot_data.keys())) != 0:
         cache_uniprot_data(uniprot_dict, cache_dir, time_stamp)
 
-    # add uniprot accessions (and sequences if seq retrieval is enabled)
-    logger.warning("Adding data to the local CAZyme database")
-    add_uniprot_accessions(uniprot_dict, connection, args)
+    if len(list(uniprot_dict.keys())) != 0:
 
-    # add ec numbers
-    if args.ec:
-        logger.warning("Adding EC numbers to the local CAZyme database")
-        add_ec_numbers(uniprot_dict, connection, args)
-        logger.warning("Adding Genbanks-ECnumber relationships to local CAZyme db")
-        add_genbank_ec_relationships(uniprot_dict, gbk_dict, connection, args)
+        # add uniprot accessions (and sequences if seq retrieval is enabled)
+        logger.warning(f"Adding data for {len(list(uniprot_dict.keys()))} NCBI accessions to the local CAZyme database")
+        add_uniprot_accessions(uniprot_dict, connection, args)
 
-        if args.delete_old_ec_relationships:
-            logger.warning(
-                "Deleting Genbanks-EC number annotations in the local CAZyme database\n"
-                "that were not included for the protein whose additional data was just\n"
-                "downloaded from UniProt"
-            )
-            # load ec numbers and relationships with Genbanks records from the local db
-            ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
-            ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)
+        # add ec numbers
+        if args.ec:
+            logger.warning("Adding EC numbers to the local CAZyme database")
+            add_ec_numbers(uniprot_dict, connection, args)
+            logger.warning("Adding Genbanks-ECnumber relationships to local CAZyme db")
+            add_genbank_ec_relationships(uniprot_dict, gbk_dict, connection, args)
 
-            delete_old_relationships(
-                uniprot_dict,
-                gbk_dict,
-                ec_table_dict,
-                ec_gbk_table_dict,
-                'ec_numbers',
-                'Genbanks_Ecs',
-                connection,
-                args,
-            )
+            if args.delete_old_ec_relationships:
+                logger.warning(
+                    "Deleting Genbanks-EC number annotations in the local CAZyme database\n"
+                    "that were not included for the protein whose additional data was just\n"
+                    "downloaded from UniProt"
+                )
+                # load ec numbers and relationships with Genbanks records from the local db
+                ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
+                ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)
 
-        if args.delete_old_ecs:
-            logger.warning(
-                "Deleting EC numbers in local db that are not linked to any Genbanks table records"
-            )
-            # load ec numbers and relationships with Genbanks records from the local db
-            ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
-            ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)
+                delete_old_relationships(
+                    uniprot_dict,
+                    gbk_dict,
+                    ec_table_dict,
+                    ec_gbk_table_dict,
+                    'ec_numbers',
+                    'Genbanks_Ecs',
+                    connection,
+                    args,
+                )
 
-            delete_old_annotations(ec_table_dict, ec_gbk_table_dict, 'Ecs', connection, args)
+            if args.delete_old_ecs:
+                logger.warning(
+                    "Deleting EC numbers in local db that are not linked to any Genbanks table records"
+                )
+                # load ec numbers and relationships with Genbanks records from the local db
+                ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
+                ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)
 
-    # add pdb accessions
-    if args.pdb:
-        logger.warning("Adding RSCB PDB IDs to the local CAZyme database")
-        add_pdb_accessions(uniprot_dict, gbk_dict, connection, args)
-        add_pdb_gbk_relationships(uniprot_dict, gbk_dict, connection, args)
+                delete_old_annotations(ec_table_dict, ec_gbk_table_dict, 'Ecs', connection, args)
 
-        if args.delete_old_pdb_relationships:
-            logger.warning(
-                "Deleting Genbanks-PDB annotations in the local CAZyme database\n"
-                "that were not included for the protein whose additional data was just\n"
-                "downloaded from UniProt"
-            )
-            # load ec numbers and relationships with Genbanks records from the local db
-            pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
-            gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
+        # add pdb accessions
+        if args.pdb:
+            logger.warning("Adding RSCB PDB IDs to the local CAZyme database")
+            add_pdb_accessions(uniprot_dict, gbk_dict, connection, args)
+            add_pdb_gbk_relationships(uniprot_dict, gbk_dict, connection, args)
 
-            delete_old_relationships(
-                uniprot_dict,
-                gbk_dict,
-                pdb_table_dict,
-                gbk_pdb_rel_table_dict,
-                'pdbs',
-                'Genbanks_Pdbs',
-                connection,
-                args,
-            )
+            if args.delete_old_pdb_relationships:
+                logger.warning(
+                    "Deleting Genbanks-PDB annotations in the local CAZyme database\n"
+                    "that were not included for the protein whose additional data was just\n"
+                    "downloaded from UniProt"
+                )
+                # load ec numbers and relationships with Genbanks records from the local db
+                pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
+                gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
 
-        if args.delete_old_pdbs:
-            logger.warning(
-                "Deleting PDB accessions in local db that are not linked to any Genbanks table records"
-            )
-            # load ec numbers and relationships with Genbanks records from the local db
-            pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
-            gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
+                delete_old_relationships(
+                    uniprot_dict,
+                    gbk_dict,
+                    pdb_table_dict,
+                    gbk_pdb_rel_table_dict,
+                    'pdbs',
+                    'Genbanks_Pdbs',
+                    connection,
+                    args,
+                )
 
-            delete_old_annotations(pdb_table_dict, gbk_pdb_rel_table_dict, 'Pdbs', connection, args)
+            if args.delete_old_pdbs:
+                logger.warning(
+                    "Deleting PDB accessions in local db that are not linked to any Genbanks table records"
+                )
+                # load ec numbers and relationships with Genbanks records from the local db
+                pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
+                gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
+
+                delete_old_annotations(pdb_table_dict, gbk_pdb_rel_table_dict, 'Pdbs', connection, args)
+
+    else:
+        logger.warning("Did no retrieve data for any proteins in NCBI")
 
     closing_message("get_uniprot_data", start_time, args)
 
@@ -418,6 +423,7 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
                     for not_catalogued_acc in mappings['failedIds']:
                         fh.write(f"{not_catalogued_acc}\n")
             except KeyError:  # may not be any failed Ids
+                logger.warning("No failed IDs in this batch")
                 pass
             
             try:  # Mapped UniProt records
@@ -451,6 +457,7 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
                     }
 
             except KeyError: # may not be any ncbi acc that mapped to a UniProt record
+                print("No successful IDs")
                 pass
             
             if success:
@@ -488,7 +495,7 @@ def mapping_decorator(func):
 def map_to_uniprot(accessions):
     """Map accessions to records in UniProt
     
-    :param accessions: list, list of NCBI protein version accessions
+    :param accessions: str, list of NCBI protein accessions separated by commas
     
     Return dict. Successful mappings under 'results', and failed mappings under 'failedIds' 
     Failed mappings are NCBI accessions that are not listed in UniProt
@@ -498,10 +505,152 @@ def map_to_uniprot(accessions):
     mapping_results = UniProt().mapping(
         fr="EMBL-GenBank-DDBJ_CDS",
         to="UniProtKB",
-        query=",".join(accessions),  # str of ids, separated by commas
+        query=accessions,  # str of ids, separated by commas
     )
     
     return mapping_results
+
+
+def extract_protein_data(mapped_record, ncbi_acc):
+    """Extract protein data from UniProt mapping result
+    
+    :param mapped_record: dict, mapped UniProt record from UniProt().mapping['results'][i]['to']
+    :param ncbi_acc: str, NCBI Protein accession of mapped record
+    
+    Return:
+    * UniProt accession, str
+    * UniProt record ID, str
+    * protein name, str  - only the recommended name from UniProt
+    * gene name, str
+    * EC numbers, set of EC numbers
+    * sequence, str (protein sequence)
+    * data sequence was last updated yyyy-mm-dd
+    * all_pdbs, set of PDB protein structure IDs
+    * bool, record contains the ncbi acc 
+    """
+    uniprot_acc = None
+    uniprot_id = None
+    protein_name = None
+    gene_name = None
+    ec_numbers = set()
+    sequence = None
+    sequence_date = None
+    all_pdbs = set()
+    ncbi_accs_from_uniprot = set()
+    matching_record = True
+    
+    # check the record is relevant
+    # this is overkill but better safe than sorry
+    for value in mapped_record['uniProtKBCrossReferences']:
+        # value is a dict of ['database', 'id', 'properties']
+        if value['database'] == 'EMBL':
+            gene_name = value['id']
+
+            for db_property in value['properties']:
+                if db_property['key'] == 'ProteinId':
+                    ncbi_accs_from_uniprot.add(db_property['value'])
+                    
+    if ncbi_acc not in ncbi_accs_from_uniprot:
+        print(
+            f'WARNING: Mapped {ncbi_acc} to UniProt but mapped record does not contain the\n'
+            f'the NCBI accession. Instead it contains {ncbi_accs_from_uniprot}'
+        )
+        matching_record = False
+        return (
+            uniprot_acc,
+            uniprot_id,
+            name,
+            ec_numbers,
+            sequence,
+            all_pdbs,
+            matching_record,
+        )
+
+    # UniProt record does contain the UniProt protein accession
+    for key in mapped_record:
+        # Retrieve UniProt Accession
+        if key == 'primaryAccession':
+            uniprot_acc = mapped_record[key]
+
+        # Retrieve UniProt Record ID
+        if key == 'uniProtkbId':
+            uniprot_id = mapped_record[key]
+
+        # Retrieve Protein Name and EC Numbers
+        if key == 'proteinDescription':
+            
+            for section in mapped_record[key]:
+
+                if section == 'recommendedName':
+
+                    for feature_name in mapped_record[key][section]:
+
+                        if feature_name == 'fullName':
+                            protein_name = mapped_record[key][section]['fullName']['value']
+
+                        elif feature_name == 'ecNumbers':
+                            for value in mapped_record[key][section]['ecNumbers']:
+                                ec_numbers.add(value['value'])
+
+                if section == 'includes':
+                    for feature in mapped_record[key][section]:
+                        for section_name in feature:
+                            record = feature[section_name]
+
+                            if section_name == 'recommendedName':
+                                try:
+                                    for value in record['ecNumbers']:
+                                        ec_numbers.add(value['value'])
+                                except KeyError:
+                                    continue
+
+                            else:
+                                for sub_record in record:
+                                    try:
+                                        ec_records = sub_record['ecNumbers']
+                                        for value in ec_records:
+                                            ec_numbers.add(value['value'])
+                                    except KeyError:
+                                        continue
+
+        # Retrieve EC numbers
+        if key == 'comments':
+            for comment in mapped_record[key]:
+                try:
+                    if comment['commentType'] == 'CATALYTIC ACTIVITY':
+                        ec_numbers.add(comment['reaction']['ecNumber'])
+                except KeyError:
+                    continue
+
+        # Retrieve PDB Ids
+        if key == 'features':
+            for feature in mapped_record['features']:
+                try:
+                    for evidence in feature['evidences']:
+                        if evidence['source'] == 'PDB':
+                            pdb = evidence['id']
+                            all_pdbs.add(pdb)
+                except KeyError:
+                    continue
+
+        # Retrieve Protein Sequence
+        if key == 'sequence':
+            sequence = mapped_record[key]['value']
+            
+        if key == 'entryAudit':
+            sequence_date = mapped_record[key]['lastSequenceUpdateDate']
+    
+    return (
+        uniprot_acc,
+        uniprot_id,
+        protein_name,
+        gene_name,
+        ec_numbers,
+        sequence,
+        sequence_date,
+        all_pdbs,
+        matching_record,
+    )
 
 
 if __name__ == "__main__":
