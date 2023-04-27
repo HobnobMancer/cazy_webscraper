@@ -241,7 +241,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             )
             # load ec numbers and relationships with Genbanks records from the local db
             pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
-            gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connecti
+            gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
 
             delete_old_annotations(pdb_table_dict, gbk_pdb_rel_table_dict, 'Pdbs', connection, args)
 
