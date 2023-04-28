@@ -62,7 +62,7 @@ from cazy_webscraper.expand.uniprot import get_uniprot_data
 from cazy_webscraper.ncbi.gene_names import get_linked_ncbi_accessions
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface.add_data import add_uniprot_data
-from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
 from cazy_webscraper.utilities.parsers import uniprot_parser
 
 
@@ -108,7 +108,7 @@ def test_main(
             output=None,
             retries=10,
             sequence=True,
-            seq_update=True,
+            update_seq=True,
             subfamilies=True,
             species=None,
             strains=None,
@@ -123,6 +123,10 @@ def test_main(
             use_uniprot_cache=None,
             email="dummy_email",
             skip_download=False,
+            delete_old_ec_relationships=True,
+            delete_old_ecs=True,
+            delete_old_pdb_relationships=True,
+            delete_old_pdbs=True,
         )
         return parser
 
@@ -139,13 +143,14 @@ def test_main(
         return {1: 1, 2:2, 3:3}
     
     def mock_get_uniprot_data(*args, **kwards):
-        return (
-            {
-                1: {'genbank_accession': 1, 'gene_name': 1, 'ec': {1,2,3}, 'pdb': {1,2,3}},
-                2: {'gene_name': 'nan', 'ec': {1,2,3}, 'pdb': {1,2,3}}, 3: {'ec': {1,2,3}, 'pdb': {1,2,3}}
-            },
-            {1, 2, 3}
-        )
+        return  {'ncbi_acc': {
+            'uniprot_acc': 'uniprot_acc',
+            'uniprot_entry_id': 'uniprot_entry_id',
+            'protein_name': 'protein_name',
+            'ec_numbers': {'ec_numbers'},
+            'sequence': 'sequence',
+            'pdbs': {'all_pdbs'},
+        }}
 
     def mock_uniprot_data(*args, **kwards):
         return {
@@ -162,13 +167,23 @@ def test_main(
     monkeypatch.setattr(sql_interface, "log_scrape_in_db", mock_return_none)
     monkeypatch.setattr(get_selected_gbks, "get_genbank_accessions", mock_get_genbank_accessions)
     monkeypatch.setattr(get_uniprot_data, "get_uniprot_accessions", mock_get_genbank_accessions)
+    monkeypatch.setattr(get_uniprot_data, "add_uniprot_genbank_relationships", mock_return_none)
     monkeypatch.setattr(get_uniprot_data, "get_uniprot_data", mock_get_uniprot_data)
-    monkeypatch.setattr(get_uniprot_data, "get_mapped_genbank_accessions", mock_uniprot_data)
-    monkeypatch.setattr(get_uniprot_data, "get_linked_ncbi_accessions", mock_get_uniprot_data)
     monkeypatch.setattr(get_uniprot_data, "add_uniprot_accessions", mock_return_none)
     monkeypatch.setattr(get_uniprot_data, "add_ec_numbers", mock_return_none)
+    monkeypatch.setattr(get_uniprot_data, "add_genbank_ec_relationships", mock_return_none)
+    monkeypatch.setattr(get_uniprot_data, "delete_old_relationships", mock_return_none)
+    monkeypatch.setattr(get_uniprot_data, "delete_old_annotations", mock_return_none)
     monkeypatch.setattr(get_uniprot_data, "add_pdb_accessions", mock_return_none)
+    monkeypatch.setattr(get_uniprot_data, "add_pdb_gbk_relationships", mock_return_none)
+    monkeypatch.setattr(get_uniprot_data, "delete_old_annotations", mock_return_none)
+    monkeypatch.setattr(get_uniprot_data, "delete_old_relationships", mock_return_none)
     monkeypatch.setattr(cazy_webscraper, "closing_message", mock_return_none)
+
+    monkeypatch.setattr(get_table_dicts, "get_ec_table_dict", mock_get_genbank_accessions)
+    monkeypatch.setattr(get_table_dicts, "get_ec_gbk_table_dict", mock_get_genbank_accessions)
+    monkeypatch.setattr(get_table_dicts, "get_pdb_table_dict", mock_get_genbank_accessions)
+    monkeypatch.setattr(get_table_dicts, "get_gbk_pdb_table_dict", mock_get_genbank_accessions)
 
     output = test_dir / "test_outputs" / "test_outputs_uniprot"
     output.mkdir(parents=True, exist_ok=True)
