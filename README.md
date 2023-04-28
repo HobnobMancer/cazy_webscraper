@@ -82,6 +82,18 @@ For a full description of the operation and examples of use, please see our pape
 
 > Hobbs, E. E. M., Gloster, T. M., and Pritchard, L. (2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets', _bioRxiv_, [https://doi.org/10.1101/2022.12.02.518825](https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1.full)
 
+## Updates
+
+**New in version 2.3.0**
+* Downloading protein data from UniProt is several magnitudes faster than before - and should have fewer issues with using older version of `bioservices`
+* Updated database schema: Changed `Genbanks 1--* Uniprots` to `Genbanks *--1 Uniprots`. `Uniprots.uniprot_id` is now listed in the `Genbanks` table, instead of listing `Genbanks.genbank_id` in the `Uniprots` table
+
+## Contributions
+
+We welcome contributions and suggestions. You can raise issues at this repository, or fork the repository and submit pull requests, at the links below:
+
+- [Issues](https://github.com/HobnobMancer/cazy_webscraper/issues)
+- [Pull Requests](https://github.com/HobnobMancer/cazy_webscraper/pulls)
 
 ## Table of Contents
 <!-- TOC -->
@@ -122,8 +134,7 @@ For a full description of the operation and examples of use, please see our pape
 ## Features in the pipeline:
 - Retrieve and stored PubMed IDs in the local CAZyme database
 - Fix any remaining bugs we can find (if you find a bug, please report it and provide as detailed bug report as possible!)
-- Update the unit tests to work with the new `cazy_webscraper` architecture
-- Update the documentation
+- Increase unit test coverage
 - Automate analysing the taxonomic distribution across CAZy and datasets of interest, including generating a final report
 
 ## Citation
