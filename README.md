@@ -57,12 +57,12 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 
 ## Updates
 
-* `cazy_webscraper` version >= 2.3.0 uses a different schema for the Uniprots table in the local CAZyme database.
-    - A Genbanks \*-1 Uniprots relationship is now used, instead of  the previous Genbanks 1-\* Uniprots relationship
 
-* Faster retrieval of data from UniProt.
+**New in version 2.3.0**
+* Downloading protein data from UniProt is several magnitudes faster than before - and should have fewer issues with using older version of `bioservices`
     - Uses `bioservices` mapping to map directly from NCBI protein version accession to UniProt
     - `cw_get_uniprot_data` not longer calls to NCBI and thus no longer requires an email address as a positional argument
+* Updated database schema: Changed `Genbanks 1--* Uniprots` to `Genbanks *--1 Uniprots`. `Uniprots.uniprot_id` is now listed in the `Genbanks` table, instead of listing `Genbanks.genbank_id` in the `Uniprots` table
 
 * Improved clarrification of deleting old records when using `cw_get_uniprot_data`
     - Separate arguments to delete Genbanks-EC number and Genbanks-PDB accession relationships that are no longer listed in UniProt for those proteins in the local CAZyme database for proteins whom data is downloaded from UniProt
@@ -81,12 +81,6 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 For a full description of the operation and examples of use, please see our paper in (BioRxiv)[https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1.full].
 
 > Hobbs, E. E. M., Gloster, T. M., and Pritchard, L. (2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets', _bioRxiv_, [https://doi.org/10.1101/2022.12.02.518825](https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1.full)
-
-## Updates
-
-**New in version 2.3.0**
-* Downloading protein data from UniProt is several magnitudes faster than before - and should have fewer issues with using older version of `bioservices`
-* Updated database schema: Changed `Genbanks 1--* Uniprots` to `Genbanks *--1 Uniprots`. `Uniprots.uniprot_id` is now listed in the `Genbanks` table, instead of listing `Genbanks.genbank_id` in the `Uniprots` table
 
 ## Contributions
 
