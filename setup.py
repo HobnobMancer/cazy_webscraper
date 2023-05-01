@@ -88,13 +88,13 @@ setuptools.setup(
         ]
     },
     install_requires=[
-        "biopython>=1.76",
-        "bioservices>=1.10.4",
+        "biopython",
+        "bioservices>=1.11.0",
         "mechanicalsoup",
-        "pandas>=1.0.3",
+        "pandas",
         "pyyaml",
         "requests",
-        "saintBioutils>=0.0.24",
+        "saintBioutils>=0.0.25",
         "sqlalchemy==1.4.20",
         "tqdm",
         "html5lib",
