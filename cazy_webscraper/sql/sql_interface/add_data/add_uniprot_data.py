@@ -293,10 +293,10 @@ def add_genbank_ec_relationships(uniprot_dict, gbk_dict, connection, args):
             try:
                 existing_relationships = ec_gbk_table_dict[ec_id]
                 if gbk_db_id not in existing_relationships:
-                    gbk_ec_insert_values.add( (gbk_id, ec_id) )
+                    gbk_ec_insert_values.add( (gbk_db_id, ec_id) )
 
             except KeyError: # EC number is not linked to any gbk records so add new records
-                gbk_ec_insert_values.add( (gbk_id, ec_id) )
+                gbk_ec_insert_values.add( (gbk_db_id, ec_id) )
 
     if len(gbk_ec_insert_values) != 0:
         insert_data(connection, "Genbanks_Ecs", ["genbank_id", "ec_id"], list(gbk_ec_insert_values))
@@ -396,7 +396,7 @@ def add_pdb_gbk_relationships(uniprot_dict, gbk_dict, connection, args):
         except KeyError:
             existing_pdb_relationships = set()
 
-        for pdb_acc in uniprot_dict[uniprot_acc]["pdb"]:
+        for pdb_acc in uniprot_dict[ncbi_acc]["pdbs"]:
             try:
                 pdb_db_id = pdb_table_dict[pdb_acc]
             except KeyError:
