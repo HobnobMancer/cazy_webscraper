@@ -510,11 +510,18 @@ def map_to_uniprot(accessions):
     
     Or returns None if connection could not be made
     """
-    mapping_results = UniProt().mapping(
-        fr="EMBL-GenBank-DDBJ_CDS",
-        to="UniProtKB",
-        query=accessions,  # str of ids, separated by commas
-    )
+    try:
+        mapping_results = UniProt().mapping(
+            fr="EMBL-GenBank-DDBJ_CDS",
+            to="UniProtKB",
+            query=accessions,  # str of ids, separated by commas
+        )
+    except TypeError:
+        # raised by bioservices
+        #   File ".../python3.11/site-packages/bioservices/uniprot.py", line 485, in mapping
+        # if results != 500 and 'results' in results:
+        # TypeError: argument of type 'int' is not iterable
+        return None
     
     return mapping_results
 
@@ -567,9 +574,11 @@ def extract_protein_data(mapped_record, ncbi_acc):
         return (
             uniprot_acc,
             uniprot_id,
-            name,
+            protein_name,
+            gene_name,
             ec_numbers,
             sequence,
+            sequence_date,
             all_pdbs,
             matching_record,
         )
