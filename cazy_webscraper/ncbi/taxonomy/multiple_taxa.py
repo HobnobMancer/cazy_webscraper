@@ -43,6 +43,7 @@
 import logging
 
 from saintBioutils.genbank import entrez_retry
+from saintBioutils.misc import get_chunks_list
 from tqdm import tqdm
 
 from Bio import Entrez
@@ -96,61 +97,69 @@ def replace_multiple_tax(cazy_data, genbank_accessions, replaced_taxa_logger, ar
     """
     logger = logging.getLogger(__name__)
 
-    id_post_list = str(",".join(genbank_accessions))
+    batches = get_chunks_list(genbank_accessions, args.ncbi_batch_size)
 
-    success = False
+    for batch in tqdm(batches, desc="Batch retrieving tax info from NCBI"):
 
-    try:
-        epost_results = Entrez.read(
-            entrez_retry(
-                args.retries,
-                Entrez.epost,
-                "Protein",
-                id=id_post_list,
+        id_post_list = str(",".join(batch))
+
+        success = False
+
+        try:
+            epost_results = Entrez.read(
+                entrez_retry(
+                    args.retries,
+                    Entrez.epost,
+                    "Protein",
+                    id=id_post_list,
+                )
             )
-        )
-        success = True
+            success = True
 
-    except (TypeError, AttributeError):  # if no record is returned from call to Entrez
-        # error not due to the presence of invalid IDs
-        logger.error(
-            f"Entrez failed to post assembly IDs.\n"
-            "Not retrieving taxonomy classification from NCBI.\n"
-            "Selecting the first organism retrieved from CAZy as the source organism"
-        )
-        cazy_data = select_first_organism(cazy_data, genbank_accessions)
-        success = True
-        return cazy_data, success
+        except (TypeError, AttributeError):  # if no record is returned from call to Entrez
+            # error not due to the presence of invalid IDs
+            logger.error(
+                f"Entrez failed to post assembly IDs for this batch.\n"
+                "Not retrieving tax data from NCBI for these proteins"
+                "Selecting the first organism retrieved from CAZy as the source organism\nProtein accessions:\n"
+                f"{batch}"
+            )
+            # cazy_data, gbk_accessions, replaced_taxa_logger
+            cazy_data = select_first_organism(cazy_data, batch, replaced_taxa_logger)
+            success = True
+            continue
 
-    except RuntimeError:
-        logger.warning("Found GenBank accessions in CAZy data that are no longer in NCBI")
+        except RuntimeError:
+            logger.warning("Found GenBank accessions in CAZy data that are no longer in NCBI")
 
-        if invalid_ids:
-            # replace_multiple_tax was called by replace_multiple_tax_with_invalid_ids
-            # return results, don't use recursive programming
-            return cazy_data, success
+            if invalid_ids:
+                # replace_multiple_tax was called by replace_multiple_tax_with_invalid_ids
+                # return results, don't use recursive programming
+                continue
+
+            else:
+                # first time replace_multiple_tax was called
+                cazy_data, success = replace_multiple_tax_with_invalid_ids(
+                    cazy_data,
+                    genbank_accessions,
+                    replaced_taxa_logger,
+                    args,
+                )
+
+        if success is False:
+            logger.error(
+                "Could not retrieve taxonomy data from NCBI for this batch,\n"
+                "Using the first source organism retrieved from CAZy for each GenBank accession\n"
+                "Protein accessions:\n"
+                f"{batch}"
+            )
+
+            cazy_data = select_first_organism(cazy_data, genbank_accessions, replaced_taxa_logger)
+            success = True
 
         else:
-            # first time replace_multiple_tax was called
-            cazy_data, success = replace_multiple_tax_with_invalid_ids(
-                cazy_data,
-                genbank_accessions,
-                replaced_taxa_logger,
-                args,
-            )
-
-    if success is False:
-        logger.error(
-            "Could not retrieve taxonomy data from NCBI,\n"
-            "Using the first source organism retrieved from CAZy for each GenBank accession"
-        )
-
-        cazy_data = select_first_organism(cazy_data, genbank_accessions, replaced_taxa_logger)
-        success = True
-
-    else:
-        logger.info("Parsing data retrieved from NCBI")
-        cazy_data = get_ncbi_tax(epost_results, cazy_data, replaced_taxa_logger, args)
+            logger.info("Parsing data retrieved from NCBI")
+            cazy_data = get_ncbi_tax(epost_results, cazy_data, replaced_taxa_logger, args)
 
     return cazy_data, success
 

@@ -197,6 +197,14 @@ def build_parser(argv: Optional[List] = None):
         help="When called, content in the existing out dir is NOT deleted",
     )
 
+
+    parser.add_argument(
+        "--ncbi_batch_size",
+        type=int,
+        default=200,
+        help="Number of genbank accessions in each NCBI Taxonomy db batch query"
+    )
+
     # Add option to not delete content in the existing cache dir
     parser.add_argument(
         "--nodelete_cache",
