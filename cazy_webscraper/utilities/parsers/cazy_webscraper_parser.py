@@ -240,6 +240,18 @@ def build_parser(argv: Optional[List] = None):
         help="Set SQLite engine echo to True (SQLite will print its log messages)",
     )
 
+    parser.add_argument(
+        "--skip_ncbi_tax",
+        dest="skip_ncbi_tax",
+        action="store_true",
+        default=False,
+        help=(
+            "Skip retrieving the latest tax classification from the NCBI Taxonomy db for proteins\n"
+            "listed with multiple taxs in CAZy.\n"
+            "For these proteins the first taxonomy listed in CAZy is added to the local CAZyme db"
+        ),
+    )
+
     # Add option to enable retrieval of subfamilies
     parser.add_argument(
         "-s",
