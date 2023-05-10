@@ -59,7 +59,7 @@ from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
-from cazy_webscraper.expand.uniprot.uniprot_cache import get_uniprot_cache, cache_uniprot_data
+from cazy_webscraper.cache.uniprot import get_uniprot_cache, cache_uniprot_data
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface.add_data.add_uniprot_data import (
     add_ec_numbers,
