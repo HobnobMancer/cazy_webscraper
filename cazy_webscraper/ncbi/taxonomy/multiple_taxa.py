@@ -66,17 +66,13 @@ def identify_multiple_taxa(cazy_data, multiple_taxa_logger):
         total=len(list(cazy_data.keys())), desc='Searching for multiple taxa annotations',
     ):
 
-        gbk_organisms = cazy_data[genbank_accession]["organism"]
-
-        if len(gbk_organisms) > 1:
+        if len(cazy_data[genbank_accession]['taxonomy']) > 1:
             multiple_taxa_gbk.append(genbank_accession)
 
-            kingdoms = ",".join(list(cazy_data[genbank_accession]["kingdom"]))
-            gbk_organisms = ",".join(list(gbk_organisms))
-
-            multiple_taxa_logger.warning(
-                f"{genbank_accession}\t{kingdoms}\t{gbk_organisms}"
-            )
+            for tax_tuple in cazy_data[genbank_accession]['taxonomy']:
+                multiple_taxa_logger.warning(
+                    f"{genbank_accession}\t{tax_tuple.kingdom}\t{tax_tuple.organism}"
+                )
 
     return multiple_taxa_gbk
 
@@ -97,9 +93,18 @@ def replace_multiple_tax(cazy_data, genbank_accessions, replaced_taxa_logger, ar
     """
     logger = logging.getLogger(__name__)
 
+    if args.skip_ncbi_tax:
+        logger.warning(
+            f"Skipping retrieving the latest taxonomy classification from the NCBI Taxonomy db\n"
+            "Adding the first tax listed for each protein in the CAZy db"
+        )
+        cazy_data = select_first_organism(cazy_data, genbank_accessions, replaced_taxa_logger)
+        success = True
+        return cazy_data, success
+
     batches = get_chunks_list(genbank_accessions, args.ncbi_batch_size)
 
-    for batch in tqdm(batches, desc="Batch retrieving tax info from NCBI"):
+    for batch in tqdm(batches, desc=f"Batch retrieving tax info from NCBI. Batch size:{args.ncbi_batch_size}"):
 
         id_post_list = str(",".join(batch))
 
@@ -206,30 +211,22 @@ def get_ncbi_tax(epost_results, cazy_data, replaced_taxa_logger, args):
         organism = protein['GBSeq_organism']
         kingdom = protein['GBSeq_taxonomy'].split(';')[0]
 
-        # retrieve CAZy taxonomy data
-        cazy_kingdom = cazy_data[accession]["kingdom"]
-        cazy_organisms = cazy_data[accession]["organism"]
-
-        cazy_kingdom_str = ",".join(cazy_kingdom)
-        cazy_organism_str = ','.join(cazy_organisms)
-
         try:
-            cazy_data[accession]['kingdom'] = {kingdom}
-            cazy_data[accession]['organism'] = {organism}
-
-            # log the difference
-            replaced_taxa_logger.warning(
-               f"{accession}\t{cazy_kingdom_str}: {cazy_organism_str}\t{kingdom}: {organism}"
-            )
+            cazy_data[accession]['kingdom'] = kingdom
+            cazy_data[accession]['organism'] = organism
 
         except KeyError:
             err = (
                 f'GenBank accession {accession} retrieved from NCBI, but it is not present in CAZy'
             )
             logger.error(err)
+            continue
 
+        for tax_tuple in list(cazy_data[accession]['taxonomy'])[1:]:
             replaced_taxa_logger.warning(
-               f"{accession}\t{cazy_kingdom_str}: {cazy_organism_str}\t{err}"
+                f"{accession}\t"
+                f"SELECTED: {kingdom} -- {organism}"
+                f"\tREPLACED: {tax_tuple.kingdom}: {tax_tuple.organism}"
             )
 
     return cazy_data
@@ -328,19 +325,17 @@ def select_first_organism(cazy_data, gbk_accessions, replaced_taxa_logger):
     Return cazy_data (dict)
     """
     for accession in tqdm(gbk_accessions, desc='Selecting the first retrieved organism'):
-        cazy_kingdoms_str = ",".join(list(cazy_data[accession]["kingdom"]))
-        cazy_organisms_str = ",".join(list(cazy_data[accession]["organism"]))
+        selected_kingdom = list(cazy_data[accession]['taxonomy'])[0].kingdom
+        selected_organism = list(cazy_data[accession]['taxonomy'])[0].organism
 
-        cazy_kingdom = list(cazy_data[accession]["kingdom"])[0]
-        cazy_organism = list(cazy_data[accession]["organism"])[0]
+        for tax_tuple in list(cazy_data[accession]['taxonomy'])[1:]:
+            replaced_taxa_logger.warning(
+                f"{accession}\t"
+                f"SELECTED: {selected_kingdom} -- {selected_organism}"
+                f"\tREPLACED: {tax_tuple.kingdom}: {tax_tuple.organism}"
+            )
 
-        cazy_data[accession]["kingdom"] = {cazy_kingdom}
-        cazy_data[accession]["organism"] = {cazy_organism}
-
-        # log the data that was replaced and the data it was replaced with
-        replaced_taxa_logger.warning(
-            f"{accession}\t{cazy_kingdoms_str}: "
-            f"{cazy_organisms_str}\t{cazy_kingdom}: {cazy_organism}"
-        )
+        cazy_data[accession]["kingdom"] = selected_kingdom
+        cazy_data[accession]["organism"] = selected_organism
 
     return cazy_data
