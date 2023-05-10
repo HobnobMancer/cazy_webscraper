@@ -56,9 +56,19 @@ def cache_cazy_data(cazy_data, cache_dir):
 
     # convert all sets to lists
     for gbk_acc in cazy_data:
-        for key in cazy_data[key]:
-            if type(cazy_data[key]) is set:
-                cazy_data[key] = list(cazy_data[key])
+        for key in cazy_data[gbk_acc]:
+            if key == 'taxonomy':
+                taxs = []
+                for tax_tuple in cazy_data[gbk_acc][key]:
+                    taxs.append(list(tax_tuple))
+                cazy_data[gbk_acc][key] = taxs
+
+            elif key == 'families':
+                for fam in cazy_data[gbk_acc][key]:
+                    cazy_data[gbk_acc][key][fam] = list(cazy_data[gbk_acc][key][fam])
+
+            elif type(cazy_data[gbk_acc][key]) is set:
+                cazy_data[gbk_acc][key] = list(cazy_data[gbk_acc][key])
 
     cache_path = cache_dir / "cached_cazy_data.json"
 
