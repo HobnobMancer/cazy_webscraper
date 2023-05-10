@@ -60,6 +60,7 @@ from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
+from cazy_webscraper.cache.ncbi import get_cache_seqs
 from cazy_webscraper.ncbi.sequences import post_accessions_to_entrez, fetch_ncbi_seqs, get_protein_accession
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
@@ -187,85 +188,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     add_genbank_data.add_gbk_seqs_to_db(seq_dict, date_today, gbk_dict, connection, cache_dir, args)
 
     closing_message("Get GenBank Sequences", start_time, args)
-
-
-def get_cache_seqs(start_time, args):
-    """Extract protein sequences from FASTA and/or JSON file, which will be added to the
-    local CAZyme database
-
-    :param seq_dict: dict, {genbank_acc: Bio.Seq}
-
-    Return update seq_dict and list of SeqRecords
-    """
-    logger = logging.getLogger(__name__)
-
-    seq_dict = {}
-    seq_records = []
-
-    if args.seq_dict:
-        logger.warning(f"Getting sequences from JSON cache:\n{args.seq_dict}")
-
-        try:
-            with open(args.seq_dict, "r") as fh:
-                cache_dict = json.load(fh)
-
-        except FileNotFoundError:
-            logger.error(
-                f"Could not find JSON file of protein sequences at:\n"
-                f"{args.seq_dict}\n"
-                "Check the path is correct"
-                "Terminating program"
-            )
-            closing_message("Get GenBank seqs", start_time, args, early_term=True)
-
-        # convert strs to SeqRecords
-        for key in cache_dict:
-            seq_dict[key] = Seq(cache_dict[key])
-
-    if args.seq_file:
-        logger.warning(f"Getting sequences from FASTA cache:\n{args.seq_file}")
-
-        try:
-            for record in SeqIO.parse(args.seq_file, "fasta"):
-                retrieved_accession = get_protein_accession(record)
-
-                if retrieved_accession is None:
-                    logger.error(
-                        "Could not retrieve a NCBI protein version accession from cache\n"
-                        f"from the record id '{record.id}'\n"
-                        "The sequence from this record will not be added to the db"
-                    )
-                    continue
-
-                try:
-                    seq_dict[retrieved_accession]
-                    if seq_dict[retrieved_accession] != record.seq:
-                        logger.warning(
-                            f"Retrieved seq for {retrieved_accession} from JSON file which does NOT match "
-                            "the seq in the FASTA file.\n"
-                            "Adding seq from the FASTA file to the local CAZyme database\n"
-                            f"JSON seq: {seq_dict[retrieved_accession]}\n"
-                            f"FASTA seq: {record.seq}"
-                        )
-                        seq_dict[retrieved_accession] = record.seq
-                except KeyError:
-                    seq_dict[retrieved_accession] = record.seq
-
-        except FileNotFoundError:
-            logger.error(
-                f"Could not find FASTA file of protein sequences at:\n"
-                f"{args.seq_file}\n"
-                "Check the path is correct"
-                "Terminating program"
-            )
-            closing_message("Get GenBank seqs", start_time, args, early_term=True)
-
-    for key in seq_dict:
-        seq_records.append(SeqRecord(id=key, seq=Seq(seq_dict[key])))
-
-    logger.warning(f"Retrieved {len(seq_records)} from cache")
-
-    return seq_dict, seq_records
 
 
 def get_records_to_retrieve(
