@@ -111,8 +111,6 @@ def add_source_organisms(taxa_dict, connection):
     taxonomy_db_insert_values = set()
     records_to_update = set()  # used incase kingdom has changed for a species
 
-    print(tax_table_dict)
-
     for kingdom in tqdm(
         taxa_dict,
         total=len(list(taxa_dict.keys())),
