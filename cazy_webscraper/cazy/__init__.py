@@ -44,6 +44,8 @@ import logging
 import re
 import sys
 
+from collections import namedtuple
+
 from tqdm import tqdm
 from zipfile import ZipFile
 
@@ -397,10 +399,12 @@ def add_protein_to_dict(cazy_data, gbk_accession, cazy_fam, cazy_subfam, organis
 
     Return dict of CAZy data
     """
+    TaxData = namedtuple('Tax', ['kingdom', 'organism'])
+    tax = TaxData(kingdom, organism)
+
     try:
         cazy_data[gbk_accession]
-        cazy_data[gbk_accession]["kingdom"].add(kingdom)
-        cazy_data[gbk_accession]["organism"].add(organism)
+        cazy_data[gbk_accession]['taxonomy'].add(tax)
         
         try:
             cazy_data[gbk_accession]["families"][cazy_fam].add(cazy_subfam)
@@ -409,8 +413,7 @@ def add_protein_to_dict(cazy_data, gbk_accession, cazy_fam, cazy_subfam, organis
         
     except KeyError:
         cazy_data[gbk_accession] = {
-            "kingdom": {kingdom},
-            "organism": {organism},
+            "taxonomy": {tax},
             "families": {cazy_fam: {cazy_subfam}},
         }
     
@@ -511,15 +514,36 @@ def build_taxa_dict(cazy_data):
     
     Return taxa_dict, dict of taxonomy data {kingdom: set(organism)}
     """
+    logger = logging.getLogger(__name__)
+
+    cazy_data = add_tax_keys(cazy_data)
+
     taxa_dict = {}  # {kingdom: {organism,}}
     
     for genbank_accession in tqdm(cazy_data, "Compiling taxa data"):
-        kingdom = list(cazy_data[genbank_accession]['kingdom'])[0]
-        organism = list(cazy_data[genbank_accession]['organism'])[0]
+        kingdom = cazy_data[genbank_accession]['kingdom']
+        organism = cazy_data[genbank_accession]['organism']
         
         try:
             taxa_dict[kingdom].add(organism)
         except KeyError:
             taxa_dict[kingdom] = {organism}
+
+    return taxa_dict, cazy_data
+
+
+def add_tax_keys(cazy_data):
+    """Add kingdom and organism tax keys to proteins missing them in cazy_data
+
+    :param cazy_data: dict of data from CAZy
+
+    Return cazy_data
+    """
+    for gbk_acc in cazy_data:
+        try:
+            cazy_data[gbk_acc]['kingdom']
+        except KeyError:
+            cazy_data[gbk_acc]['kingdom'] = list(cazy_data[gbk_acc]['taxonomy'])[0].kingdom
+            cazy_data[gbk_acc]['organism'] = list(cazy_data[gbk_acc]['taxonomy'])[0].organism
     
-    return taxa_dict
+    return cazy_data
