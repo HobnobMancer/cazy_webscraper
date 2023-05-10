@@ -111,6 +111,8 @@ def add_source_organisms(taxa_dict, connection):
     taxonomy_db_insert_values = set()
     records_to_update = set()  # used incase kingdom has changed for a species
 
+    print(tax_table_dict)
+
     for kingdom in tqdm(
         taxa_dict,
         total=len(list(taxa_dict.keys())),
@@ -135,6 +137,9 @@ def add_source_organisms(taxa_dict, connection):
                 taxonomy_db_insert_values.add( new_record )
     
     if len(taxonomy_db_insert_values) != 0:
+        with open("tax_sets", "w") as fh:
+            for tax in taxonomy_db_insert_values:
+                fh.write(f"{tax}\n")
         logger.info(
             f"Adding {len(taxonomy_db_insert_values)} new tax records to the db"
         )
@@ -231,7 +236,7 @@ def add_genbanks(cazy_data, connection):
 
     for gbk_accession in tqdm(cazy_data, desc="Compiling Genbank records for insertion"):
         if gbk_accession not in existing_gbk_records:
-            organism = list(cazy_data[gbk_accession]['organism'])[0]
+            organism = cazy_data[gbk_accessions]['organism']
             taxa_id = taxa_table_dict[organism]['tax_id']
             gbk_db_insert_values.add( (gbk_accession, taxa_id,) )
         
@@ -240,7 +245,7 @@ def add_genbanks(cazy_data, connection):
             existing_record_id = gbk_table_dict[gbk_accession]['taxa_id']
             
             # get the taxa_id for the organism listed in the CAZy txt file
-            organism = list(cazy_data[gbk_accession]['organism'])[0]
+            organism = cazy_data[gbk_accessions]['organism']
             cazy_data_taxa_id = taxa_table_dict[organism]['tax_id']
             
             if cazy_data_taxa_id != existing_record_id:
