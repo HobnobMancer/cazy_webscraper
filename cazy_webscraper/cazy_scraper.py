@@ -67,11 +67,13 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 """
 
 
+import logging
+import json
+import os
+
 from datetime import datetime
 from typing import List, Optional
 
-import logging
-import os
 import pandas as pd
 
 from Bio import Entrez
@@ -87,6 +89,7 @@ from cazy_webscraper import (
     display_citation_info,
     display_version_info,
 )
+from cazy_webscraper.cache.cazy import cache_cazy_data
 from cazy_webscraper.crawler.get_validation_data import get_validation_data
 from cazy_webscraper.cazy import (
     build_taxa_dict,
@@ -371,7 +374,11 @@ def get_cazy_data(
             invalid_ids=False,
         )
 
-    taxa_dict = build_taxa_dict(cazy_data)  # {kingdom: {organisms}}
+    # add separate kingdom and organism keys to cazy_data for all proteins
+    taxa_dict, cazy_data = build_taxa_dict(cazy_data)  # {kingdom: {organisms}}
+
+    # cache cazy_data dict
+    cache_cazy_data(cazy_data, cache_dir)
 
     add_cazyme_data.add_kingdoms(taxa_dict, connection)
 
