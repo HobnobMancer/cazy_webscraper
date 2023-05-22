@@ -122,6 +122,7 @@ def test_main(
             skip_uniprot_accessions=None,
             use_uniprot_cache=None,
             email="dummy_email",
+            taxonomy=True,
             skip_download=False,
             delete_old_ec_relationships=True,
             delete_old_ecs=True,
@@ -178,6 +179,7 @@ def test_main(
     monkeypatch.setattr(get_uniprot_data, "add_pdb_gbk_relationships", mock_return_none)
     monkeypatch.setattr(get_uniprot_data, "delete_old_annotations", mock_return_none)
     monkeypatch.setattr(get_uniprot_data, "delete_old_relationships", mock_return_none)
+    monkeypatch.setattr(get_uniprot_data, "add_uniprot_taxs", mock_return_none)
     monkeypatch.setattr(cazy_webscraper, "closing_message", mock_return_none)
 
     monkeypatch.setattr(get_table_dicts, "get_ec_table_dict", mock_get_genbank_accessions)
