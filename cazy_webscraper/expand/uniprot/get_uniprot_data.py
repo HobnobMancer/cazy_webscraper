@@ -68,6 +68,7 @@ from cazy_webscraper.sql.sql_interface.add_data.add_uniprot_data import (
     add_genbank_ec_relationships,
     add_pdb_gbk_relationships,
     add_uniprot_genbank_relationships,
+    add_uniprot_taxs,
 )
 from cazy_webscraper.sql.sql_interface.delete_data import delete_old_relationships, delete_old_annotations
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
@@ -175,6 +176,11 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
         # add uniprot IDs to Genbanks table
         add_uniprot_genbank_relationships(uniprot_dict, connection)
+
+        # add taxonomic classification (genus, species)
+        if args.taxonomy:
+            logger.warning("Adding taxonomic data to the local CAZyme database")
+            add_uniprot_taxs(uniprot_dict, connection, args)
 
         # add ec numbers
         if args.ec:
@@ -444,6 +450,8 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
                         uniprot_entry_id,
                         protein_name,
                         gene_name,  # not used atm
+                        genus,
+                        species,
                         ec_numbers,
                         sequence,
                         sequence_date,
@@ -458,6 +466,8 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
                         'uniprot_acc': uniprot_acc,
                         'uniprot_entry_id': uniprot_entry_id,
                         'protein_name': protein_name,
+                        'genus': genus,
+                        'species': species,
                         'ec_numbers': ec_numbers,
                         'sequence': sequence,
                         'sequence_date': sequence_date,
@@ -537,6 +547,8 @@ def extract_protein_data(mapped_record, ncbi_acc):
     * UniProt record ID, str
     * protein name, str  - only the recommended name from UniProt
     * gene name, str
+    * genus, str
+    * species, str
     * EC numbers, set of EC numbers
     * sequence, str (protein sequence)
     * data sequence was last updated yyyy-mm-dd
@@ -547,6 +559,8 @@ def extract_protein_data(mapped_record, ncbi_acc):
     uniprot_id = None
     protein_name = None
     gene_name = None
+    genus = None
+    species = None
     ec_numbers = set()
     sequence = None
     sequence_date = None
@@ -576,6 +590,8 @@ def extract_protein_data(mapped_record, ncbi_acc):
             uniprot_id,
             protein_name,
             gene_name,
+            genus,
+            species,
             ec_numbers,
             sequence,
             sequence_date,
@@ -592,6 +608,11 @@ def extract_protein_data(mapped_record, ncbi_acc):
         # Retrieve UniProt Record ID
         if key == 'uniProtkbId':
             uniprot_id = mapped_record[key]
+
+        # Retrieve taxonomy
+        if key == 'organism':
+            genus = mapped_record[key]['scientificName'].split(" ")[0]
+            species = " ".join(mapped_record[key]['scientificName'].split(" ")[1:])
 
         # Retrieve Protein Name and EC Numbers
         if key == 'proteinDescription':
@@ -662,6 +683,8 @@ def extract_protein_data(mapped_record, ncbi_acc):
         uniprot_id,
         protein_name,
         gene_name,
+        genus,
+        species,
         ec_numbers,
         sequence,
         sequence_date,

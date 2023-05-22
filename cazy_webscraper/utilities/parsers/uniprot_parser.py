@@ -257,9 +257,17 @@ def build_parser(argv: Optional[List] = None):
         ),
     )
 
-    # Add option to define time out limit for trying to connect to CAZy
     parser.add_argument(
         "-t",
+        "--taxonomy",
+        dest="taxonomy",
+        action="store_true",
+        default=False,
+        help="Retrieve the taxonomic classifications (scientific name: 'genus speices')",
+    )
+
+    # Add option to define time out limit for trying to connect to CAZy
+    parser.add_argument(
         "--timeout",
         type=int,
         default=45,

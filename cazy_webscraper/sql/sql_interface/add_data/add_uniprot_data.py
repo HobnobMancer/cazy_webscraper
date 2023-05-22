@@ -220,7 +220,6 @@ def add_uniprot_genbank_relationships(uniprot_dict, connection):
             )
     
 
-
 def add_ec_numbers(uniprot_dict, connection, args):
     """Add EC numbers to the local CAZyme database
 
@@ -411,3 +410,91 @@ def add_pdb_gbk_relationships(uniprot_dict, gbk_dict, connection, args):
 
     if len(gbk_pdb_insert_values) != 0:
         insert_data(connection, "Genbanks_Pdbs", ["genbank_id", "pdb_id"], list(gbk_pdb_insert_values))
+
+
+def add_uniprot_taxs(uniprot_dict, connection, args):
+    """Add taxonomic classifications (genus, species) to the local CAZyme database UniprotTaxs table.
+
+    :param uniprot_dict: dict containing data retrieved from UniProt
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc, - str
+            'protein_name': protein_name, -str
+            'ec_numbers': ec_numbers, - set
+            'sequence': sequence, - str
+            'sequence_date': date seq was last updated yyyy-mm-dd
+            'pdbs': all_pdbs, - set
+        }
+    :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param args: cmd-line args parser
+
+    Return nothing.
+    """
+    # add tax data to the local db
+    # load the table
+    ut_table_dict, ut_tax_dict = get_table_dicts.get_uniprottax_table_dict(connection)
+    # {db id: {'genus': str, 'species': str}}
+    # {'genus species': db id}
+
+    taxs_to_add = set()
+
+    for ncbi_acc in tqdm(uniprot_dict, desc="Identifying taxs to add to db"):
+        genus = uniprot_dict[ncbi_acc]['genus']
+        species = uniprot_dict[ncbi_acc]['species']
+
+        try:
+            ut_tax_dict[f"{genus} {species}"]
+        except KeyError:
+            taxs_to_add.add( (genus, species) )
+
+    if len(taxs_to_add) > 0:
+        insert_data(connection, "UniprotTaxs", ["genus", "species"], list(taxs_to_add))
+
+    add_uniprot_tax_relationships(uniprot_dict, connection, args)
+
+    
+def add_uniprot_tax_relationships(uniprot_dict, connection, args):
+    """Link Uniprot records to UniprotTaxs table.
+
+    :param uniprot_dict: dict containing data retrieved from UniProt
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc, - str
+            'protein_name': protein_name, -str
+            'ec_numbers': ec_numbers, - set
+            'sequence': sequence, - str
+            'sequence_date': date seq was last updated yyyy-mm-dd
+            'pdbs': all_pdbs, - set
+        }
+    :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param args: cmd-line args parser
+
+    Return nothing.
+    """
+    ut_table_dict, ut_tax_dict = get_table_dicts.get_uniprottax_table_dict(connection)
+    # {db id: {'genus': str, 'species': str}}
+    # {'genus species': db id}
+    
+    uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+    # {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
+
+    relationships = {}  # {uniprot db id: uniprot tax db id}
+
+    for ncbi_acc in tqdm(uniprot_dict, desc="Identifying Uniprot-Tax relationships"):
+        genus = uniprot_dict[ncbi_acc]['genus']
+        species = uniprot_dict[ncbi_acc]['species']
+        uniprot_acc = uniprot_dict[ncbi_acc]['uniprot_acc']
+
+        uni_db_id = uniprot_table_dict[uniprot_acc]
+
+        tax_db_id = ut_tax_dict[f"{genus} {species}"]
+
+        relationships[uni_db_id] = tax_db_id
+
+    with connection.begin():
+        for uni_db_id in tqdm(relationships, desc="Adding Uniprot-Tax relationships"):
+            connection.execute(
+                text(
+                    "UPDATE Uniprots "
+                    f"SET uniprot_tax_id = {relationships[uni_db_id]} "
+                    f"WHERE uniprot_id = '{uni_db_id}'"
+                )
+            )

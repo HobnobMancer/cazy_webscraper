@@ -58,6 +58,7 @@ from cazy_webscraper.sql.sql_orm import (
     Session,
     Taxonomy,
     Uniprot,
+    UniprotTax,
 )
 
 
@@ -509,3 +510,27 @@ def get_genome_table(connection):
             db_genome_dict[ref_acc] = {'db_id': db_id, 'gtdb_id': gtdb_id}
 
     return db_genome_dict
+
+
+def get_uniprottax_table_dict(connection):
+    """Load and parse the UniprotTaxs table from the db and compile a dict {db_id: {'genus': str, 'species': str}}
+    
+    :param connection:
+    
+    Return dict {db_id: {'genus': str, 'species': str}} AND {'genus species': db id}
+    """
+    with Session(bind=connection) as session:
+        ut_table = session.query(UniprotTax).all()
+    
+    ut_dict = {}  # {db_id: {'genus': str, 'species': str}}
+    ut_tax_dict = {}  # {'genus species': db id}
+    
+    for ut_obj in ut_table:
+        ut_dict[ut_obj.uniprot_tax_id] = {
+            'genus': ut_obj.genus,
+            'species': ut_obj.species,
+        }
+
+        ut_tax_dict[f"{ut_obj.genus} {ut_obj.species}"] = ut_obj.uniprot_tax_id
+        
+    return ut_dict, ut_tax_dict

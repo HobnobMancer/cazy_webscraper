@@ -469,8 +469,10 @@ class Uniprot(Base):
     uniprot_name = Column(ReString)
     sequence = Column(ReString)
     seq_update_date = Column(ReString)
+    uniprot_tax_id = Column(Integer, ForeignKey("UniprotTaxs.uniprot_tax_id"))
 
     genbank = relationship("Genbank", back_populates="uniprot")
+    taxs = relationship("UniprotTax", back_populates="uniprots")
 
     def __str__(self):
         return (
@@ -483,6 +485,35 @@ class Uniprot(Base):
         return(
             f"<Uniprot, accession={self.uniprot_accession}, "
             f"name={self.uniprot_name}, id={self.uniprot_id}>"
+        )
+
+
+class UniprotTax(Base):
+    """Describes a NCBI Taxonomy lineage."""
+    __tablename__ = "UniprotTaxs"
+
+    uniprot_tax_id = Column(Integer, primary_key=True)
+    genus = Column(ReString)
+    species = Column(ReString)
+
+    __table_args__ = (
+        UniqueConstraint("genus", "species"),
+        Index("uniprot_tax_index", "uniprot_tax_id", "genus", "species"),
+    )
+
+    uniprots = relationship(
+        "Uniprot",
+        back_populates="taxs",
+        lazy="dynamic",
+    )
+
+    def __str__(self):
+        return f"-UniProt Tax,  genus={self.genus}, species={self.species}-"
+
+    def __repr__(self):
+        """Return string representation of UniProt Tax record."""
+        return(
+            f"<Class UniProtTax, genus={self.genus}, species={self.species}>"
         )
 
 
