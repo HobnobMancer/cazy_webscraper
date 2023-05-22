@@ -197,6 +197,17 @@ def build_parser(argv: Optional[List] = None):
         help="When called, content in the existing out dir is NOT deleted",
     )
 
+    parser.add_argument(
+        "--ncbi_tax",
+        dest="ncbi_tax",
+        action="store_true",
+        default=False,
+        help=(
+            "Retriev the latest tax classification from the NCBI Taxonomy db for proteins\n"
+            "listed with multiple taxs in CAZy.\n"
+            "For these proteins the first taxonomy listed in CAZy is added to the local CAZyme db"
+        ),
+    )
 
     parser.add_argument(
         "--ncbi_batch_size",
@@ -238,18 +249,6 @@ def build_parser(argv: Optional[List] = None):
         action="store_true",
         default=False,
         help="Set SQLite engine echo to True (SQLite will print its log messages)",
-    )
-
-    parser.add_argument(
-        "--skip_ncbi_tax",
-        dest="skip_ncbi_tax",
-        action="store_true",
-        default=False,
-        help=(
-            "Skip retrieving the latest tax classification from the NCBI Taxonomy db for proteins\n"
-            "listed with multiple taxs in CAZy.\n"
-            "For these proteins the first taxonomy listed in CAZy is added to the local CAZyme db"
-        ),
     )
 
     # Add option to enable retrieval of subfamilies

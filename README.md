@@ -55,8 +55,8 @@ Protein sequences (retrieved from GenBank and/or UniProt) from the local CAZyme 
 
 Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest).
 
-## Updates
 
+## Updates
 
 **New in version 2.3.0**
 * Downloading protein data from UniProt is several magnitudes faster than before - and should have fewer issues with using older version of `bioservices`
@@ -75,6 +75,13 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 * Retrieve the local db schema
     - New command `cw_get_db_schema` added.
     - Retrieves the SQLite schema of a local CAZyme database and prints it to the terminal
+
+* `cazy_webscraper` no longer retrieves NCBI taxonomies by default
+    - The number of proteins associated with multiple taxons in CAZy has grown exponentially
+    - By default `cazy_webscraper` will uses the first taxon listed in the CAZy database dump
+    - Use the `--ncbi_tax` flag to retrieve the latest taxonomic classifications from NCBI for proteins listed with multiple taxons in CAZy
+    - Or compile the local SQLite database and use the `cw_get_ncbi_taxs` to retrieve the latest taxonomic classiciations from NCBI for proteins matching your provided criteria
+
 
 ## Documentation
 
@@ -307,6 +314,8 @@ _If `--db_output` **and** `--database` are **not** called, `cazy_webscraper` wri
 
 __When the `--db_output` flag is used, `cazy_webscraper` will create any necessary parent directories. If the direct/immediate parent directory of the database exists, by default `cazy_webscraper` will delete the content in this parent directory._
 
+`--ncbi_tax` - Retrieve the latest taxonomic information for NCBI were multiple taxonomic classifications are retrieved from CAZy for a protein. The first taxonomy retrieved from CAZy will be added to the local CAZyme database. Default False - the first taxon listed for each protein is added to the local CAZyme database.
+
 `--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
 `--nodelete_log` - When called, content in the existing log dir will **not** be deleted. Default: False (existing content is deleted).
@@ -314,8 +323,6 @@ __When the `--db_output` flag is used, `cazy_webscraper` will create any necessa
 `--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
 
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
-
-`--skip_ncbi_tax` - Skip downloaded the latest taxonomic information for NCBI were multiple taxonomic classifications are retrieved from CAZy for a protein. The first taxonomy retrieved from CAZy will be added to the local CAZyme database.
 
 `--subfamilies`, `-s` - Enable retrival of CAZy subfamilies, otherwise **only** CAZy family annotations will be retrieved. Default: False.
 
