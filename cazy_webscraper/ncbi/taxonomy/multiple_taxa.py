@@ -75,7 +75,7 @@ def identify_multiple_taxa(cazy_data, multiple_taxa_logger):
                 )
         
         else:
-            cazy_data[genbank_accession]['organism'] = cazy_data[genbank_accession]['taxonomy'][0]
+            cazy_data[genbank_accession]['organism'] = list(cazy_data[genbank_accession]['taxonomy'])[0]
 
     return multiple_taxa_gbk
 
