@@ -56,10 +56,10 @@ from cazy_webscraper.ncbi.taxonomy import multiple_taxa
 @pytest.fixture
 def cazy_data():
     data = {
-        "gbk1": {"kingdom": {'Bacteria'}, "organism": {"sp 1", "sp 2"}, "families": {'GH1', 'GH2'}},
-        "gbk2": {"kingdom": {'Bacteria'}, "organism": {"sp 1", "sp 2"}, "families": {'GH1', 'GH2'}},
-        "gbk3": {"kingdom": {'Bacteria'}, "organism": {"sp 1", "sp 2"}, "families": {'GH1', 'GH2'}},
-        "gbk4": {"kingdom": {'Bacteria'}, "organism": {"sp 1", "sp 2"}, "families": {'GH1', 'GH2'}},
+        "gbk1": {"kingdom": {'Bacteria'}, "taxonomy": {"sp 1", "sp 2"}, "families": {'GH1', 'GH2'}},
+        "gbk2": {"kingdom": {'Bacteria'}, "taxonomy": {"sp 1", "sp 2"}, "families": {'GH1', 'GH2'}},
+        "gbk3": {"kingdom": {'Bacteria'}, "taxonomy": {"sp 1", "sp 2"}, "families": {'GH1', 'GH2'}},
+        "gbk4": {"kingdom": {'Bacteria'}, "taxonomy": {"sp 1", "sp 2"}, "families": {'GH1', 'GH2'}},
     }
     return data
 
@@ -109,6 +109,8 @@ def test_multi_taxa(cazy_data, monkeypatch):
 def test_get_ncbi_tax(monkeypatch):
     argsdict = {"args": Namespace(
         retries=10,
+        ncbi_tax=True,
+        ncbi_batch_size=200,
     )}
 
     entrez_result = "tests/test_inputs/test_inputs_ncbi_tax/entrezProt.xml"
@@ -124,16 +126,19 @@ def test_get_ncbi_tax(monkeypatch):
 
         output = multiple_taxa.get_ncbi_tax(
             {"WebEnv": 1, "QueryKey": 2},
-            {'CAA35997.1': {'kingdom': {'kingdom'}, 'organism': {'organism'}}},
+            {'CAA35997.1': {'kingdom': {'kingdom'}, 'taxonomy': {'Bos taurus'}}},
             logging.getLogger(__name__),
             argsdict['args'],
         )
-        assert output == {'CAA35997.1': {'kingdom': {'Eukaryota'}, 'organism': {'Bos taurus'}}}
+        print(output)
+        assert output == {'CAA35997.1': {'kingdom': 'Eukaryota', 'taxonomy': {'Bos taurus'}, 'organism': 'Bos taurus'}}
 
 
 def test_get_ncbi_tax_fails(monkeypatch):
     argsdict = {"args": Namespace(
         retries=10,
+        ncbi_tax=True,
+        ncbi_batch_size=200,
     )}
 
     def mock_entrez_tax_call(*args, **kwargs):
@@ -154,6 +159,8 @@ def test_failed_replace_tax(monkeypatch):
     """Test replace_multiple_tax when failes to conenct to NCBI.Entrez"""
     argsdict = {"args": Namespace(
         retries=10,
+        ncbi_tax=True,
+        ncbi_batch_size=200,
     )}
 
     def mock_return_none(*args, **kwards):
@@ -172,6 +179,8 @@ def test_failed_replace_tax_run_time(monkeypatch):
     """Test replace_multiple_tax when failes to conenct to NCBI.Entrez"""
     argsdict = {"args": Namespace(
         retries=10,
+        ncbi_tax=True,
+        ncbi_batch_size=200,
     )}
 
     def mock_error(*args, **kwards):

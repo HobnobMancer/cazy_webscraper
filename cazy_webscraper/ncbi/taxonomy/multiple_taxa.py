@@ -73,6 +73,9 @@ def identify_multiple_taxa(cazy_data, multiple_taxa_logger):
                 multiple_taxa_logger.warning(
                     f"{genbank_accession}\t{tax_tuple.kingdom}\t{tax_tuple.organism}"
                 )
+        
+        else:
+            cazy_data[genbank_accession]['organism'] = cazy_data[genbank_accession]['taxonomy'][0]
 
     return multiple_taxa_gbk
 
