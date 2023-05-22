@@ -109,7 +109,9 @@ to retrieve protein data. Default 1000. See the `UniProt REST API documentation 
 
 ``--strains`` - List of species strains to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given strains.
 
-``--timeout``, ``-t`` - Connection timout limit (seconds). Default: 45.
+``--taxonomy``, ``-t`` - Retrieve taxonomic classifications (genus species) and add to the local CAZyme db.
+
+``--timeout`` - Connection timout limit (seconds). Default: 45.
 
 ``--use_uniprot_cache`` - Path to JSON file containing data previosuly retrieved from UniProt by ``cazy_webscraper``, use if an error occurred while adding the data to the local CAZyme database. This will skip the retrieval of data from UniProt, and the cached data will be added to the local CAZyme database. This can also be shared with others to add the same data to their local CAZyme database.
 

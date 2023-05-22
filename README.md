@@ -30,12 +30,13 @@
 - Latest taxonomic classification - including complete lineage (including phylum, class, order and family) (version >=2.1.2)
 - Latest genomic assembly data (GenBank and RefSeq (when available) version accession and ID numbers) (version >=2.1.3)
 
-**[UniProt](https://www.uniprot.org/):**  
+**[UniProt](https://www.uniprot.org/):** 
+- UniProt ID/accession
 - Protein name
-- UniProt accession
 - EC numbers
 - PDB accessions
-- Protein sequences
+- Protein sequence (and date sequence was last updated)
+- Taxonomic classification (genus and species)
 
 **[Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank (PDB)](https://www.rcsb.org/):**
 - Protein structure files
@@ -64,6 +65,10 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
     - `cw_get_uniprot_data` not longer calls to NCBI and thus no longer requires an email address as a positional argument
 * Updated database schema: Changed `Genbanks 1--* Uniprots` to `Genbanks *--1 Uniprots`. `Uniprots.uniprot_id` is now listed in the `Genbanks` table, instead of listing `Genbanks.genbank_id` in the `Uniprots` table
 
+* Retrieve taxonomic classifications from UniProt
+    * Use the `--taxonomy` flag to retrieve the scientific name (genus and species) for proteins of interest
+    * Adds downloaded taxonomic information to the `UniprotsTaxs` table
+
 * Improved clarrification of deleting old records when using `cw_get_uniprot_data`
     - Separate arguments to delete Genbanks-EC number and Genbanks-PDB accession relationships that are no longer listed in UniProt for those proteins in the local CAZyme database for proteins whom data is downloaded from UniProt
     - New args:
@@ -78,9 +83,13 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 
 * `cazy_webscraper` no longer retrieves NCBI taxonomies by default
     - The number of proteins associated with multiple taxons in CAZy has grown exponentially
+    - Therefore, for speed `cazy_webscraper` will no longer retrieve the latest NCBI taxonomic classifications for proteins listed under multiple taxa by default
     - By default `cazy_webscraper` will uses the first taxon listed in the CAZy database dump
     - Use the `--ncbi_tax` flag to retrieve the latest taxonomic classifications from NCBI for proteins listed with multiple taxons in CAZy
-    - Or compile the local SQLite database and use the `cw_get_ncbi_taxs` to retrieve the latest taxonomic classiciations from NCBI for proteins matching your provided criteria
+    - Or compile the local SQLite database and use:
+        - `cw_get_ncbi_taxs` to retrieve the latest taxonomic classiciations from NCBI for proteins matching your provided criteria
+        - `cw_get_genomics` and `cw_get_gtdb_taxs` to retrieve the genomic accessions associated with each protein interest, and then retrieve the relevant taxonomic classification for each genomic accession from the GTDB database
+        - `cw_get_uniprot_data` and the `--taxonomy`/`-t` flag to retrieve the latest taxonomic classifications from UniProt
 
 
 ## Documentation
@@ -316,6 +325,8 @@ __When the `--db_output` flag is used, `cazy_webscraper` will create any necessa
 
 `--ncbi_tax` - Retrieve the latest taxonomic information for NCBI were multiple taxonomic classifications are retrieved from CAZy for a protein. The first taxonomy retrieved from CAZy will be added to the local CAZyme database. Default False - the first taxon listed for each protein is added to the local CAZyme database.
 
+`--ncbi_batch_size` - The number of protein IDs submitted per batch to NCBI, when retrieving taxonomic classifications. Default 200.
+
 `--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
 `--nodelete_log` - When called, content in the existing log dir will **not** be deleted. Default: False (existing content is deleted).
@@ -445,7 +456,9 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--strains` - List of specific species strains to restrict the scraping of CAZymes to.
 
-`--timeout`, `-t` - Connection timout limit (seconds). Default: 45.
+`--taxonomy`, `-t` - Retrieve taxonomic classifications (genus species) and add to the local CAZyme database
+
+`--timeout` - Connection timout limit (seconds). Default: 45.
 
 `--update_name` - If a newer version of the protein name is available, overwrite the existing name for the protein in the database. Default is false, the protein name is **not** overwritten and updated.
 
@@ -1062,7 +1075,7 @@ When listing EC numbers, the 'EC' prefix can be included or excluded. For exampl
 
 `cazy_webscraper` performs a direct EC number comparison. Therefore, supplying `cazy_webscraper` with the EC number EC1.2.3.- will only retrieve protein specifically annotated with EC1.2.3.-. `cazy_webscraper` will **not** retrieve proteins will all completed EC numbers under EC1.2.3.-, thus, `cazy_webscraper` will **not** retrieve data for proteins annotated with EC1.2.3.1, EC1.2.3.2, EC1.2.3.3, etc.
 
-Example configuration files, and an empty configuraiton file template are located in the [`config_files`]() directory of this repo.
+Example configuration files, and an empty configuraiton file template are located in the `configuration_files/` directory of this repo.
 
 
 ## Integrating a local CAZyme database

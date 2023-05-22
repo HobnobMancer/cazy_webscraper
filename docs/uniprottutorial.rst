@@ -245,11 +245,11 @@ To retrieve PDB accessions for all CAZymes in GH, GT, CE1, CE5 and CE8, and whic
 
 
 **Example 2:**
-To retrieve EC numbers and PDB accessions for all CAZymes in GH and which are derived from *Aspegillus* and *Trichoderma* species we use the command:
+To retrieve EC numbers, PDB accessions and taxonomies for all CAZymes in GH and which are derived from *Aspegillus* and *Trichoderma* species we use the command:
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --pdb --ec --classes GH --genera Aspegillus,Trichoderma
+   cw_get_uniprot_data cazy/cazyme.db --pdb --ec --classes GH --genera Aspegillus,Trichoderma --taxonomy
 
 
 **Example 3:**
