@@ -200,6 +200,7 @@ def test_main_citation(mock_building_parser, mock_config_logger, monkeypatch):
     def mock_parser(*args, **kwargs):
         parser = Namespace(
             email="dummy@domain.com",
+            ncbi_tax=False,
             cache_dir=None,
             cazy_data=None,
             cazy_synonyms=None,
@@ -244,6 +245,7 @@ def test_main_version(mock_building_parser, mock_config_logger, monkeypatch):
             email="dummy@domain.com",
             cache_dir=None,
             cazy_data=None,
+            ncbi_tax=False,
             cazy_synonyms=None,
             classes=None,
             config=None,
@@ -287,6 +289,7 @@ def test_main_version_argv(mock_building_parser, mock_config_logger, monkeypatch
             cache_dir=None,
             cazy_data=None,
             cazy_synonyms=None,
+            ncbi_tax=False,
             classes=None,
             config=None,
             citation=False,
@@ -329,6 +332,7 @@ def test_main_double_db(mock_building_parser, mock_config_logger, monkeypatch):
             cache_dir=None,
             cazy_data=None,
             cazy_synonyms=None,
+            ncbi_tax=False,
             classes=None,
             config=None,
             citation=False,
@@ -376,6 +380,7 @@ def test_main_new_db_exists_force(db_path, mock_building_parser, mock_config_log
             classes=None,
             config=None,
             citation=False,
+            ncbi_tax=False,
             db_output=Path(db_path),  ###
             database=None,
             delete_old_relationships=False,
@@ -432,6 +437,7 @@ def test_main_new_db_exists(db_path, mock_building_parser, mock_config_logger, m
             cazy_data=Path('cazy_data.json'),
             cazy_synonyms=None,
             classes=None,
+            ncbi_tax=False,
             config=None,
             citation=False,
             db_output=Path(db_path),  ###
@@ -496,6 +502,7 @@ def test_main_database(
             cazy_data=None,
             cazy_synonyms=None,
             classes=None,
+            ncbi_tax=False,
             config=None,
             citation=False,
             db_output=None,
@@ -578,6 +585,7 @@ def test_main_db_output(
             delete_old_relationships=False,
             force=False,
             families=None,
+            ncbi_tax=False,
             genera=None,
             kingdoms=None,
             log=None,
