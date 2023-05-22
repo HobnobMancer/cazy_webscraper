@@ -55,11 +55,9 @@ from cazy_webscraper.crawler import get_cazy_file
 
 def get_cazy_txt_file_data(cache_dir, time_stamp, args):
     """Retrieve txt file of CAZy db dump from CAZy or the local disk.
-
     :param cache_dir: Path(), path to directory where cache is written to
     :param time_stamp: str, date and time cazy_webscraper was intiated
     :param args: cmd-line args parser
-
     Return list of lines from CAZy txt file, one line is one item in the list"""
     logger = logging.getLogger(__name__)
 
@@ -345,7 +343,6 @@ def apply_kingdom_tax_filters(
     :param cazy_fam: str, CAZy family annotation
     :param cazy_subfam: str, CAZy subfamily annotation, or None if protein is not a CAZy subfamily
     :param kingdom: str, taxonomy kingdom of the source organism of the protein
-
     Return
     - cazy_data ({gbk_acc: {kingdom: str, organism: str, families: {(fam, subfam, )}}})
     - boolean if data for the given protein was (True) or was not (False) added to the db
@@ -404,18 +401,20 @@ def add_protein_to_dict(cazy_data, gbk_accession, cazy_fam, cazy_subfam, organis
 
     try:
         cazy_data[gbk_accession]
+
         cazy_data[gbk_accession]['taxonomy'].add(tax)
-        
+
         try:
             cazy_data[gbk_accession]["families"][cazy_fam].add(cazy_subfam)
         except KeyError:
             cazy_data[gbk_accession]["families"][cazy_fam] = {cazy_subfam}
-        
+
     except KeyError:
         cazy_data[gbk_accession] = {
             "taxonomy": {tax},
             "families": {cazy_fam: {cazy_subfam}},
         }
+        return cazy_data
     
     return cazy_data
 
