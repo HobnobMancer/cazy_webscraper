@@ -707,6 +707,9 @@ def test_get_cazy_data_no_filters(db_path, empty_config_dict, monkeypatch):
     def mock_return_none(*args, **kwards):
         return
 
+    def mock_tax_dict(*args, **kwargs):
+        return {}, {}
+
     def mock_multiple_taxa(*args, **kwards):
         return [1,2,3,4]
 
@@ -722,7 +725,7 @@ def test_get_cazy_data_no_filters(db_path, empty_config_dict, monkeypatch):
     monkeypatch.setattr(cazy_scraper, "parse_all_cazy_data", mock_cazy_data)
     monkeypatch.setattr(cazy_scraper, "identify_multiple_taxa", mock_multiple_taxa)
     monkeypatch.setattr(cazy_scraper, "replace_multiple_tax", mock_replace_taxa)
-    monkeypatch.setattr(cazy_scraper, "build_taxa_dict", mock_return_none)
+    monkeypatch.setattr(cazy_scraper, "build_taxa_dict", mock_tax_dict)
     monkeypatch.setattr(add_cazyme_data, "add_kingdoms", mock_return_none)
     monkeypatch.setattr(add_cazyme_data, "add_source_organisms", mock_return_none)
     monkeypatch.setattr(add_cazyme_data, "add_cazy_families", mock_return_none)
@@ -739,7 +742,7 @@ def test_get_cazy_data_no_filters(db_path, empty_config_dict, monkeypatch):
         set(),
         set(),
         'connection',
-        Path('cache_dir'),
+        Path('tests/test_outputs/test_webscraper/test_logs'),
         'logger_name',
         'time_stamp',
         argsdict['args'],
