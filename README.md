@@ -101,6 +101,8 @@ For a full description of the operation and examples of use, please see our pape
 
 > Hobbs, E. E. M., Gloster, T. M., and Pritchard, L. (2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets', _bioRxiv_, [https://doi.org/10.1101/2022.12.02.518825](https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1.full)
 
+You can view the database schema [here](??) and find a PDF of the database schema here []().
+
 ## Contributions
 
 We welcome contributions and suggestions. You can raise issues at this repository, or fork the repository and submit pull requests, at the links below:
@@ -139,6 +141,7 @@ We welcome contributions and suggestions. You can raise issues at this repositor
 - [CAZy coverage of GenBank](#cazy-coverage-of-genbank)
     - [Configure calculating CAZy coverage of GenBank](#configure-calculating-cazy-coverage-of-genbank)
 - [Integrating a local CAZyme database](#integrating-a-local-cazyme-database)
+- [Database schema](#database-schema)
 - [Contributions](#contributions)
 - [License and copyright](#license-and-copyright)
 <!-- /TOC -->
@@ -1098,6 +1101,12 @@ Import the function into the `Python` script using:
 ```python
 from cazy_webscraper.sql.sql_orm import get_db_connection
 ```
+
+## Database Schema
+
+This is the structure of the local SQLite3 database compiled by `cazy_webscraper` version >=2.3.0:
+
+![database schema](assets/cazy_webscraper_v2.3+.svg "database schema")
 
 
 ## Contributions

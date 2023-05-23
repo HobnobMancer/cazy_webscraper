@@ -25,7 +25,7 @@ Database Schema
 
 Below is the database ORM. It plots the relationships between elements in each table.
 
-.. image:: cazy_webscraper_version2.svg
+.. image:: cazy_webscraper_v2.3+.svg
    :scale: 100 %
    :alt: cazy_webscraper database schema
    :align: center
