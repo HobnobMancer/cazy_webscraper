@@ -179,9 +179,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             closing_message("cazy_webscraper", start_time, args, early_term=True)
             return
 
-    if args.ncbi_tax is False:
+    if args.skip_ncbi_tax:
         logger.warning(
-            "ncbi_tax is False - not retrieving the latest taxa from NCBI for proteins with multipe tax. Will use the first taxa listed in CAZy\n"
+            "skip_ncbi_tax is True - not retrieving the latest taxa from NCBI for proteins with multipe tax. Will use the first taxa listed in CAZy\n"
             "The latest taxonomic data can be retrieved using any of the three options:\n"
             "(i) cw_get_ncbi_taxs\n"
             "(ii) cw_get_genomics + cw_get_gtdb_taxs\n"

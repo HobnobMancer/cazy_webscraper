@@ -111,7 +111,7 @@ def test_multi_taxa(cazy_data, monkeypatch):
 def test_get_ncbi_tax(monkeypatch):
     argsdict = {"args": Namespace(
         retries=10,
-        ncbi_tax=True,
+        skip_ncbi_tax=True,
         ncbi_batch_size=200,
     )}
 
@@ -138,7 +138,7 @@ def test_get_ncbi_tax(monkeypatch):
 def test_get_ncbi_tax_fails(monkeypatch):
     argsdict = {"args": Namespace(
         retries=10,
-        ncbi_tax=True,
+        skip_ncbi_tax=True,
         ncbi_batch_size=200,
     )}
 
@@ -160,7 +160,7 @@ def test_failed_replace_tax(monkeypatch):
     """Test replace_multiple_tax when failes to conenct to NCBI.Entrez"""
     argsdict = {"args": Namespace(
         retries=10,
-        ncbi_tax=True,
+        skip_ncbi_tax=True,
         ncbi_batch_size=200,
     )}
 
@@ -180,7 +180,7 @@ def test_failed_replace_tax_run_time(monkeypatch):
     """Test replace_multiple_tax when failes to conenct to NCBI.Entrez"""
     argsdict = {"args": Namespace(
         retries=10,
-        ncbi_tax=True,
+        skip_ncbi_tax=True,
         ncbi_batch_size=200,
     )}
 
