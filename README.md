@@ -97,11 +97,15 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 
 The full documentation can be found at [Read the Docs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest).
 
+### Our paper: Implementation and demonstration of use
+
 For a full description of the operation and examples of use, please see our paper in (BioRxiv)[https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1.full].
 
 > Hobbs, E. E. M., Gloster, T. M., and Pritchard, L. (2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets', _bioRxiv_, [https://doi.org/10.1101/2022.12.02.518825](https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1.full)
 
-You can view the database schema [here](??) and find a PDF of the database schema here []().
+### Database schema
+
+You can view the database schema [here](#database-schema) and find a PDF of the database schema [here]](https://hobnobmancer.github.io/cazy_webscraper/database_schema.pdf).
 
 ## Contributions
 
