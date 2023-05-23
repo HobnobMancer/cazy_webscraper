@@ -14,7 +14,6 @@
 
 --------------------------------
 
-
 ## cazy_webscraper
 
 `cazy_webscraper` is an application and Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. The code is distributed under the MIT license.
@@ -56,7 +55,6 @@ Protein sequences (retrieved from GenBank and/or UniProt) from the local CAZyme 
 **The `cazy_webscraper` API facilitates interoggating the local CAZyme database.**
 
 Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest).
-
 
 ## Updates
 
