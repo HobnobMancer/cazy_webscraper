@@ -476,6 +476,8 @@ def add_uniprot_tax_relationships(uniprot_dict, connection, args):
     uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
     # {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
 
+    print('ut_tax_dict:', ut_tax_dict)
+
     relationships = {}  # {uniprot db id: uniprot tax db id}
 
     for ncbi_acc in tqdm(uniprot_dict, desc="Identifying Uniprot-Tax relationships"):
@@ -483,8 +485,7 @@ def add_uniprot_tax_relationships(uniprot_dict, connection, args):
         species = uniprot_dict[ncbi_acc]['species']
         uniprot_acc = uniprot_dict[ncbi_acc]['uniprot_acc']
 
-        uni_db_id = uniprot_table_dict[uniprot_acc]
-
+        uni_db_id = uniprot_table_dict[uniprot_acc]['db_id']
         tax_db_id = ut_tax_dict[f"{genus} {species}"]
 
         relationships[uni_db_id] = tax_db_id
