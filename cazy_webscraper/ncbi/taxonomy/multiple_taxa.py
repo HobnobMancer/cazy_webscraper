@@ -96,7 +96,7 @@ def replace_multiple_tax(cazy_data, genbank_accessions, replaced_taxa_logger, ar
     """
     logger = logging.getLogger(__name__)
 
-    if args.ncbi_tax is False:
+    if args.skip_ncbi_tax:
         logger.warning(
             f"Skipping retrieving the latest taxonomy classification from the NCBI Taxonomy db\n"
             "Adding the first tax listed for each protein in the CAZy db"

@@ -104,11 +104,11 @@ to download data from CAZy.
 
 ``--nodelete_log`` - When called, content in the existing log dir will **not** be deleted. Default: False (existing content is deleted).
 
-``--ncbi_tax`` - Retrieve the latest taxonomic information for NCBI were multiple taxonomic classifications are retrieved from CAZy for a protein. The first taxonomy retrieved from CAZy will be added to the local CAZyme database. Default False: will not retrieve taxon data from NCBI, will use the first taxon retrieved from the CAZy database dump.
-
 ``--ncbi_batch_size`` - The number of protein IDs submitted per batch to NCBI, when retrieving taxonomic classifications. Default 200.
 
 ``--retries``, ``-r`` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
+
+``--skip_ncbi_tax`` - Skip retrieving the latest taxonomic information for NCBI were multiple taxonomic classifications are retrieved from CAZy for a protein. The first taxonomy retrieved from CAZy will be added to the local CAZyme database. Default False: will not retrieve taxon data from NCBI, will use the first taxon retrieved from the CAZy database dump.
 
 ``--sql_echo`` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 

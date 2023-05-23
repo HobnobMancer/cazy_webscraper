@@ -67,7 +67,7 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
 * Updated database schema: Changed `Genbanks 1--* Uniprots` to `Genbanks *--1 Uniprots`. `Uniprots.uniprot_id` is now listed in the `Genbanks` table, instead of listing `Genbanks.genbank_id` in the `Uniprots` table
 
 * Retrieve taxonomic classifications from UniProt
-    * Use the `--taxonomy` flag to retrieve the scientific name (genus and species) for proteins of interest
+    * Use the `--taxonomy`/`-t` flag to retrieve the scientific name (genus and species) for proteins of interest
     * Adds downloaded taxonomic information to the `UniprotsTaxs` table
 
 * Improved clarrification of deleting old records when using `cw_get_uniprot_data`
@@ -82,15 +82,10 @@ Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readt
     - New command `cw_get_db_schema` added.
     - Retrieves the SQLite schema of a local CAZyme database and prints it to the terminal
 
-* `cazy_webscraper` no longer retrieves NCBI taxonomies by default
-    - The number of proteins associated with multiple taxons in CAZy has grown exponentially
-    - Therefore, for speed `cazy_webscraper` will no longer retrieve the latest NCBI taxonomic classifications for proteins listed under multiple taxa by default
-    - By default `cazy_webscraper` will uses the first taxon listed in the CAZy database dump
-    - Use the `--ncbi_tax` flag to retrieve the latest taxonomic classifications from NCBI for proteins listed with multiple taxons in CAZy
-    - Or compile the local SQLite database and use:
-        - `cw_get_ncbi_taxs` to retrieve the latest taxonomic classiciations from NCBI for proteins matching your provided criteria
-        - `cw_get_genomics` and `cw_get_gtdb_taxs` to retrieve the genomic accessions associated with each protein interest, and then retrieve the relevant taxonomic classification for each genomic accession from the GTDB database
-        - `cw_get_uniprot_data` and the `--taxonomy`/`-t` flag to retrieve the latest taxonomic classifications from UniProt
+* Added option to skip retrieving the latest taxonomic classifications NCBI taxonomies
+    - By default, when retreiving data from CAZy, `cazy_webscraper` retrieves the latest taxonomic classifications for proteins listed under multiple tax
+    - To increase scrapping time, and to reduce burden on the NCBI-Entrez server, if this data is not needed (e.g. GTDB taxs will be use) this step can be skipped by using the new `--skip_ncbi_tax` flag.
+    - When skipping retrieval of the latest taxa classifications from NCBI, `cazy_webscraper` will add the first taxa retrieved from CAZy for those proteins listed under mutliple taxa
 
 
 ## Documentation
@@ -333,8 +328,6 @@ _If `--db_output` **and** `--database` are **not** called, `cazy_webscraper` wri
 
 __When the `--db_output` flag is used, `cazy_webscraper` will create any necessary parent directories. If the direct/immediate parent directory of the database exists, by default `cazy_webscraper` will delete the content in this parent directory._
 
-`--ncbi_tax` - Retrieve the latest taxonomic information for NCBI were multiple taxonomic classifications are retrieved from CAZy for a protein. The first taxonomy retrieved from CAZy will be added to the local CAZyme database. Default False - the first taxon listed for each protein is added to the local CAZyme database.
-
 `--ncbi_batch_size` - The number of protein IDs submitted per batch to NCBI, when retrieving taxonomic classifications. Default 200.
 
 `--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
@@ -342,6 +335,8 @@ __When the `--db_output` flag is used, `cazy_webscraper` will create any necessa
 `--nodelete_log` - When called, content in the existing log dir will **not** be deleted. Default: False (existing content is deleted).
 
 `--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
+
+`--skip-ncbi_tax` - Skip retrieving the latest taxonomic information for NCBI were multiple taxonomic classifications are retrieved from CAZy for a protein. The first taxonomy retrieved from CAZy will be added to the local CAZyme database. Default False - the first taxon listed for each protein is added to the local CAZyme database.
 
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
