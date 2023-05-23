@@ -205,6 +205,12 @@ class Genbank(Base):
     seq_update_date = Column(ReString)
     taxonomy_id = Column(Integer, ForeignKey("Taxs.taxonomy_id"))
     ncbi_tax_id = Column(Integer, ForeignKey("NcbiTaxs.ncbi_tax_id"))
+    uniprot_id = Column(Integer, ForeignKey("Uniprots.uniprot_id"))
+
+    uniprot = relationship(
+        "Uniprot",
+        back_populates="genbank",
+    )
 
     ncbi_taxs = relationship(
         "NcbiTax",
@@ -243,12 +249,6 @@ class Genbank(Base):
         back_populates="genbank",
         lazy="dynamic",
     )
-
-    uniprot = relationship(
-        "Uniprot",
-        back_populates="genbank",
-        # uselist=False,
-    )  # 1-1 relationship
 
     def __str__(self):
         return f"-Genbank accession={self.genbank_accession}-"
@@ -464,14 +464,15 @@ class Uniprot(Base):
         Index("uniprot_option", "uniprot_id", "uniprot_accession")
     )
 
-    genbank_id = Column(Integer, ForeignKey('Genbanks.genbank_id'))
     uniprot_id = Column(Integer, primary_key=True)
     uniprot_accession = Column(String)
     uniprot_name = Column(ReString)
     sequence = Column(ReString)
     seq_update_date = Column(ReString)
+    uniprot_tax_id = Column(Integer, ForeignKey("UniprotTaxs.uniprot_tax_id"))
 
     genbank = relationship("Genbank", back_populates="uniprot")
+    taxs = relationship("UniprotTax", back_populates="uniprots")
 
     def __str__(self):
         return (
@@ -484,6 +485,35 @@ class Uniprot(Base):
         return(
             f"<Uniprot, accession={self.uniprot_accession}, "
             f"name={self.uniprot_name}, id={self.uniprot_id}>"
+        )
+
+
+class UniprotTax(Base):
+    """Describes a NCBI Taxonomy lineage."""
+    __tablename__ = "UniprotTaxs"
+
+    uniprot_tax_id = Column(Integer, primary_key=True)
+    genus = Column(ReString)
+    species = Column(ReString)
+
+    __table_args__ = (
+        UniqueConstraint("genus", "species"),
+        Index("uniprot_tax_index", "uniprot_tax_id", "genus", "species"),
+    )
+
+    uniprots = relationship(
+        "Uniprot",
+        back_populates="taxs",
+        lazy="dynamic",
+    )
+
+    def __str__(self):
+        return f"-UniProt Tax,  genus={self.genus}, species={self.species}-"
+
+    def __repr__(self):
+        """Return string representation of UniProt Tax record."""
+        return(
+            f"<Class UniProtTax, genus={self.genus}, species={self.species}>"
         )
 
 

@@ -23,6 +23,30 @@ To download the entire CAZy dataset, and save the data set to the current workin
 .. NOTE::
   Typically, downloading the entire CAZy dataset takes 10-15 minutes, although this is dependent on the amount of avaible memory.
 
+To print citation information (including the citations of third party tools used by ``cazy_webscraper``):
+
+.. code-block:: bash
+  
+   cazy_webscraper --citation
+
+Or
+
+.. code-block:: bash
+  
+   cazy_webscraper -C
+
+To print version information (including the versions of third party tools used by ``cazy_webscraper``):
+
+.. code-block:: bash
+  
+   cazy_webscraper --version
+
+Or
+
+.. code-block:: bash
+  
+   cazy_webscraper -V
+
 --------------------
 Command line options
 --------------------
@@ -30,7 +54,7 @@ Command line options
 Listed below are the required and optional command-line options when using ``cazy_webscraper`` 
 to download data from CAZy.
 
-``email`` - **REQUIRED** User email address. This is required by NCBI Entrez for querying the Entrez server.
+``email`` - **REQUIRED** User email address. This is required by NCBI Entrez for querying the Entrez server. - Not needed when printing out citation or version number information.
 
 ``--cache_dir`` - Path to cache dir to be used instead of default cache dir path.
 
@@ -80,7 +104,11 @@ to download data from CAZy.
 
 ``--nodelete_log`` - When called, content in the existing log dir will **not** be deleted. Default: False (existing content is deleted).
 
+``--ncbi_batch_size`` - The number of protein IDs submitted per batch to NCBI, when retrieving taxonomic classifications. Default 200.
+
 ``--retries``, ``-r`` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
+
+``--skip_ncbi_tax`` - Skip retrieving the latest taxonomic information for NCBI were multiple taxonomic classifications are retrieved from CAZy for a protein. The first taxonomy retrieved from CAZy will be added to the local CAZyme database. Default False: will not retrieve taxon data from NCBI, will use the first taxon retrieved from the CAZy database dump.
 
 ``--sql_echo`` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 

@@ -53,7 +53,7 @@ with Path("README.md").open("r") as long_description_handle:
 
 setuptools.setup(
     name="cazy_webscraper",
-    version="2.2.8",
+    version="2.3.0",
     # Metadata
     author="Emma E. M. Hobbs",
     author_email="eemh1@st-andrews.ac.uk",
@@ -84,18 +84,20 @@ setuptools.setup(
             "cw_extract_db_seqs = cazy_webscraper.expand.extract_seqs.extract_db_seqs:main",
             "cw_get_pdb_structures = cazy_webscraper.expand.pdb.get_pdb_structures:main",
             "cw_query_database = cazy_webscraper.api.cw_query_database:main",
+            "cw_get_db_schema = cazy_webscraper.sql.get_schema:main",
         ]
     },
     install_requires=[
-        "biopython>=1.76",
-        "bioservices>=1.10.4",
+        "biopython",
+        "bioservices>=1.11.0",
         "mechanicalsoup",
-        "pandas>=1.0.3",
+        "pandas",
         "pyyaml",
         "requests",
-        "saintBioutils>=0.0.24",
+        "saintBioutils>=0.0.25",
         "sqlalchemy==1.4.20",
         "tqdm",
+        "html5lib",
     ],
     packages=setuptools.find_packages(),
     package_data={

@@ -200,6 +200,7 @@ def test_main_citation(mock_building_parser, mock_config_logger, monkeypatch):
     def mock_parser(*args, **kwargs):
         parser = Namespace(
             email="dummy@domain.com",
+            skip_ncbi_tax=False,
             cache_dir=None,
             cazy_data=None,
             cazy_synonyms=None,
@@ -244,6 +245,7 @@ def test_main_version(mock_building_parser, mock_config_logger, monkeypatch):
             email="dummy@domain.com",
             cache_dir=None,
             cazy_data=None,
+            skip_ncbi_tax=False,
             cazy_synonyms=None,
             classes=None,
             config=None,
@@ -287,6 +289,7 @@ def test_main_version_argv(mock_building_parser, mock_config_logger, monkeypatch
             cache_dir=None,
             cazy_data=None,
             cazy_synonyms=None,
+            skip_ncbi_tax=False,
             classes=None,
             config=None,
             citation=False,
@@ -329,6 +332,7 @@ def test_main_double_db(mock_building_parser, mock_config_logger, monkeypatch):
             cache_dir=None,
             cazy_data=None,
             cazy_synonyms=None,
+            skip_ncbi_tax=False,
             classes=None,
             config=None,
             citation=False,
@@ -376,6 +380,7 @@ def test_main_new_db_exists_force(db_path, mock_building_parser, mock_config_log
             classes=None,
             config=None,
             citation=False,
+            skip_ncbi_tax=False,
             db_output=Path(db_path),  ###
             database=None,
             delete_old_relationships=False,
@@ -432,6 +437,7 @@ def test_main_new_db_exists(db_path, mock_building_parser, mock_config_logger, m
             cazy_data=Path('cazy_data.json'),
             cazy_synonyms=None,
             classes=None,
+            skip_ncbi_tax=False,
             config=None,
             citation=False,
             db_output=Path(db_path),  ###
@@ -496,6 +502,7 @@ def test_main_database(
             cazy_data=None,
             cazy_synonyms=None,
             classes=None,
+            skip_ncbi_tax=False,
             config=None,
             citation=False,
             db_output=None,
@@ -578,6 +585,7 @@ def test_main_db_output(
             delete_old_relationships=False,
             force=False,
             families=None,
+            skip_ncbi_tax=False,
             genera=None,
             kingdoms=None,
             log=None,
@@ -707,6 +715,9 @@ def test_get_cazy_data_no_filters(db_path, empty_config_dict, monkeypatch):
     def mock_return_none(*args, **kwards):
         return
 
+    def mock_tax_dict(*args, **kwargs):
+        return {}, {}
+
     def mock_multiple_taxa(*args, **kwards):
         return [1,2,3,4]
 
@@ -722,7 +733,7 @@ def test_get_cazy_data_no_filters(db_path, empty_config_dict, monkeypatch):
     monkeypatch.setattr(cazy_scraper, "parse_all_cazy_data", mock_cazy_data)
     monkeypatch.setattr(cazy_scraper, "identify_multiple_taxa", mock_multiple_taxa)
     monkeypatch.setattr(cazy_scraper, "replace_multiple_tax", mock_replace_taxa)
-    monkeypatch.setattr(cazy_scraper, "build_taxa_dict", mock_return_none)
+    monkeypatch.setattr(cazy_scraper, "build_taxa_dict", mock_tax_dict)
     monkeypatch.setattr(add_cazyme_data, "add_kingdoms", mock_return_none)
     monkeypatch.setattr(add_cazyme_data, "add_source_organisms", mock_return_none)
     monkeypatch.setattr(add_cazyme_data, "add_cazy_families", mock_return_none)
@@ -739,7 +750,7 @@ def test_get_cazy_data_no_filters(db_path, empty_config_dict, monkeypatch):
         set(),
         set(),
         'connection',
-        Path('cache_dir'),
+        Path('tests/test_outputs/test_webscraper/test_logs'),
         'logger_name',
         'time_stamp',
         argsdict['args'],

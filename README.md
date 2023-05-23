@@ -12,14 +12,12 @@
 [![pyani PyPi version](https://img.shields.io/pypi/v/cazy_webscraper "PyPI version")](https://pypi.python.org/pypi/cazy_webscraper)  
 [![Downloads](https://pepy.tech/badge/cazy-webscraper)](https://pepy.tech/project/cazy-webscraper)
 
--------------------------------
-
-> `cazy_webscraper` version 1 is depracted. Please ensure you are using version 2 or newer.  
-> `bioconda` installation is fixed for >= v2.1.3.1
+--------------------------------
 
 ## cazy_webscraper
 
 `cazy_webscraper` is an application and Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. The code is distributed under the MIT license.
+The full documentation can be found at [Read the Docs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest).
 
 **`cazy_webscraper` retrieves protein data from the [CAZy database](https://www.cazy.org) and stores the data in a local SQLite3 database.** This enables users to integrate the dataset into analytical pipelines, and interrogate the data in a manner unachievable through the CAZy website.
 
@@ -32,12 +30,13 @@
 - Latest taxonomic classification - including complete lineage (including phylum, class, order and family) (version >=2.1.2)
 - Latest genomic assembly data (GenBank and RefSeq (when available) version accession and ID numbers) (version >=2.1.3)
 
-**[UniProt](https://www.uniprot.org/):**  
+**[UniProt](https://www.uniprot.org/):** 
+- UniProt ID/accession
 - Protein name
-- UniProt accession
 - EC numbers
 - PDB accessions
-- Protein sequences
+- Protein sequence (and date sequence was last updated)
+- Taxonomic classification (genus and species)
 
 **[Research Collaboratory for Structural Bioinformatics (RCSB) Protein Data Bank (PDB)](https://www.rcsb.org/):**
 - Protein structure files
@@ -57,12 +56,56 @@ Protein sequences (retrieved from GenBank and/or UniProt) from the local CAZyme 
 
 Please see the [full documentation at ReadTheDocs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest).
 
+## Updates
+
+**New in version 2.3.0**
+* Downloading protein data from UniProt is several magnitudes faster than before - and should have fewer issues with using older version of `bioservices`
+    - Uses `bioservices` mapping to map directly from NCBI protein version accession to UniProt
+    - `cw_get_uniprot_data` not longer calls to NCBI and thus no longer requires an email address as a positional argument
+* Updated database schema: Changed `Genbanks 1--* Uniprots` to `Genbanks *--1 Uniprots`. `Uniprots.uniprot_id` is now listed in the `Genbanks` table, instead of listing `Genbanks.genbank_id` in the `Uniprots` table
+
+* Retrieve taxonomic classifications from UniProt
+    * Use the `--taxonomy`/`-t` flag to retrieve the scientific name (genus and species) for proteins of interest
+    * Adds downloaded taxonomic information to the `UniprotsTaxs` table
+
+* Improved clarrification of deleting old records when using `cw_get_uniprot_data`
+    - Separate arguments to delete Genbanks-EC number and Genbanks-PDB accession relationships that are no longer listed in UniProt for those proteins in the local CAZyme database for proteins whom data is downloaded from UniProt
+    - New args:
+        - `--delete_old_ec_relationships` = deletes Genbank(protein)-EC number relationships no longer in UniProt
+        - `--delete_old_ecs` = deletes EC numbers in the local db not linked to any proteins
+        - `--delete_old_pdb_relationships` = deletes Genbank(protein)-PDB relationships no longer in UniProt
+        - `--delete_old_pdbs` = deletes PDB accessions in the local db not linked to any proteins
+
+* Retrieve the local db schema
+    - New command `cw_get_db_schema` added.
+    - Retrieves the SQLite schema of a local CAZyme database and prints it to the terminal
+
+* Added option to skip retrieving the latest taxonomic classifications NCBI taxonomies
+    - By default, when retreiving data from CAZy, `cazy_webscraper` retrieves the latest taxonomic classifications for proteins listed under multiple tax
+    - To increase scrapping time, and to reduce burden on the NCBI-Entrez server, if this data is not needed (e.g. GTDB taxs will be use) this step can be skipped by using the new `--skip_ncbi_tax` flag.
+    - When skipping retrieval of the latest taxa classifications from NCBI, `cazy_webscraper` will add the first taxa retrieved from CAZy for those proteins listed under mutliple taxa
+
+
 ## Documentation
+
+The full documentation can be found at [Read the Docs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest).
+
+### Our paper: Implementation and demonstration of use
 
 For a full description of the operation and examples of use, please see our paper in (BioRxiv)[https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1.full].
 
 > Hobbs, E. E. M., Gloster, T. M., and Pritchard, L. (2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets', _bioRxiv_, [https://doi.org/10.1101/2022.12.02.518825](https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1.full)
 
+### Database structure
+
+You can view the database schema [here](#database-schema) and find a PDF of the database schema [here](https://hobnobmancer.github.io/cazy_webscraper/database_schema.pdf).
+
+## Contributions
+
+We welcome contributions and suggestions. You can raise issues at this repository, or fork the repository and submit pull requests, at the links below:
+
+- [Issues](https://github.com/HobnobMancer/cazy_webscraper/issues)
+- [Pull Requests](https://github.com/HobnobMancer/cazy_webscraper/pulls)
 
 ## Table of Contents
 <!-- TOC -->
@@ -95,6 +138,7 @@ For a full description of the operation and examples of use, please see our pape
 - [CAZy coverage of GenBank](#cazy-coverage-of-genbank)
     - [Configure calculating CAZy coverage of GenBank](#configure-calculating-cazy-coverage-of-genbank)
 - [Integrating a local CAZyme database](#integrating-a-local-cazyme-database)
+- [Database schema](#database-schema)
 - [Contributions](#contributions)
 - [License and copyright](#license-and-copyright)
 <!-- /TOC -->
@@ -103,8 +147,7 @@ For a full description of the operation and examples of use, please see our pape
 ## Features in the pipeline:
 - Retrieve and stored PubMed IDs in the local CAZyme database
 - Fix any remaining bugs we can find (if you find a bug, please report it and provide as detailed bug report as possible!)
-- Update the unit tests to work with the new `cazy_webscraper` architecture
-- Update the documentation
+- Increase unit test coverage
 - Automate analysing the taxonomic distribution across CAZy and datasets of interest, including generating a final report
 
 ## Citation
@@ -171,13 +214,21 @@ cazy_webscraper <user_email>
 To retrieve the version, use the following command:
 
 ```bash
-cazy_webscraper <user_email> -V
+cazy_webscraper -V
+```
+or
+```bash
+cazy_webscraper --version
 ```
 
 To retrieve the citation to use:
 
 ```bash
-cazy_webscraper <user_email> -C
+cazy_webscraper -C
+```
+or
+```bash
+cazy_webscraper --citation
 ```
 
 ### Command summary
@@ -217,11 +268,27 @@ To protein structure files from PDB use the `cw_get_pdb_structures` command.
 
 To interrogate the database, use the `cw_query_database` command.
 
+### Local CAZyme database schema
+
+The schema of a local CAZyme database can be retrieved using `cazy_webscraper`:
+
+```bash
+cw_get_db_schema <path to local CAZyme database>
+```
+
+Alternatively, `sqlite3` can be used to retrieve the schema:
+```bash
+sqlite3 <path to local CAZyme database> .schema
+```
+
+A visual representation of the db schema when using `cazy_webscraper` version >= 2.3.0 can be found [here](https://hobnobmancer.github.io/cazy_webscraper/database_schema.pdf).
+
 ## Creating a local CAZyme database
 Command line options for `cazy_webscraper`, which is used to scrape CAZy and compile a local SQLite database. 
 Options are written in alphabetical order.
 
 `email` - \[REQUIRED\] User email address. This is required by NCBI Entrez for querying the Entrez server.
+**Email address is not required when printing out the citation and version number information**
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
@@ -259,11 +326,15 @@ _If `--db_output` **and** `--database` are **not** called, `cazy_webscraper` wri
 
 __When the `--db_output` flag is used, `cazy_webscraper` will create any necessary parent directories. If the direct/immediate parent directory of the database exists, by default `cazy_webscraper` will delete the content in this parent directory._
 
+`--ncbi_batch_size` - The number of protein IDs submitted per batch to NCBI, when retrieving taxonomic classifications. Default 200.
+
 `--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
 
 `--nodelete_log` - When called, content in the existing log dir will **not** be deleted. Default: False (existing content is deleted).
 
 `--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
+
+`--skip-ncbi_tax` - Skip retrieving the latest taxonomic information for NCBI were multiple taxonomic classifications are retrieved from CAZy for a protein. The first taxonomy retrieved from CAZy will be added to the local CAZyme database. Default False - the first taxon listed for each protein is added to the local CAZyme database.
 
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
@@ -318,7 +389,7 @@ Data can be retrieived for all proteins in the local CAZyme database, or a speci
 
 To retrieve all UniProt data for all proteins in a local CAZyme datbase, using the following command:
 ```bash
-cw_get_uniprot_data <path_to_local_CAZyme_db> <user_email> --ec --pdb --sequence
+cw_get_uniprot_data <path_to_local_CAZyme_db> --ec --pdb --sequence
 ```
 
 ### Configuring UniProt data retrieval
@@ -327,11 +398,7 @@ Below are listed the command-line flags for configuring the retrieval of UniProt
 
 `database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
 
-`email` - \[REQUIRED\] User email address. This is required by NCBI Entrez for querying the Entrez server.
-
-`--ncbi_batch_size` - Size of batch query posted to NCBI Entrez. Default 150.
-
-`--uniprot_batch_size` - Change the query batch size submitted via [`bioservices`](https://bioservices.readthedocs.io/en/master/) to UniProt to retrieve protein data. Default is 150. `bioservices` recommands queries not larger than 200 objects.
+`--bioservices_batch_size` - Change the query batch size submitted via [`bioservices`](https://bioservices.readthedocs.io/en/master/) to UniProt to retrieve protein data. Default is 1000. See the [UniProt REST API documentation](https://www.uniprot.org/help/id_mapping) for batch size limits.
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
@@ -340,10 +407,6 @@ Below are listed the command-line flags for configuring the retrieval of UniProt
 `--classes` - List of classes to retrieve UniProt data for.
 
 `--config`, `-c` - Path to a configuration YAML file. Default: None.
-
-`--delete_old_ec` - Boolean, delete EC number - Protein relationships that are no longer listed in UniProt, i.e. an EC number annotation is no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
-
-`--delete_old_pdbs` - Boolean, delete PDB accessions - Protein relationships that are no longer listed in UniProt, i.e. an PDB accessions that are no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
 
 `--ec`, `-e` - Enable retrieval of EC number annotations from UniProt
 
@@ -374,13 +437,19 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--retries`, `-r` - Define the number of times to retry making a connection to CAZy if the connection should fail. Default: 10.
 
+`--delete_old_ec_relationships` - Boolean, delete old Genbanks-EC number relationships - For those proteins in the local db for whom data is downloaded from UniProt, compare the current links between the proteins in the Genbanks table and EC numbers in the Ecs table. Delete Genbanks-Ecs relationships that are not longer listed in the respective protein records in UniProt.
+
+`--delete_old_ecs` - Boolean, delete EC number - Delete EC numbers that are not linked to any proteins listed in the Genbanks table. These can arise from multiple retrievals of data from the UniProt data over a period of time during UniProt records have been updated.
+
+`--delete_old_pdb_relationships` - Boolean, delete old Genbanks-PDB relationships - For those proteins in the local db for whom data is downloaded from UniProt, compare the current links between the proteins in the Genbanks table and PDB accessions in the Pdbs table. Delete Genbanks-Pdbs relationships that are not longer listed in the respective protein records in UniProt.
+
+`--delete_old_pdbs` - Boolean, delete PDB accessions - Protein relationships that are no longer listed in UniProt, i.e. an PDB accessions that are no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
+
 `--use_uniprot_cache` - Path to a JSON file, keyed by UniProt accessions/IDs and valued by dicts containing `{'gbk_acc': str, 'db_id': int}`. This file part of the cache created by `cw_get_uniprot_data`. This is option to skip retrieving the UniProt IDs for a set of GenBank accessions, if retrieving data for the same dataset (this save a lot of time!)
 
 `skip_download` - Bool, default False. If set to True, only uses data from UniProt cache and will not download new data from UniProt.
 
 `--sequence`, `-s` - Retrieve protein amino acid sequences from UniProt
-
-`--seq_update` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
 `--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
 
@@ -388,13 +457,31 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--strains` - List of specific species strains to restrict the scraping of CAZymes to.
 
-`--timeout`, `-t` - Connection timout limit (seconds). Default: 45.
+`--taxonomy`, `-t` - Retrieve taxonomic classifications (genus species) and add to the local CAZyme database
+
+`--timeout` - Connection timout limit (seconds). Default: 45.
+
+`--update_name` - If a newer version of the protein name is available, overwrite the existing name for the protein in the database. Default is false, the protein name is **not** overwritten and updated.
+
+`--update_seq` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
 
 `--use_uniprot_cache` - Path to JSON file containing data previosuly retrieved from UniProt by `cazy_webscraper`, use if an error occurred while adding the data to the local CAZyme database. This will skip the retrieval of data from UniProt, and the cached data will be added to the local CAZyme database. This can also be shared with others to add the same data to their local CAZyme database.
 
 `--uniprot_batch_size` - Size of an individual batch query submitted to the [UniProt REST API](https://www.uniprot.org/help/programmatic_access) to retrieve the UniProt accessions of proteins identified by the GenBank accession. Default is 150. The UniProt API documentation recommands batch sizes of less than 20,000 but batch sizes of 1,000 often result in HTTP 400 errors. It is recommend to keep batch sizes less than 1,000, and ideally less than 200.
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
+
+**UniProt batch sizes:**
+Note that according to Uniprot (June 2022), there are various limits on ID Mapping Job Submission:
+
+========= =====================================================================================
+Limit	  Details
+========= =====================================================================================
+100,000	  Total number of ids allowed in comma separated param ids in /idmapping/run api
+500,000	  Total number of "mapped to" ids allowed
+100,000	  Total number of "mapped to" ids allowed to be enriched by UniProt data
+10,000	  Total number of "mapped to" ids allowed with filtering
+========= =====================================================================================
 
 ### UniProt data retrieval cache
 
@@ -1001,7 +1088,7 @@ When listing EC numbers, the 'EC' prefix can be included or excluded. For exampl
 
 `cazy_webscraper` performs a direct EC number comparison. Therefore, supplying `cazy_webscraper` with the EC number EC1.2.3.- will only retrieve protein specifically annotated with EC1.2.3.-. `cazy_webscraper` will **not** retrieve proteins will all completed EC numbers under EC1.2.3.-, thus, `cazy_webscraper` will **not** retrieve data for proteins annotated with EC1.2.3.1, EC1.2.3.2, EC1.2.3.3, etc.
 
-Example configuration files, and an empty configuraiton file template are located in the [`config_files`]() directory of this repo.
+Example configuration files, and an empty configuraiton file template are located in the `configuration_files/` directory of this repo.
 
 
 ## Integrating a local CAZyme database
@@ -1021,6 +1108,12 @@ Import the function into the `Python` script using:
 ```python
 from cazy_webscraper.sql.sql_orm import get_db_connection
 ```
+
+## Database Schema
+
+This is the structure of the local SQLite3 database compiled by `cazy_webscraper` version >=2.3.0:
+
+![database schema](assets/cazy_webscraper_v2.3+.svg "database schema")
 
 
 ## Contributions

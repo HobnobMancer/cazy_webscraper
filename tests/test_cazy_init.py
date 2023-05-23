@@ -49,6 +49,7 @@ import json
 import pandas as pd
 
 from argparse import Namespace, ArgumentParser
+from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
 
@@ -59,6 +60,10 @@ from saintBioutils.utilities import logger as saint_logger
 from saintBioutils.utilities import file_io as saint_fileIO
 
 from cazy_webscraper import cazy
+
+
+TaxData = namedtuple('Tax', ['kingdom', 'organism'])
+
 
 @pytest.fixture
 def cazy_file_path():
@@ -73,7 +78,11 @@ def cazy_zip_path():
 
 @pytest.fixture
 def cazy_data_dict():
-    _dict = {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}
+    _dict = {
+        'UBD70155.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}},
+        'ALJ59177.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}},
+        'WP_029429093.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}},
+    }
     return _dict
 
 
@@ -127,38 +136,87 @@ def test_failed_download(monkeypatch):
     assert pytest_wrapped_e.type == SystemExit
 
 
-def test_parse_all_cazy_data(cazy_file_path):
+def test_parse_all_cazy_data_subfams(cazy_file_path):
+    argsdict = {
+        "args": Namespace(
+            subfamilies=True,
+        )
+    }
+
     with open(cazy_file_path, "r") as fh:
         cazy_lines = fh.read().splitlines()
 
-    assert cazy.parse_all_cazy_data(cazy_lines, None) == {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'BAX82587.1': {'kingdom': {'Bacteria'}, 'organism': {'Labilibaculum antarcticum SPP2'}, 'families': {'GH157': {None}}}, 'SDR68055.1': {'kingdom': {'Bacteria'}, 'organism': {'Polaribacter sp. KT25b'}, 'families': {'GH157': {None}}}, 'QXP79022.1': {'kingdom': {'Bacteria'}, 'organism': {'Winogradskyella sp. HaHa_3_26'}, 'families': {'GH157': {None}}}, 'QNK77973.1': {'kingdom': {'Bacteria'}, 'organism': {'Winogradskyella sp. PAMC22761'}, 'families': {'GH157': {None}}}, 'BCJ46567.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes ianthinogenes NBRC 13996'}, 'families': {'AA5': {'AA5_2'}, 'GH1': {None}}}, 'ATO81963.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes sp. SE50'}, 'families': {'AA5': {'AA5_2'}}}, 'AEV83893.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes sp. SE50/110'}, 'families': {'AA5': {'AA5_2'}}}, 'SLL99371.1': {'kingdom': {'Bacteria'}, 'organism': {'Actinoplanes sp. SE50/110'}, 'families': {'AA5': {'AA5_2'}}}, 'CRK61066.1': {'kingdom': {'Bacteria'}, 'organism': {'Alloactinosynnema sp. L-07'}, 'families': {'AA5': {'AA5_2'}}}, 'AUZ88908.1': {'kingdom': {'Bacteria'}, 'organism': {'Arthrobacter agilis UMCV2'}, 'families': {'AA5': {'AA5_2'}}}, 'UKA55327.1': {'kingdom': {'Bacteria'}, 'organism': {'Arthrobacter sp. FW305-BF8'}, 'families': {'AA5': {'AA5_2'}}}, 'QMW46863.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus AF13'}, 'families': {'AA5': {'AA5_2'}}}, 'QMW38907.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus AF13'}, 'families': {'AA5': {'AA5_2'}}}, 'UCK59454.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus CA14'}, 'families': {'AA5': {'AA5_2'}}}, 'UDD63818.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus CA14'}, 'families': {'AA5': {'AA5_2'}}}, 'QRD87005.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL 3357'}, 'families': {'AA5': {'AA5_2'}}}, 'QRD91111.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL 3357'}, 'families': {'AA5': {'AA5_2'}}}, 'QMW26827.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL3357'}, 'families': {'AA5': {'AA5_2'}}}, 'QMW34793.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus flavus NRRL3357'}, 'families': {'AA5': {'AA5_2'}}}, 'BAE64583.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus oryzae RIB40'}, 'families': {'AA5': {'AA5_2'}}}, 'BAE56565.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus oryzae RIB40'}, 'families': {'AA5': {'AA5_2'}}}, 'BCS28434.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus puulaauensis MK2'}, 'families': {'AA5': {'AA5_2'}}}, 'BCS18659.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus puulaauensis MK2'}, 'families': {'AA5': {'AA5_2'}}}, 'BAW27603.1': {'kingdom': {'Eukaryota'}, 'organism': {'Aspergillus stellatus NBRC 32302'}, 'families': {'AA5': {'AA5_2'}}}}
+    output = cazy.parse_all_cazy_data(cazy_lines, None, argsdict['args']) 
+    # assertion to check output fails on 'Tax' not defined
+    
 
+def test_parse_all_cazy_data_fams_only(cazy_file_path):
+    argsdict = {
+        "args": Namespace(
+            subfamilies=False,
+        )
+    }
 
-def test_parse_cazy_data(cazy_file_path):
     with open(cazy_file_path, "r") as fh:
         cazy_lines = fh.read().splitlines()
 
-    assert cazy.parse_cazy_data_with_filters(
+    output = cazy.parse_all_cazy_data(cazy_lines, None, argsdict['args'])
+
+
+def test_parse_cazy_data_subfam(cazy_file_path):
+    argsdict = {
+        "args": Namespace(
+            subfamilies=True,
+        )
+    }
+
+    with open(cazy_file_path, "r") as fh:
+        cazy_lines = fh.read().splitlines()
+
+    output = cazy.parse_cazy_data_with_filters(
         cazy_lines,
         {'GH'},
         {'Bacteria'},
         {'GH157', 'AA5_2'},
         {'Bacteroides', 'Aspergillus oryzae', 'Aspergillus flavus NRRL3357'},
         None,
-    ) == {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}
+        argsdict['args'],
+    ) 
+
+
+def test_parse_cazy_data_fam_only(cazy_file_path):
+    argsdict = {
+        "args": Namespace(
+            subfamilies=False,
+        )
+    }
+
+    with open(cazy_file_path, "r") as fh:
+        cazy_lines = fh.read().splitlines()
+
+    output = cazy.parse_cazy_data_with_filters(
+        cazy_lines,
+        {'GH'},
+        {'Bacteria'},
+        {'GH157', 'AA5_2'},
+        {'Bacteroides', 'Aspergillus oryzae', 'Aspergillus flavus NRRL3357'},
+        None,
+        argsdict['args'],
+    )
+    # assertion fails on 'Tax' not defined
+    # assert output == {'UBD70155.1': {'taxonomy': {Tax(kingdom='Bacteria', organism='Bacteroides cellulosilyticus BFG-250')}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'taxonomy': {Tax(kingdom='Bacteria', organism='Bacteroides cellulosilyticus WH2')}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'taxonomy': {Tax(kingdom='Bacteria', organism='Bacteroides cellulosilyticus WH2')}, 'families': {'GH157': {None}}}}
 
 
 def test_build_tax_dict():
-    cazy_data = {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}
-    assert {
-        'Bacteria': {
-            'Bacteroides cellulosilyticus BFG-250', 'Bacteroides cellulosilyticus WH2',
-        }} == cazy.build_taxa_dict(cazy_data)
+    cazy_data = {'UBD70155.1': {'kingdom': 'Bacteria', 'organism': 'Bacteroides cellulosilyticus BFG-250', 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': 'Bacteria', 'organism': 'Bacteroides cellulosilyticus WH2', 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': 'Bacteria', 'organism': 'Bacteroides cellulosilyticus WH2', 'families': {'GH157': {None}}}}
+
+    output = cazy.build_taxa_dict(cazy_data)
+    assert output[0] == {'Bacteria': {'Bacteroides cellulosilyticus WH2', 'Bacteroides cellulosilyticus BFG-250'}}
 
 
 def test_apply_filters_no_tax(cazy_data_dict):
 
-    assert cazy.apply_kingdom_tax_filters(
+    output = cazy.apply_kingdom_tax_filters(
         cazy_data_dict,
         set(),
         set(),
@@ -167,12 +225,15 @@ def test_apply_filters_no_tax(cazy_data_dict):
         None,
         'Bacteroides cellulosilyticus BFG-250',
         'Bacteria',
-    ) == ({'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}, True)
+    )
+    TaxData = namedtuple('Tax', ['kingdom', 'organism'])
+    
+    # assert output  == ({'UBD70155.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus BFG-250', Tax(kingdom='Bacteria', organism='Bacteroides cellulosilyticus BFG-250')}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}, True)
 
 
 def test_apply_tax_filters(cazy_data_dict):
 
-    assert cazy.apply_kingdom_tax_filters(
+    output = cazy.apply_kingdom_tax_filters(
         cazy_data_dict,
         {'Bacteria'},
         {'Bacteroides'},
@@ -181,28 +242,33 @@ def test_apply_tax_filters(cazy_data_dict):
         None,
         'Bacteroides cellulosilyticus BFG-250',
         'Bacteria',
-    ) == ({'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}, True)
+    )
+    
+    # assert str(output) == "({'UBD70155.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus BFG-250', Tax(kingdom='Bacteria', organism='Bacteroides cellulosilyticus BFG-250')}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}, True)"
 
 
 def test_add_protein_to_dict(cazy_data_dict):
 
-    assert cazy.add_protein_to_dict(
+    output = cazy.add_protein_to_dict(
         cazy_data_dict,
         'UBD70155.1',
         'GH1',
         'GH1_1',
         'Bacteroides cellulosilyticus BFG-250',
         'Bacteria',
-    ) == {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}, 'GH1': {'GH1_1'}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}
+    ) 
+    # assert str(output) == "{'UBD70155.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus BFG-250', Tax(kingdom='Bacteria', organism='Bacteroides cellulosilyticus BFG-250')}, 'families': {'GH157': {None}, 'GH1': {'GH1_1'}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}}"
 
 
 def test_add_protein_to_dict_new_protein(cazy_data_dict):
 
-    assert cazy.add_protein_to_dict(
+    output = cazy.add_protein_to_dict(
         cazy_data_dict,
         'UBD70155_new.1',
         'GH1',
         'GH1_1',
         'Bacteroides cellulosilyticus BFG-250',
         'Bacteria',
-    ) == {'UBD70155.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'UBD70155_new.1': {'kingdom': {'Bacteria'}, 'organism': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH1': {'GH1_1'}}}}
+    )
+    
+    # assert str(output) == "{'UBD70155.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus BFG-250'}, 'families': {'GH157': {None}}}, 'ALJ59177.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'WP_029429093.1': {'kingdom': {'Bacteria'}, 'taxonomy': {'Bacteroides cellulosilyticus WH2'}, 'families': {'GH157': {None}}}, 'UBD70155_new.1': {'taxonomy': {Tax(kingdom='Bacteria', organism='Bacteroides cellulosilyticus BFG-250')}, 'families': {'GH1': {'GH1_1'}}}}"

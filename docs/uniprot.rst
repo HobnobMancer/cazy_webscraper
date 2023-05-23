@@ -14,7 +14,7 @@ the local CAZyme database, use the following command structure:
 
 .. code-block:: bash
     
-   cw_get_uniprot_data <path to local CAZyme db> <user email>
+   cw_get_uniprot_data <path to local CAZyme db>
 
 .. NOTE::
    The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
@@ -30,12 +30,12 @@ the local CAZyme database, use the following command structure:
 
 .. code-block:: bash
     
-   cw_get_uniprot_data <path to local CAZyme db> <user email> --ec --pdb --sequence
+   cw_get_uniprot_data <path to local CAZyme db> --ec --pdb --sequence
 
 For example:
 
 .. code-block:: bash
-    cw_get_uniprot_data cazy/cazyme.db myemail@domain.com --ec --pdb --sequence
+    cw_get_uniprot_data cazy/cazyme.db --ec --pdb --sequence
 
 
 --------------------
@@ -46,13 +46,6 @@ Below are listed the required and optional command-line options for configuring 
 
 ``database`` - **REQUIRED** Path to a local CAZyme database to add UniProt data to.
 
-``email`` - **REQUIRED** User email address, required by NCBI Entrez.
-
-``--ncbi_batch_size`` - Size of batch query posted to NCBI Entrez. Default 150.
-
-``uniprot_batch_size`` - Change the size of the batch query size submitted via `bioservices <https://bioservices.readthedocs.io/en/master/>`_ to UniProt
-to retrieve protein data. Default 150. ``bioservices`` recommends submitting queries no larger than 200 objects.
-
 ``--cache_dir`` - Path to cache dir to be used instead of default cache dir path.
 
 ``--cazy_synonyms`` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
@@ -60,10 +53,6 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting que
 ``--config``, ``-c`` - Path to a configuration YAML file. Default: None.
 
 ``--classes`` - list of classes to retrieve UniProt data for.
-
-``--delete_old_ec`` - Boolean, delete EC number - Protein relationships that are no longer listed in UniProt, i.e. an EC number annotation is no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
-
-``--delete_old_pdbs`` - Boolean, delete PDB accessions - Protein relationships that are no longer listed in UniProt, i.e. an PDB accessions that are no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
 
 ``--ec``, ``-e`` - Enable retrieval of EC number annotations from UniProt. Default, EC number annotations are **not** retrieved.
 
@@ -93,7 +82,17 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting que
 
 ``--sequence``, ``-s`` - Enable retrieving protein amino acid sequences. Default, sequences are **not** retrieved.
 
-``--seq_update`` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
+``--update_name`` - If a newer version of the protein name is available, overwrite the existing name for the protein in the database. Default is false, the protein name is **not** overwritten and updated.
+
+``--update_seq`` - If a newer version of the protein sequence is available, overwrite the existing sequence for the protein in the database. Default is false, the protein sequence is **not** overwritten and updated.
+
+``--delete_old_ec_relationships`` - Boolean, delete old Genbanks-EC number relationships - For those proteins in the local db for whom data is downloaded from UniProt, compare the current links between the proteins in the Genbanks table and EC numbers in the Ecs table. Delete Genbanks-Ecs relationships that are not longer listed in the respective protein records in UniProt.
+
+``--delete_old_ecs`` - Boolean, delete EC number - Delete EC numbers that are not linked to any proteins listed in the Genbanks table. These can arise from multiple retrievals of data from the UniProt data over a period of time during UniProt records have been updated.
+
+``--delete_old_pdb_relationships`` - Boolean, delete old Genbanks-PDB relationships - For those proteins in the local db for whom data is downloaded from UniProt, compare the current links between the proteins in the Genbanks table and PDB accessions in the Pdbs table. Delete Genbanks-Pdbs relationships that are not longer listed in the respective protein records in UniProt.
+
+``--delete_old_pdbs`` - Boolean, delete PDB accessions - Protein relationships that are no longer listed in UniProt, i.e. an PDB accessions that are no longer included in UniProt but is in the local database. If set to TRUE these relationships will be DELETED from the database.
 
 ``--use_uniprot_cache`` - Path to a JSON file, keyed by UniProt accessions/IDs and valued by dicts containing `{'gbk_acc': str, 'db_id': int}`. This file part of the cache created by `cw_get_uniprot_data`. This is option to skip retrieving the UniProt IDs for a set of GenBank accessions, if retrieving data for the same dataset (this save a lot of time!)
 
@@ -105,13 +104,30 @@ to retrieve protein data. Default 150. ``bioservices`` recommends submitting que
 
 ``--strains`` - List of species strains to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given strains.
 
-``--timeout``, ``-t`` - Connection timout limit (seconds). Default: 45.
+``--taxonomy``, ``-t`` - Retrieve taxonomic classifications (genus species) and add to the local CAZyme db.
+
+``--timeout`` - Connection timout limit (seconds). Default: 45.
 
 ``--use_uniprot_cache`` - Path to JSON file containing data previosuly retrieved from UniProt by ``cazy_webscraper``, use if an error occurred while adding the data to the local CAZyme database. This will skip the retrieval of data from UniProt, and the cached data will be added to the local CAZyme database. This can also be shared with others to add the same data to their local CAZyme database.
 
-``--uniprot_batch_size`` - Size of an individual batch query submitted to the `UniProt REST API <https://www.uniprot.org/help/programmatic_access>_` to retrieve the UniProt accessions of proteins identified by the GenBank accession. Default is 150. The UniProt API documentation recommands batch sizes of less than 20,000 but batch sizes of 1,000 often result in HTTP 400 errors. It is recommend to keep batch sizes less than 1,000, and ideally less than 200.
+``--bioservices_batch_size`` - Size of an individual batch query submitted to the `UniProt REST API <https://www.uniprot.org/help/programmatic_access>_` to retrieve protein data from UniProt. Default is 1000. 
 
 ``--verbose``, ``-v`` - Enable verbose logging. This does **not** set the SQLite engine ``echo`` parameter to True. Default: False.
+
+-----------
+Batch sizes
+-----------
+
+Note that according to Uniprot (June 2022), there are various limits on ID Mapping Job Submission:
+
+========= =====================================================================================
+Limit	  Details
+========= =====================================================================================
+100,000	  Total number of ids allowed in comma separated param ids in /idmapping/run api
+500,000	  Total number of "mapped to" ids allowed
+100,000	  Total number of "mapped to" ids allowed to be enriched by UniProt data
+10,000	  Total number of "mapped to" ids allowed with filtering
+========= =====================================================================================
 
 -----------
 Basic Usage

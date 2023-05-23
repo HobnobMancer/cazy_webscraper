@@ -44,6 +44,8 @@ import logging
 import re
 import sys
 
+from collections import namedtuple
+
 from tqdm import tqdm
 from zipfile import ZipFile
 
@@ -53,11 +55,9 @@ from cazy_webscraper.crawler import get_cazy_file
 
 def get_cazy_txt_file_data(cache_dir, time_stamp, args):
     """Retrieve txt file of CAZy db dump from CAZy or the local disk.
-
     :param cache_dir: Path(), path to directory where cache is written to
     :param time_stamp: str, date and time cazy_webscraper was intiated
     :param args: cmd-line args parser
-
     Return list of lines from CAZy txt file, one line is one item in the list"""
     logger = logging.getLogger(__name__)
 
@@ -100,7 +100,7 @@ def get_cazy_txt_file_data(cache_dir, time_stamp, args):
     return cazy_txt_lines
 
 
-def parse_all_cazy_data(lines, cazy_fam_populations):
+def parse_all_cazy_data(lines, cazy_fam_populations, args):
     """Extract ALL GenBank accession, taxonomy data and CAZy (sub)family annotations from CAZy txt file.
     
     This is when no filters are applied.
@@ -108,6 +108,7 @@ def parse_all_cazy_data(lines, cazy_fam_populations):
     :param lines: list of str, lines from CAZy txt file, one unqiue line is one item in the list
     :param cazy_fam_populations: None if args.validate is False, or dict of CAZy listed CAZy 
         (sub)fam population sizes if args.validate is True
+    :param args: CLI args parser
     
     Return cazy_data: dict, {gbk: {"organism": set(str), "families": {'fam': set (subfam)}}}
     """
@@ -134,10 +135,13 @@ def parse_all_cazy_data(lines, cazy_fam_populations):
 
         # retrieve CAZyme data
         cazy_fam = line_data[0]
-        if cazy_fam.find("_") != -1:
-            cazy_subfam = cazy_fam
-            cazy_fam = cazy_fam[:cazy_fam.find("_")]
-        else:
+        if cazy_fam.find("_") != -1: # is subfamily annotation present
+            if args.subfamilies:  # retrieve subfamily annotation if present
+                cazy_subfam = cazy_fam
+                cazy_fam = cazy_fam[:cazy_fam.find("_")]
+            else:  # no retrieving subfam annotations
+                cazy_subfam = None
+        else: # no sub fam annotation present
             cazy_subfam = None
         
         fam_annotations.add( (cazy_fam, cazy_subfam) )
@@ -174,6 +178,7 @@ def parse_cazy_data_with_filters(
     kingdom_filter,
     tax_filter,
     cazy_fam_populations,
+    args,
 ):
     """Extract GenBank accession, taxonomy data and CAZy (sub)family annotations from CAZy txt file.
     
@@ -184,6 +189,7 @@ def parse_cazy_data_with_filters(
     :param tax_filter: set of tax (genus, species, strains) filters to limit scrape to
     :param cazy_fam_populations: None if args.validate is False, or dict of CAZy listed CAZy 
         (sub)fam population sizes if args.validate is True
+    :param args: CLI args parser
     
     Return cazy_data: dict, {gbk: {"organism": set(str), "families": {'fam': set (subfam)}}}
     """
@@ -216,10 +222,13 @@ def parse_cazy_data_with_filters(
 
         # retrieve CAZyme data
         cazy_fam = line_data[0]
-        if cazy_fam.find("_") != -1:
-            cazy_subfam = cazy_fam
-            cazy_fam = cazy_fam[:cazy_fam.find("_")]
-        else:
+        if cazy_fam.find("_") != -1: # is subfamily annotation present
+            if args.subfamilies:  # retrieve subfamily annotation if present
+                cazy_subfam = cazy_fam
+                cazy_fam = cazy_fam[:cazy_fam.find("_")]
+            else:  # no retrieving subfam annotations
+                cazy_subfam = None
+        else: # no sub fam annotation present
             cazy_subfam = None
             
         # check if protein previously matched filter criteria, and additional CAZy (sub)fam annotations
@@ -334,7 +343,6 @@ def apply_kingdom_tax_filters(
     :param cazy_fam: str, CAZy family annotation
     :param cazy_subfam: str, CAZy subfamily annotation, or None if protein is not a CAZy subfamily
     :param kingdom: str, taxonomy kingdom of the source organism of the protein
-
     Return
     - cazy_data ({gbk_acc: {kingdom: str, organism: str, families: {(fam, subfam, )}}})
     - boolean if data for the given protein was (True) or was not (False) added to the db
@@ -388,22 +396,25 @@ def add_protein_to_dict(cazy_data, gbk_accession, cazy_fam, cazy_subfam, organis
 
     Return dict of CAZy data
     """
+    TaxData = namedtuple('Tax', ['kingdom', 'organism'])
+    tax = TaxData(kingdom, organism)
+
     try:
         cazy_data[gbk_accession]
-        cazy_data[gbk_accession]["kingdom"].add(kingdom)
-        cazy_data[gbk_accession]["organism"].add(organism)
-        
+
+        cazy_data[gbk_accession]['taxonomy'].add(tax)
+
         try:
             cazy_data[gbk_accession]["families"][cazy_fam].add(cazy_subfam)
         except KeyError:
             cazy_data[gbk_accession]["families"][cazy_fam] = {cazy_subfam}
-        
+
     except KeyError:
         cazy_data[gbk_accession] = {
-            "kingdom": {kingdom},
-            "organism": {organism},
+            "taxonomy": {tax},
             "families": {cazy_fam: {cazy_subfam}},
         }
+        return cazy_data
     
     return cazy_data
 
@@ -502,15 +513,36 @@ def build_taxa_dict(cazy_data):
     
     Return taxa_dict, dict of taxonomy data {kingdom: set(organism)}
     """
+    logger = logging.getLogger(__name__)
+
+    cazy_data = add_tax_keys(cazy_data)
+
     taxa_dict = {}  # {kingdom: {organism,}}
     
     for genbank_accession in tqdm(cazy_data, "Compiling taxa data"):
-        kingdom = list(cazy_data[genbank_accession]['kingdom'])[0]
-        organism = list(cazy_data[genbank_accession]['organism'])[0]
+        kingdom = cazy_data[genbank_accession]['kingdom']
+        organism = cazy_data[genbank_accession]['organism']
         
         try:
             taxa_dict[kingdom].add(organism)
         except KeyError:
             taxa_dict[kingdom] = {organism}
+
+    return taxa_dict, cazy_data
+
+
+def add_tax_keys(cazy_data):
+    """Add kingdom and organism tax keys to proteins missing them in cazy_data
+
+    :param cazy_data: dict of data from CAZy
+
+    Return cazy_data
+    """
+    for gbk_acc in cazy_data:
+        try:
+            cazy_data[gbk_acc]['kingdom']
+        except KeyError:
+            cazy_data[gbk_acc]['kingdom'] = list(cazy_data[gbk_acc]['taxonomy'])[0].kingdom
+            cazy_data[gbk_acc]['organism'] = list(cazy_data[gbk_acc]['taxonomy'])[0].organism
     
-    return taxa_dict
+    return cazy_data

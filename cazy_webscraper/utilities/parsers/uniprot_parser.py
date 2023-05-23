@@ -62,19 +62,12 @@ def build_parser(argv: Optional[List] = None):
         help="Path to local CAZyme database"
     )
 
-    parser.add_argument(
-        "email",
-        type=str,
-        metavar="user email address",
-        help="User email address, requirement of NCBI-Entrez",
-    )
-
     # Add optional arguments to parser
     parser.add_argument(
         "--bioservices_batch_size",
         type=int,
-        default=150,
-        help="Batch size for queries parsed by bioservices to UniProt to retrieve protein data"
+        default=1000,
+        help="Batch size for queries parsed by bioservices to the UniProt REST API to retrieve protein data"
     )
 
     parser.add_argument(
@@ -108,25 +101,6 @@ def build_parser(argv: Optional[List] = None):
         metavar="config file",
         default=None,
         help="Path to configuration file. Default: None, scrapes entire database",
-    )
-
-    parser.add_argument(
-        "--delete_old_ec",
-        dest="delete_old_ec",
-        action="store_true",
-        default=False,
-        help=(
-            "Delete EC number-GenBank relationships/annotations\n"
-            "that are not longer listed in UniProt for a given protein"
-        ),
-    )
-
-    parser.add_argument(
-        "--delete_old_pdbs",
-        dest="delete_old_pdbs",
-        action="store_true",
-        default=False,
-        help="Delete PDB accessions that are not longer listed in UniProt for a given protein",
     )
 
     parser.add_argument(
@@ -169,7 +143,6 @@ def build_parser(argv: Optional[List] = None):
         default=None,
         help="Path to a text file containing a list of GenBank accessions to retrieve data for",
     )
-
 
     # Add option to restrict scrape to specific genera
     parser.add_argument(
@@ -248,18 +221,6 @@ def build_parser(argv: Optional[List] = None):
     )
 
     parser.add_argument(
-        "--seq_update",
-        dest="seq_update",
-        action="store_true",
-        default=False,
-        help=(
-            "Retrieve protein Aa sequences from UniProt for records and overwrite the existing\n"
-            "sequence in the local CAZyme database if a newer sequence is retireved from UniProt"
-        ),
-    )
-
-
-    parser.add_argument(
         "--skip_download",
         dest="skip_download",
         action="store_true",
@@ -296,13 +257,83 @@ def build_parser(argv: Optional[List] = None):
         ),
     )
 
-    # Add option to define time out limit for trying to connect to CAZy
     parser.add_argument(
         "-t",
+        "--taxonomy",
+        dest="taxonomy",
+        action="store_true",
+        default=False,
+        help="Retrieve the taxonomic classifications (scientific name: 'genus speices')",
+    )
+
+    # Add option to define time out limit for trying to connect to CAZy
+    parser.add_argument(
         "--timeout",
         type=int,
         default=45,
         help="Connection timeout limit (seconds)"
+    )
+
+    parser.add_argument(
+        "--update_name",
+        dest="update_name",
+        action="store_true",
+        default=False,
+        help=(
+            "Update protein name in local CAZyme database Uniprots table.\n"
+            "Retrieve protein name from UniProt for records and overwrite the existing\n"
+            "protein name in the local CAZyme database if a new/different name is retireved from UniProt"
+        ),
+    )
+
+    parser.add_argument(
+        "--update_seq",
+        dest="update_seq",
+        action="store_true",
+        default=False,
+        help=(
+            "Update sequences in local CAZyme database Uniprots table\n"
+            "Retrieve protein Aa sequences from UniProt for records and overwrite the existing\n"
+            "sequence in the local CAZyme database if a newer sequence is retireved from UniProt"
+        ),
+    )
+
+    parser.add_argument(
+        "--delete_old_ec_relationships",
+        dest="delete_old_ec_relationships",
+        action="store_true",
+        default=False,
+        help=(
+            "Delete Genbank-EC number relationships for those proteins for whom data is downloaded from UniProt\n"
+            "and which are not included in the EC numbers listed for the respective protein reocrd in UniProt"
+        ),
+    )
+
+    parser.add_argument(
+        "--delete_old_ecs",
+        dest="delete_old_ecs",
+        action="store_true",
+        default=False,
+        help="Delete EC numbers that are not linked to any proteins listed in the Genbanks table.",
+    )
+
+    parser.add_argument(
+        "--delete_old_pdb_relationships",
+        dest="delete_old_pdb_relationships",
+        action="store_true",
+        default=False,
+        help=(
+            "Delete Genbank-PDB relationships for those proteins for whom data is downloaded from UniProt\n"
+            "and which are not included in the PDB accessions listed for the respective protein reocrd in UniProt"
+        ),
+    )
+
+    parser.add_argument(
+        "--delete_old_pdbs",
+        dest="delete_old_pdbs",
+        action="store_true",
+        default=False,
+        help="Delete PDB accessions that are no longer linked to any records in the Genbanks table",
     )
 
     parser.add_argument(
@@ -311,20 +342,6 @@ def build_parser(argv: Optional[List] = None):
         default=None,
         help="Path to a JSON file containing data previously retrieved from UniProt by cazy_webscraper",
     )  
-
-    parser.add_argument(
-        "--uniprot_batch_size",
-        type=int,
-        default=150,
-        help="Batch size for queries sent to the UniProt REST API to retrieved UniProt accessions"
-    )
-
-    parser.add_argument(
-        "--ncbi_batch_size",
-        type=int,
-        default=150,
-        help="Batch size for queries sent to NCBI Entrez to retrieve protein accessions for gene names retrieved from UniProt"
-    )
 
     # Add option for more detail (verbose) logging
     parser.add_argument(

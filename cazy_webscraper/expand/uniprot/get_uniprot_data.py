@@ -43,13 +43,14 @@
 
 import json
 import logging
+import time
 
-import pandas as pd
-
+from copy import copy
 from datetime import datetime
 from typing import List, Optional
 
-from Bio import Entrez
+import pandas as pd
+
 from bioservices import UniProt
 from saintBioutils.misc import get_chunks_list
 from saintBioutils.uniprot import get_uniprot_accessions
@@ -58,14 +59,19 @@ from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
-from cazy_webscraper.ncbi.gene_names import get_linked_ncbi_accessions
+from cazy_webscraper.cache.uniprot import get_uniprot_cache, cache_uniprot_data
 from cazy_webscraper.sql import sql_interface
-from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_data.add_uniprot_data import (
     add_ec_numbers,
     add_pdb_accessions,
     add_uniprot_accessions,
+    add_genbank_ec_relationships,
+    add_pdb_gbk_relationships,
+    add_uniprot_genbank_relationships,
+    add_uniprot_taxs,
 )
+from cazy_webscraper.sql.sql_interface.delete_data import delete_old_relationships, delete_old_annotations
+from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
 from cazy_webscraper.sql import sql_orm
 from cazy_webscraper.utilities.parsers.uniprot_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
@@ -89,8 +95,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if logger is None:
         logger = logging.getLogger(__name__)
         config_logger(args)
-
-    Entrez.email = args.email
     
     # parse the configuration data (cache the uniprot data as .csv files)
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
@@ -135,16 +139,25 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         args,
     )
 
-    # get cached data, or return an empty dict and set
-    uniprot_dict, all_ecs, gbk_data_to_download = get_uniprot_cache(gbk_dict, args)
-    # uniprot_dict = {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
-    # all_ecs = set of EC numers
+    # get cached data, or return an empty dict
+    # and return a list of GenBank/NCBI protein version accessions to query UniProt with
+    # to download protein data
+    uniprot_dict, gbk_data_to_download = get_uniprot_cache(gbk_dict, args)
+    # uniprot_dict[ncbi_acc] = {
+    #     'uniprot_acc': uniprot_acc,
+    #     'uniprot_entry_id': uniprot_entry_id,
+    #     'protein_name': protein_name,
+    #     'ec_numbers': ec_numbers,
+    #     'sequence': sequence,
+    #     'pdbs': all_pdbs,
+    # }
+
     # gbk_data_to_download = list of GenBank accs to download data for
 
     if args.skip_download is False:
         logger.warning(f"Retrieving data for {len(gbk_data_to_download)} proteins")
 
-        downloaded_uniprot_data, all_ecs = get_uniprot_data(gbk_data_to_download, cache_dir, args)
+        downloaded_uniprot_data = get_uniprot_data(gbk_data_to_download, cache_dir, args)
 
         uniprot_dict.update(downloaded_uniprot_data)
 
@@ -154,39 +167,98 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     if len(list(downloaded_uniprot_data.keys())) != 0:
         cache_uniprot_data(uniprot_dict, cache_dir, time_stamp)
 
-    # get genbank accessions by mapping uniprot accession to ncbi
-    # if can't get genbank accession and did not retrieve a gene name from uniprot
-    # map the uniprot acc to the gene name and then retrieve the genbank accession from ncbi
-    uniprot_dict = get_mapped_genbank_accessions(uniprot_dict, cache_dir, args)
+    if len(list(uniprot_dict.keys())) != 0:
+        logger.warning(f"Adding data for {len(list(uniprot_dict.keys()))} NCBI accessions to the local CAZyme database")
 
-    acc_to_remove = set()
-    for uniprot_acc in uniprot_dict:
-        try:
-            uniprot_dict[uniprot_acc]['genbank_accession']
-        except KeyError:
-            logger.error(
-                f"Could not map the UniProt accession '{uniprot_acc}' to a GenBank accession\n"
-                "directly via the UniProt mapping service or via its gene name.\n"
-                f"Not adding protein data for the UniProt accession '{uniprot_acc}' to the\n"
-                "local CAZyme database."
-            )
-            acc_to_remove.add(uniprot_acc)
-    for uniprot_acc in acc_to_remove:
-        del uniprot_dict[uniprot_acc]
+        # add data to the UniProts table
+        # add uniprot accessions (and sequences if seq retrieval is enabled)
+        add_uniprot_accessions(uniprot_dict, connection, args)
 
-    # add uniprot accessions (and sequences if seq retrieval is enabled)
-    logger.warning("Adding data to the local CAZyme database")
-    add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args)
+        # add uniprot IDs to Genbanks table
+        add_uniprot_genbank_relationships(uniprot_dict, connection)
 
-    # add ec numbers
-    if (args.ec) and (len(all_ecs) != 0):
-        logger.warning("Adding EC numbers to the local CAZyme database")
-        add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args)
+        # add taxonomic classification (genus, species)
+        if args.taxonomy:
+            logger.warning("Adding taxonomic data to the local CAZyme database")
+            add_uniprot_taxs(uniprot_dict, connection, args)
 
-    # add pdb accessions
-    if args.pdb:
-        logger.warning("Adding RSCB PDB IDs to the local CAZyme database")
-        add_pdb_accessions(uniprot_dict, gbk_dict, connection, args)
+        # add ec numbers
+        if args.ec:
+            logger.warning("Adding EC numbers to the local CAZyme database")
+            add_ec_numbers(uniprot_dict, connection, args)
+            logger.warning("Adding Genbanks-ECnumber relationships to local CAZyme db")
+            add_genbank_ec_relationships(uniprot_dict, gbk_dict, connection, args)
+
+            if args.delete_old_ec_relationships:
+                logger.warning(
+                    "Deleting Genbanks-EC number annotations in the local CAZyme database\n"
+                    "that were not included for the protein whose additional data was just\n"
+                    "downloaded from UniProt"
+                )
+                # load ec numbers and relationships with Genbanks records from the local db
+                ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
+                ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)
+
+                delete_old_relationships(
+                    uniprot_dict,
+                    gbk_dict,
+                    ec_table_dict,
+                    ec_gbk_table_dict,
+                    'ec_numbers',
+                    'Genbanks_Ecs',
+                    connection,
+                    args,
+                )
+
+            if args.delete_old_ecs:
+                logger.warning(
+                    "Deleting EC numbers in local db that are not linked to any Genbanks table records"
+                )
+                # load ec numbers and relationships with Genbanks records from the local db
+                ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
+                ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)
+
+                delete_old_annotations(ec_table_dict, ec_gbk_table_dict, 'Ecs', connection, args)
+
+        # add pdb accessions
+        if args.pdb:
+            logger.warning("Adding RSCB PDB IDs to the local CAZyme database")
+            add_pdb_accessions(uniprot_dict, gbk_dict, connection, args)
+            add_pdb_gbk_relationships(uniprot_dict, gbk_dict, connection, args)
+
+            if args.delete_old_pdb_relationships:
+                logger.warning(
+                    "Deleting Genbanks-PDB annotations in the local CAZyme database\n"
+                    "that were not included for the protein whose additional data was just\n"
+                    "downloaded from UniProt"
+                )
+                # load ec numbers and relationships with Genbanks records from the local db
+                pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
+                gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
+
+                delete_old_relationships(
+                    uniprot_dict,
+                    gbk_dict,
+                    pdb_table_dict,
+                    gbk_pdb_rel_table_dict,
+                    'pdbs',
+                    'Genbanks_Pdbs',
+                    connection,
+                    args,
+                )
+
+            if args.delete_old_pdbs:
+                logger.warning(
+                    "Deleting PDB accessions in local db that are not linked to any Genbanks table records"
+                )
+                # load ec numbers and relationships with Genbanks records from the local db
+                pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
+                gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
+
+                delete_old_annotations(pdb_table_dict, gbk_pdb_rel_table_dict, 'Pdbs', connection, args)
+
+    else:
+        logger.warning("Did no retrieve data for any proteins in NCBI")
 
     closing_message("get_uniprot_data", start_time, args)
 
@@ -214,7 +286,7 @@ def add_db_log(
         retrieved_annotations += ", PDB accessions"
     if args.sequence:
         retrieved_annotations += ", Protein sequence"
-    if args.seq_update:
+    if args.update_seq:
         retrieved_annotations += ", Updated UniProt protein sequences"
 
     with sql_orm.Session(bind=connection) as session:
@@ -275,388 +347,350 @@ def get_db_gbk_accs(
     return gbk_dict
 
 
-def get_uniprot_cache(gbk_dict, args):
-    """Get cached UniProt data, or return empty dict and set.
-    
-    :param gbk_dict: {gbk acc: local db id}
-    :param args: CLI args parser
-
-    Return dict {uniprot: {genbank_accession: str, uniprot_name: str, pdb: set, ec: set}}
-    and set of EC numbers
-    and list of GenBank accessions to download UniProt data for
-    """
-    # if using cachce skip accession retrieval
-    uniprot_dict = {}  # {uniprot: {genbank_accession: str, uniprot_name: str, pdb: set, ec: set}}
-    all_ecs = set()
-    gbk_data_to_download = []
-
-    logger = logging.getLogger(__name__)
-
-    if args.use_uniprot_cache is not None:
-        logger.warning(f"Getting UniProt data from cache: {args.use_uniprot_cache}")
-
-        with open(args.use_uniprot_cache, "r") as fh:
-            uniprot_dict = json.load(fh)
-
-        if args.ec:
-            all_ecs = get_ecs_from_cache(uniprot_dict)
-    
-    if args.skip_download:  # only use cached data
-        return uniprot_dict, all_ecs, gbk_data_to_download
-
-    # else: check for which GenBank accessions data still needs be retrieved from UniProt
-    # if some of the data is used from a cache, if no data is provided from a cache
-    # retrieve data for all GenBank accesisons matching the provided criteria
-    if len(list(uniprot_dict.keys())) != 0: 
-        for uniprot_acc in tqdm(uniprot_dict):
-            gbk_data_to_download.append(uniprot_dict[uniprot_acc]['genbank_accession'])
-    else:  # get data for all GenBank accessions from the local db matching the user criteria
-        gbk_data_to_download = list(gbk_dict.keys())
-    
-    return uniprot_dict, all_ecs, gbk_data_to_download
-
-
-def get_uniprot_data(gbk_data_to_download, cache_dir, args):
+def get_uniprot_data(ncbi_accessions, cache_dir, args):
     """Batch query UniProt to retrieve protein data. Save data to cache directory.
     
     Bioservices requests batch queries no larger than 200.
 
-    :param gbk_data_to_download: list of NCBI protein accessions to query UniProt with
+    Note that according to Uniprot (June 2022), there are various limits on ID Mapping Job Submission:
+
+    ========= =====================================================================================
+    Limit	  Details
+    ========= =====================================================================================
+    100,000	  Total number of ids allowed in comma separated param ids in /idmapping/run api
+    500,000	  Total number of "mapped to" ids allowed
+    100,000	  Total number of "mapped to" ids allowed to be enriched by UniProt data
+    10,000	  Total number of "mapped to" ids allowed with filtering
+    ========= =====================================================================================
+
+    :param ncbi_accessions: list of NCBI protein accessions to query UniProt with
     :param cache_dir: path to directory to write out cache
     :param args: cmd-line args parser
     
     Return
     Dict of data retrieved from UniProt and to be added to the db 
-        {uniprot_acccession: {gene_name: str, uniprot_name: str, pdb: set, ec: set}}
-    Set of all retrieved EC numbers
-    Set of gene names
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc,
+            'uniprot_entry_id': uniprot_entry_id,
+            'protein_name': protein_name,
+            'ec_numbers': ec_numbers,
+            'sequence': sequence,
+            'pdbs': all_pdbs,
+        }
     """
     logger = logging.getLogger(__name__)
 
-    uniprot_dict = {}  # {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
-    all_ecs = set()  # store all retrieved EC numbers as one tuple per unique EC number
-    ncbi_gene_names = set()
-    
+    failed_ids_cache = cache_dir / "ncbi_acc_not_in_uniprot"
+    failed_connections_cache = cache_dir / "failed_connections_ncbi_acc"
+
+    uniprot_dict = {}  # see doc string
+    all_batches = {}  # {'acc,acc': int(tries), batch: int(tries)}
+
+    # [[acc, acc], [acc, acc]]
     bioservices_queries = get_chunks_list(
-        gbk_data_to_download,
-        args.uniprot_batch_size,
+        ncbi_accessions,
+        args.bioservices_batch_size,
     )
 
-    print(bioservices_queries)
+    for batch in bioservices_queries:
+        all_batches[",".join(batch)] = 0  # num of attempts at connecting to UniProt
 
-    for query in tqdm(bioservices_queries, "Batch retrieving protein data from UniProt"):
-        uniprot_df = UniProt().get_df(entries=query, limit=args.uniprot_batch_size)
+    while len(list(all_batches.keys())) > 0:
+        batches_to_process = copy(all_batches)
+        logger.warning(f"{len(list(batches_to_process.keys()))} batches remaining")
 
-        # cache UniProt response
-        _time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        _path = cache_dir / f'uniprot_query_response_{_time_stamp}.csv'
-        uniprot_df.to_csv(_path)
+        for batch in tqdm(batches_to_process, "Batch retrieving protein data from UniProt"):
+            success = False
+            # batch is a string of comma separated NCBI protein version accessions
+            mappings = map_to_uniprot(batch)
 
-        index = 0
-        uniprot_df = uniprot_df[[
-            'Gene Names (primary)', # used to link UniProt record to GenBank protein accession
-            'Entry',
-            'Protein names',
-            'EC number',
-            'Sequence',
-            'Date of last sequence modification',
-            'PDB', 
-        ]]
+            if mappings is None:  # could not connect to UniProt
+                all_batches[batch] += 1
 
-        for index in tqdm(range(len(uniprot_df)), desc="Parsing UniProt response"):
-            row = uniprot_df.iloc[index]
-
-            # Parse UniProt accession
-            uniprot_acc = row['Entry'].strip()
-
-           # checked if parsed before incase bioservices returned duplicate proteins
-            try:
-                uniprot_dict[uniprot_acc]
-                continue  # already parsed
-            except KeyError:
-                pass
-
-            # Parse UniProt protein name
-            try:
-                uniprot_name = row['Protein names'].strip()
-
-            except AttributeError:
-                logger.warning(
-                    f"Protein name {row['Protein names']} was returned as float not string. Converting to string"
-                )
-                uniprot_name = str(row['Protein names']).strip()
-
-            # remove quotation marks from the protein name, else an SQL error will be raised on insert
-            uniprot_name = uniprot_name.replace("'", "")
-            uniprot_name = uniprot_name.replace('"', '')
-            uniprot_name = uniprot_name.replace("`", "")
-
-            # add protein data to uniprot dict
-            uniprot_dict[uniprot_acc] = {
-                'gene_name': str(row['Gene Names (primary)']).strip(),
-                'protein_name': uniprot_name, 
-            }
-            
-            if args.ec:
-                ec_numbers = row['EC number']
-                try:
-                    ec_numbers = ec_numbers.split('; ')
-                except AttributeError:
-                    # no EC numbers listed
-                    ec_numbers = set()
-                
-                try:
-                    uniprot_dict[uniprot_acc]["ec"]
-                except KeyError:
-                    uniprot_dict[uniprot_acc]["ec"] = set()
-
-                # add EC numbers to dict
-                for ec in ec_numbers:
-                    all_ecs.add( (ec,) )
-                    uniprot_dict[uniprot_acc]["ec"].add(ec.strip())
-
-            if args.pdb:
-                # retrieve PDB accessions
-                pdb_accessions = row['PDB']
-                try:
-                    pdb_accessions = pdb_accessions.split(';')
-                    pdb_accessions = [pdb.strip() for pdb in pdb_accessions if len(pdb.strip()) > 0]
-                except AttributeError:
-                    pdb_accessions = set()
-
-                try:
-                    uniprot_dict[uniprot_acc]["pdb"]
-                except KeyError:
-                    uniprot_dict[uniprot_acc]["pdb"] = set()
-
-                # add PDB accessions to dict
-                for pdb in pdb_accessions:
-                    uniprot_dict[uniprot_acc]["pdb"].add(pdb.strip())
-            
-            if args.sequence:
-                sequence = row['Sequence']
-
-                try:
-                    uniprot_dict[uniprot_acc]["sequence"]
-                    existing_date = uniprot_dict[uniprot_acc]["seq_date"]
-                    new_date = row['Date of last sequence modification']
-                    
-                    # check which sequence is newer
-                    existing_date.split('-')
-                    existing_date = datetime(existing_date[0], existing_date[1], existing_date[2])
-                    new_date.split('-')
-                    new_date = datetime(existing_date[0], existing_date[1], existing_date[2])
-
-                    if new_date > existing_date:  # past < present is True
-                        uniprot_dict[uniprot_acc]["sequence"] = sequence
-                        uniprot_dict[uniprot_acc]["seq_date"] = row['Date of last sequence modification']
-                    # else keep the existing sequence
+                if all_batches[batch] > args.retries:  # run out of attempts to retry the connection
+                    del all_batches[batch]
                     logger.warning(
-                        f'Multiple sequences retrieved for {uniprot_acc}\n'
-                        'Using most recently updated sequence'
+                        f"Failed to retrieve data for batch after {args.retries} attemps\n"
+                        "Out of retries.\n"
+                        "NCBI accessions will be written to cache"
                     )
+                    failed_acc = batch.split(",")
+                    with open("failed_connections_cache", a) as fh:
+                        for acc in failed_acc:
+                            fh.write(f"{acc}\n")
+                        
+                else:  # still attempts remaining
+                    logger.warning(
+                        f"Failled to retrieve data from UniProt for batch after {all_batches[batch]}"
+                        f"/{args.retries} attemtps\n"
+                        "Will retry later."
+                    )
+
+                continue
+
+            try:  # some NCBI accessions could not be mapped to a record in UniProt
+                mappings['failedIds']
+                with open(failed_ids_cache, "a") as fh:
+                    for not_catalogued_acc in mappings['failedIds']:
+                        fh.write(f"{not_catalogued_acc}\n")
+            except KeyError:  # may not be any failed Ids
+                logger.warning("No failed IDs in this batch")
+                pass
+            
+            try:  # Mapped UniProt records
+                mapping_results = mappings['results']  # used mostly for try/except
+                success = True
+
+                for mapping_result in mapping_results:
+                    ncbi_acc = mapping_result['from']
+                    mapped_record = mapping_result['to']
+
+                    (
+                        uniprot_acc,
+                        uniprot_entry_id,
+                        protein_name,
+                        gene_name,  # not used atm
+                        genus,
+                        species,
+                        ec_numbers,
+                        sequence,
+                        sequence_date,
+                        all_pdbs,
+                        matching_record,
+                    ) = extract_protein_data(mapped_record, ncbi_acc)
+
+                    if matching_record is False:  # bool, if mapped record contains ncbi accession
+                        continue
                     
-                except KeyError:
-                    uniprot_dict[uniprot_acc]["sequence"] = sequence
-                    uniprot_dict[uniprot_acc]["seq_date"] = row['Date of last sequence modification']
+                    uniprot_dict[ncbi_acc] = {
+                        'uniprot_acc': uniprot_acc,
+                        'uniprot_entry_id': uniprot_entry_id,
+                        'protein_name': protein_name,
+                        'genus': genus,
+                        'species': species,
+                        'ec_numbers': ec_numbers,
+                        'sequence': sequence,
+                        'sequence_date': sequence_date,
+                        'pdbs': all_pdbs,
+                    }
 
-    return uniprot_dict, all_ecs
+            except KeyError: # may not be any ncbi acc that mapped to a UniProt record
+                print("No successful IDs")
+                pass
+            
+            if success:
+                # do not process the batch again
+                del all_batches[batch]
 
-
-def get_ecs_from_cache(uniprot_dict):
-    """Extract all unique EC numbers from the UniProt data cache.
-    
-    :param uniprot_dict: dict of data retrieved from UniProt.
-    
-    Return set of EC numbers.
-    """
-    all_ecs = set()
-
-    for uniprot_acc in tqdm(uniprot_dict, desc="Getting EC numbers from cached data"):
-        try:
-            ecs = uniprot_dict[uniprot_acc]["ec"]
-            for ec in ecs:
-                all_ecs.add( (ec,) )
-        except (ValueError, TypeError, KeyError):
-            pass
-
-    return all_ecs
+    return uniprot_dict
 
 
-def cache_uniprot_data(uniprot_dict, cache_dir, time_stamp):
-    """Cache data retrieved from UniProt.
+def mapping_decorator(func):
+    """Decorator to retry the wrapped function up, up to 'retries' times"""
 
-    :param
-
-    Return nothing
-    """
-    # cache updated UniProt data
-    for uniprot_accession in uniprot_dict:
-        try:
-            uniprot_dict[uniprot_accession]['ec'] = list(uniprot_dict[uniprot_accession]['ec'])
-        except KeyError:
-            pass
-        try:
-            uniprot_dict[uniprot_accession]['pdb'] = list(uniprot_dict[uniprot_accession]['pdb'])
-        except KeyError:
-            pass
-
-    uniprot_acc_cache = cache_dir / f"uniprot_data_{time_stamp}.json"
-    with open(uniprot_acc_cache, "w") as fh:
-        json.dump(uniprot_dict, fh) 
-
-
-def get_mapped_genbank_accessions(uniprot_dict, cache_dir, args):
-    """Map uniprot accessions to GenBank protein version accessions.
-    
-    :param uniprot_dict: {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
-    :param cache_dir: path to cache directory
-    :param args: CLI parser
-
-    Return uniprot_dict with GenBank accessions
-    """
-    logger = logging.getLogger(__name__)
-    mapping_batch_size = 25
-    cache_path = cache_dir / "failed_mapped_uniprot_ids"
-
-    bioservices_queries = get_chunks_list(
-        list(uniprot_dict.keys()),
-        mapping_batch_size,
-    )
-
-    failed_ids = set()
-
-    for batch in tqdm(bioservices_queries, desc="Mapping UniProt acc to GenBank acc"):
-        mapping_dict = UniProt().mapping(
-            fr="UniProtKB_AC-ID",
-            to="EMBL-GenBank-DDBJ_CDS",
-            query=batch,
-        )
-        try:
-            for mapped_pair in mapping_dict['results']:
-                uniprot_acc = mapped_pair['from']
-                gbk_acc = mapped_pair['to']
-
-                try:
-                    uniprot_dict[uniprot_acc]['genbank_accession'] = gbk_acc
-                except KeyError:
-                    logger.error(
-                        f"Retrieved UniProt accessions {uniprot_acc} from UniProt but accession was\n"
-                        "not retrieved when quering by GenBank accession"
-                    )
-                    pass
-        except KeyError:
-            pass
-
-        try:
-            for acc in mapping_dict['failedIds']:
-                if acc in (list(uniprot_dict.keys())):
-                    failed_ids.add(acc)
-        except KeyError:
-            pass
-
-    if len(failed_ids) != 0:
-        logger.warning(f"Could not map {len(failed_ids)} UniProt accessions to GenBank accessions")
-
-        failed_ids_to_parse = set()
-
-        for failed_id in failed_ids:
-            if uniprot_dict[failed_id]['gene_name'] == 'nan':
-                failed_ids_to_parse.add(failed_id)
-
-        if len(failed_ids_to_parse) != 0:
-            failed_ids = set()
-
-            logger.warning(
-                f"Could not map {len(failed_ids_to_parse)} UniProt accessions to GenBank accessions\n"
-                "and could did not retrieve a gene name from UniProt.\n"
-                "Will try mapping the UniProt acc to the gene name"
-            )
-
-            # retry getting gene names if did not have gene names before
-            bioservices_queries = get_chunks_list(
-                list(failed_ids_to_parse),
-                mapping_batch_size,
-            )
-
-            for batch in tqdm(bioservices_queries, desc="Getting gene names"):
-                mapping_dict = UniProt().mapping(
-                    fr="UniProtKB_AC-ID",
-                    to="EMBL-GenBank-DDBJ",
-                    query=batch,
+    def wrapper(*args, retries=10, **kwards):
+        tries, success, response = 0, False, None
+        
+        while not success and (tries < retries):
+            response = func(*args, **kwards)
+            
+            if response is not None:
+                success = True
+            else:
+                print(
+                    f"Could not connect to UniProt on attempt no.{tries} of {retries} tries.\n"
+                    "Retrying in 10 seconds"
                 )
+                tries += 1
+                time.sleep(10)
 
-                try:
-                    for mapped_pair in mapping_dict['results']:
-                        uniprot_acc = mapped_pair['from']
-                        gene_name = mapped_pair['to']
-
-                        try:
-                            uniprot_dict[uniprot_acc]['gene_name'] = gene_name
-                        except KeyError:
-                            logger.error(
-                                f"Retrieved UniProt accessions {uniprot_acc} from UniProt but accession was\n"
-                                "not retrieved when quering by GenBank accession"
-                            )
-                            pass
-                except KeyError:
-                    pass
-
-                try:
-                    for acc in mapping_dict['failedIds']:
-                        if acc in list(uniprot_dict.keys()):
-                            failed_ids.add(acc)
-                except KeyError:
-                    pass
-
-    if len(failed_ids) != 0:
-        with open(cache_path, "w") as fh:
-            for acc in failed_ids:
-                if acc in list(uniprot_dict.keys()):
-                    if uniprot_dict[acc]['gene_name'] == 'nan':
-                        logger.error(
-                            f"Could not map the UniProt accession '{acc}' to a NCBI GenBank protein\n"
-                            "accession or gene name, so can't map the UniProt accession to a GenBank\n"
-                            "accession in the local CAZyme database.\n"
-                            f"Not adding protein data for UniProt accession '{acc}' to the local\n"
-                            "CAZyme database"
-                        )
-                        del uniprot_dict[acc]
-                        fh.write(f"Could not map UniProt accession '{acc}' to a GenBank accession or gene name\n")
-
-    uniprot_dict = get_linked_ncbi_accessions(uniprot_dict, args)
+        return response
     
-    return uniprot_dict
-    
+    return wrapper
 
 
-def get_gene_names(uniprot_dict, args):
-    """Map UniProt accessions to Ensemble-GenBank gene name
+@mapping_decorator
+def map_to_uniprot(accessions):
+    """Map accessions to records in UniProt
     
-    :param uniprot_dict: {uniprot_acc: {gene_name: str, protein_name: str, pdb: set, ec: set, sequence:str, seq_data:str}}
-    :param args: CLI parser
+    :param accessions: str, list of NCBI protein accessions separated by commas
     
-    Return UniProt dict
+    Return dict. Successful mappings under 'results', and failed mappings under 'failedIds' 
+    Failed mappings are NCBI accessions that are not listed in UniProt
+    
+    Or returns None if connection could not be made
     """
-    uniprot_acc_to_parse = [acc for acc in uniprot_dict if uniprot_dict[acc]['gene_name'] == 'nan']
-
-    bioservices_queries = get_chunks_list(
-        uniprot_acc_to_parse,
-        args.uniprot_batch_size,
-    )
-
-    for batch in tqdm(bioservices_queries, "Getting gene names from UniProt"):
-        mapping_dict = UniProt().mapping(
-            fr="UniProtKB_AC-ID",
-            to="EMBL-GenBank-DDBJ",
-            query=batch,
+    try:
+        mapping_results = UniProt().mapping(
+            fr="EMBL-GenBank-DDBJ_CDS",
+            to="UniProtKB",
+            query=accessions,  # str of ids, separated by commas
         )
-        for result in mapping_dict['results']:
-            uniprot_acc = result['from']
-            gene_name = result['to']
-            uniprot_dict[uniprot_acc]['gene_name'] = gene_name
+    except TypeError:
+        # raised by bioservices
+        #   File ".../python3.11/site-packages/bioservices/uniprot.py", line 485, in mapping
+        # if results != 500 and 'results' in results:
+        # TypeError: argument of type 'int' is not iterable
+        return None
     
-    return uniprot_dict
+    return mapping_results
+
+
+def extract_protein_data(mapped_record, ncbi_acc):
+    """Extract protein data from UniProt mapping result
+    
+    :param mapped_record: dict, mapped UniProt record from UniProt().mapping['results'][i]['to']
+    :param ncbi_acc: str, NCBI Protein accession of mapped record
+    
+    Return:
+    * UniProt accession, str
+    * UniProt record ID, str
+    * protein name, str  - only the recommended name from UniProt
+    * gene name, str
+    * genus, str
+    * species, str
+    * EC numbers, set of EC numbers
+    * sequence, str (protein sequence)
+    * data sequence was last updated yyyy-mm-dd
+    * all_pdbs, set of PDB protein structure IDs
+    * bool, record contains the ncbi acc 
+    """
+    uniprot_acc = None
+    uniprot_id = None
+    protein_name = None
+    gene_name = None
+    genus = None
+    species = None
+    ec_numbers = set()
+    sequence = None
+    sequence_date = None
+    all_pdbs = set()
+    ncbi_accs_from_uniprot = set()
+    matching_record = True
+    
+    # check the record is relevant
+    # this is overkill but better safe than sorry
+    for value in mapped_record['uniProtKBCrossReferences']:
+        # value is a dict of ['database', 'id', 'properties']
+        if value['database'] == 'EMBL':
+            gene_name = value['id']
+
+            for db_property in value['properties']:
+                if db_property['key'] == 'ProteinId':
+                    ncbi_accs_from_uniprot.add(db_property['value'])
+                    
+    if ncbi_acc not in ncbi_accs_from_uniprot:
+        print(
+            f'WARNING: Mapped {ncbi_acc} to UniProt but mapped record does not contain the\n'
+            f'the NCBI accession. Instead it contains {ncbi_accs_from_uniprot}'
+        )
+        matching_record = False
+        return (
+            uniprot_acc,
+            uniprot_id,
+            protein_name,
+            gene_name,
+            genus,
+            species,
+            ec_numbers,
+            sequence,
+            sequence_date,
+            all_pdbs,
+            matching_record,
+        )
+
+    # UniProt record does contain the UniProt protein accession
+    for key in mapped_record:
+        # Retrieve UniProt Accession
+        if key == 'primaryAccession':
+            uniprot_acc = mapped_record[key]
+
+        # Retrieve UniProt Record ID
+        if key == 'uniProtkbId':
+            uniprot_id = mapped_record[key]
+
+        # Retrieve taxonomy
+        if key == 'organism':
+            genus = mapped_record[key]['scientificName'].split(" ")[0]
+            species = " ".join(mapped_record[key]['scientificName'].split(" ")[1:])
+
+        # Retrieve Protein Name and EC Numbers
+        if key == 'proteinDescription':
+            
+            for section in mapped_record[key]:
+
+                if section == 'recommendedName':
+
+                    for feature_name in mapped_record[key][section]:
+
+                        if feature_name == 'fullName':
+                            protein_name = mapped_record[key][section]['fullName']['value']
+
+                        elif feature_name == 'ecNumbers':
+                            for value in mapped_record[key][section]['ecNumbers']:
+                                ec_numbers.add(value['value'])
+
+                if section == 'includes':
+                    for feature in mapped_record[key][section]:
+                        for section_name in feature:
+                            record = feature[section_name]
+
+                            if section_name == 'recommendedName':
+                                try:
+                                    for value in record['ecNumbers']:
+                                        ec_numbers.add(value['value'])
+                                except KeyError:
+                                    continue
+
+                            else:
+                                for sub_record in record:
+                                    try:
+                                        ec_records = sub_record['ecNumbers']
+                                        for value in ec_records:
+                                            ec_numbers.add(value['value'])
+                                    except KeyError:
+                                        continue
+
+        # Retrieve EC numbers
+        if key == 'comments':
+            for comment in mapped_record[key]:
+                try:
+                    if comment['commentType'] == 'CATALYTIC ACTIVITY':
+                        ec_numbers.add(comment['reaction']['ecNumber'])
+                except KeyError:
+                    continue
+
+        # Retrieve PDB Ids
+        if key == 'features':
+            for feature in mapped_record['features']:
+                try:
+                    for evidence in feature['evidences']:
+                        if evidence['source'] == 'PDB':
+                            pdb = evidence['id']
+                            all_pdbs.add(pdb)
+                except KeyError:
+                    continue
+
+        # Retrieve Protein Sequence
+        if key == 'sequence':
+            sequence = mapped_record[key]['value']
+            
+        if key == 'entryAudit':
+            sequence_date = mapped_record[key]['lastSequenceUpdateDate']
+    
+    return (
+        uniprot_acc,
+        uniprot_id,
+        protein_name,
+        gene_name,
+        genus,
+        species,
+        ec_numbers,
+        sequence,
+        sequence_date,
+        all_pdbs,
+        matching_record,
+    )
 
 
 if __name__ == "__main__":

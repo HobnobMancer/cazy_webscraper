@@ -121,7 +121,7 @@ def get_uni_gbk_tax_dict(connection):
     with Session(bind=connection) as session:
         uniprt_gbk_tax_records = session.query(Uniprot, Genbank, Taxonomy).\
             join(Genbank, (Taxonomy.taxonomy_id == Genbank.taxonomy_id)).\
-            join(Uniprot, (Genbank.genbank_id == Uniprot.genbank_id)).\
+            join(Uniprot, (Genbank.uniprot_id == Uniprot.uniprot_id)).\
             all()
 
     gbk_tax_dict = {}  # {genbank_accession: organism}

@@ -136,7 +136,7 @@ def test_add_gbks(monkeypatch):
         return
 
     cazy_data = {
-        'gbk1': {'kingdom': 'k', 'organism': ('genus species',), 'families': {
+        'gbk1': {'kingdom': 'k', 'organism': 'genus species', 'families': {
                 'fam': {'subfam'},
                 'fam1': {None},
             }

@@ -67,11 +67,13 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 """
 
 
+import logging
+import json
+import os
+
 from datetime import datetime
 from typing import List, Optional
 
-import logging
-import os
 import pandas as pd
 
 from Bio import Entrez
@@ -87,6 +89,7 @@ from cazy_webscraper import (
     display_citation_info,
     display_version_info,
 )
+from cazy_webscraper.cache.cazy import cache_cazy_data
 from cazy_webscraper.crawler.get_validation_data import get_validation_data
 from cazy_webscraper.cazy import (
     build_taxa_dict,
@@ -136,6 +139,16 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         display_citation_info()
         return
 
+    if args.email is None:
+        logger.error(
+            "No email address provided.\n"
+            "Email address required by NCBI - which is required to retrieve the latest taxonomic\n"
+            "classifications for proteins listed with multiple source organisms in the CAZy database\n"
+            "Please provide your email address.\n"
+            "Terminating program."
+        )
+        return
+
     # check correct output was provided, exit if not operable
     if args.database is not None and args.db_output is not None:
         warning_message = (
@@ -165,6 +178,15 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
             )
             closing_message("cazy_webscraper", start_time, args, early_term=True)
             return
+
+    if args.skip_ncbi_tax:
+        logger.warning(
+            "skip_ncbi_tax is True - not retrieving the latest taxa from NCBI for proteins with multipe tax. Will use the first taxa listed in CAZy\n"
+            "The latest taxonomic data can be retrieved using any of the three options:\n"
+            "(i) cw_get_ncbi_taxs\n"
+            "(ii) cw_get_genomics + cw_get_gtdb_taxs\n"
+            "(iii) cw_get_uniprot_data with --taxonomy/-t"
+        )
 
     Entrez.email = args.email
 
@@ -330,7 +352,7 @@ def get_cazy_data(
         (len(fam_filters) == 0) and \
             (len(kingdom_filters) == 0) and \
                 (len(taxonomy_filters) == 0):
-        cazy_data = parse_all_cazy_data(cazy_txt_lines, cazy_fam_populations)
+        cazy_data = parse_all_cazy_data(cazy_txt_lines, cazy_fam_populations, args)
 
     else:
         cazy_data = parse_cazy_data_with_filters(
@@ -340,6 +362,7 @@ def get_cazy_data(
             kingdom_filters,
             taxonomy_filters,
             cazy_fam_populations,
+            args,
         )
 
     logger.info(
@@ -360,7 +383,11 @@ def get_cazy_data(
             invalid_ids=False,
         )
 
-    taxa_dict = build_taxa_dict(cazy_data)  # {kingdom: {organisms}}
+    # add separate kingdom and organism keys to cazy_data for all proteins
+    taxa_dict, cazy_data = build_taxa_dict(cazy_data)  # {kingdom: {organisms}}
+
+    # cache cazy_data dict
+    cache_cazy_data(cazy_data, cache_dir)
 
     add_cazyme_data.add_kingdoms(taxa_dict, connection)
 

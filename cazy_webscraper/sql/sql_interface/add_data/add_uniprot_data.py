@@ -47,14 +47,21 @@ from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_interface import insert_data
 from cazy_webscraper.sql.sql_interface.get_data import get_table_dicts
-from cazy_webscraper.sql.sql_orm import genbanks_ecs
+from cazy_webscraper.sql.sql_orm import genbanks_ecs, Ec, Pdb
 
 
-def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
+def add_uniprot_accessions(uniprot_dict, connection, args):
     """Add UniProt data to the local CAZyme database
     
     :param uniprot_dict: dict containing data retrieved from UniProt
-    :param gbk_dict: dict representing data from the Genbanks table
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc, - str
+            'protein_name': protein_name, -str
+            'ec_numbers': ec_numbers, - set
+            'sequence': sequence, - str
+            'sequence_date': date seq was last updated yyyy-mm-dd
+            'pdbs': all_pdbs, - set
+        }
     :param connection: open sqlalchemy conenction to an SQLite db engine
     :param args: cmd-line args parser
 
@@ -66,111 +73,84 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
     # {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
     uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
 
-    uniprot_insert_values = set()
+    uniprot_insert_values = set()   # new rows to add to the local CAZyme db Uniprots table
+    record_names_to_update = set()  # ((uniprot_accession, retrieved_name), )
+    record_seqs_to_update = set()   # ((uniprot_accession, retrieved_sequence), )
 
-    # the following variables containing objects in the local db that are to be updated
-    update_record_gbk_id = set()  # ((uniprot_accession, gbk_id),)
-    update_record_name = set()  # ((uniprot_accession, retrieved_name), )
-    update_record_seq = set()  # ((uniprot_accession, retrieved_seq), )
+    for ncbi_acc in tqdm(uniprot_dict, desc="Separating new and existing Uniprots Table records"):
+        # check if the uniprot accession is in the local CAZyme datbase
+        uniprot_acc = uniprot_dict[ncbi_acc]['uniprot_acc']
 
-    for uniprot_acc in tqdm(uniprot_dict, desc="Separating new and existing records"):
-        # check the genbank accession is in the local cazyme database
-        retrieved_gbk_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
-        try:
-            gbk_dict[retrieved_gbk_acc]
-        except KeyError:
-            logger.error(
-                f"Mapped the GenBank accession '{retrieved_gbk_acc}' to the UniProt accession\n"
-                f"'{uniprot_acc}' but the GenBank accession is not in the local CAZyme database\n"
-                f"therefore, not adding protein data for GBK:{retrieved_gbk_acc}/UniProt:{uniprot_acc}"
-                "to the local CAZyme database."
-            )
-            continue
-        # check if the UniProt accession is already in the local CAZyme db
         try:
             uniprot_table_dict[uniprot_acc]
-            # Uniprot accession is already in the local CAZyme db
+        except KeyError:
+            # uniprot acc not in Uniprots table, so will need to add
+            if args.sequence:  # add seq to local db
+                uniprot_insert_values.add(
+                    (
+                        uniprot_acc,
+                        uniprot_dict[ncbi_acc]['protein_name'],
+                        uniprot_dict[ncbi_acc]['sequence'],
+                        uniprot_dict[ncbi_acc]['sequence_date'],
+                    )
+                )
+            else:  # do not add sequence
+                uniprot_insert_values.add(
+                    (
+                        uniprot_acc,
+                        uniprot_dict[ncbi_acc]['protein_name'],
+                    )
+                )
+            continue
 
-            # check if the GenBank id is the same
-            existing_gbk_id = uniprot_table_dict[uniprot_acc]['genbank_id']
-            retrieved_gbk_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
-            retrieved_gbk_id = gbk_dict[retrieved_gbk_acc]
-            if existing_gbk_id != retrieved_gbk_id:
-                update_record_gbk_id.add( (uniprot_acc, retrieved_gbk_id) )
-                
-            if args.name_update:
-                # check if the name has changed
-                existing_name = uniprot_table_dict[uniprot_acc]["protein_name"]
-                retrieved_name = uniprot_dict[uniprot_acc]["protein_name"]
-                
-                if existing_name != retrieved_name:
-                    update_record_name.add( (uniprot_acc, retrieved_name) )
-            
-            if args.sequence:  # only add seq if sequence is not there
-                if uniprot_table_dict[uniprot_acc]['seq'] is None:
-                    update_record_seq.add( (uniprot_acc, uniprot_dict[uniprot_acc]["sequence"]) )
-                
-            if args.seq_update:  # update seq if a newer version is available or no seq present
-                if uniprot_table_dict[uniprot_acc]['seq'] is None:
-                        update_record_seq.add( (
-                            uniprot_acc,
-                            uniprot_dict[uniprot_acc]["sequence"],
-                            uniprot_dict[uniprot_acc]["seq_date"],
-                        ) )
-                else:
-                    existing_date = uniprot_table_dict[uniprot_acc]['seq_date']
-                    retrieved_date = uniprot_dict[uniprot_acc]['seq_date']
-                    
-                    if existing_date < retrieved_date:  # existing date is older, update seq
-                        update_record_seq.add( (
-                            uniprot_acc,
-                            uniprot_dict[uniprot_acc]["sequence"],
-                            uniprot_dict[uniprot_acc]["seq_date"],
-                        ) )
-        
-        except KeyError:  # new record to add to local CAZyme db
-            
-            if args.sequence or args.seq_update:
-                genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
-                gbk_id = gbk_dict[genbank_acc]
-                uniprot_name = uniprot_dict[uniprot_acc]["protein_name"]
-                seq = uniprot_dict[uniprot_acc]["sequence"]
-                date = uniprot_dict[uniprot_acc]["seq_date"]
+        # uniprot acc already in the db
+        # check if need to update name or sequence
 
-                uniprot_insert_values.add( (gbk_id, uniprot_acc, uniprot_name, seq, date) )
+        if args.update_name:
+            if uniprot_table_dict[uniprot_acc]['name'] != uniprot_dict[ncbi_acc]['protein_name']:
+                logger.warning(
+                    f"Updating protein name for UniProt acc {uniprot_acc} from:\n"
+                    f"{uniprot_table_dict[uniprot_acc]['name']}\n"
+                    "to:\n"
+                    f"{uniprot_dict[ncbi_acc]['protein_name']}"
+                )
+                record_names_to_update.add(
+                    (
+                        uniprot_acc,
+                        uniprot_dict[ncbi_acc]['protein_name'],
+                    )
+                )
 
-            else:  # not retrieving protein sequences
-                genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
-                gbk_id = gbk_dict[genbank_acc]
-                uniprot_name = uniprot_dict[uniprot_acc]["protein_name"]
-                
-                uniprot_insert_values.add( (gbk_id, uniprot_acc, uniprot_name) )
+        if args.update_seq:
+            if uniprot_table_dict[uniprot_acc]['seq'] != uniprot_dict[ncbi_acc]['sequence']:
+                logger.warning(
+                    f"Updating protein sequence for UniProt acc {uniprot_acc} from:\n"
+                    f"{uniprot_table_dict[uniprot_acc]['seq']}\n"
+                    "to:\n"
+                    f"{uniprot_dict[ncbi_acc]['sequence']}"
+                )
+                record_seqs_to_update.add(
+                    (
+                        uniprot_acc,
+                        uniprot_dict[ncbi_acc]['sequence'],
+                        uniprot_dict[ncbi_acc]['sequence_date'],
+                    )
+                )
     
     if len(uniprot_insert_values) != 0:
-        logger.warning(f"Inserting {len(uniprot_insert_values)} into the local CAZyme db")
-        if args.sequence or args.seq_update:
-            columns = ['genbank_id', 'uniprot_accession', 'uniprot_name', 'sequence', 'seq_update_date']
+        logger.warning(f"Inserting {len(uniprot_insert_values)} ew records into the Uniprots table")
+        if args.sequence:
+            columns = ['uniprot_accession', 'uniprot_name', 'sequence', 'seq_update_date']
         else:
-            columns = ['genbank_id', 'uniprot_accession', 'uniprot_name']
+            columns = ['uniprot_accession', 'uniprot_name']
     
         insert_data(connection, "Uniprots", columns, list(uniprot_insert_values))
 
-    if len(update_record_gbk_id) != 0:
-        logger.warning(f"Updating {len(update_record_gbk_id)} Gbk-UniProt relationships in the local CAZyme db")
-        with connection.begin():
-            for record in tqdm(update_record_gbk_id, desc="Updating UniProt-Gbk relationships"):
-                connection.execute(
-                    text(
-                        "UPDATE Uniprots "
-                        f"SET genbank_id = {record[1]} "
-                        f"WHERE uniprot_accession = '{record[0]}'"
-                    )
-                )
         
-    if len(update_record_name) != 0:
-        logger.warning(f"Updating {len(update_record_name)} UniProt protein names in the local CAZyme db")
+    if len(record_names_to_update) != 0:
+        logger.warning(f"Updating {len(record_names_to_update)} UniProt protein names in the local CAZyme db")
         with connection.begin():
-            for record in tqdm(update_record_name, desc="Updating UniProt protein names"):
+            for record in tqdm(record_names_to_update, desc="Updating UniProt protein names"):
                 connection.execute(
                     text(
                         "UPDATE Uniprots "
@@ -179,10 +159,10 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
                     )
                 )
 
-    if len(update_record_seq) != 0:
-        logger.warning(f"Updating {len(update_record_seq)} UniProt protein sequences in the local CAZyme db")
+    if len(record_seqs_to_update) != 0:
+        logger.warning(f"Updating {len(record_seqs_to_update)} UniProt protein sequences in the local CAZyme db")
         with connection.begin():
-            for record in tqdm(update_record_seq, desc="Updating UniProt protein seqs"):
+            for record in tqdm(record_seqs_to_update, desc="Updating UniProt protein seqs"):
                 connection.execute(
                     text(
                         "UPDATE Uniprots "
@@ -194,17 +174,71 @@ def add_uniprot_accessions(uniprot_dict, gbk_dict, connection, args):
     return
 
 
-def add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args):
+def add_uniprot_genbank_relationships(uniprot_dict, connection):
+    """Add Uniprots local db IDs to Genbanks table to link Genbanks and Uniprots records.
+
+    :param uniprot_dict: dict of data from uniprot
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc,
+            'uniprot_entry_id': uniprot_entry_id,
+            'protein_name': protein_name,
+            'ec_numbers': ec_numbers,
+            'sequence': sequence,
+            'pdbs': all_pdbs,
+        }
+    :param connection: open sqlite3 engine connection
+
+    Return nothing.
+    """
+    logger = logging.getLogger(__name__)
+
+    uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+    # uniprot_table_dict = {acc: {db_id: int, name: str, seq: str, seq_date:str } }
+
+    logger.warning(
+        f"Linking {len(list(uniprot_dict.keys()))} Genbank records in the local CAZyme db"
+        "to records in the Uniprots table"
+    )
+    with connection.begin():
+        for ncbi_acc in tqdm(uniprot_dict, desc="Updating Genbanks records"):
+            uniprot_acc = uniprot_dict[ncbi_acc]['uniprot_acc']
+            try:
+                uniprot_db_id = uniprot_table_dict[uniprot_acc]['db_id']
+            except KeyError:
+                logger.error(
+                    f"Could not find a local db record for UniProt accession {uniprot_acc}\n"
+                    "Not linking the accession to a record in the Genbanks table"
+                )
+                continue
+
+            connection.execute(
+                text(
+                    "UPDATE Genbanks "
+                    f"SET uniprot_id = {uniprot_db_id} "
+                    f"WHERE genbank_accession = '{ncbi_acc}'"
+                )
+            )
+    
+
+def add_ec_numbers(uniprot_dict, connection, args):
     """Add EC numbers to the local CAZyme database
 
     :param uniprot_dict: dict containing data retrieved from UniProt
-    :param all_ecs: set of all EC numbers retrieved from UniProt
-    :param gbk_dict: dict representing data from the Genbanks table
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc, - str
+            'protein_name': protein_name, -str
+            'ec_numbers': ec_numbers, - set
+            'sequence': sequence, - str
+            'sequence_date': date seq was last updated yyyy-mm-dd
+            'pdbs': all_pdbs, - set
+        }
     :param connection: open sqlalchemy conenction to an SQLite db engine
     :param args: cmd-line args parser
 
     Return nothing.
     """
+    logger = logging.getLogger(__name__)
+    
     # load EC records in the local CAZyme db
     ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
 
@@ -212,79 +246,73 @@ def add_ec_numbers(uniprot_dict, all_ecs, gbk_dict, connection, args):
     existing_ecs = list(ec_table_dict.keys())
     ec_insert_values = set()
 
-    for ec in all_ecs:
-        if ec[0] not in existing_ecs:
-            ec_insert_values.add( ec )
+    for ncbi_acc in tqdm(uniprot_dict, desc="Identifying EC numbers to add to the local CAZyme db"):
+        for ec_num in uniprot_dict[ncbi_acc]['ec_numbers']:
+            if ec_num not in existing_ecs:
+                ec_insert_values.add((ec_num,))
 
     if len(ec_insert_values) != 0:
         insert_data(connection, "Ecs", ["ec_number"], list(ec_insert_values))
 
-        # load in the newly updated EC table from the local CAZyme db
-        ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
+
+def add_genbank_ec_relationships(uniprot_dict, gbk_dict, connection, args):
+    """Add and update relationships between the Genbanks and Ecs table.
+
+    :param uniprot_dict: dict containing data retrieved from UniProt
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc, - str
+            'protein_name': protein_name, -str
+            'ec_numbers': ec_numbers, - set
+            'sequence': sequence, - str
+            'sequence_date': date seq was last updated yyyy-mm-dd
+            'pdbs': all_pdbs, - set
+        }
+    :param gbk_dict: {gbk_acc: gbk_id}
+    :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param args: cmd-line args parser
+
+    Return nothing
+    """
+    # load in EC records in the local CAZyme db
+    # {ec_number: ec_id}
+    ec_table_dict = get_table_dicts.get_ec_table_dict(connection)
     
     # load in gbk_ec table, contains the gbk-ec number relationships
-    ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)  # {ec_id: {gbk ids}}
+    # {ec_id: {gbk ids}}
+    ec_gbk_table_dict = get_table_dicts.get_ec_gbk_table_dict(connection)  
 
-    if args.delete_old_ec:
-        gbk_ec_table_dict = get_table_dicts.get_gbk_ec_table_dict(connection)  # {gbk_id: {ec ids}}
-        ecs_rel_to_delete = set()  # set of tuples (gbk_id, ec_id)
-
-    # compile list of tuples to insert into the Genbanks_Ecs table
+    # compile list of tuples to insert or delete into the Genbanks_Ecs table
     gbk_ec_insert_values = set()
 
-    for uniprot_acc in tqdm(uniprot_dict, desc="Updating EC numbers"):
-        genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
-        try:
-            gbk_id = gbk_dict[genbank_acc]
-        except KeyError:
-            logger.error(
-                f"Mapped the GenBank accession '{genbank_acc}' to the UniProt accession\n"
-                f"'{uniprot_acc}' but the GenBank accession is not in the local CAZyme database\n"
-                f"therefore, not adding protein data for GBK:{genbank_acc}/UniProt:{uniprot_acc}"
-                "to the local CAZyme database."
-            )
-            continue
-        
-        retrieved_ec_numbers = uniprot_dict[uniprot_acc]["ec"]  # EC#s retrieved from UniProt
-        for ec in retrieved_ec_numbers:
-            ec_id = ec_table_dict[ec]
+    for ncbi_acc in tqdm(uniprot_dict, desc="Adding and updating EC-Genbanks relationships"):
+        for ec_number in uniprot_dict[ncbi_acc]['ec_numbers']:
+            gbk_db_id = gbk_dict[ncbi_acc]
+            ec_id = ec_table_dict[ec_number]
 
             try:
-                existing_gbk_relationships = ec_gbk_table_dict[ec_id]
-                # check if protein-ec# relationship is already in the db
-                if gbk_id not in existing_gbk_relationships:
-                    gbk_ec_insert_values.add( (gbk_id, ec_id) )
-            except KeyError:  # when adding relationship for the first time
-                gbk_ec_insert_values.add( (gbk_id, ec_id) )
+                existing_relationships = ec_gbk_table_dict[ec_id]
+                if gbk_db_id not in existing_relationships:
+                    gbk_ec_insert_values.add( (gbk_db_id, ec_id) )
 
-        if args.delete_old_ec:
-            existing_ec_relationships = gbk_ec_table_dict[gbk_id]
-            for ec in retrieved_ec_numbers:
-                ec_id = ec_table_dict[ec]
-                if ec_id not in existing_ec_relationships:
-                    ecs_rel_to_delete.add( (gbk_id, ec_id) )
+            except KeyError: # EC number is not linked to any gbk records so add new records
+                gbk_ec_insert_values.add( (gbk_db_id, ec_id) )
 
     if len(gbk_ec_insert_values) != 0:
         insert_data(connection, "Genbanks_Ecs", ["genbank_id", "ec_id"], list(gbk_ec_insert_values))
-
-    if args.delete_old_ec and len(ecs_rel_to_delete) != 0:
-        with connection.begin():
-            for record in tqdm(ecs_rel_to_delete, desc="Deleteing old GenBank-EC relationships"):
-                # record = (genbank_id, ec_id,)
-                stmt = (
-                    delete(genbanks_ecs).\
-                    where(genbanks_ecs.c.genbank_id == record[0]).\
-                    where(genbanks_ecs.c.ec_id == record[1])
-                )
-                connection.execute(stmt)
-
-    return
 
 
 def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
     """Add PDB accessions to the local CAZyme database
 
     :param uniprot_dict: dict containing data retrieved from UniProt
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc, - str
+            'protein_name': protein_name, -str
+            'ec_numbers': ec_numbers, - set
+            'sequence': sequence, - str
+            'sequence_date': date seq was last updated yyyy-mm-dd
+            'pdbs': all_pdbs, - set
+        }
     :param gbk_dict: dict representing data from the Genbanks table
     :param connection: open sqlalchemy conenction to an SQLite db engine
     :param args: cmd-line args parser
@@ -302,8 +330,8 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
 
     # First, identify new PDB accessions to add to the database
     pdb_insert_values = set()
-    for uniprot_acc in tqdm(uniprot_dict, desc="Identifying new PDBs to add to db"):
-        for pdb in uniprot_dict[uniprot_acc]["pdb"]:
+    for ncbi_acc in tqdm(uniprot_dict, desc="Identifying new PDBs to add to db"):
+        for pdb in uniprot_dict[ncbi_acc]["pdbs"]:
             try:
                 pdb_table_dict[pdb]
             except KeyError:
@@ -312,103 +340,162 @@ def add_pdb_accessions(uniprot_dict, gbk_dict, connection, args):
     if len(pdb_insert_values) != 0:
         logger.warning(f"Adding {len(pdb_insert_values)} PDB accessions to the database")
         insert_data(connection, "Pdbs", ["pdb_accession"], list(pdb_insert_values))
-        # reload the updated pdb table
-        pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
+
+
+def add_pdb_gbk_relationships(uniprot_dict, gbk_dict, connection, args):
+    """Add relationships between PDB accessions and proteins in the Genbanks table
+
+    :param uniprot_dict: dict containing data retrieved from UniProt
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc, - str
+            'protein_name': protein_name, -str
+            'ec_numbers': ec_numbers, - set
+            'sequence': sequence, - str
+            'sequence_date': date seq was last updated yyyy-mm-dd
+            'pdbs': all_pdbs, - set
+        }
+    :param gbk_dict: dict representing data from the Genbanks table
+    :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param args: cmd-line args parser
+
+    Return nothing.
+    """
+    # load the updated pdb table
+    # {pdb_acc: pdb_db_id}
+    pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)
     
     # load in Genbanks_Pdbs relationship table
     gbk_pdb_rel_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
-    # {gbk_db_id: {pdb_db_id} }
+    # {gbk_db_id: set(pdb_db_ids) }
 
     # convert the data from UniProt into a dict of {gbk_db_id: pdb_db_id} 
     # to identify pdb-protein relationships retrieved from UniProt
     gbk_pdb_insert_values = set()
-    for uniprot_acc in tqdm(uniprot_dict, desc="Identifying new protein-PDB relationships to add to db"):
-        genbank_acc = uniprot_dict[uniprot_acc]["genbank_accession"]
 
+    for ncbi_acc in tqdm(uniprot_dict, desc="Identifying new protein-PDB relationships to add to db"):
+
+        if len(uniprot_dict[ncbi_acc]['pdbs']) == 0:  # not relationships to add
+            continue
+
+        uniprot_acc = uniprot_dict[ncbi_acc]['uniprot_acc']
         try:
-            gbk_db_id = gbk_dict[genbank_acc]
+            gbk_db_id = gbk_dict[ncbi_acc]
         except KeyError:
             logger.error(
-                f"Mapped the GenBank accession '{genbank_acc}' to the UniProt accession\n"
+                f"Mapped the GenBank accession '{ncbi_acc}' to the UniProt accession\n"
                 f"'{uniprot_acc}' but the GenBank accession is not in the local CAZyme database\n"
-                f"therefore, not adding protein data for GBK:{genbank_acc}/UniProt:{uniprot_acc}"
+                f"therefore, not adding protein data for GBK:{ncbi_acc}/UniProt:{uniprot_acc}"
                 "to the local CAZyme database."
             )
             continue
 
-        # set of pdb_accessions retrieved from UniProt
-        retrieved_pdbs = uniprot_dict[uniprot_acc]["pdb"]
-        if len(retrieved_pdbs) == 0:
-            continue
-
-        # set of pdb_db_ids the protein (gbk_db_id) is already related to in the db
+        # check if there any existing relationships for the gbk record
         try:
             existing_pdb_relationships = gbk_pdb_rel_table_dict[gbk_db_id]  
         except KeyError:
             existing_pdb_relationships = set()
 
-        for pdb_acc in retrieved_pdbs:
-            pdb_db_id = pdb_table_dict[pdb_acc]
-
+        for pdb_acc in uniprot_dict[ncbi_acc]["pdbs"]:
             try:
-                if pdb_db_id not in existing_pdb_relationships:
-                    # genbank and pdb records not yet stored together in the relationship table
-                    gbk_pdb_insert_values.add( (gbk_db_id, pdb_db_id) )
+                pdb_db_id = pdb_table_dict[pdb_acc]
             except KeyError:
-                # genbank not listed in the Genbanks_Pdbs relationship table
+                logger.error(
+                    f"Retrieved PDB:{pdb_acc} from UniProt.\n"
+                    "Cannot link to Genbanks table records because PDB not listed in the Pdbs table"
+                )
+                continue
+            
+            if pdb_db_id not in gbk_pdb_rel_table_dict:
                 gbk_pdb_insert_values.add( (gbk_db_id, pdb_db_id) )
-
-        if args.delete_old_pdbs:
-            # convert gbk_pdb_rel_table_dict to be keyed by pdb_db_ids and valued by set of gbk_db_ids
-            pdb_gbk_relationships = {}
-            for existing_gbk_id in gbk_pdb_rel_table_dict:
-                existing_pdbs = gbk_pdb_rel_table_dict[existing_gbk_id]
-                for pdb in existing_pdbs:
-                    try:
-                        pdb_gbk_relationships[pdb].add(existing_gbk_id)
-                    except KeyError:
-                        pdb_gbk_relationships[pdb] = {existing_gbk_id}
-
-            # for each pdb_db_id related to the current protein in the db
-            # get the corresponding pdb_accession
-            all_existing_pdb_ids = list(set(pdb_table_dict.values()))
-            all_existing_pdb_accs = list(pdb_table_dict.keys())
-
-            for pdb_db_id in existing_pdb_relationships:
-                position = all_existing_pdb_ids.index(pdb_db_id)
-                pdb_acc = all_existing_pdb_accs[position]
-
-                if pdb_acc not in retrieved_pdbs:
-                    # delete genbank-pdb relationship
-                    relationships_to_delete.add( (gbk_db_id, pdb_db_id) )
-
-                    # check if can delete pdb accession because it is not linked to any other proteins
-                    if len(pdb_gbk_relationships[pdb_db_id]) != 1:  # deleting one pdb accession will not leave not related to any genbanks
-                        pdbs_to_delete.add( (pdb_acc) )
 
     if len(gbk_pdb_insert_values) != 0:
         insert_data(connection, "Genbanks_Pdbs", ["genbank_id", "pdb_id"], list(gbk_pdb_insert_values))
 
-    if args.delete_old_pdbs and len(pdbs_to_delete) != 0:
-        with connection.begin():
-            for record in tqdm(pdbs_to_delete, desc="Deleteing old PDB accessions"):
-            # record = (pdb_acc,)
-                connection.execute(
-                    text(
-                        "DELETE Pdbs "
-                        f"WHERE pdb_accession = '{record[0]}'"
-                    )
-                )
 
-    if args.delete_old_pdbs and len(relationships_to_delete) != 0:
-        with connection.begin():
-            for record in tqdm(relationships_to_delete, desc="Deleteing old Genbank-PDB relationships"):
-            # record = (pdb_acc,)
-                connection.execute(
-                    text(
-                        "DELETE Genbanks_Pdbs "
-                        f"WHERE genbank_id = '{record[0]}' AND pdb_id = '{record[1]}'"
-                    )
+def add_uniprot_taxs(uniprot_dict, connection, args):
+    """Add taxonomic classifications (genus, species) to the local CAZyme database UniprotTaxs table.
+
+    :param uniprot_dict: dict containing data retrieved from UniProt
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc, - str
+            'protein_name': protein_name, -str
+            'ec_numbers': ec_numbers, - set
+            'sequence': sequence, - str
+            'sequence_date': date seq was last updated yyyy-mm-dd
+            'pdbs': all_pdbs, - set
+        }
+    :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param args: cmd-line args parser
+
+    Return nothing.
+    """
+    # add tax data to the local db
+    # load the table
+    ut_table_dict, ut_tax_dict = get_table_dicts.get_uniprottax_table_dict(connection)
+    # {db id: {'genus': str, 'species': str}}
+    # {'genus species': db id}
+
+    taxs_to_add = set()
+
+    for ncbi_acc in tqdm(uniprot_dict, desc="Identifying taxs to add to db"):
+        genus = uniprot_dict[ncbi_acc]['genus']
+        species = uniprot_dict[ncbi_acc]['species']
+
+        try:
+            ut_tax_dict[f"{genus} {species}"]
+        except KeyError:
+            taxs_to_add.add( (genus, species) )
+
+    if len(taxs_to_add) > 0:
+        insert_data(connection, "UniprotTaxs", ["genus", "species"], list(taxs_to_add))
+
+    add_uniprot_tax_relationships(uniprot_dict, connection, args)
+
+    
+def add_uniprot_tax_relationships(uniprot_dict, connection, args):
+    """Link Uniprot records to UniprotTaxs table.
+
+    :param uniprot_dict: dict containing data retrieved from UniProt
+        uniprot_dict[ncbi_acc] = {
+            'uniprot_acc': uniprot_acc, - str
+            'protein_name': protein_name, -str
+            'ec_numbers': ec_numbers, - set
+            'sequence': sequence, - str
+            'sequence_date': date seq was last updated yyyy-mm-dd
+            'pdbs': all_pdbs, - set
+        }
+    :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param args: cmd-line args parser
+
+    Return nothing.
+    """
+    ut_table_dict, ut_tax_dict = get_table_dicts.get_uniprottax_table_dict(connection)
+    # {db id: {'genus': str, 'species': str}}
+    # {'genus species': db id}
+    
+    uniprot_table_dict = get_table_dicts.get_uniprot_table_dict(connection)
+    # {acc: {name: str, gbk_id: int, seq: str, seq_date:str } }
+
+    print('ut_tax_dict:', ut_tax_dict)
+
+    relationships = {}  # {uniprot db id: uniprot tax db id}
+
+    for ncbi_acc in tqdm(uniprot_dict, desc="Identifying Uniprot-Tax relationships"):
+        genus = uniprot_dict[ncbi_acc]['genus']
+        species = uniprot_dict[ncbi_acc]['species']
+        uniprot_acc = uniprot_dict[ncbi_acc]['uniprot_acc']
+
+        uni_db_id = uniprot_table_dict[uniprot_acc]['db_id']
+        tax_db_id = ut_tax_dict[f"{genus} {species}"]
+
+        relationships[uni_db_id] = tax_db_id
+
+    with connection.begin():
+        for uni_db_id in tqdm(relationships, desc="Adding Uniprot-Tax relationships"):
+            connection.execute(
+                text(
+                    "UPDATE Uniprots "
+                    f"SET uniprot_tax_id = {relationships[uni_db_id]} "
+                    f"WHERE uniprot_id = '{uni_db_id}'"
                 )
-                
-    return
+            )
