@@ -103,9 +103,9 @@ For a full description of the operation and examples of use, please see our pape
 
 > Hobbs, E. E. M., Gloster, T. M., and Pritchard, L. (2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets', _bioRxiv_, [https://doi.org/10.1101/2022.12.02.518825](https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1.full)
 
-### Database schema
+### Database structure
 
-You can view the database schema [here](#database-schema) and find a PDF of the database schema [here]](https://hobnobmancer.github.io/cazy_webscraper/database_schema.pdf).
+You can view the database schema [here](#database-schema) and find a PDF of the database schema [here](https://hobnobmancer.github.io/cazy_webscraper/database_schema.pdf).
 
 ## Contributions
 
