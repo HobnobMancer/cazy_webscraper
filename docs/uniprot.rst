@@ -46,11 +46,6 @@ Below are listed the required and optional command-line options for configuring 
 
 ``database`` - **REQUIRED** Path to a local CAZyme database to add UniProt data to.
 
-``--ncbi_batch_size`` - Size of batch query posted to NCBI Entrez. Default 150.
-
-``uniprot_batch_size`` - Change the size of the batch query size submitted via `bioservices <https://bioservices.readthedocs.io/en/master/>`_ to UniProt
-to retrieve protein data. Default 1000. See the `UniProt REST API documentation <https://www.uniprot.org/help/id_mapping>`_ for batch size limits.
-
 ``--cache_dir`` - Path to cache dir to be used instead of default cache dir path.
 
 ``--cazy_synonyms`` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
@@ -115,9 +110,24 @@ to retrieve protein data. Default 1000. See the `UniProt REST API documentation 
 
 ``--use_uniprot_cache`` - Path to JSON file containing data previosuly retrieved from UniProt by ``cazy_webscraper``, use if an error occurred while adding the data to the local CAZyme database. This will skip the retrieval of data from UniProt, and the cached data will be added to the local CAZyme database. This can also be shared with others to add the same data to their local CAZyme database.
 
-``--uniprot_batch_size`` - Size of an individual batch query submitted to the `UniProt REST API <https://www.uniprot.org/help/programmatic_access>_` to retrieve the UniProt accessions of proteins identified by the GenBank accession. Default is 150. The UniProt API documentation recommands batch sizes of less than 20,000 but batch sizes of 1,000 often result in HTTP 400 errors. It is recommend to keep batch sizes less than 1,000, and ideally less than 200.
+``--bioservices_batch_size`` - Size of an individual batch query submitted to the `UniProt REST API <https://www.uniprot.org/help/programmatic_access>_` to retrieve protein data from UniProt. Default is 1000. 
 
 ``--verbose``, ``-v`` - Enable verbose logging. This does **not** set the SQLite engine ``echo`` parameter to True. Default: False.
+
+-----------
+Batch sizes
+-----------
+
+Note that according to Uniprot (June 2022), there are various limits on ID Mapping Job Submission:
+
+========= =====================================================================================
+Limit	  Details
+========= =====================================================================================
+100,000	  Total number of ids allowed in comma separated param ids in /idmapping/run api
+500,000	  Total number of "mapped to" ids allowed
+100,000	  Total number of "mapped to" ids allowed to be enriched by UniProt data
+10,000	  Total number of "mapped to" ids allowed with filtering
+========= =====================================================================================
 
 -----------
 Basic Usage

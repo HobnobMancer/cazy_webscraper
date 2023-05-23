@@ -67,7 +67,7 @@ def build_parser(argv: Optional[List] = None):
         "--bioservices_batch_size",
         type=int,
         default=1000,
-        help="Batch size for queries parsed by bioservices to UniProt to retrieve protein data"
+        help="Batch size for queries parsed by bioservices to the UniProt REST API to retrieve protein data"
     )
 
     parser.add_argument(
@@ -342,20 +342,6 @@ def build_parser(argv: Optional[List] = None):
         default=None,
         help="Path to a JSON file containing data previously retrieved from UniProt by cazy_webscraper",
     )  
-
-    parser.add_argument(
-        "--uniprot_batch_size",
-        type=int,
-        default=150,
-        help="Batch size for queries sent to the UniProt REST API to retrieved UniProt accessions"
-    )
-
-    parser.add_argument(
-        "--ncbi_batch_size",
-        type=int,
-        default=150,
-        help="Batch size for queries sent to NCBI Entrez to retrieve protein accessions for gene names retrieved from UniProt"
-    )
 
     # Add option for more detail (verbose) logging
     parser.add_argument(

@@ -389,7 +389,7 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
     # [[acc, acc], [acc, acc]]
     bioservices_queries = get_chunks_list(
         ncbi_accessions,
-        args.uniprot_batch_size,
+        args.bioservices_batch_size,
     )
 
     for batch in bioservices_queries:

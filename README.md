@@ -400,9 +400,7 @@ Below are listed the command-line flags for configuring the retrieval of UniProt
 
 `database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
 
-`--ncbi_batch_size` - Size of batch query posted to NCBI Entrez. Default 150.
-
-`--uniprot_batch_size` - Change the query batch size submitted via [`bioservices`](https://bioservices.readthedocs.io/en/master/) to UniProt to retrieve protein data. Default is 1000. See the [UniProt REST API documentation](https://www.uniprot.org/help/id_mapping) for batch size limits.
+`--bioservices_batch_size` - Change the query batch size submitted via [`bioservices`](https://bioservices.readthedocs.io/en/master/) to UniProt to retrieve protein data. Default is 1000. See the [UniProt REST API documentation](https://www.uniprot.org/help/id_mapping) for batch size limits.
 
 `--cache_dir` - Path to cache dir to be used instead of default cache dir path.
 
@@ -474,6 +472,18 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--uniprot_batch_size` - Size of an individual batch query submitted to the [UniProt REST API](https://www.uniprot.org/help/programmatic_access) to retrieve the UniProt accessions of proteins identified by the GenBank accession. Default is 150. The UniProt API documentation recommands batch sizes of less than 20,000 but batch sizes of 1,000 often result in HTTP 400 errors. It is recommend to keep batch sizes less than 1,000, and ideally less than 200.
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
+
+**UniProt batch sizes:**
+Note that according to Uniprot (June 2022), there are various limits on ID Mapping Job Submission:
+
+========= =====================================================================================
+Limit	  Details
+========= =====================================================================================
+100,000	  Total number of ids allowed in comma separated param ids in /idmapping/run api
+500,000	  Total number of "mapped to" ids allowed
+100,000	  Total number of "mapped to" ids allowed to be enriched by UniProt data
+10,000	  Total number of "mapped to" ids allowed with filtering
+========= =====================================================================================
 
 ### UniProt data retrieval cache
 
