@@ -14,6 +14,13 @@ This paper includes a full description of the operation and examples of use.
 
     Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. [https://doi.org/10.6084/m9.figshare.14370860.v7](https://doi.org/10.6084/m9.figshare.14370860.v7)
 
+---------
+Cite CAZy
+---------
+
+``cazy_webscraper`` is entirely dependent upon the CAZy database.
+
+   Elodie Drula and others, The carbohydrate-active enzyme database: functions and literature, Nucleic Acids Research, Volume 50, Issue D1, 7 January 2022, Pages D571–D577, https://doi.org/10.1093/nar/gkab1045
 
 -------------------
 Citing dependencies
