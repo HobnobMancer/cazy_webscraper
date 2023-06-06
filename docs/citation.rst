@@ -8,6 +8,10 @@ Cite ``cazy_webscraper``
 
 If you use ``cazy_webscraper``, please cite the following publication:
 
+   Hobbs, E. E. M., Gloster, T. M., and Pritchard, L. (2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets', bioRxiv, https://doi.org/10.1101/2022.12.02.518825
+
+This paper includes a full description of the operation and examples of use.
+
     Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. [https://doi.org/10.6084/m9.figshare.14370860.v7](https://doi.org/10.6084/m9.figshare.14370860.v7)
 
 
