@@ -195,9 +195,13 @@ For details and updates on development, please consult the `GitHub repository <h
 Citing ``cazy_webscraper``
 --------------------------
  
-If you use ``cazy_webscraper`` in your work *please* do cite our work (including the provided DOI), as well as the specific version of the tool you use. This is not only helpful for us as developers to get our work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**. Citation:
-   
-   Hobbs, Emma E. M.; Pritchard, Leighton; Chapman, Sean; Gloster, Tracey M. (2021): cazy_webscraper Microbiology Society Annual Conference 2021 poster. FigShare. Poster. https://doi.org/10.6084/m9.figshare.14370860.v7 
+If you use ``cazy_webscraper`` in your work *please* do cite our work (including the provided DOI), as well as the specific version of the tool you use. This is not only helpful for us as developers to get our work out into the world, but it is also **essential for the reproducibility and integrity of scientific research**.
+
+**Citation:**
+
+   Hobbs, E. E. M., Gloster, T. M., and Pritchard, L. (2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets', bioRxiv, https://doi.org/10.1101/2022.12.02.518825
+
+This paper includes a full description of the operation and examples of use.
 
 ``cazy_webscraper`` depends on a number of tools. To recognise the contributions that the 
 authors and developers have made, please also cite the following:
