@@ -156,6 +156,8 @@ If you use `cazy_webscraper`, please cite the following publication:
 
 > Hobbs, E. E. M., Gloster, T. M., and Pritchard, L. (2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets', _bioRxiv_, [https://doi.org/10.1101/2022.12.02.518825](https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1)
 
+The supplementary information for this manuscript is available via the BioRxiv server, and in the `manuscript` directory in this repository.
+
 cazy_webscraper depends on a number of tools. To recognise the contributions that the 
 authors and developers have made, please also cite the following:
 
