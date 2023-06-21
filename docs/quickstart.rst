@@ -64,6 +64,10 @@ To download the single CAZy family GH169, use the command:
 
 .. code-block:: bash
 
-  cazy_webscraper --families GH169 -o GH169
+  cazy_webscraper <user email> --families GH169 -o GH169
 
-This will create a new directory ``GH169`` in the current working directory, and will download all CAZy entries in the GH169 family to a new SQLite3 database in that directory:
+This will create a new directory ``GH169`` in the current working directory, and will download all CAZy entries in the GH169 family to a new SQLite3 database in that directory.
+
+.. note::
+   To retrieve data from NCBI ``cazy_webscraper`` utilises Entrez, and therefore, a user email address must be provided as this a requirement of Entrez. When downloading CAZyme records from CAZy, ``cazy_webscraper`` retrieves the latest taxonomic classification for proteins assigned to multiple taxonomies in NCBI, and thus ``cazy_webscraper`` requires an email address.
+
