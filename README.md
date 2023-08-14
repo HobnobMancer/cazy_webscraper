@@ -19,6 +19,10 @@
 `cazy_webscraper` is an application and Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. The code is distributed under the MIT license.
 The full documentation can be found at [Read the Docs](https://cazy-webscraper.readthedocs.io/en/latest/?badge=latest).
 
+For full details see our publication in [Microbial Genomics](https://www.microbiologyresearch.org/content/journal/mgen/10.1099/mgen.0.001086)
+
+> Hobbs, E. E. M, Gloster, T. M., Pritchard, L. (2023) cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets, _Microbial Genomics_, 9(8). [https://doi.org/10.1099/mgen.0.001086](https://doi.org/10.1099/mgen.0.001086)
+
 **`cazy_webscraper` retrieves protein data from the [CAZy database](https://www.cazy.org) and stores the data in a local SQLite3 database.** This enables users to integrate the dataset into analytical pipelines, and interrogate the data in a manner unachievable through the CAZy website.
 
 **Data can be retrieved for user defined datasets of interest.** `cazy_webscraper` can recover specified CAZy Classes and/or CAZy families. These queries can be filtered by taxonomy at Kingdoms, genus, species or strain level. Successive CAZy queries can be collated into a single local database. A log of each query is recorded in the database for transparency, reproducibility and shareablity.
@@ -154,7 +158,7 @@ We welcome contributions and suggestions. You can raise issues at this repositor
 
 If you use `cazy_webscraper`, please cite the following publication:
 
-> Hobbs, E. E. M., Gloster, T. M., and Pritchard, L. (2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets', _bioRxiv_, [https://doi.org/10.1101/2022.12.02.518825](https://www.biorxiv.org/content/10.1101/2022.12.02.518825v1)
+> Hobbs, E. E. M, Gloster, T. M., Pritchard, L. (2023) cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets, _Microbial Genomics_, 9(8). [https://doi.org/10.1099/mgen.0.001086](https://doi.org/10.1099/mgen.0.001086)
 
 The supplementary information for this manuscript is available via the BioRxiv server, and in the `manuscript` directory in this repository.
 
