@@ -10,7 +10,7 @@
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/cazy_webscraper/badges/version.svg)](https://anaconda.org/bioconda/cazy_webscraper)
 [![Anaconda-Update Badge](https://anaconda.org/bioconda/cazy_webscraper/badges/latest_release_date.svg)](https://anaconda.org/bioconda/cazy_webscraper)  
 [![pyani PyPi version](https://img.shields.io/pypi/v/cazy_webscraper "PyPI version")](https://pypi.python.org/pypi/cazy_webscraper)  
-[![Downloads](https://pepy.tech/badge/cazy-webscraper)](https://pepy.tech/project/cazy-webscraper)
+[![Downloads](https://static.pepy.tech/badge/cazy-webscraper)](https://pepy.tech/project/cazy-webscraper)
 
 --------------------------------
 
