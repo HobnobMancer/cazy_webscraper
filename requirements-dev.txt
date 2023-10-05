@@ -12,3 +12,4 @@ pytest-cov
 pytest-ordering
 rstcheck
 sphinx
+sphinx_rtd_theme
