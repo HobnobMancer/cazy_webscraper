@@ -1,0 +1,38 @@
+cff-version: 1.0.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Hobbs"
+  given-names: "Emma"
+  orcid: "https://orcid.org/0000-0002-8470-4739"
+- family-names: "Gloster"
+  given-names: "Tracey"
+  orcid: "https://orcid.org/0000-0003-4692-2222"
+- family-names: "Pritchard"
+  given-names: "Leighton"
+  orcid: "https://orcid.org/0000-0002-8392-2822"
+title: "cazy_webscraper"
+version: 2.3.0
+doi: 10.5281/zenodo.7962936
+date-released: 2023-05-23
+url: "https://hobnobmancer.github.io/cazy_webscraper/"
+preferred-citation:
+  type: article
+  authors:
+- family-names: "Hobbs"
+  given-names: "Emma"
+  orcid: "https://orcid.org/0000-0002-8470-4739"
+- family-names: "Gloster"
+  given-names: "Tracey"
+  orcid: "https://orcid.org/0000-0003-4692-2222"
+- family-names: "Pritchard"
+  given-names: "Leighton"
+  orcid: "https://orcid.org/0000-0002-8392-2822"
+  doi: "10.1099/mgen.0.001086"
+  journal: "Microbial Genomics"
+  month: 8
+  start: 1 # First page number
+  end: 23 # Last page number
+  title: "cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets"
+  issue: 8
+  volume: 9
+  year: 2023
