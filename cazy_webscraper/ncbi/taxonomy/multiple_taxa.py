@@ -42,6 +42,9 @@
 
 import logging
 
+from http.client import IncompleteRead
+
+from Bio.Entrez.Parser import NotXMLError
 from saintBioutils.genbank import entrez_retry
 from saintBioutils.misc import get_chunks_list
 from tqdm import tqdm
@@ -201,7 +204,7 @@ def get_ncbi_tax(epost_results, cazy_data, replaced_taxa_logger, args):
             protein_records = Entrez.read(record_handle, validate=False)
 
     # if no record is returned from call to Entrez
-    except (TypeError, AttributeError) as error:
+    except (TypeError, AttributeError, RuntimeError,  NotXMLError, IncompleteRead) as error:
         logger.error(
             f"Entrez failed to retireve accession numbers."
             "Exiting retrieval of accession numbers, and returning null value 'NA'"
