@@ -49,21 +49,23 @@ from collections import namedtuple
 from tqdm import tqdm
 from zipfile import ZipFile
 
-from cazy_webscraper import crawler
 from cazy_webscraper.crawler import get_cazy_file
 
 
 def get_cazy_txt_file_data(cache_dir, time_stamp, args):
     """Retrieve txt file of CAZy db dump from CAZy or the local disk.
+    
     :param cache_dir: Path(), path to directory where cache is written to
     :param time_stamp: str, date and time cazy_webscraper was intiated
     :param args: cmd-line args parser
+
     Return list of lines from CAZy txt file, one line is one item in the list"""
     logger = logging.getLogger(__name__)
 
     if args.cazy_data is not None:   # retrieve lines from predownloaded CAZy txt file
         with open(args.cazy_data, 'r') as fh:
-            cazy_txt_lines = fh.read().splitlines()
+            for line in fh:
+                yield line
 
     else:
         # download CAZy database txt file
@@ -95,16 +97,15 @@ def get_cazy_txt_file_data(cache_dir, time_stamp, args):
             cazy_filepath = zip_handle.namelist()[0]
 
             with zip_handle.open(cazy_filepath) as fh:
-                cazy_txt_lines = fh.read().splitlines()
-
-    return cazy_txt_lines
+                for line in fh:
+                    yield line
 
 
 def parse_all_cazy_data(lines, cazy_fam_populations, args):
     """Extract ALL GenBank accession, taxonomy data and CAZy (sub)family annotations from CAZy txt file.
-    
+
     This is when no filters are applied.
-    
+
     :param lines: list of str, lines from CAZy txt file, one unqiue line is one item in the list
     :param cazy_fam_populations: None if args.validate is False, or dict of CAZy listed CAZy 
         (sub)fam population sizes if args.validate is True
@@ -182,7 +183,7 @@ def parse_cazy_data_with_filters(
 ):
     """Extract GenBank accession, taxonomy data and CAZy (sub)family annotations from CAZy txt file.
     
-    :param lines: list of str, lines from CAZy txt file, one unqiue line is one item in the list
+    :param lines: generator, lines from CAZy txt file, one unqiue line is one item in the list
     :param class_filter: set of CAZy class to scrape
     :param fam_filter: set of CAZy families to scrape
     :param kingdom_filter: set of tax Kingdoms to limit scrape to
@@ -198,7 +199,6 @@ def parse_cazy_data_with_filters(
 
     # define dicts CAZy data will be stored in
     cazy_data = {} # {genbank_accession: {organism,}, families: {fam: {subfams}} }
-    taxa_data = {} # {kingdom: organism}
     
     # used for verbose logging
     gbk_accessions = set()
@@ -335,7 +335,7 @@ def apply_kingdom_tax_filters(
 ):
     """Apply User defined Kingdom and Taxonomy filters to determine if protein is to be added to 
     the local CAZyme database.
-    
+
     :param cazy_data: dict of proteins to add to the local CAZyme database
     :param kingdom_filter: set of kingdoms to limit the addition of proteins to the db to
     :param tax_filter: set of genus, species and strains to limit the addition of protein to the db to
@@ -348,7 +348,7 @@ def apply_kingdom_tax_filters(
     - boolean if data for the given protein was (True) or was not (False) added to the db
     """
     stored_gbk_accession = False
-    
+
     if (len(kingdom_filter) == 0) and (len(tax_filter) == 0):  # kingdom and tax filters NOT enabled
         cazy_data = add_protein_to_dict(
             cazy_data,
@@ -381,13 +381,13 @@ def apply_kingdom_tax_filters(
             kingdom,
         )
         stored_gbk_accession = True
-    
+
     return cazy_data, stored_gbk_accession
 
 
 def add_protein_to_dict(cazy_data, gbk_accession, cazy_fam, cazy_subfam, organism, kingdom):
     """Add protein to dict containing all proteins to be added to the local CAZyme database.
-    
+
     :param cazy_data: dict of proteins to add to the local CAZyme database
     :param cazy_fam: str, name of the CAZy family
     :param cazy_subfam: str, name of the CAZy subfamily or None if not in a subfamily
@@ -415,7 +415,7 @@ def add_protein_to_dict(cazy_data, gbk_accession, cazy_fam, cazy_subfam, organis
             "families": {cazy_fam: {cazy_subfam}},
         }
         return cazy_data
-    
+
     return cazy_data
 
 
@@ -424,13 +424,13 @@ def validate_data_retrieval(cazy_data, cazy_fam_populations):
 
     Check the number of retrieved proteins per CAZy family against the family population sizes
     previously retrieved to the CAZy website.
-    
+
     :param lines: list of str, lines from CAZy txt file, one unqiue line is one item in the list
     :param class_filter: set of CAZy class to scrape
     :param fam_filter: set of CAZy families to scrape
     :param kingdom_filter: set of tax Kingdoms to limit scrape to
     :param tax_filter: set of tax (genus, species, strains) filters to limit scrape to
-    
+
     Return nothing
     """
     logger = logging.getLogger(__name__)
@@ -445,31 +445,31 @@ def validate_data_retrieval(cazy_data, cazy_fam_populations):
             # if protein has is not listed under the parent family alone, add fam with None subfam value
             if None not in cazy_data[gbk_accession]['family'][fam]:
                 cazy_data[gbk_accession]['family'][fam].add(None)
-            
+
             for subfam in cazy_data[gbk_accession]['family'][fam]:
                 if subfam is None:
                     try:
                         post_filtering_fam_pops[fam] += 1
                     except KeyError:
                         post_filtering_fam_pops[fam] = 1
-                
+
                 else:
                     try:
                         post_filtering_fam_pops[subfam] += 1
                     except KeyError:
                         post_filtering_fam_pops[subfam] = 1
-    
+
     for fam in total_retrieved_fam_pops:
         try:
             post_filtering_pop = post_filtering_fam_pops[fam]
         except KeyError:
             post_filtering_pop = 0
-        
+
         try:
             cazy_pop = cazy_fam_populations[fam]
         except KeyError:
             cazy_pop = 'Not Retrieved'
-        
+
         if cazy_pop == 'Not Retrieved' or cazy_pop == 'Failed Retrieval':
             logger.warning(
                 f"Cannot validate data retrieval for {fam} because failed to retrieve\n"
@@ -508,9 +508,9 @@ def validate_data_retrieval(cazy_data, cazy_fam_populations):
 
 def build_taxa_dict(cazy_data):
     """Createa a dict of taxa data extracted from the CAZy plain text file.
-    
+
     :param cazy_dict: dict of CAZy data
-    
+
     Return taxa_dict, dict of taxonomy data {kingdom: set(organism)}
     """
     logger = logging.getLogger(__name__)
@@ -518,11 +518,11 @@ def build_taxa_dict(cazy_data):
     cazy_data = add_tax_keys(cazy_data)
 
     taxa_dict = {}  # {kingdom: {organism,}}
-    
+
     for genbank_accession in tqdm(cazy_data, "Compiling taxa data"):
         kingdom = cazy_data[genbank_accession]['kingdom']
         organism = cazy_data[genbank_accession]['organism']
-        
+
         try:
             taxa_dict[kingdom].add(organism)
         except KeyError:
