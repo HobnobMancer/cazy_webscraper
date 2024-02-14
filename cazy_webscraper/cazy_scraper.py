@@ -81,8 +81,6 @@ from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger, build_logger
 
 from cazy_webscraper import (
-    CITATION_INFO,
-    VERSION_INFO,
     closing_message,
     connect_to_new_db,
     connect_existing_db,
@@ -329,45 +327,39 @@ def get_cazy_data(
     multiple_taxa_logger = build_logger(cache_dir, f"{logger_name}_{time_stamp}_multiple_taxa.log")
     replaced_taxa_logger = build_logger(cache_dir, f"{logger_name}_{time_stamp}_replaced_taxa.log")
 
-    if args.validate:  # retrieve CAZy family population sizes for validating all data was retrieved
-        # {fam (str): pop size (int)}
-        cazy_fam_populations = get_validation_data(
-            cazy_home_url,
-            excluded_classes,
-            cazy_class_synonym_dict,
-            config_dict,
-            cache_dir,
-            connection_failures_logger,
-            time_stamp,
-            args,
-        )
-    else:
-        cazy_fam_populations = None
-
-    cazy_txt_lines = get_cazy_txt_file_data(cache_dir, time_stamp, args)
-
-    logger.info(f"Retrieved {len(cazy_txt_lines)} lines from the CAZy db txt file")
+    print("Downloading and parsing CAZy database dump")
+    cazy_data = {}  # {genbank_accession: {organism,}, families: {(fam, subfam,),} }
 
     if (len(class_filters) == 0) and \
         (len(fam_filters) == 0) and \
             (len(kingdom_filters) == 0) and \
                 (len(taxonomy_filters) == 0):
-        cazy_data = parse_all_cazy_data(cazy_txt_lines, cazy_fam_populations, args)
+
+        for line in get_cazy_txt_file_data(cache_dir, time_stamp, args):
+            cazy_data = parse_all_cazy_data(
+                line,
+                cazy_data,
+                args,
+            )
 
     else:
-        cazy_data = parse_cazy_data_with_filters(
-            cazy_txt_lines,
-            class_filters,
-            fam_filters,
-            kingdom_filters,
-            taxonomy_filters,
-            cazy_fam_populations,
-            args,
-        )
+        for line in get_cazy_txt_file_data(cache_dir, time_stamp, args):
+            cazy_data = parse_cazy_data_with_filters(
+                line,
+                cazy_data,
+                class_filters,
+                fam_filters,
+                kingdom_filters,
+                taxonomy_filters,
+                args,
+            )
+
+    print(len(cazy_data), "*********")
 
     logger.info(
-        f"Retrieved {len((list(cazy_data.keys())))} proteins from the CAZy txt file "
-        "matching the scraping criteria"
+        "Retrieved %s proteins from the CAZy txt file "
+        "matching the scraping criteria",
+        len((list(cazy_data.keys())))
     )
 
     # check for GenBank accessions with multiple source organisms in the CAZy data
