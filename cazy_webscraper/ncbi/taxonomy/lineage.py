@@ -46,7 +46,7 @@ from Bio import Entrez
 from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
 from http.client import IncompleteRead
-from Bio.Entrez.Parser import NotXMLError
+from Bio.Entrez.Parser import NotXMLError, CorruptedXMLError
 
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.ncbi import post_ids
@@ -80,7 +80,7 @@ def link_single_prot_tax(prot_id, args):
             f"Error:\n{err}"
         )
         return "invalid"
-    except (TypeError, AttributeError, NotXMLError, IncompleteRead) as err:
+    except (TypeError, AttributeError, NotXMLError, IncompleteRead, CorruptedXMLError) as err:
         logger.warning(
             "Failed to connect to NCBI.Entrez and download the Entrez.elink result\n"
             "Will retry later"
@@ -175,7 +175,7 @@ def fetch_lineages(tax_ids, query_key, web_env, args):
         ) as handle:
             batched_tax_records = Entrez.read(handle, validate=False)
 
-    except (TypeError, AttributeError) as err:
+    except (TypeError, AttributeError, NotXMLError, IncompleteRead, CorruptedXMLError) as err:
         logger.warning(f"Failed to fetch tax records from NCBI tax for ids '{tax_ids}'':\n{err}")
         return
 
