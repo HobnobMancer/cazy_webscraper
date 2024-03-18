@@ -41,7 +41,10 @@
 
 import logging
 
+from http.client import IncompleteRead
+
 from Bio import Entrez
+from Bio.Entrez.Parser import NotXMLError, CorruptedXMLError
 from saintBioutils.genbank import entrez_retry
 from saintBioutils.misc import get_chunks_list
 from tqdm import tqdm
@@ -272,7 +275,7 @@ def query_ncbi(batch, gene_names=None, query_key=None, webEnv=None, uniprot_acc=
             )
             success = "retry"
 
-    except (TypeError, AttributeError) as err:  # if no record is returned from call to Entrez
+    except (TypeError, AttributeError, IncompleteRead, CorruptedXMLError) as err:  # if no record is returned from call to Entrez
         logger.warning(
             f"Error occurenced when batch quering NCBI ({process})\n"
             "Will retry batch later\n"
