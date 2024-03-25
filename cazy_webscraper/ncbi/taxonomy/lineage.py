@@ -42,11 +42,12 @@
 
 import logging
 
+
 from Bio import Entrez
 from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
 from http.client import IncompleteRead
-from Bio.Entrez.Parser import NotXMLError
+from Bio.Entrez.Parser import NotXMLError, CorruptedXMLError
 
 from cazy_webscraper.expand import get_chunks_list
 from cazy_webscraper.ncbi import post_ids
@@ -80,7 +81,7 @@ def link_single_prot_tax(prot_id, args):
             f"Error:\n{err}"
         )
         return "invalid"
-    except (TypeError, AttributeError, NotXMLError, IncompleteRead) as err:
+    except (TypeError, AttributeError, NotXMLError, IncompleteRead, CorruptedXMLError) as err:
         logger.warning(
             "Failed to connect to NCBI.Entrez and download the Entrez.elink result\n"
             "Will retry later"
@@ -175,7 +176,7 @@ def fetch_lineages(tax_ids, query_key, web_env, args):
         ) as handle:
             batched_tax_records = Entrez.read(handle, validate=False)
 
-    except (TypeError, AttributeError) as err:
+    except (TypeError, AttributeError, NotXMLError, IncompleteRead, CorruptedXMLError) as err:
         logger.warning(f"Failed to fetch tax records from NCBI tax for ids '{tax_ids}'':\n{err}")
         return
 
@@ -271,6 +272,15 @@ def get_taxid_lineages(batches, tax_ids, args):
             )
             unlisted_id_batches += batch
             continue
+        except (CorruptedXMLError, IncompleteRead) as err:
+            logger.warning(
+                ("Connection to NCBI interrupted leading to incomplete XML retrieval\n"
+                "Will try later\n"
+                "Error message:\n%s"),
+                err
+            )
+            failed_batches[str(batch)] = {'batch': batch, 'tries': 1}
+            continue
         
         if query_key is None:
             failed_batches[str(batch)] = {'batch': batch, 'tries': 1}
@@ -338,6 +348,16 @@ def retry_get_tax_lineages(failed_batches, tax_ids, args):
                 )
                 unlisted_id_batches += batch
                 continue
+            
+            except (IncompleteRead, NotXMLError, CorruptedXMLError) as err:
+                logger.warning(
+                    ("Connection to NCBI was interrupted.\n"
+                    "Failed to retrieve a complete XML file\n"
+                    "Will retry later\n"
+                    "Error message:\n%s"),
+                    err
+                )
+                query_key = None
             
             if query_key is None:
                 failed_batches[str(batch)]['tries'] += 1
@@ -421,6 +441,19 @@ def parse_unlised_taxid_lineages(batches, tax_ids, args):
                 unlisted_ids += batch
                 all_ids_to_parse.remove(batch)
                 del failed_ids[batch]
+                continue
+
+            except (IncompleteRead, NotXMLError, CorruptedXMLError) as err:
+                logger.warning(
+                    ("Connection to NCBI was interrupted, leading to the retrieval of an incomplete XML file\n"
+                    "Will not retrieve lineage data for this ID\n"
+                    "Error message:\n%s"),
+                    err
+                )
+                try:
+                    failed_ids[batch] += 1
+                except KeyError:
+                    failed_ids[batch] = 1
                 continue
             
             if query_key is None:

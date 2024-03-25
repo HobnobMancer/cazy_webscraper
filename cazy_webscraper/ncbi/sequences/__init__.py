@@ -45,7 +45,7 @@ import re
 from http.client import IncompleteRead
 
 from Bio import Entrez, SeqIO
-from Bio.Entrez.Parser import NotXMLError
+from Bio.Entrez.Parser import NotXMLError, CorruptedXMLError
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Entrez.Parser import NotXMLError
@@ -114,9 +114,9 @@ def post_accessions_to_entrez(batch, args):
                 )
                 success = "Contains invalid ID"
 
-    except IncompleteRead as err:
+    except (IncompleteRead, CorruptedXMLError) as err:
         logger.warning(
-            "IncompleteRead error raised when querying NCBI:\n"
+            "Incomplete Read or Corrupted XML error raised when querying NCBI:\n"
             f"{err}\n"
             "Will reattempt NCBI query later"
         )
@@ -239,9 +239,9 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
                 )
                 success = "Contains invalid ID"
 
-    except IncompleteRead as err:
+    except (IncompleteRead, CorruptedXMLError) as err:
         logger.warning(
-            "IncompleteRead error raised when fetching record from NCBI:\n"
+            "Incomplete Read or Corrupted XML error raised when fetching record from NCBI:\n"
             f"{err}\n"
             "Will reattempt NCBI query later"
         )

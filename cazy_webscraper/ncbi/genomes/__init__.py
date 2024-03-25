@@ -41,6 +41,9 @@
 
 import logging
 
+from http.client import IncompleteRead
+
+from Bio.Entrez.Parser import NotXMLError, CorruptedXMLError
 from Bio import Entrez
 from saintBioutils.genbank import entrez_retry
 from tqdm import tqdm
@@ -92,7 +95,7 @@ def get_nuccore_ids(batch, failed_batches, args, retry=False):
         ) as handle:
             nuccore_records = Entrez.read(handle, validate=False)
 
-    except (TypeError, AttributeError, RuntimeError):
+    except (TypeError, AttributeError, RuntimeError, IncompleteRead, NotXMLError, CorruptedXMLError):
         logger.warning(
             f"Entrez failed to link Protein records to nuccore records numbers\n",
             exc_info=1,
@@ -152,7 +155,7 @@ def get_assembly_ids(nuccore_ids, failed_batches, args, retry=False):
             linkname="nuccore_assembly",
         ) as handle:
             linked_records = Entrez.read(handle, validate=False)
-    except (TypeError, AttributeError, RuntimeError) as err:
+    except (TypeError, AttributeError, RuntimeError, IncompleteRead, NotXMLError, CorruptedXMLError) as err:
         logger.warning(f"Failed to link nuccore records to assembly records:\n{err}")
         return assembly_ids, failed_batches
 
@@ -205,7 +208,7 @@ def get_assembly_data(assembly_ids, failed_batches, parsed_assembly_ids, args, r
             retmode="xml",
         ) as record_handle:
             assembly_records = Entrez.read(record_handle, validate=False)
-    except (TypeError, AttributeError, RuntimeError) as err:
+    except (TypeError, AttributeError, RuntimeError, IncompleteRead, NotXMLError, CorruptedXMLError) as err:
         logger.warning(f"Failed to retrieve Assembly records:\n{err}")
         return genome_dict, failed_batches
 
