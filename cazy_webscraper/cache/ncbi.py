@@ -40,6 +40,7 @@
 """Cache data retrieved from the remove NCBI database"""
 
 
+import argparse
 import logging
 import json
 
@@ -51,7 +52,10 @@ from cazy_webscraper import closing_message
 from cazy_webscraper.ncbi.sequences import get_protein_accession
 
 
-def get_cache_seqs(start_time, args):
+def get_cache_seqs(
+    start_time: str,
+    args: argparse.ArgumentParser
+) -> tuple(dict[str, Seq], list[SeqRecord]):
     """Extract protein sequences from FASTA and/or JSON file, which will be added to the
     local CAZyme database
 
