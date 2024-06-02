@@ -68,7 +68,6 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 
 
 import logging
-import json
 import os
 
 from datetime import datetime
@@ -81,8 +80,6 @@ from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger, build_logger
 
 from cazy_webscraper import (
-    CITATION_INFO,
-    VERSION_INFO,
     closing_message,
     connect_to_new_db,
     connect_existing_db,
