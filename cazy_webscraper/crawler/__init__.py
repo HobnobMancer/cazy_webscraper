@@ -51,21 +51,23 @@ from urllib3.exceptions import HTTPError, RequestError
 from urllib.request import urlopen
 from requests.exceptions import ConnectionError, MissingSchema
 
+from cazy_webscraper import DOWNLOAD_URL
+
 
 def download_file_decorator(func):
     """Decorator to re-invoke the wrapped function up to 'args.retries' times."""
-    
+
     def wrapper(*args, **kwargs):
         logger = logging.getLogger(__name__)
         tries, success, err = 0, False, None
-        
+
         while not success and (tries < kwargs['max_tries']):
             # reset storing error messsage
             err_message = None
-            
+
             try:
                 func(*args, **kwargs)
-                
+
             except (
                 IOError,
                 HTTPError,
@@ -81,21 +83,23 @@ def download_file_decorator(func):
 
             if err is None:
                 success = True
-                
+
             tries += 1
-            
+
             if (not success) and (tries < kwargs['max_tries']):
                 logger.warning(
-                    f'Failed to connect to CAZy on try {tries}/{kwargs["max_tries"]}\n'
-                    f'Error raised: {err}\n'
-                    'Retrying connection to CAZy in 10s'
+                    'Failed to connect to CAZy on try %s/{kwargs["max_tries"]}\n'
+                    'Error raised: %s\n'
+                    'Retrying connection to CAZy in 10s',
+                    tries, err
                 )
                 time.sleep(10)
-            
+
         if success is False:
             logger.warning(
-                f'Failed to connect to CAZy after {kwargs["max_tries"]} tries\n'
-                f'Error raised: {err}\n'
+                'Failed to connect to CAZy after %s tries\n'
+                'Error raised: %s\n',
+                kwargs["max_tries"], err
             )
             return err
         else:
@@ -105,7 +109,7 @@ def download_file_decorator(func):
 
 
 @download_file_decorator
-def get_cazy_file(out_path, args, **kwargs):
+def get_cazy_file(out_path: Path, args: args, **kwargs):
     """Download plain text file database dumb from the CAZy website
 
     :param out_path: Path, target path to write out downloaded txt file
@@ -115,29 +119,25 @@ def get_cazy_file(out_path, args, **kwargs):
     Return nothing
     """
     logger = logging.getLogger(__name__)
-    download_url = 'http://www.cazy.org/IMG/cazy_data/cazy_data.zip'
 
     # HTTPError, URLError or timeout error may be raised, handled by wrapper
-    response = urlopen(download_url, timeout=args.timeout)
+    with urlopen(DOWNLOAD_URL, timeout=args.timeout) as response:
+        file_size = int(response.info().get("Content-length"))
+        bsize = 1_048_576
 
-    file_size = int(response.info().get("Content-length"))
-    bsize = 1_048_576
+        # IOError may be raised, handled by wrapper
+        with open(out_path, 'wb') as fh:
+            with tqdm(
+                total=file_size,
+                desc="Downloading CAZy txt file",
+            ) as pbar:
+                while True:
+                    buffer = response.read(bsize)
+                    if not buffer:
+                        break
+                    pbar.update(len(buffer))
+                    fh.write(buffer)
 
-    # IOError may be raised, handled by wrapper
-    with open(out_path, 'wb') as fh:
-        with tqdm(
-            total=file_size,
-            desc=f"Downloading CAZy txt file",
-        ) as pbar:
-            while True:
-                buffer = response.read(bsize)
-                if not buffer:
-                    break
-                pbar.update(len(buffer))
-                fh.write(buffer)
-
-    if os.path.isfile(out_path) is False:
-        logger.error('CAZy txt file not created locally.')
-        raise IOError
-
-    return
+        if os.path.isfile(out_path) is False:
+            logger.error('CAZy txt file not created locally.')
+            raise IOError
