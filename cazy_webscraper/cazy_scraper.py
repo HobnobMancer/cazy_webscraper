@@ -66,11 +66,14 @@ from cazy_webscraper import (
 )
 from cazy_webscraper.cache.cazy import cache_cazy_data
 from cazy_webscraper.cazy.download import get_cazy_db_dump
+
 from cazy_webscraper.database.connect import (
     connect_to_new_db,
     connect_existing_db,
 )
 from cazy_webscraper.database.scrape_log import add_main_scrape_message
+from cazy_webscraper.database.cazy import dump_cazy_txt
+
 from cazy_webscraper.cazy import (
     build_taxa_dict,
     get_cazy_txt_file_data,
@@ -115,7 +118,8 @@ def main(argv: Optional[List[str]] = None):
         display_citation_info()
         return
 
-    sanity_checks.sanity_check_main_input(args)
+    db = sanity_checks.sanity_check_main_input(args)
+    # db = byte representation of path to the local cazyme db
 
     if args.skip_ncbi_tax:
         logger.warning(
@@ -193,6 +197,7 @@ def main(argv: Optional[List[str]] = None):
         logger_name,
         time_stamp,
         args,
+        db,
     )
 
     closing_message("cazy_webscraper", start_time, args)
@@ -211,6 +216,7 @@ def get_cazy_data(
     logger_name: str,
     time_stamp: str,
     args: argparse.Namespace,
+    db: Path,
 ):
     """Coordinate retrieval of data from the CAZy website.
 
@@ -231,8 +237,6 @@ def get_cazy_data(
 
     Return nothing.
     """
-    logger = logging.getLogger(__name__)
-
     # define paths for additional logs files
     # unless specifed they are added to the logs dir in the cache dir
     connection_failures_logger = build_logger(
@@ -241,45 +245,30 @@ def get_cazy_data(
     multiple_taxa_logger = build_logger(cache_dir, f"{logger_name}_{time_stamp}_multiple_taxa.log")
     replaced_taxa_logger = build_logger(cache_dir, f"{logger_name}_{time_stamp}_replaced_taxa.log")
 
-    if args.validate:  # retrieve CAZy family population sizes for validating all data was retrieved
-        # {fam (str): pop size (int)}
-        cazy_fam_populations = get_validation_data(
-            CAZY_URL,
-            excluded_classes,
-            cazy_class_synonym_dict,
-            config_dict,
-            cache_dir,
-            connection_failures_logger,
-            time_stamp,
-            args,
-        )
+    if args.cazy_data:
+        dump_cazy_txt(args.cazy_data, db)
     else:
-        cazy_fam_populations = None
+        cazy_txt_path = get_cazy_db_dump(cache_dir, time_stamp, args)
+        dump_cazy_txt(cazy_txt_path, db)
 
-    cazy_txt_lines = get_cazy_txt_file_data(cache_dir, time_stamp, args)
+    sys.exit(0)
 
-    logger.info(f"Retrieved {len(cazy_txt_lines)} lines from the CAZy db txt file")
-
-    if (len(class_filters) == 0) and \
-        (len(fam_filters) == 0) and \
-            (len(kingdom_filters) == 0) and \
-                (len(taxonomy_filters) == 0):
-        cazy_data = parse_all_cazy_data(cazy_txt_lines, cazy_fam_populations, args)
+    if not any((class_filters, fam_filters, kingdom_filters, taxonomy_filters)):
+        cazy_data = parse_all_cazy_data(args)
 
     else:
         cazy_data = parse_cazy_data_with_filters(
-            cazy_txt_lines,
             class_filters,
             fam_filters,
             kingdom_filters,
             taxonomy_filters,
-            cazy_fam_populations,
             args,
         )
 
     logger.info(
-        f"Retrieved {len((list(cazy_data.keys())))} proteins from the CAZy txt file "
-        "matching the scraping criteria"
+        "Retrieved %s proteins from the CAZy txt file "
+        "matching the scraping criteria",
+        len((list(cazy_data.keys())))
     )
 
     # check for GenBank accessions with multiple source organisms in the CAZy data
