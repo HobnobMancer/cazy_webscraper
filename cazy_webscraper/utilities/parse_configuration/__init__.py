@@ -330,7 +330,7 @@ def parse_user_cazy_classes(cazy_classes, cazy_class_synonym_dict):
                         selected_classes.append(standardised_class_name)
 
         else:  # written in standardised format
-            selected_classes.appent(cazy_class)
+            selected_classes.append(cazy_class)
 
     return list(set(cazy_classes))
 
@@ -466,9 +466,8 @@ def get_excluded_classes(config_dict, cazy_class_synonym_dict):
 
     if len(excluded_classes) != 0:
         # change names of classes into format for excluding classes during scrape
-        index = 0
-        for index in range(len(excluded_classes)):
-            excluded_classes[index] = f"<strong>{excluded_classes[index]}</strong>"
+        for index, class_name in enumerate(excluded_classes):
+            excluded_classes[index] = f"{class_name}"
     else:
         excluded_classes = None
 

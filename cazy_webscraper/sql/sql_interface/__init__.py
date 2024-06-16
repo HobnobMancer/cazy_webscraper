@@ -112,7 +112,7 @@ def log_scrape_in_db(
                 new_log.classes = classes
         except KeyError:
             pass
-            
+
         if len(classes) != 0:
             new_log.classes = classes
 
@@ -165,7 +165,7 @@ def log_scrape_in_db(
                     strains = organism
                 else:
                     strains += f", {organism}"
-        
+
         if len(strains) != 0:
             new_log.strains = strains
     except (TypeError, KeyError):
@@ -179,14 +179,14 @@ def log_scrape_in_db(
                 kingdoms_str = kingdom
             else:
                 kingdoms_str += f", {kingdom}"
-        
+
         if len(kingdoms_str) != 0:
             new_log.kingdoms = kingdoms_str
         else:
             new_log.kingdoms = "ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified)"
     else:
         new_log.kingdoms = "ALL (Archaea, Bacteria, Eukaryota, Viruses, Unclassified)"
-    
+
     # retrieve commands from the command line
     cmd_line = ""
     for cmd in [

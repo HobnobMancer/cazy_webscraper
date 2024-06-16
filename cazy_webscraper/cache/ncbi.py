@@ -40,6 +40,7 @@
 """Cache data retrieved from the remove NCBI database"""
 
 
+import argparse
 import logging
 import json
 
@@ -47,8 +48,14 @@ from Bio import SeqIO
 from Bio.Seq import Seq 
 from Bio.SeqRecord import SeqRecord
 
+from cazy_webscraper import closing_message
+from cazy_webscraper.ncbi.sequences import get_protein_accession
 
-def get_cache_seqs(start_time, args):
+
+def get_cache_seqs(
+    start_time: str,
+    args: argparse.ArgumentParser
+) -> tuple(dict[str, Seq], list[SeqRecord]):
     """Extract protein sequences from FASTA and/or JSON file, which will be added to the
     local CAZyme database
 
@@ -62,7 +69,7 @@ def get_cache_seqs(start_time, args):
     seq_records = []
 
     if args.seq_dict:
-        logger.warning(f"Getting sequences from JSON cache:\n{args.seq_dict}")
+        logger.warning("Getting sequences from JSON cache:\n%s", args.seq_dict)
 
         try:
             with open(args.seq_dict, "r") as fh:
@@ -70,10 +77,10 @@ def get_cache_seqs(start_time, args):
 
         except FileNotFoundError:
             logger.error(
-                f"Could not find JSON file of protein sequences at:\n"
-                f"{args.seq_dict}\n"
-                "Check the path is correct"
-                "Terminating program"
+                "Could not find JSON file of protein sequences at:\n"
+                "%s\n"
+                "Check the path is correct. Terminating program",
+                args.seq_dict
             )
             closing_message("Get GenBank seqs", start_time, args, early_term=True)
 
@@ -82,7 +89,7 @@ def get_cache_seqs(start_time, args):
             seq_dict[key] = Seq(cache_dict[key])
 
     if args.seq_file:
-        logger.warning(f"Getting sequences from FASTA cache:\n{args.seq_file}")
+        logger.warning("Getting sequences from FASTA cache:\n%s", args.seq_file)
 
         try:
             for record in SeqIO.parse(args.seq_file, "fasta"):
@@ -91,20 +98,23 @@ def get_cache_seqs(start_time, args):
                 if retrieved_accession is None:
                     logger.error(
                         "Could not retrieve a NCBI protein version accession from cache\n"
-                        f"from the record id '{record.id}'\n"
-                        "The sequence from this record will not be added to the db"
+                        "from the record id '%s'\n"
+                        "The sequence from this record will not be added to the db",
+                        record.id
                     )
                     continue
 
                 try:
-                    seq_dict[retrieved_accession]
                     if seq_dict[retrieved_accession] != record.seq:
                         logger.warning(
-                            f"Retrieved seq for {retrieved_accession} from JSON file which does NOT match "
+                            "Retrieved seq for %s from JSON file which does NOT match "
                             "the seq in the FASTA file.\n"
                             "Adding seq from the FASTA file to the local CAZyme database\n"
-                            f"JSON seq: {seq_dict[retrieved_accession]}\n"
-                            f"FASTA seq: {record.seq}"
+                            "JSON seq: %s\n"
+                            "FASTA seq: %s",
+                            retrieved_accession,
+                            seq_dict[retrieved_accession],
+                            record.seq
                         )
                         seq_dict[retrieved_accession] = record.seq
                 except KeyError:
@@ -112,16 +122,16 @@ def get_cache_seqs(start_time, args):
 
         except FileNotFoundError:
             logger.error(
-                f"Could not find FASTA file of protein sequences at:\n"
-                f"{args.seq_file}\n"
-                "Check the path is correct"
-                "Terminating program"
+                "Could not find FASTA file of protein sequences at:\n"
+                "%s\n"
+                "Check the path is correct. Terminating program",
+                args.seq_file
             )
             closing_message("Get GenBank seqs", start_time, args, early_term=True)
 
-    for key in seq_dict:
-        seq_records.append(SeqRecord(id=key, seq=Seq(seq_dict[key])))
+    for key, value in seq_dict.items():
+        seq_records.append(SeqRecord(id=key, seq=Seq(value)))
 
-    logger.warning(f"Retrieved {len(seq_records)} from cache")
+    logger.warning("Retrieved %s from cache", len(seq_records))
 
     return seq_dict, seq_records
