@@ -52,7 +52,10 @@ from tqdm import tqdm
 from zipfile import ZipFile
 
 from cazy_webscraper import crawler
-from cazy_webscraper.crawler import get_cazy_file
+
+
+def get_cazy_file():
+    return
 
 
 def get_cazy_txt_file_data(cache_dir: Path, time_stamp: str, args: argparse.ArgumentParser):
