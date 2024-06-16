@@ -66,6 +66,11 @@ from cazy_webscraper import (
 )
 from cazy_webscraper.cache.cazy import cache_cazy_data
 from cazy_webscraper.cazy.download import get_cazy_db_dump
+from cazy_webscraper.cazy.filter_data import (
+    apply_kingdom_filers,
+    apply_tax_filters,
+    apply_class_and_family_filters,
+)
 
 from cazy_webscraper.database.connect import (
     connect_to_new_db,
@@ -73,6 +78,8 @@ from cazy_webscraper.database.connect import (
 )
 from cazy_webscraper.database.scrape_log import add_main_scrape_message
 from cazy_webscraper.database.cazy import dump_cazy_txt
+
+
 
 from cazy_webscraper.cazy import (
     build_taxa_dict,
@@ -118,7 +125,7 @@ def main(argv: Optional[List[str]] = None):
         display_citation_info()
         return
 
-    db = sanity_checks.sanity_check_main_input(args)
+    db = sanity_checks.sanity_check_main_input(time_stamp, args)
     # db = byte representation of path to the local cazyme db
 
     if args.skip_ncbi_tax:
@@ -186,12 +193,10 @@ def main(argv: Optional[List[str]] = None):
 
     get_cazy_data(
         excluded_classes,
-        cazy_class_synonym_dict,
-        config_dict,
         class_filters,
         fam_filters,
         kingdom_filters,
-        taxonomy_filter_set,
+        taxonomy_filter_dict,
         connection,
         cache_dir,
         logger_name,
@@ -205,12 +210,10 @@ def main(argv: Optional[List[str]] = None):
 
 def get_cazy_data(
     excluded_classes: list[str],
-    cazy_class_synonym_dict: dict[str, list],
-    config_dict: dict[str, set],
     class_filters: set[str],
     fam_filters: set[str],
     kingdom_filters: set[str],
-    taxonomy_filters: set[str],
+    taxonomy_filter_dict: dict,
     connection,
     cache_dir: Path,
     logger_name: str,
@@ -224,8 +227,6 @@ def get_cazy_data(
     functions, and then retrieving the protein data by calling to the appropriate data again.
 
     :param excluded_classes: list, list of classes to not scrape from CAZy
-    :param cazy_class_synonym_dict: dict of accepted CAZy class name synonyms
-    :param config_dict: dict of CAZy families to scrape, or None if args.validate is False
     :param class_filters: set of CAZy classes to retrieve proteins from
     :param fam_filters: set of CAZy families to retrieve proteins from
     :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
@@ -239,9 +240,6 @@ def get_cazy_data(
     """
     # define paths for additional logs files
     # unless specifed they are added to the logs dir in the cache dir
-    connection_failures_logger = build_logger(
-        cache_dir, f"{logger_name}_{time_stamp}_connection_failures.log"
-    )
     multiple_taxa_logger = build_logger(cache_dir, f"{logger_name}_{time_stamp}_multiple_taxa.log")
     replaced_taxa_logger = build_logger(cache_dir, f"{logger_name}_{time_stamp}_replaced_taxa.log")
 
@@ -251,7 +249,28 @@ def get_cazy_data(
         cazy_txt_path = get_cazy_db_dump(cache_dir, time_stamp, args)
         dump_cazy_txt(cazy_txt_path, db)
 
+    # filter data in the cazy db dump to only retain records that match the user criteria
+    if kingdom_filters:
+        apply_kingdom_filers(kingdom_filters, db)
     sys.exit(0)
+
+    # need to fix the taxonomy filter
+    # retain rows that match at least one criteria
+    if any([taxonomy_filter_dict['genera'], taxonomy_filter_dict['species'], taxonomy_filter_dict['strains']]):
+        apply_tax_filters(
+            taxonomy_filter_dict['genera'],
+            taxonomy_filter_dict['species'],
+            taxonomy_filter_dict['strains'],
+            db
+        )
+
+    sys.exit(0)
+    if excluded_classes or fam_filters:
+        apply_class_and_family_filters(excluded_classes, fam_filters, db)
+
+    sys.exit(0)
+
+    # deal with instances of multiple taxonomies
 
     if not any((class_filters, fam_filters, kingdom_filters, taxonomy_filters)):
         cazy_data = parse_all_cazy_data(args)
