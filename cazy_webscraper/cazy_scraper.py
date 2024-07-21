@@ -67,9 +67,9 @@ from cazy_webscraper import (
 from cazy_webscraper.cache.cazy import cache_cazy_data
 from cazy_webscraper.cazy.download import get_cazy_db_dump
 from cazy_webscraper.cazy.filter_data import (
-    apply_kingdom_filers,
     apply_tax_filters,
     apply_class_and_family_filters,
+    drop_subfamilies
 )
 
 from cazy_webscraper.database.connect import (
@@ -250,23 +250,25 @@ def get_cazy_data(
         dump_cazy_txt(cazy_txt_path, db)
 
     # filter data in the cazy db dump to only retain records that match the user criteria
-    if kingdom_filters:
-        apply_kingdom_filers(kingdom_filters, db)
-    sys.exit(0)
-
-    # need to fix the taxonomy filter
-    # retain rows that match at least one criteria
-    if any([taxonomy_filter_dict['genera'], taxonomy_filter_dict['species'], taxonomy_filter_dict['strains']]):
+    if any([
+        kingdom_filters,
+        taxonomy_filter_dict['genera'],
+        taxonomy_filter_dict['species'],
+        taxonomy_filter_dict['strains'],
+    ]):
         apply_tax_filters(
+            kingdom_filters,
             taxonomy_filter_dict['genera'],
             taxonomy_filter_dict['species'],
             taxonomy_filter_dict['strains'],
             db
         )
 
-    sys.exit(0)
-    if excluded_classes or fam_filters:
-        apply_class_and_family_filters(excluded_classes, fam_filters, db)
+    if any([class_filters, fam_filters]):
+        apply_class_and_family_filters(class_filters, fam_filters, db)
+
+    if not args.subfamilies:
+        drop_subfamilies(db)
 
     sys.exit(0)
 

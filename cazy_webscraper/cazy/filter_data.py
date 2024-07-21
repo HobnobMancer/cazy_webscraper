@@ -40,7 +40,9 @@
 """Filter data in CAZy database dump (txt file)."""
 
 
+import argparse
 import logging
+import re
 import sqlite3
 
 from pathlib import Path
@@ -49,21 +51,15 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-def apply_kingdom_filers(kingdom_filter: set[str], db: Path):
-    logger.warning("Filtering to kingdoms: %s", kingdom_filter)
-    query = "DELETE FROM TempTable WHERE kingdom NOT IN ({})".format(
-        ', '.join('?' for _ in kingdom_filter)
-    )
-
-    conn = sqlite3.connect(db)
-    cur = conn.cursor()
-    cur.execute(query, list(kingdom_filter))
-    conn.commit()
-    conn.close()
-
-
-def apply_tax_filters(genera: set[str], species: set[str], strains: set[str], db: Path):
+def apply_tax_filters(
+    kingdoms: set[str],
+    genera: set[str],
+    species: set[str],
+    strains: set[str],
+    db: Path
+):
     """
+    :param kingdom filter: set of kingdoms
     :param taxonomy_filter_dict: dict
     E.g. {
         'genera': {'Aspergillus', 'AnotherGenus},
@@ -71,30 +67,30 @@ def apply_tax_filters(genera: set[str], species: set[str], strains: set[str], db
         'strains': {'Alternaria alternata SRC1lrK2f v1.0', 'Genus species strain'}
     }
     """
-    query = "DELETE FROM TempTable WHERE "
+    query = "DELETE FROM TempTable WHERE"
+    parameters = []
+
+    if kingdoms:
+        query += " kingdom NOT IN ({})".format(', '.join('?' for _ in kingdoms))
+        parameters += list(kingdoms)
 
     if genera:
-        query += "genus NOT IN ({})".format(','.join('?' for _ in genera))
-        parameters = list(genera)
-    else:
-        parameters = []
+        if kingdoms:
+            query += " AND"
+        query += " genus NOT IN ({})".format(','.join('?' for _ in genera))
+        parameters += list(genera)
 
     if species:
-        species_clauses = ["species NOT LIKE ?" for _ in species]
         if parameters:
-            query += " AND "
-        query += " AND ".join(species_clauses)
-        species_with_wildcards = [s + '%' for s in species]
-        parameters.extend(species_with_wildcards)
+            query += " AND"
+        query += f" (species NOT LIKE {' OR '.join(['?'] * len(species))})"
+        parameters.extend([f'{sp}%' for sp in species])
 
     if strains:
         if parameters:
-            query += " AND "
-        query += "species NOT IN ({})".format(','.join('?' for _ in strains))
-        parameters += list(strains)
-
-    print(query)
-    print(parameters)
+            query += " AND"
+        query += " species NOT IN ({})".format(','.join('?' for _ in strains))
+        parameters.extend(strains)
 
     conn = sqlite3.connect(db)
     cur = conn.cursor()
@@ -103,28 +99,46 @@ def apply_tax_filters(genera: set[str], species: set[str], strains: set[str], db
     conn.close()
 
 
-def apply_class_and_family_filters(excluded_classes: list[str], fam_filter: set[str], db: Path):
-    if excluded_classes and fam_filter:
-        class_query = " AND ".join(f"family NOT LIKE '{class_}%'" for class_ in excluded_classes)
-        fam_query = ', '.join(f"'{family}'" for family in fam_filter)
-        query = f"""
-            DELETE FROM TempTable
-            WHERE {class_query}
-            AND family NOT IN ({fam_query});
-        """
-    elif excluded_classes and not fam_filter:
-        class_query = " AND ".join(f"family NOT LIKE '{class_}%'" for class_ in excluded_classes)
-        query = f"""
-            DELETE FROM TempTable
-            WHERE {class_query};
-        """
-    elif fam_filter and not excluded_classes:
-        fam_query = ', '.join(f"'{family}'" for family in fam_filter)
-        query = f"""
-            DELETE FROM TempTable
-            WHERE family NOT IN ({fam_query});
-        """
+def apply_class_and_family_filters(
+    class_filter: list[str],
+    fam_filter: set[str],
+    db: Path,
+):
+    query = "DELETE FROM TempTable WHERE"
 
+    for i, cazy_class in enumerate(class_filter):
+        if i == 0:
+            query += " ("
+        if i > 0:
+            query += " AND "
+        query += f"family NOT LIKE '{cazy_class}%'"
+
+    if class_filter and fam_filter:
+        query += ") AND"
+
+    for i, fam in enumerate(fam_filter):
+        if i == 0:
+            query += " ("
+        if i > 0:
+            query += " AND "
+
+        if re.match(r"^\D{2,3}\d+_\d$", fam):  # subfam, only keep specific subfam
+            query += f"family NOT LIKE '{fam}'"
+        else:  # keep fam and all it's subfamilies
+            query += f"family NOT LIKE '{fam}'"
+            query += f" AND family NOT LIKE '{fam}_%'"
+
+    query += ")"
+
+    conn = sqlite3.connect(db)
+    cur = conn.cursor()
+    cur.execute(query)
+    conn.commit()
+    conn.close()
+
+
+def drop_subfamilies(db: Path):
+    query = "DELETE FROM TempTable WHERE family LIKE '%_%'"
     conn = sqlite3.connect(db)
     cur = conn.cursor()
     cur.execute(query)
