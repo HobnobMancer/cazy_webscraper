@@ -138,7 +138,7 @@ def apply_class_and_family_filters(
 
 
 def drop_subfamilies(db: Path):
-    query = "DELETE FROM TempTable WHERE family LIKE '%_%'"
+    query = "DELETE FROM TempTable WHERE family LIKE '%\_%' ESCAPE '\'"
     conn = sqlite3.connect(db)
     cur = conn.cursor()
     cur.execute(query)
