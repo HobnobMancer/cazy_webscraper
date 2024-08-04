@@ -77,7 +77,7 @@ def process_multi_taxa(
     If skip_ncbi is true, the latest taxonomies are not retrieved from their remote repositories
     and the first taxonomy retrieved from CAZy is used.
     """
-    conn = sqlite3.connect('db_path')
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
     # Execute the query
@@ -93,7 +93,7 @@ def process_multi_taxa(
     ORDER BY protein_id;
     """)
 
-    if args.skip_ncbi:
+    if args.skip_ncbi_tax:
         # delete all rows that have a different taxonomy to
         # first row retrieved from the table
         for row in cursor:
@@ -213,7 +213,7 @@ def use_latest_taxa(
                     keep_first_taxa(protein_id, conn)
 
             for protein in ncbi_data:
-                replace_ncbi_taxonomy(protein, db_path, conn, replaced_taxa_log)
+                replace_ncbi_taxonomy(protein, conn, replaced_taxa_log)
 
     return success
 

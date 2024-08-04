@@ -78,4 +78,5 @@ def dump_cazy_txt(cazy_txt_path: Path, db: Path):
                 )
 
     conn.commit()
+    cur.close()
     conn.close()

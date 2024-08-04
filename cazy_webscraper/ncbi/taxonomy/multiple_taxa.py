@@ -64,7 +64,7 @@ class NcbiProtein:
     def get_ncbi_data(self, record):
         """extract the data from the record"""
         self.protein_id = record['GBSeq_accession-version']
-        self.genus = record['GBSeq_organism'].split(max_split=1)[0]
+        self.genus = record['GBSeq_organism'].split(maxsplit=1)[0]
         self.species = " ".join(record['GBSeq_organism'].split()[1:])
         self.kingdom = record['GBSeq_taxonomy'].split(';')[0]
 
