@@ -59,7 +59,6 @@ from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger, build_logger
 
 from cazy_webscraper import (
-    CAZY_URL,
     closing_message,
     display_citation_info,
     display_version_info,
@@ -79,18 +78,7 @@ from cazy_webscraper.database.connect import (
 from cazy_webscraper.database.scrape_log import add_main_scrape_message
 from cazy_webscraper.database.cazy import dump_cazy_txt
 
-
-
-from cazy_webscraper.cazy import (
-    build_taxa_dict,
-    get_cazy_txt_file_data,
-    parse_all_cazy_data,
-    parse_cazy_data_with_filters,
-)
-from cazy_webscraper.ncbi.taxonomy.multiple_taxa import (
-    identify_multiple_taxa,
-    replace_multiple_tax,
-)
+from cazy_webscraper.ncbi.taxonomy.multiple_taxa import process_multi_taxa
 from cazy_webscraper.sql.sql_interface.add_data import add_cazyme_data
 from cazy_webscraper.utilities import (
     parse_configuration,
@@ -192,7 +180,6 @@ def main(argv: Optional[List[str]] = None):
         )
 
     get_cazy_data(
-        excluded_classes,
         class_filters,
         fam_filters,
         kingdom_filters,
@@ -209,7 +196,6 @@ def main(argv: Optional[List[str]] = None):
 
 
 def get_cazy_data(
-    excluded_classes: list[str],
     class_filters: set[str],
     fam_filters: set[str],
     kingdom_filters: set[str],
@@ -238,11 +224,6 @@ def get_cazy_data(
 
     Return nothing.
     """
-    # define paths for additional logs files
-    # unless specifed they are added to the logs dir in the cache dir
-    multiple_taxa_logger = build_logger(cache_dir, f"{logger_name}_{time_stamp}_multiple_taxa.log")
-    replaced_taxa_logger = build_logger(cache_dir, f"{logger_name}_{time_stamp}_replaced_taxa.log")
-
     if args.cazy_data:
         dump_cazy_txt(args.cazy_data, db)
     else:
@@ -256,6 +237,7 @@ def get_cazy_data(
         taxonomy_filter_dict['species'],
         taxonomy_filter_dict['strains'],
     ]):
+        logger.warning("Applying taxonomic filters")
         apply_tax_filters(
             kingdom_filters,
             taxonomy_filter_dict['genera'],
@@ -265,53 +247,28 @@ def get_cazy_data(
         )
 
     if any([class_filters, fam_filters]):
+        logger.warning("Applying class and family filters")
         apply_class_and_family_filters(class_filters, fam_filters, db)
 
     if not args.subfamilies:
+        logger.warning("Dropping subfamilies")
         drop_subfamilies(db)
+
+    # deal with instances of multiple taxonomies
+    process_multi_taxa(
+        db,
+        cache_dir / f"{logger_name}_{time_stamp}_multi_taxa.log",
+        cache_dir / f"{logger_name}_{time_stamp}_replaced_taxa.log",
+        args,
+    )
 
     sys.exit(0)
 
-    # deal with instances of multiple taxonomies
+    # add data to the database
+    add_cazyme_data.add_kingdoms(db)
 
-    if not any((class_filters, fam_filters, kingdom_filters, taxonomy_filters)):
-        cazy_data = parse_all_cazy_data(args)
-
-    else:
-        cazy_data = parse_cazy_data_with_filters(
-            class_filters,
-            fam_filters,
-            kingdom_filters,
-            taxonomy_filters,
-            args,
-        )
-
-    logger.info(
-        "Retrieved %s proteins from the CAZy txt file "
-        "matching the scraping criteria",
-        len((list(cazy_data.keys())))
-    )
-
-    # check for GenBank accessions with multiple source organisms in the CAZy data
-    multiple_taxa_gbks = identify_multiple_taxa(cazy_data, multiple_taxa_logger)
-
-    if len(multiple_taxa_gbks) != 0:
-        # remove the multiple taxa, and retrieve the latest taxa from NCBI
-        cazy_data, successful_replacement = replace_multiple_tax(
-            cazy_data,
-            multiple_taxa_gbks,
-            replaced_taxa_logger,
-            args,
-            invalid_ids=False,
-        )
-
-    # add separate kingdom and organism keys to cazy_data for all proteins
-    taxa_dict, cazy_data = build_taxa_dict(cazy_data)  # {kingdom: {organisms}}
-
-    # cache cazy_data dict
-    cache_cazy_data(cazy_data, cache_dir)
-
-    add_cazyme_data.add_kingdoms(taxa_dict, connection)
+    sys.exit(0)
+    # 
 
     add_cazyme_data.add_source_organisms(taxa_dict, connection)
 
@@ -321,6 +278,9 @@ def get_cazy_data(
 
     add_cazyme_data.add_genbank_fam_relationships(cazy_data, connection, args)
 
+    # delete the TempTable
+    ######
+    
     return
 
 

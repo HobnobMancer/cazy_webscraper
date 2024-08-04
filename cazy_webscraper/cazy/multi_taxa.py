@@ -60,7 +60,12 @@ from cazy_webscraper.sql.sql_interface.add_data.add_ncbi_tax_data import replace
 logger = logging.getLogger(__name__)
 
 
-def process_multi_taxa(db_path: str, replaced_taxa_log: str, args: Namespace) -> None:
+def process_multi_taxa(
+    db_path: str,
+    multi_taxa_log: str,
+    replaced_taxa_log: str,
+    args: Namespace
+) -> None:
     """Identify cases where a protein ID is associated with multiple taxonomies
     (specific distance genus-species).
 
@@ -93,22 +98,28 @@ def process_multi_taxa(db_path: str, replaced_taxa_log: str, args: Namespace) ->
         # first row retrieved from the table
         for row in cursor:
             protein_id = row[0]
-            keep_first_taxa(protein_id, db_path)
+            with open(multi_taxa_log, "a") as fh:
+                fh.write(f"{protein_id}\n")
+            keep_first_taxa(protein_id, conn)
 
     else:
         protein_ids = [row[0] for row in cursor]
+        with open(multi_taxa_log, "a") as fh:
+            for protein_id in protein_ids:
+                fh.write(f"{protein_id}\n")
         invalid_ids = False  # default to presume all IDs are valid
-        success = use_latest_taxa(protein_ids, db_path, args, replaced_taxa_log, invalid_ids)
+        success = use_latest_taxa(protein_ids, db_path, args, replaced_taxa_log, conn, invalid_ids)
 
     # Close the connection
+    cursor.close()
+    conn.commit()
     conn.close()
 
 
-def keep_first_taxa(protein_id: str, db_path: str) -> None:
+def keep_first_taxa(protein_id: str, conn: sqlite3.Connection) -> None:
     """Delete all rows that have a different taxonomy to 
     first row retrieved from the table"""
-    con = sqlite3.connect(db_path)
-    cur = con.cursor()
+    cur = conn.cursor()
     cur.execute("""
         SELECT *
         FROM TempTable
@@ -123,8 +134,7 @@ def keep_first_taxa(protein_id: str, db_path: str) -> None:
             AND (genus != ? OR species != ?);
     """, (protein_id, first_row[1], first_row[2]))
 
-    con.commit()
-    con.close()
+    conn.commit()
 
 
 def use_latest_taxa(
@@ -132,6 +142,7 @@ def use_latest_taxa(
     db_path: str,
     args: Namespace,
     replaced_taxa_log: str,
+    conn: sqlite3.Connection,
     invalid_ids: bool,
 ) -> None:
     """Retrieve the latest taxonomy from NCBI and use this for
@@ -162,7 +173,7 @@ def use_latest_taxa(
             )
             # cazy_data, gbk_accessions, replaced_taxa_logger
             for protein_id in batch:
-                keep_first_taxa(protein_id, db_path)
+                keep_first_taxa(protein_id, conn)
             success = True
             continue
 
@@ -181,6 +192,7 @@ def use_latest_taxa(
                     db_path,
                     replaced_taxa_log,
                     args,
+                    conn,
                 )
                 success = True
 
@@ -192,16 +204,16 @@ def use_latest_taxa(
                 "%s", batch
             )
             for protein_id in batch:
-                keep_first_taxa(protein_id, db_path)
+                keep_first_taxa(protein_id, conn)
 
         else:
             ncbi_data = get_ncbi_tax(epost_results, args)
             if not ncbi_data:
                 for protein_id in batch:
-                    keep_first_taxa(protein_id, db_path)
+                    keep_first_taxa(protein_id, conn)
 
             for protein in ncbi_data:
-                replace_ncbi_taxonomy(protein, db_path, replaced_taxa_log)
+                replace_ncbi_taxonomy(protein, db_path, conn, replaced_taxa_log)
 
     return success
 
@@ -211,6 +223,7 @@ def replace_multiple_tax_with_invalid_ids(
     db_path: str,
     replaced_taxa_log: str,
     args: Namespace,
+    conn: sqlite3.Connection,
 ) -> bool:
     """Split up a batch where there may be invalid protein ids, then
     try retrieving data"""
@@ -223,6 +236,7 @@ def replace_multiple_tax_with_invalid_ids(
         db_path,
         args,
         replaced_taxa_log,
+        conn,
         invalid_ids=True
     )
 
@@ -235,11 +249,12 @@ def replace_multiple_tax_with_invalid_ids(
                 db_path,
                 args,
                 replaced_taxa_log,
+                conn,
                 invalid_ids=True
             )
 
             if not success:
-                keep_first_taxa(protein_id, db_path)
+                keep_first_taxa(protein_id, conn)
 
     else:
         # invalid IDs are stored in the first half of the accessions list
@@ -249,11 +264,12 @@ def replace_multiple_tax_with_invalid_ids(
                 db_path,
                 args,
                 replaced_taxa_log,
+                conn,
                 invalid_ids=True
             )
 
             if not success:
-                keep_first_taxa(protein_id, db_path)
+                keep_first_taxa(protein_id, conn)
 
         # parse the second half of the list
         half_batch = batch[mid_point:]
@@ -262,6 +278,7 @@ def replace_multiple_tax_with_invalid_ids(
             db_path,
             args,
             replaced_taxa_log,
+            conn,
             invalid_ids=True
         )
 
@@ -273,8 +290,9 @@ def replace_multiple_tax_with_invalid_ids(
                     db_path,
                     args,
                     replaced_taxa_log,
+                    conn,
                     invalid_ids=True
                 )
 
                 if not success:
-                    keep_first_taxa(protein_id, db_path)
+                    keep_first_taxa(protein_id, conn)
