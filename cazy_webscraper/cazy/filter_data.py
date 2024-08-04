@@ -40,7 +40,6 @@
 """Filter data in CAZy database dump (txt file)."""
 
 
-import argparse
 import logging
 import re
 import sqlite3
@@ -95,6 +94,7 @@ def apply_tax_filters(
     conn = sqlite3.connect(db)
     cur = conn.cursor()
     cur.execute(query, parameters)
+    cur.close()
     conn.commit()
     conn.close()
 
@@ -134,6 +134,7 @@ def apply_class_and_family_filters(
     cur = conn.cursor()
     cur.execute(query)
     conn.commit()
+    cur.close()
     conn.close()
 
 
@@ -143,4 +144,5 @@ def drop_subfamilies(db: Path):
     cur = conn.cursor()
     cur.execute(query)
     conn.commit()
+    cur.close()
     conn.close()
