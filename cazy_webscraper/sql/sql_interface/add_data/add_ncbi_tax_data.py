@@ -42,11 +42,17 @@
 
 
 import logging
+import sqlite3
+
 from sqlalchemy import text
 from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_interface import insert_data
 from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import get_ncbi_tax_table, get_no_tax_gbk_table_dict
+from cazy_webscraper.ncbi.taxonomy.multiple_taxa import NcbiProtein
+
+
+logger = logging.getLogger(__name__)
 
 
 def add_ncbi_taxonomies(tax_dict, connection, args):
@@ -58,8 +64,6 @@ def add_ncbi_taxonomies(tax_dict, connection, args):
 
     Return nothing
     """
-    logger = logging.getLogger(__name__)
-
     # load ncbiTax table into dict
     db_ncbi_tax_table = get_ncbi_tax_table(connection)  # {ncbi_tax_id: local db id}
 
@@ -211,3 +215,31 @@ def update_genbank_ncbi_tax(tax_prot_dict, connection, args, unit_test=False):
                             connection.rollback()
 
     return
+
+
+def replace_ncbi_taxonomy(
+    protein: NcbiProtein,
+    conn: sqlite3.Connection,
+    replaced_taxa_log: str,
+) -> None:
+    """Replace all taxa for the protein id with the taxa retrieved from NCBI"""
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE TempTable
+        SET genus = ?,
+            species = ?,
+            kingdom = ?
+        WHERE protein_id = ?;
+    """, (protein.genus, protein.species, protein.kingdom, protein.protein_id))
+
+    message = (
+        f"{protein.protein_id}\t"
+        f"\tREPLACED TAXA WITH:\t{protein.kingdom}\t{protein.genus}:\t{protein.species}"
+    )
+    with open(replaced_taxa_log, "a") as fh:
+        fh.write(f"{message}\n")
+        logger.warning(message)
+
+    cur.close()
+    conn.commit()

@@ -56,29 +56,29 @@ from pathlib import Path
 
 from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
-from saintBioutils.utilities.logger import config_logger, build_logger
+from saintBioutils.utilities.logger import config_logger
 
 from cazy_webscraper import (
     closing_message,
     display_citation_info,
     display_version_info,
 )
-from cazy_webscraper.cache.cazy import cache_cazy_data
 from cazy_webscraper.cazy.download import get_cazy_db_dump
 from cazy_webscraper.cazy.filter_data import (
     apply_tax_filters,
     apply_class_and_family_filters,
     drop_subfamilies
 )
+from cazy_webscraper.cazy.multi_taxa import process_multi_taxa
 
 from cazy_webscraper.database.connect import (
     connect_to_new_db,
     connect_existing_db,
 )
+
 from cazy_webscraper.database.scrape_log import add_main_scrape_message
 from cazy_webscraper.database.cazy import dump_cazy_txt
 
-from cazy_webscraper.ncbi.taxonomy.multiple_taxa import process_multi_taxa
 from cazy_webscraper.sql.sql_interface.add_data import add_cazyme_data
 from cazy_webscraper.utilities import (
     parse_configuration,
@@ -261,8 +261,6 @@ def get_cazy_data(
         cache_dir / f"{logger_name}_{time_stamp}_replaced_taxa.log",
         args,
     )
-
-    sys.exit(0)
 
     # add data to the database
     add_cazyme_data.add_kingdoms(db)

@@ -41,12 +41,15 @@
 """Submodule to interact with local SQLite database, and adding data other than CAZyme records."""
 
 
-from asyncio.log import logger
 import logging
+import sqlite3
 
 from tqdm import tqdm
 
 from cazy_webscraper.sql import sql_orm
+
+
+logger = logging.getLogger(__name__)
 
 
 class SqlInterfaceException(Exception):
@@ -216,36 +219,37 @@ def log_scrape_in_db(
     return
 
 
-def insert_data(connection, table_name, column_names, insert_values):
+def insert_data(
+    connection: sqlite3.Connection,
+    table_name: str,
+    column_names: list[str],
+    insert_values: list[tuple[str]]
+):
     """Insert values into one or multiple rows in the database.
-    
+
     :param connection: open connection to SQLite db engine
     :param table_name: str, name of table to be inserted into
     :param column_names: list of columns (str) to insert data into
     :param insert_values: list of tuples, one tuple per inserted row in the db
-    
+
     Return nothing.
     """
-    logger = logging.getLogger(__name__)
-
     logger.info("Bulk inserting data into db")
 
-    # set up series of ? to fill in the VALUES statement
-    value_stmt = ''
-    for name in range((len(column_names)) - 1):
-        value_stmt += '?, '
-    value_stmt += '?'  # statement should not end with a comma
-    
-    with connection.begin():
-        try:
-            connection.exec_driver_sql(
-                f"INSERT INTO {table_name} ({', '.join(column_names)}) VALUES ({value_stmt})",
-                insert_values,
-            )
-        except Exception as db_error:
-            raise SqlInterfaceException(db_error)
+    # Set up placeholders for the VALUES statement
+    placeholders = ', '.join(['?' for _ in column_names])
 
-    return
+    query = f"INSERT INTO {table_name} ({', '.join(column_names)}) VALUES ({placeholders})"
+
+    insert_cur = connection.cursor()
+    try:
+        insert_cur.executemany(query, insert_values)
+        connection.commit()
+    except Exception as db_error:
+        connection.rollback()
+        raise SqlInterfaceException(f"Database error: {str(db_error)}") from db_error
+    finally:
+        insert_cur.close()
 
 
 def get_gbk_table_dict(connection):

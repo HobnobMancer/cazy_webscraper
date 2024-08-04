@@ -42,7 +42,7 @@
 
 
 import logging
-from operator import ge
+import sqlite3
 
 from tqdm import tqdm
 
@@ -64,14 +64,14 @@ from cazy_webscraper.sql.sql_orm import (
 
 def get_ec_table_dict(connection):
     """Create dict of objects present in the CazyFamilies table.
-    
+
     :param connection: open sqlalchemy db engine connection
-    
+
     Return dict {ec_number: ec_id}
     """
     with Session(bind=connection) as session:
         db_ec_records = session.query(Ec).all()
-    
+
     ec_table_dict = {}  # {ec_number: ec_id}
     for record in tqdm(db_ec_records, desc="Retrieving existing EC# records"):
         ec_table_dict[record.ec_number] = record.ec_id
@@ -83,21 +83,21 @@ def get_ec_gbk_table_dict(connection):
     """Load the Genbanks_Ecs table into memory and compile a dict.
 
     The the result dict is keyed by EC IDS.
-    
+
     The table contains the current Genbank and EC number relationships in 
     the local CAZyme db.
-    
+
     :param connection: open sqlalchemy connection to an SQLite db
-    
+
     Return dict {ec_id: {gbk ids}}
     """
     with Session(bind=connection) as session:
         all_gbk_ec_records = session.query(Genbank, Ec).\
             join(Ec, Genbank.ecs).\
             all()
-        
+
     ec_gbk_table_dict = {}
-    
+
     for record in all_gbk_ec_records:
         genbank_id = record[0].genbank_id
         ec_id = record[1].ec_id
@@ -283,21 +283,23 @@ def get_gbk_fam_table_dict(connection):
     return gbk_fam_table_dict, existing_rel_tuples
 
 
-def get_kingdom_table_dict(connection):
+def get_kingdom_table_dict(connection: sqlite3.Connection) -> dict:
     """Load and parse the Kingdoms table from the db and compile a dict {kgnd: id}
-    
-    :param connection:
-    
+
     Return dict {kingdom: kindom_db_id}
     """
-    with Session(bind=connection) as session:
-        kingdom_table = session.query(Kingdom).all()
-    
+    king_cur = connection.cursor()
+    king_cur.execute("""
+    SELECT * FROM Kingdoms
+    """)
+
     kingdom_dict = {}  # {kingdom: kindom_db_id}
-    
-    for kingdom_obj in kingdom_table:
-        kingdom_dict[kingdom_obj.kingdom] = kingdom_obj.kingdom_id
-        
+
+    for row in king_cur:
+        # row0 = kingdom_id; row1 = kingdom
+        kingdom_dict[row[0]] = row[1]
+
+    king_cur.close()
     return kingdom_dict
 
 
