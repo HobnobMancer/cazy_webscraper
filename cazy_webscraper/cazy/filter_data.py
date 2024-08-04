@@ -94,8 +94,8 @@ def apply_tax_filters(
     conn = sqlite3.connect(db)
     cur = conn.cursor()
     cur.execute(query, parameters)
-    cur.close()
     conn.commit()
+    cur.close()
     conn.close()
 
 
@@ -139,10 +139,9 @@ def apply_class_and_family_filters(
 
 
 def drop_subfamilies(db: Path):
-    query = "DELETE FROM TempTable WHERE family LIKE '%\_%' ESCAPE '\'"
     conn = sqlite3.connect(db)
     cur = conn.cursor()
-    cur.execute(query)
+    cur.execute("DELETE FROM TempTable WHERE family LIKE '%\\_%' ESCAPE '\\'")
     conn.commit()
     cur.close()
     conn.close()
