@@ -347,29 +347,21 @@ def get_gbk_pdb_table_dict(connection):
     return gbk_pdb_table_dict 
 
 
-def get_taxs_table_dict(connection):
+def get_taxs_table_dict(connection: sqlite3.Connection) -> dict:
     """Create dict of objects present in the Taxs table.
-    
-    :param connection: open sqlalchemy db engine connection
-    
+
     Return dict {genus species: {'tax_id': db_tax_id, 'kingdom_id': kingdom_id}
     """
-    with Session(bind=connection) as session:
-        all_taxa = session.query(Taxonomy).all()
-        
+    tax_cur = connection.cursor()
+    tax_cur.execute("""SELECT * FROM Taxs""")
     db_tax_dict = {}
-    for taxa in all_taxa:
-        if len(taxa.species) == 0:
-            db_tax_dict[f"{taxa.genus}"] = {
-                'tax_id': taxa.taxonomy_id,
-                'kingdom_id': taxa.kingdom_id,
-            }
-        else:
-            db_tax_dict[f"{taxa.genus} {taxa.species}"] = {
-                'tax_id': taxa.taxonomy_id,
-                'kingdom_id': taxa.kingdom_id,
-            }
-    
+    for row in tax_cur:
+        # [0] tax id, [1] genus, [2] species, [3] kingdom id
+        db_tax_dict[f"{row[1]} {row[2]}"] = {
+            'tax_id': row[0],
+            'kingdom_id': row[3]
+        }
+    tax_cur.close()    
     return db_tax_dict
 
 
