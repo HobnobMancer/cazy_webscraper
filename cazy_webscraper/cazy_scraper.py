@@ -79,7 +79,7 @@ from cazy_webscraper.database.connect import (
 from cazy_webscraper.database.scrape_log import add_main_scrape_message
 from cazy_webscraper.database.cazy import dump_cazy_txt
 
-from cazy_webscraper.sql.sql_interface.add_data import add_cazyme_data
+from cazy_webscraper.sql.sql_interface.add_data import add_cazy_data
 from cazy_webscraper.utilities import (
     parse_configuration,
     sanity_checks
@@ -113,8 +113,7 @@ def main(argv: Optional[List[str]] = None):
         display_citation_info()
         return
 
-    db = sanity_checks.sanity_check_main_input(time_stamp, args)
-    # db = byte representation of path to the local cazyme db
+    db = sanity_checks.sanity_check_main_input(time_stamp, args)  # path to the local cazyme db
 
     if args.skip_ncbi_tax:
         logger.warning(
@@ -184,7 +183,6 @@ def main(argv: Optional[List[str]] = None):
         fam_filters,
         kingdom_filters,
         taxonomy_filter_dict,
-        connection,
         cache_dir,
         logger_name,
         time_stamp,
@@ -200,7 +198,6 @@ def get_cazy_data(
     fam_filters: set[str],
     kingdom_filters: set[str],
     taxonomy_filter_dict: dict,
-    connection,
     cache_dir: Path,
     logger_name: str,
     time_stamp: str,
@@ -212,15 +209,15 @@ def get_cazy_data(
     This function coordinates the crawling through the CAZy website by calling the appropriate
     functions, and then retrieving the protein data by calling to the appropriate data again.
 
-    :param excluded_classes: list, list of classes to not scrape from CAZy
     :param class_filters: set of CAZy classes to retrieve proteins from
     :param fam_filters: set of CAZy families to retrieve proteins from
+    :param kingdom_filters: set of kingdoms to keep
     :param taxonomy_filters: set of genera, species and strains to restrict the scrape to
-    :param connection: sqlalchemy connection obj, connection to SQLite db engine
     :param cache_dir: Path to dir to write out downloaded family txt files
     :param logger_name: str, name used for additional logger files
     :param time_stramp: str, time cazy_webscraper was invoked
     :param args: cmd args parser
+    :param db: path to local cazyme db
 
     Return nothing.
     """
@@ -263,23 +260,18 @@ def get_cazy_data(
     )
 
     # add data to the database
-    add_cazyme_data.add_kingdoms(db)
+    add_cazy_data.add_kingdoms(db)
+    add_cazy_data.add_source_organisms(db)
+    sys.exit(1)
 
-    sys.exit(0)
-    # 
+    add_cazy_data.add_cazy_families(cazy_data, connection)
 
-    add_cazyme_data.add_source_organisms(taxa_dict, connection)
+    add_cazy_data.add_genbanks(cazy_data, connection)
 
-    add_cazyme_data.add_cazy_families(cazy_data, connection)
-
-    add_cazyme_data.add_genbanks(cazy_data, connection)
-
-    add_cazyme_data.add_genbank_fam_relationships(cazy_data, connection, args)
+    add_cazy_data.add_genbank_fam_relationships(cazy_data, connection, args)
 
     # delete the TempTable
     ######
-    
-    return
 
 
 if __name__ == "__main__":

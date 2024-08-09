@@ -297,7 +297,7 @@ def get_kingdom_table_dict(connection: sqlite3.Connection) -> dict:
 
     for row in king_cur:
         # row0 = kingdom_id; row1 = kingdom
-        kingdom_dict[row[0]] = row[1]
+        kingdom_dict[row[1]] = row[0]
 
     king_cur.close()
     return kingdom_dict

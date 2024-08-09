@@ -70,107 +70,61 @@ def add_kingdoms(db: Path) -> None:
     CAZy txt file, so as to only add new kingdoms.
     """
     conn = sqlite3.connect(db)
-
-    kingdom_table_dict = get_kingdom_table_dict(conn)
-    # dict {kingdom: {organisms}}
-    existing_kingdom_records = list(kingdom_table_dict.keys())
+    kingdom_table_dict = get_kingdom_table_dict(conn)  # dict {kingdom: kingdom_id}
 
     # retrieve the Kingdoms retrieved from the CAZy txt file
     cur = conn.cursor()
-    cur.execute("""
-    SELECT DISTINCT(kingdom) FROM TempTable
-    """)
-    cazy_kingdoms = [row[0] for row in cur]
-    cur.close()
-
+    cur.execute("""SELECT DISTINCT(kingdom) FROM TempTable""")
     # create list of tuples for db insert
-    kingdoms_db_insert_values = [
-        (kngdm,) for kngdm in cazy_kingdoms if kngdm not in existing_kingdom_records
-    ]
+    kingdoms_db_insert_values = [(row[0],) for row in cur if row[0] not in kingdom_table_dict]
+    cur.close()
 
     if len(kingdoms_db_insert_values) != 0:
         insert_data(conn, 'Kingdoms', ['kingdom'], kingdoms_db_insert_values)
 
-    return
+    conn.commit()
+    conn.close()
 
 
-def add_source_organisms(taxa_dict, connection):
-    """Add taxonomy (source organism) data to the local CAZyme database
-    
-    :param taxa_dict: dict of taxa data {kingdom: set(organism)} to be added to the db
-    :param connection: open sqlalchemy connection to SQLite engine
-    
-    Return nothing
+def add_source_organisms(db: Path) -> None:
+    """Add taxonomy (source organism) data from TempTable to the Tax table in
+    the local CAZyme database
+
+    Check existing kingdom objects in the db against kingdoms retrieved from the 
+    CAZy txt file, so as to only add new kingdoms.
     """
-    logger = logging.getLogger(__name__)
-
-    # retrieve db kingdom objects for retrieving the kingdom_id for the Taxs table
-    kingdom_table_dict = get_kingdom_table_dict(connection)
-    # {kingdom: kingdom_id}
-    tax_table_dict = get_taxs_table_dict(connection)
+    conn = sqlite3.connect(db)
+    # get the kingdom_id for the Taxs table
+    kingdom_table_dict = get_kingdom_table_dict(conn)  # dict {kingdom: kingdom_id}
+    # {genus species: {'tax_id': db_tax_id, 'kingdom_id': kingdom_id}
+    tax_table_dict = get_taxs_table_dict(conn)
     # {genus species: {'tax_id': int(db_tax_id), 'kingdom_id': int(kingdom_id)}
-    
-    # compare taxa already in the db against taxa retrieved from the CAZy txt file
-    # to identify new taxa objects to be added to the db
 
-    taxonomy_db_insert_values = set()
+    tax_insert_values = set()  # new taxa to add to db (kingdom_id, genus, species)
     records_to_update = set()  # used incase kingdom has changed for a species
+    cur = conn.cursor()
+    cur.execute("""SELECT DISTINCT kingdom, genus, species FROM TempTable""")
+    for row in cur:
+        if f"{row[1]} {row[2]}" in tax_table_dict:
+            if int(row[0]) != int(tax_table_dict[f"{row[1]} {row[2]}"]['kingdom_id']):
+                records_to_update.add((row[0], row[1], row[2],))
+        else:
+            tax_insert_values.add((row[1], row[2], kingdom_table_dict[row[0]]))
 
-    for kingdom in tqdm(
-        taxa_dict,
-        total=len(list(taxa_dict.keys())),
-        desc='Create tax objects per Kingdom',
-    ):
-        kingdom_id = kingdom_table_dict[kingdom]
-        organisms = taxa_dict[kingdom]
-        
-        for organism in organisms:  # organisms from the CAZy txt file
-            
-            try:
-                existing_record_data = tax_table_dict[organism]
-                # check kingdom is correct
-                existing_record_kngdm_id = tax_table_dict[organism]['kingdom_id']
-                if existing_record_kngdm_id != kingdom_id:
-                    records_to_update.add( (genus, species, kingdom_id,) )
-                
-            except KeyError:  # organism not in the db, build new record
-                genus = organism.split(" ")[0]
-                species = ' '.join(organism.split(" ")[1:])
-                new_record = (genus, species, kingdom_id,)
-                taxonomy_db_insert_values.add( new_record )
-    
-    if len(taxonomy_db_insert_values) != 0:
-        with open("tax_sets", "w") as fh:
-            for tax in taxonomy_db_insert_values:
-                fh.write(f"{tax}\n")
-        logger.info(
-            f"Adding {len(taxonomy_db_insert_values)} new tax records to the db"
-        )
-        insert_data(
-            connection,
-            'Taxs',
-            ['genus', 'species', 'kingdom_id'],
-            list(taxonomy_db_insert_values),
-        )
-    else:
-        logger.info(
-            "No new tax records to add to the db"
-        )
+    if len(tax_insert_values) != 0:
+        logger.warning("Inserting %s new taxs into the local db", len(tax_insert_values))
+        insert_data(conn, 'Taxs', ['genus', 'species', 'kingdom_id'], list(tax_insert_values))
+
     if len(records_to_update) != 0:
-        logger.info(
-            f"Updating the parent Kingdom for {len(records_to_update)} tax records in the db"
-        )
-        with connection.begin():
-            for record in records_to_update:
-                connection.execute(
-                    text(
-                        "UPDATE Taxs "
-                        f"SET kingdom_id = {record[2]} "
-                        f"WHERE genus = '{record[0]}' AND species = '{record[1]}'"
-                    )
-                )
+        logger.warning("Updating %s tax records in th local CAZyme db", len(records_to_update))
+        for record in records_to_update:
+            conn.execute(
+                """UPDATE Taxs SET kingdom_id = ? WHERE genus = ? AND species = ?""",
+                record
+            )
 
-    return
+    conn.commit()
+    conn.close()
 
 
 def add_cazy_families(cazy_data, connection):
