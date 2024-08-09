@@ -42,13 +42,14 @@
 
 
 import logging
+import sqlite3
+
+from pathlib import Path
 
 from sqlalchemy import delete, text
-from sqlalchemy.orm import relationship
 from tqdm import tqdm
 
 from cazy_webscraper.sql.sql_interface import insert_data
-from cazy_webscraper.sql.sql_interface.get_data import get_table_dicts
 from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
     get_kingdom_table_dict,
     get_taxs_table_dict,
@@ -59,24 +60,28 @@ from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
 from cazy_webscraper.sql.sql_orm import genbanks_families
 
 
-def add_kingdoms(cazy_taxa_dict, connection):
-    """Add new Kingdoms objects to database.
-    
+logger = logging.getLogger(__name__)
+
+
+def add_kingdoms(db: Path) -> None:
+    """Add new Kingdoms objects to database from the TempTable
+
     Check existing kingdom objects in the db against kingdoms retrieved from the 
     CAZy txt file, so as to only add new kingdoms.
-
-    :param cazy_taxa_dict: dict of kingdoms and organisms from the cazy_data dict
-        {kingdom: {organism}}
-    :param connection: open sqlalchemy connection to a local SQLite db engine
-    
-    Return nothing
     """
-    kingdom_table_dict = get_kingdom_table_dict(connection)
+    conn = sqlite3.connect(db)
+
+    kingdom_table_dict = get_kingdom_table_dict(conn)
     # dict {kingdom: {organisms}}
+    existing_kingdom_records = list(kingdom_table_dict.keys())
 
     # retrieve the Kingdoms retrieved from the CAZy txt file
-    cazy_kingdoms = list(cazy_taxa_dict.keys())
-    existing_kingdom_records = list(kingdom_table_dict.keys())
+    cur = conn.cursor()
+    cur.execute("""
+    SELECT DISTINCT(kingdom) FROM TempTable
+    """)
+    cazy_kingdoms = [row[0] for row in cur]
+    cur.close()
 
     # create list of tuples for db insert
     kingdoms_db_insert_values = [
@@ -84,8 +89,8 @@ def add_kingdoms(cazy_taxa_dict, connection):
     ]
 
     if len(kingdoms_db_insert_values) != 0:
-        insert_data(connection, 'Kingdoms', ['kingdom'], kingdoms_db_insert_values)
-    
+        insert_data(conn, 'Kingdoms', ['kingdom'], kingdoms_db_insert_values)
+
     return
 
 
