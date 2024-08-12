@@ -141,26 +141,18 @@ def get_gbk_ec_table_dict(connection):
     return gbk_ec_table_dict
 
 
-def get_fams_table_dict(connection):
+def get_fams_table_dict(connection: sqlite3.Connection) -> dict:
     """Create dict of objects present in the CazyFamilies table.
-    
-    :param connection: open sqlalchemy db engine connection
-    
     Return dict {family subfamily: db_family_id}
     """
-    with Session(bind=connection) as session:
-        all_families = session.query(CazyFamily).all()
-        
+    fam_cur = connection.cursor()
+    fam_cur.execute("""SELECT * FROM CazyFamilies""")
     db_fam_dict = {}
-
-    for fam in all_families:
-        if fam.subfamily is None:
-            subfam = '_'
-        else:
-            subfam = fam.subfamily
-            
-        db_fam_dict[f"{fam.family} {subfam}"] = fam.family_id
-    
+    for row in fam_cur:
+        # [0] fam_id, [1] fam, [2] subfamily
+        subfam = row[2] if not None else '_'
+        db_fam_dict[f"{row[1]} {subfam}"] = row[1]
+    fam_cur.close()
     return db_fam_dict
 
 
@@ -289,16 +281,11 @@ def get_kingdom_table_dict(connection: sqlite3.Connection) -> dict:
     Return dict {kingdom: kindom_db_id}
     """
     king_cur = connection.cursor()
-    king_cur.execute("""
-    SELECT * FROM Kingdoms
-    """)
-
+    king_cur.execute("""SELECT * FROM Kingdoms""")
     kingdom_dict = {}  # {kingdom: kindom_db_id}
-
     for row in king_cur:
         # row0 = kingdom_id; row1 = kingdom
         kingdom_dict[row[1]] = row[0]
-
     king_cur.close()
     return kingdom_dict
 

@@ -262,9 +262,8 @@ def get_cazy_data(
     # add data to the database
     add_cazy_data.add_kingdoms(db)
     add_cazy_data.add_source_organisms(db)
+    add_cazy_data.add_cazy_families(db)
     sys.exit(1)
-
-    add_cazy_data.add_cazy_families(cazy_data, connection)
 
     add_cazy_data.add_genbanks(cazy_data, connection)
 

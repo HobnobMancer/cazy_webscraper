@@ -127,45 +127,31 @@ def add_source_organisms(db: Path) -> None:
     conn.close()
 
 
-def add_cazy_families(cazy_data, connection):
-    """Add CAZy families and subfamilies to local CAZyme database
-    
-    :param cazy_data: dict of data extracted from the txt file
-        {gbk_accession: {kingdom:str, organism:str, families{fam:subfam}}}
-    :param connection: open sqlalchemy connection to an SQLite db engine
-    
-    Return nothing"""
-    logger = logging.getLogger(__name__)
-
-    # get list of CAZy (sub)families already present in the db
-    fam_table_dict = get_fams_table_dict(connection)  # {family subfamily: db_family_id}
-
-    existing_fam_records = list(fam_table_dict.keys()) 
+def add_cazy_families(db: Path) -> None:
+    """Add CAZy families and subfamilies to local CAZyme database"""
+    conn = sqlite3.connect(db)
+    fam_table_dict = get_fams_table_dict(conn)  # {'<fam> <subfam|_>': db fam id}
 
     families_db_insert_values = set()  # new fam records to add to db
+    cur = conn.cursor()
+    cur.execute("""SELECT DISTINCT family FROM TempTable""")
+    for row in cur:
+        if row[0].find("_") == -1:
+            fam = row[0]
+            subfam = '_'
+        else:
+            fam = row[0].split("_")[0]
+            subfam = row[0]
 
-    for genbank_accession in tqdm(cazy_data, desc='Extracting CAZy fams from CAZy data'):
-        for cazy_fam in cazy_data[genbank_accession]["families"]:
-            subfamilies = cazy_data[genbank_accession]["families"][cazy_fam]
-            
-            for subfam in subfamilies:
-                if subfam is None:
-                    cazy_subfam = "_"
-                else:
-                    cazy_subfam = subfam
-                fam_key = f"{cazy_fam} {cazy_subfam}"
-                
-                if fam_key not in existing_fam_records:
-                    families_db_insert_values.add( (cazy_fam, subfam) )  # add None for subfam if is None
-            
+        if f"{fam} {subfam}" not in fam_table_dict:
+            families_db_insert_values.add((fam, subfam if subfam != '_' else None))
+
     if len(families_db_insert_values) != 0:
-        logger.info(
-            f"Inserting {len(families_db_insert_values)} "
-            "new family records into the CazyFamilies table"
+        logger.warning(
+            "Inserting %s new families-subfamilies into the local db",
+            len(families_db_insert_values)
         )
-        insert_data(connection, 'CazyFamilies', ['family', 'subfamily'], list(families_db_insert_values))
-    else:
-        logger.info("Found no new CAZy family records to add the CazyFamilies table")
+        insert_data(conn, 'CazyFamilies', ['family', 'subfamily'], list(families_db_insert_values))
 
     return
 
