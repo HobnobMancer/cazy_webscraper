@@ -54,10 +54,10 @@ from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
     get_kingdom_table_dict,
     get_taxs_table_dict,
     get_fams_table_dict,
-    get_gbk_table_dict,
-    get_gbk_fam_table_dict,
+    get_protein_table_dict,
+    get_prot_fam_table_dict,
 )
-from cazy_webscraper.sql.sql_orm import genbanks_families
+from cazy_webscraper.sql.sql_orm import proteins_families
 
 
 logger = logging.getLogger(__name__)
@@ -136,12 +136,7 @@ def add_cazy_families(db: Path) -> None:
     cur = conn.cursor()
     cur.execute("""SELECT DISTINCT family FROM TempTable""")
     for row in cur:
-        if row[0].find("_") == -1:
-            fam = row[0]
-            subfam = '_'
-        else:
-            fam = row[0].split("_")[0]
-            subfam = row[0]
+        fam, subfam = (row[0].split('_')[0], row[0]) if '_' in row[0] else (row[0], None)
 
         if f"{fam} {subfam}" not in fam_table_dict:
             families_db_insert_values.add((fam, subfam if subfam != '_' else None))
@@ -153,180 +148,117 @@ def add_cazy_families(db: Path) -> None:
         )
         insert_data(conn, 'CazyFamilies', ['family', 'subfamily'], list(families_db_insert_values))
 
-    return
+    conn.commit()
+    conn.close()
 
 
-def add_genbanks(cazy_data, connection):
-    """Add GenBank accessions with tax data to the db
-    
-    :param cazy_data: dict of CAZy data
-        {gbk_acc: {kingdom: {str}, organism: {str}, families: {(fam, subfam, )}}}
-    :param connection: open sqlalchemy connection to an SQLite db
-    
-    Return Nothing
-    """
-    logger = logging.getLogger(__name__)
+def add_proteins(db: Path) -> None:
+    """Add GenBank accs from TempTable to Proteins table"""
+    conn = sqlite3.connect(db)
+    protein_table_dict = get_protein_table_dict(conn)
+    # {prot acc: {'taxa_id': str, 'id': int}}
+    taxa_table_dict = get_taxs_table_dict(conn)
+    # {genus species: {'tax_id': int(db_tax_id), 'kingdom_id': int(kingdom_id)}
 
-    # retrieve existing records from the db
-    gbk_table_dict = get_gbk_table_dict(connection)
-    existing_gbk_records = list(gbk_table_dict.keys())
+    prot_record_updates = set()  # {prot_accession: 'taxa_id': (new taxa_id) int, 'protein_id': int}
+    prot_db_insert_values = set()
 
-    taxa_table_dict = get_taxs_table_dict(connection)
-    # {genus species: {'tax_id': db_tax_id, 'kingdom_id': kingdom_id}
+    cur = conn.cursor()
+    cur.execute("""SELECT DISTINCT protein_id, source, genus, species FROM TempTable""")
+    for row in cur:
+        protein_acc = row[0]
+        tax_id = taxa_table_dict[f"{row[2]} {row[3]}"]['tax_id']
+        if protein_acc not in protein_table_dict:
+            prot_db_insert_values.add((protein_acc, tax_id, row[1]))
+        elif tax_id != protein_table_dict[protein_acc]['taxa_id']:
+            prot_record_updates.add((tax_id, protein_table_dict[protein_acc]['protein_id']))
 
-    gbk_record_updates = set()  # {gbk_accession: 'taxa_id': (new taxa_id) int, 'gbk_id': int}
-    gbk_db_insert_values = set()
-
-    for gbk_accession in tqdm(cazy_data, desc="Compiling Genbank records for insertion"):
-        if gbk_accession not in existing_gbk_records:
-            organism = cazy_data[gbk_accession]['organism']
-            taxa_id = taxa_table_dict[organism]['tax_id']
-            gbk_db_insert_values.add( (gbk_accession, taxa_id,) )
-        
-        else:  # check if need to update taxa_id
-            # get the taxa_id for the existing record
-            existing_record_id = gbk_table_dict[gbk_accession]['taxa_id']
-            
-            # get the taxa_id for the organism listed in the CAZy txt file
-            organism = cazy_data[gbk_accession]['organism']
-            cazy_data_taxa_id = taxa_table_dict[organism]['tax_id']
-            
-            if cazy_data_taxa_id != existing_record_id:
-                # need to update the record
-                gbk_record_updates.add( (cazy_data_taxa_id, gbk_table_dict[gbk_accession]['gbk_id']) )
-
-    if len(gbk_db_insert_values) != 0:
-        logger.info(
-            f"Inserting {len(gbk_db_insert_values)} GenBank accessions into the db"
-        )
-        insert_data(connection, 'Genbanks', ['genbank_accession', 'taxonomy_id'], list(gbk_db_insert_values))
-    
-    if len(gbk_record_updates) != 0:
-        logger.info(
-            f"Updating {len(gbk_record_updates)} Genbank table records with new taxonomy IDs"
-        )
-        with connection.begin():
-            for record in gbk_record_updates:
-                connection.execute(
-                    text(
-                        "UPDATE Taxs "
-                        f"SET taxonomy_id = {record[1]} "
-                        f"WHERE genbank_id = '{record[0]}'"
-                    )
-                )
-    
-    return
-
-
-def add_genbank_fam_relationships(cazy_data, connection, args):
-    """Add GenBank accession - CAZy family relationships to db
-    
-    :param cazy_data: dict of data extracted from the txt file
-        {gbk_accession: {kingdom:str, organism:str, families{fam:subfam}}}
-    :param connection: open sqlalchemy connection to an SQLite db engine
-    :param args: cmd-line args parser
-
-    Return nothing
-    """
-    logger = logging.getLogger(__name__)
-
-    gbk_fam_db_insert_values = set()  # new records to add
-    gbk_fam_records_to_del = set()  # records/relationships to delete
-
-    # get dict of GenBank and CazyFamilies tables, used for getting gbk_ids  and fam_ids of accessions and
-    # families without entries in the CazyFamilies_Genbanks table
-    
-    gbk_table_dict = get_gbk_table_dict(connection) 
-    # {genbank_accession: 'taxa_id': int, 'gbk_id': int}
-
-
-    fam_table_dict = get_fams_table_dict(connection) 
-    # {'fam subfam': fam_id}
-
-    # load current relationships in the db
-    gbk_fam_table_dict, existing_rel_tuples = get_gbk_fam_table_dict(connection)
-    # {genbank_accession: {'families': {str(fam subfam): int(fam_id)}, 'gbk_id': int(gbk_db_id)} }
-
-    for genbank_accession in tqdm(cazy_data, desc="Extracting Genbank-Family relationships from CAZy data"):
-        
-        gbk_id = gbk_table_dict[genbank_accession]['gbk_id']
-        
-        cazy_fam_dict = cazy_data[genbank_accession]['families']
-        # cazy_data = { gbk_acc: {'families': {fam: {subfamilies}} } }
-        # cazy_fam_dict = {fam : {subfamilies}}
-        
-        try:
-            existing_relation_dict = gbk_fam_table_dict[genbank_accession]['families']
-            # existing_relation_dict = { str(fam subfam) : fam_id }
-            
-            for fam in cazy_fam_dict:
-                subfamilies = cazy_fam_dict[fam] # set of subfams for parent fam from CAZy data
-                
-                for subfam in subfamilies:  # add each fam-subfam pair
-                    if subfam is None:
-                        family_key = f"{fam} _"
-                    else:
-                        family_key = f"{fam} {subfam}"
-                    
-                    try:
-                        existing_relation_dict[family_key]
-                        # already in db, don't add relationship again
-                    
-                    except KeyError:
-                        fam_id = fam_table_dict[family_key]
-                        
-                        new_row = (gbk_id, fam_id,)
-                        if new_row not in existing_rel_tuples:
-                            gbk_fam_db_insert_values.add( (gbk_id, fam_id,) )
-        
-        except KeyError:  # GenBank not present in the Genbanks_CazyFamilies table, create new record
-            
-            for fam in cazy_fam_dict:
-                subfamilies = cazy_fam_dict[fam] # set of subfams for parent fam from CAZy data
-                
-                for subfam in subfamilies:  # add each fam-subfam pair
-                    if subfam is None:
-                        family_key = f"{fam} _"
-                    else:
-                        family_key = f"{fam} {subfam}"
-
-                    fam_id = fam_table_dict[family_key]
-                
-                    new_row = (gbk_id, fam_id,)
-                    if new_row not in existing_rel_tuples:
-                        gbk_fam_db_insert_values.add( (gbk_id, fam_id,) )
-
-    if len(gbk_fam_db_insert_values) != 0:
-
-        logger.info(
-            f"Adding {len(gbk_fam_db_insert_values)} new GenBank accession - "
-            "CAZy (sub)family relationships to the db"
-        )
+    if len(prot_db_insert_values) != 0:
+        logger.warning("Inserting %s Protein accessions into the db", len(prot_db_insert_values))
         insert_data(
-            connection,
-            'Genbanks_CazyFamilies',
-            ['genbank_id', 'family_id'],
-            list(gbk_fam_db_insert_values),
+            conn,
+            'Proteins',
+            ['protein_accession', 'taxonomy_id', 'source'],
+            list(prot_db_insert_values)
         )
-    else:
-        logger.info(
-            "No new Genbank accession-CAZy (sub)family relationships to add to the db"
+
+    if len(prot_record_updates) != 0:
+        logger.warning(
+            "Updating %s Protein table records with new taxonomy IDs",
+            len(prot_record_updates)
         )
-    
-    if (len(gbk_fam_records_to_del) != 0):
-        logger.info(
-            "Deleting {(len(gbk_fam_records_to_del)} GenBank accession - "
-            "CAZy (sub)family relationships\n"
-            "that are the db but are no longer in CAZy"
+        for record in prot_record_updates:
+            conn.execute(
+                """UPDATE Proteins SET taxonomy_id = ? WHERE protein_id = ?""",
+                record
+            )
+
+    conn.commit()
+    conn.close()
+
+
+def add_protein_fam_relationships(db: Path) -> None:
+    """Add Protein accession - CAZy family relationships to db"""
+    insert_values = set()  # new records to add
+    records_to_del = set()  # records/relationships to delete
+
+    conn = sqlite3.connect(db)
+    fam_table_dict = get_fams_table_dict(conn)  # {'fam subfam': fam db id}
+    prot_fam_table_dict = get_prot_fam_table_dict(conn)  # {protein_id: {family_id}}
+
+    cur = conn.cursor()
+    cur.execute("""SELECT DISTINCT protein_id, family FROM TempTable""")
+
+    for row in cur:
+        protein_acc = row[0]
+        fam, subfam = (row[1].split('_')[0], row[1]) if '_' in row[1] else (row[1], 'None')
+        fam_id = fam_table_dict[f"{fam} {subfam}"]
+
+        prot_cur = conn.cursor()
+        prot_cur.execute(
+            "SELECT protein_id FROM Proteins WHERE protein_accession = ?",
+            (protein_acc,)
         )
-        with connection.begin():
-            for record in gbk_fam_records_to_del:
-                # record = (genbank_id, fam_id,)
-                stmt = (
-                    delete(genbanks_families).\
-                    where(genbanks_families.c.genbank_id == record[0]).\
-                    where(genbanks_families.c.family_id == record[1])
-                )
-                connection.execute(stmt)
+
+        result = prot_cur.fetchone()
+        if result:
+            protein_id = result[0]
+        else:
+            logger.error((
+                "Could not find protein id for accession %s in the Proteins table\n"
+                "Not adding fams for this protein"
+            ))
+            continue
+        prot_cur.close()
+
+        if protein_id not in prot_fam_table_dict:
+            insert_values.add((protein_id, fam_id))
+        elif fam_id not in prot_fam_table_dict[protein_id]:
+            records_to_del.add((protein_id, fam_id))
+
+    cur.close()
+
+    if len(insert_values) != 0:
+        logger.warning("Inserting %s protein-family relationships into the db", len(insert_values))
+        insert_data(
+            conn,
+            'Proteins_CazyFamilies',
+            ['protein_id', 'family_id'],
+            list(insert_values),
+        )
+
+    if (len(records_to_del) != 0):
+        logger.warning("Deleting %s defunct protein-family relationships", len(records_to_del))
+        del_cur = conn.connect()
+        for record in records_to_del:
+            del_cur.execute(
+                "DELETE FROM Proteins_CazyFamilies WHERE protein_id = ? AND family_id = ?",
+                (record[0], record[1])
+            )
+            conn.commit()
+        del_cur.close()
+
+    conn.commit()
+    conn.close()
 
     return

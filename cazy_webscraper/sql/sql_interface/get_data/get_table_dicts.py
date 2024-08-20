@@ -49,12 +49,12 @@ from tqdm import tqdm
 from cazy_webscraper.sql.sql_orm import (
     CazyFamily,
     Ec,
-    Genbank,
     Genome,
     GtdbTax,
     Kingdom,
     NcbiTax,
     Pdb,
+    Protein,
     Session,
     Taxonomy,
     Uniprot,
@@ -80,11 +80,11 @@ def get_ec_table_dict(connection):
 
 
 def get_ec_gbk_table_dict(connection):
-    """Load the Genbanks_Ecs table into memory and compile a dict.
+    """Load the Proteins_Ecs table into memory and compile a dict.
 
     The the result dict is keyed by EC IDS.
 
-    The table contains the current Genbank and EC number relationships in 
+    The table contains the current Protein and EC number relationships in 
     the local CAZyme db.
 
     :param connection: open sqlalchemy connection to an SQLite db
@@ -92,8 +92,8 @@ def get_ec_gbk_table_dict(connection):
     Return dict {ec_id: {gbk ids}}
     """
     with Session(bind=connection) as session:
-        all_gbk_ec_records = session.query(Genbank, Ec).\
-            join(Ec, Genbank.ecs).\
+        all_gbk_ec_records = session.query(Protein, Ec).\
+            join(Ec, Protein.ecs).\
             all()
 
     ec_gbk_table_dict = {}
@@ -111,11 +111,11 @@ def get_ec_gbk_table_dict(connection):
 
 
 def get_gbk_ec_table_dict(connection):
-    """Load the Genbanks_Ecs table into memory and compile a dict.
+    """Load the Proteins_Ecs table into memory and compile a dict.
 
     The the result dict is keyed by GENBANK IDS.
     
-    The table contains the current Genbank and EC number relationships in 
+    The table contains the current Protein and EC number relationships in 
     the local CAZyme db.
     
     :param connection: open sqlalchemy connection to an SQLite db
@@ -123,8 +123,8 @@ def get_gbk_ec_table_dict(connection):
     Return dict {gbk_id: {ec ids}}
     """
     with Session(bind=connection) as session:
-        all_gbk_ec_records = session.query(Genbank, Ec).\
-            join(Ec, Genbank.ecs).\
+        all_gbk_ec_records = session.query(Protein, Ec).\
+            join(Ec, Protein.ecs).\
             all()
         
     gbk_ec_table_dict = {}
@@ -156,29 +156,28 @@ def get_fams_table_dict(connection: sqlite3.Connection) -> dict:
     return db_fam_dict
 
 
-def get_gbk_table_dict(connection):
-    """Compile a dict of the data in the Genbanks table
-    
-    :param connection: open connection to an SQLite3 database
-    
-    Return dict {genbank_accession: 'taxa_id': int, 'gbk_id': int}
+def get_protein_table_dict(connection: sqlite3.Connection) -> dict:
+    """Compile a dict of the data in the Proteins table
+    Return dict {genbank_accession: 'taxa_id': int, 'protein_id': int}
     """
-    with Session(bind=connection) as session:
-        all_genbank = session.query(Genbank).all()
-
-    db_gbk_dict = {}  # {genbank_accession: 'taxa_id': str, 'id': int}
-    
-    for gbk in all_genbank:
-        db_gbk_dict[f"{gbk.genbank_accession}"] = {
-            'taxa_id': gbk.taxonomy_id,
-            'gbk_id': gbk.genbank_id
+    prot_cur = connection.cursor()
+    prot_cur.execute("""SELECT * FROM Proteins""")
+    db_protein_dict = {}  # {genbank_accession: 'taxa_id': str, 'id': int}
+    for row in prot_cur:
+        # [0] protein_id, [1] protein_accession
+        # [2] sequence, [3] sequence_update
+        # [4] taxonomy_id, [5] ncbi_tax_id
+        # [6] uniprot_id, [7] source
+        db_protein_dict[f"{row[1]}"] = {
+            'taxa_id': row[4],
+            'protein_id': row[0]
         }
-    
-    return db_gbk_dict
+    prot_cur.close()
+    return db_protein_dict
 
 
 def get_no_tax_gbk_table_dict(connection):
-    """Compile a dict of the data in the Genbanks table containing records only of proteins with no 
+    """Compile a dict of the data in the Proteins table containing records only of proteins with no 
     NCBI tax data
     
     :param connection: open connection to an SQLite3 database
@@ -188,7 +187,7 @@ def get_no_tax_gbk_table_dict(connection):
     logger = logging.getLogger(__name__)
 
     with Session(bind=connection) as session:
-        all_genbank = session.query(Genbank).all()
+        all_genbank = session.query(Protein).all()
 
     gbk_db_ids = set()
     
@@ -202,77 +201,46 @@ def get_no_tax_gbk_table_dict(connection):
 
 
 def get_gbk_table_seq_dict(connection):
-    """Compile a dict of the data in the Genbanks table
+    """Compile a dict of the data in the Proteins table
     
     :param connection: open connection to an SQLite3 database
     
     Return dict {genbank_accession: 'sequence': str, 'seq_date': str}
     """
     with Session(bind=connection) as session:
-        all_genbank = session.query(Genbank).all()
+        all_genbank = session.query(Protein).all()
 
-    db_gbk_dict = {}  # {genbank_accession: 'sequence': str, 'seq_date': str}
+    db_protein_dict = {}  # {genbank_accession: 'sequence': str, 'seq_date': str}
     
     for gbk in all_genbank:
-        db_gbk_dict[f"{gbk.genbank_accession}"] = {
+        db_protein_dict[f"{gbk.genbank_accession}"] = {
             'sequence': gbk.sequence,
             'seq_date': gbk.seq_update_date
         }
     
-    return db_gbk_dict
+    return db_protein_dict
 
 
-def get_gbk_fam_table_dict(connection):
-    """Build dict representing the records present in the Genbanks_CazyFamilies table
+def get_prot_fam_table_dict(connection: sqlite3.Connection) -> dict:
+    """Build dict representing the records present in the Proteins_CazyFamilies table
 
     If a GenBank accession is in the db but not has not CazyFamilies instances related to it,
     the GenBank accession is not returned when quering the db.
-    
-    :param connection: open sqlalchemy connection to an SQLite3 db engine
-    
-    Return 
-    - dict: {gbk_acc: {'families': {'fam subfam': fam_id}}, 'gbk_id': gbk_id }
-    - set of tuples: (gbk_id, fam_id), each representing one row in the table
+
+    Return {protein_id: {family_id}}
     """
-    with Session(bind=connection) as session:
-        all_gbk_fam_records = session.query(Genbank, CazyFamily).\
-        join(CazyFamily, Genbank.families).\
-        all()
+    prot_fam_cur = connection.cursor()
+    prot_fam_cur.execute("""SELECT * FROM Proteins_CazyFamilies""")
 
-    existing_rel_tuples = set()  # set of tuples (gbk_id, fam_id)
+    prot_fam_table_dict = {}  # {protein_id: {family_id}}
+    for row in prot_fam_cur:
+        # [0] protein_id, [1] family_id
+        if row[0] not in prot_fam_table_dict:
+            prot_fam_table_dict[row[0]] == set()
+        prot_fam_table_dict[row[0]].add(row[1])
+    prot_fam_cur.close()
 
-    gbk_fam_table_dict = {}
-    # {gbk_acc: {'families': {'fam subfam': fam_id}}, 'gbk_id': gbk_id }
-
-    for record in tqdm(all_gbk_fam_records, ' Retreving existing gbk-fam relationships from db'):
-        gbk_accession = record[0].genbank_accession
-        gbk_id = record[0].genbank_id
-
-        family = record[1].family
-        if record[1].subfamily is None:
-            subfamily = '_'
-        else:
-            subfamily = record[1].subfamily
-        fam_id = record[1].family_id
-
-        existing_rel_tuples.add( (gbk_id, fam_id) )
-
-        try:
-            gbk_fam_table_dict[gbk_accession]
-
-            try:
-                gbk_fam_table_dict[gbk_accession][f'{family} {subfamily}']
-
-            except KeyError:
-                gbk_fam_table_dict[gbk_accession][f'{family} {subfamily}'] = fam_id
-
-        except KeyError:
-            gbk_fam_table_dict[gbk_accession] = {
-                'families': {f'{family} {subfamily}': fam_id},
-                'gbk_id': gbk_id,
-            }
-
-    return gbk_fam_table_dict, existing_rel_tuples
+    return prot_fam_table_dict
 
 
 def get_kingdom_table_dict(connection: sqlite3.Connection) -> dict:
@@ -309,20 +277,20 @@ def get_pdb_table_dict(connection):
 
 
 def get_gbk_pdb_table_dict(connection):
-    """Create dict of objects present in the Genbanks_Pdbs table.
+    """Create dict of objects present in the Proteins_Pdbs table.
     
     :param connection: open sqlalchemy db engine connection
     
     Return dict {gbk_db_id: set(pdb_db_ids) }
     """
     with Session(bind=connection) as session:
-        all_gbk_pdb_records = session.query(Genbank, Pdb).\
-            join(Pdb, Genbank.pdbs).\
+        all_gbk_pdb_records = session.query(Protein, Pdb).\
+            join(Pdb, Protein.pdbs).\
             all()
 
     gbk_pdb_table_dict = {}  # {pdb_accession: pdb_db_id}
 
-    for record in tqdm(all_gbk_pdb_records, desc="Loading existing Genbank_Pdbs db records"):
+    for record in tqdm(all_gbk_pdb_records, desc="Loading existing Protein_Pdbs db records"):
         genbank_id = record[0].genbank_id
         pdb_id = record[1].pdb_id
 
@@ -376,16 +344,16 @@ def get_uniprot_table_dict(connection):
 
 
 def get_gbk_kingdom_dict(connection):
-    """Compile dict of Genbank, Taxonomy and Kingdom records
+    """Compile dict of Protein, Taxonomy and Kingdom records
     
     :param connection: open sqlalchemy db connection
     
     Return dict {kingdom: {genus: {species: {protein_accessions}}}
     """
     with Session(bind=connection) as session:
-        query_results = session.query(Genbank, Taxonomy, Kingdom).\
+        query_results = session.query(Protein, Taxonomy, Kingdom).\
             join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
-            join(Genbank, (Genbank.taxonomy_id == Taxonomy.taxonomy_id)).\
+            join(Protein, (Protein.taxonomy_id == Taxonomy.taxonomy_id)).\
             all()
 
     genbank_kingdom_dict = {}  # kingdom: {genus: {species: {protein_accessions}}}

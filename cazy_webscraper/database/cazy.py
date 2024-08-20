@@ -80,3 +80,10 @@ def dump_cazy_txt(cazy_txt_path: Path, db: Path):
     conn.commit()
     cur.close()
     conn.close()
+
+
+def drop_temptable(db: Path) -> None:
+    conn = sqlite3.connect(db)
+    conn.execute("DROP TABLE IF EXISTS TempTable")
+    conn.commit()
+    conn.close()

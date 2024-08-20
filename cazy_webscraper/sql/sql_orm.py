@@ -152,110 +152,98 @@ SQLITE_REGEX_FUNCTIONS = {
 # define linker/relationship tables
 
 
-genbanks_genomes = Table(
-    'Genbanks_Genomes',
+proteins_genomes = Table(
+    'Proteins_Genomes',
     Base.metadata,
-    Column("genbank_id", Integer, ForeignKey("Genbanks.genbank_id")),
+    Column("protein_id", Integer, ForeignKey("Proteins.protein_id")),
     Column("genome_id", Integer, ForeignKey("Genomes.genome_id")),
-    PrimaryKeyConstraint("genbank_id", "genome_id"),
+    PrimaryKeyConstraint("protein_id", "genome_id"),
 )
 
 
-genbanks_families = Table(
-    'Genbanks_CazyFamilies',
+proteins_families = Table(
+    'Proteins_CazyFamilies',
     Base.metadata,
-    Column("genbank_id", Integer, ForeignKey("Genbanks.genbank_id")),
+    Column("protein_id", Integer, ForeignKey("Proteins.protein_id")),
     Column("family_id", Integer, ForeignKey("CazyFamilies.family_id")),
-    PrimaryKeyConstraint("genbank_id", "family_id"),
+    PrimaryKeyConstraint("protein_id", "family_id"),
 )
 
-genbanks_ecs = Table(
-    "Genbanks_Ecs",
+proteins_ecs = Table(
+    "Proteins_Ecs",
     Base.metadata,
-    Column("genbank_id", Integer, ForeignKey("Genbanks.genbank_id")),
+    Column("protein_id", Integer, ForeignKey("Proteins.protein_id")),
     Column("ec_id", Integer, ForeignKey("Ecs.ec_id")),
-    PrimaryKeyConstraint("genbank_id", "ec_id"),
+    PrimaryKeyConstraint("protein_id", "ec_id"),
 )
 
 
-genbanks_pdbs = Table(
-    "Genbanks_Pdbs",
+proteins_pdbs = Table(
+    "Proteins_Pdbs",
     Base.metadata,
-    Column("genbank_id", Integer, ForeignKey("Genbanks.genbank_id")),
+    Column("protein_id", Integer, ForeignKey("Proteins.protein_id")),
     Column("pdb_id", Integer, ForeignKey("Pdbs.pdb_id")),
-    PrimaryKeyConstraint("genbank_id", "pdb_id"),
+    PrimaryKeyConstraint("protein_id", "pdb_id"),
 )
 
 
-# Define class tables
-class Genbank(Base):
-    """Represents a protein GenBank accession number and protein seq.
+class Protein(Base):
+    """Represents a protein (NCBI or JGI) accession number and protein seq.
 
     The GenBank accession is used to identify unique proteins in the database.
     """
-    __tablename__ = 'Genbanks'
+    __tablename__ = 'Proteins'
 
-    __table_args__ = (
-        UniqueConstraint("genbank_accession"),
-    )
-
-    genbank_id = Column(Integer, primary_key=True)
-    genbank_accession = Column(String, index=True)
+    protein_id = Column(Integer, primary_key=True)
+    protein_accession = Column(String, index=True)
     sequence = Column(ReString)
     seq_update_date = Column(ReString)
     taxonomy_id = Column(Integer, ForeignKey("Taxs.taxonomy_id"))
     ncbi_tax_id = Column(Integer, ForeignKey("NcbiTaxs.ncbi_tax_id"))
     uniprot_id = Column(Integer, ForeignKey("Uniprots.uniprot_id"))
     source = Column(String)
-
     uniprot = relationship(
         "Uniprot",
-        back_populates="genbank",
+        back_populates="protein",
     )
-
     ncbi_taxs = relationship(
         "NcbiTax",
-        back_populates="genbanks",
+        back_populates="proteins",
     )
-
     genomes = relationship(
         "Genome",
-        secondary=genbanks_genomes,
-        back_populates="genbanks",
+        secondary=proteins_genomes,
+        back_populates="proteins",
         lazy="dynamic",
     )
-
     organism = relationship(
         "Taxonomy",
-        back_populates="genbanks",
+        back_populates="proteins",
     )
-
     families = relationship(
         "CazyFamily",
-        secondary=genbanks_families,
-        back_populates="genbanks",
+        secondary=proteins_families,
+        back_populates="proteins",
         lazy="dynamic",
     )
-
     ecs = relationship(
         "Ec",
-        secondary=genbanks_ecs,
-        back_populates="genbanks",
+        secondary=proteins_ecs,
+        back_populates="proteins",
         lazy="dynamic",
     )
-
     pdbs = relationship(
         "Pdb",
-        secondary=genbanks_pdbs,
-        back_populates="genbank",
+        secondary=proteins_pdbs,
+        back_populates="protein",
         lazy="dynamic",
     )
 
     def __str__(self):
-        return f"-Genbank accession={self.genbank_accession}-"
+        return f"-Protein accession={self.protein_accession}-"
 
     def __repr__(self):
-        return f"<Class GenBank acc={self.genbank_accession}>"
+        return f"<Class Protein acc={self.protein_accession}>"
 
 
 class Taxonomy(Base):
@@ -272,7 +260,7 @@ class Taxonomy(Base):
     species = Column(String)
     kingdom_id = Column(Integer, ForeignKey("Kingdoms.kingdom_id"))
 
-    genbanks = relationship("Genbank", back_populates="organism")
+    proteins = relationship("Protein", back_populates="organism")
     tax_kingdom = relationship("Kingdom", back_populates="taxonomy")
 
     def __str__(self):
@@ -323,10 +311,10 @@ class Genome(Base):
     refseq_version_accession = Column(String)
     refseq_ncbi_id = Column(Integer)
     gtdb_tax_id = Column(Integer, ForeignKey("GtdbTaxs.gtdb_tax_id"))
-    
-    genbanks = relationship(
-        "Genbank",
-        secondary=genbanks_genomes,
+
+    proteins = relationship(
+        "Protein",
+        secondary=proteins_genomes,
         back_populates="genomes",
         lazy="dynamic",
     )
@@ -401,9 +389,9 @@ class CazyFamily(Base):
         Index("fam_index", "family", "subfamily"),
     )
 
-    genbanks = relationship(
-        "Genbank",
-        secondary=genbanks_families,
+    proteins = relationship(
+        "Protein",
+        secondary=proteins_families,
         back_populates="families",
         lazy="dynamic",
     )
@@ -440,8 +428,8 @@ class NcbiTax(Base):
         Index("ncbi_index", "ncbi_tax_id", "genus", "species"),
     )
 
-    genbanks = relationship(
-        "Genbank",
+    proteins = relationship(
+        "Protein",
         back_populates="ncbi_taxs",
         lazy="dynamic",
     )
@@ -472,7 +460,7 @@ class Uniprot(Base):
     seq_update_date = Column(ReString)
     uniprot_tax_id = Column(Integer, ForeignKey("UniprotTaxs.uniprot_tax_id"))
 
-    genbank = relationship("Genbank", back_populates="uniprot")
+    protein = relationship("Protein", back_populates="uniprot")
     taxs = relationship("UniprotTax", back_populates="uniprots")
 
     def __str__(self):
@@ -528,9 +516,9 @@ class Ec(Base):
     ec_id = Column(Integer, primary_key=True)
     ec_number = Column(String, index=True)
 
-    genbanks = relationship(
-        "Genbank",
-        secondary=genbanks_ecs,
+    proteins = relationship(
+        "Protein",
+        secondary=proteins_ecs,
         back_populates="ecs",
         lazy="dynamic",
     )
@@ -554,9 +542,9 @@ class Pdb(Base):
 
     Index('pdb_idx', pdb_accession)
 
-    genbank = relationship(
-        "Genbank",
-        secondary=genbanks_pdbs,
+    protein = relationship(
+        "Protein",
+        secondary=proteins_pdbs,
         back_populates="pdbs",
         lazy="dynamic",
     )

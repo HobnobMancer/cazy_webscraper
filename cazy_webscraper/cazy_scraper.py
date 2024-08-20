@@ -45,7 +45,6 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 
 import argparse
 import logging
-import sys
 
 from datetime import datetime
 from typing import List, Optional
@@ -70,15 +69,12 @@ from cazy_webscraper.cazy.filter_data import (
     drop_subfamilies
 )
 from cazy_webscraper.cazy.multi_taxa import process_multi_taxa
-
 from cazy_webscraper.database.connect import (
     connect_to_new_db,
     connect_existing_db,
 )
-
 from cazy_webscraper.database.scrape_log import add_main_scrape_message
-from cazy_webscraper.database.cazy import dump_cazy_txt
-
+from cazy_webscraper.database.cazy import dump_cazy_txt, drop_temptable
 from cazy_webscraper.sql.sql_interface.add_data import add_cazy_data
 from cazy_webscraper.utilities import (
     parse_configuration,
@@ -263,14 +259,10 @@ def get_cazy_data(
     add_cazy_data.add_kingdoms(db)
     add_cazy_data.add_source_organisms(db)
     add_cazy_data.add_cazy_families(db)
-    sys.exit(1)
+    add_cazy_data.add_proteins(db)
+    add_cazy_data.add_protein_fam_relationships(db)
 
-    add_cazy_data.add_genbanks(cazy_data, connection)
-
-    add_cazy_data.add_genbank_fam_relationships(cazy_data, connection, args)
-
-    # delete the TempTable
-    ######
+    drop_temptable(db)
 
 
 if __name__ == "__main__":
