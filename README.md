@@ -15,6 +15,14 @@
 
 --------------------------------
 
+> [!CAUTION]
+> This is the development branch. It is not stable.
+
+> [!IMPORTANT]
+> This branch includes a signficantly faster and light weight deployment of `cazy_webscraper`, capable
+> of compiling a local CAZyme database containing all CAZyme records from CAZy in 2m5s on a 
+> standard office laptop.
+
 ## cazy_webscraper
 
 `cazy_webscraper` is an application and Python3 package for the automated retrieval of protein data from the [CAZy](http://wwww.cazy.org/) database. The code is distributed under the MIT license.
