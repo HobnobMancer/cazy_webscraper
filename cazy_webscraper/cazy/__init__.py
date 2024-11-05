@@ -40,24 +40,31 @@
 """Parse data retrieved from CAZy and build a dict of data matching the user's criteria."""
 
 
+import argparse
 import logging
 import re
 import sys
 
 from collections import namedtuple
+from pathlib import Path
 
 from tqdm import tqdm
 from zipfile import ZipFile
 
 from cazy_webscraper import crawler
-from cazy_webscraper.crawler import get_cazy_file
 
 
-def get_cazy_txt_file_data(cache_dir, time_stamp, args):
+def get_cazy_file():
+    return
+
+
+def get_cazy_txt_file_data(cache_dir: Path, time_stamp: str, args: argparse.ArgumentParser):
     """Retrieve txt file of CAZy db dump from CAZy or the local disk.
+
     :param cache_dir: Path(), path to directory where cache is written to
     :param time_stamp: str, date and time cazy_webscraper was intiated
     :param args: cmd-line args parser
+
     Return list of lines from CAZy txt file, one line is one item in the list"""
     logger = logging.getLogger(__name__)
 
@@ -84,10 +91,13 @@ def get_cazy_txt_file_data(cache_dir, time_stamp, args):
         if err_message is not None:
             logger.error(
                 "Could not connect to CAZy to download the CAZy db txt file after "
-                f"{(args.retries + 1)*(args.retries + 1)}\n"
-                f"The following error was raised:\n{err_message}"
-                f"File would have been written to {cazy_txt_path}"
-                "Terminating program"
+                "%s\n"
+                "The following error was raised:\n%s"
+                "File would have been written to %s"
+                "Terminating program",
+                ((args.retries + 1)*(args.retries + 1)),
+                err_message,
+                cazy_txt_path,
             )
             sys.exit(1)
 

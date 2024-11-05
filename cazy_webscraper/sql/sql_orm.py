@@ -206,6 +206,7 @@ class Genbank(Base):
     taxonomy_id = Column(Integer, ForeignKey("Taxs.taxonomy_id"))
     ncbi_tax_id = Column(Integer, ForeignKey("NcbiTaxs.ncbi_tax_id"))
     uniprot_id = Column(Integer, ForeignKey("Uniprots.uniprot_id"))
+    source = Column(String)
 
     uniprot = relationship(
         "Uniprot",
@@ -620,3 +621,38 @@ def get_db_connection(db_path, sql_echo, new=False):
     connection = engine.connect()
 
     return connection
+
+
+class TempTable(Base):
+    """Represent the temporary table used to store the CAZy database dump.
+
+    Extract from a CAZy file:
+    GH157	Bacteria	Bacteroides cellulosilyticus BFG-250	UBD70155.1	ncbi
+    GH157	Bacteria	Bacteroides cellulosilyticus BFG-371	UVP51702.1	ncbi
+    GH157	Bacteria	Bacteroides cellulosilyticus WH2	ALJ59177.1	ncbi
+    GH157	Bacteria	Bacteroides cellulosilyticus WH2	WP_029429093.1	ncbi
+    GH157	Bacteria	Bacteroides sp. BFG-257	UVO98786.1	ncbi
+    GH157	Bacteria	Bacteroides sp. BFG-257	UVO98787.1	ncbi
+    """
+    __tablename__ = "TempTable"
+
+    __table_args__ = (
+        Index("record_id", "protein_id"),
+    )
+
+    record_id = Column(Integer, primary_key=True)
+    family = Column(ReString)
+    kingdom = Column(String)
+    genus = Column(ReString)
+    species = Column(ReString)
+    protein_id = Column(String)
+    source = Column(String)
+
+    def __str__(self):
+        return f"-temp protein record, protein={self.protein_id}-"
+
+    def __repr__(self):
+        return (
+            f"<Class Temp Record: protein={self.protein_id}, source={self.source}, "
+            f"kingdom={self.kingdom}, family={self.family}>"
+        )
