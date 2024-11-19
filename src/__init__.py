@@ -61,16 +61,17 @@ import tqdm
 
 __version__ = "3.0.0.0"
 
-
-VERSION_INFO = f"cazy_webscraper version: {__version__}"
-
-
-CITATION_INFO = (
-    "If you use cazy_webscraper in your work, please cite the following publication:\n"
+__citation__ = (
     "\tHobbs, E. E. M., Gloster, T. M., and Pritchard, L.\n"
     "\t(2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets',\n"
     "\tbioRxiv\n"
     "\thttps://doi.org/10.1101/2022.12.02.518825"
+)
+
+VERSION_INFO = f"cazy_webscraper version: {__version__}"
+
+CITATION_INFO = (
+    f"If you use cazy_webscraper in your work, please cite the following publication:\n {__citation__}"
 )
 
 WEBSITE = "https://hobnobmancer.github.io/cazy_webscraper/"
@@ -114,7 +115,7 @@ def closing_message(job, start_time, args, early_term=False):
     {termination_status}
     Total run time: {total_time}
 
-    Version: {VERSION_INFO}
+    Version: {__version__}
 
     For help with trouble shooting and operating cazy_webscraper please see the documentation:
     README: {WEBSITE}
@@ -122,7 +123,7 @@ def closing_message(job, start_time, args, early_term=False):
     GitHub Issues: {GITHUB_ISSUES}
 
     When publishing work that uses cazy_webscraper please cite:
-    Citation: {CITATION_INFO}
+    Citation: {__citation__}
     """
 
     if args.verbose:
@@ -142,10 +143,10 @@ def display_citation_info():
 
     message = f"""
     =====================cazy_webscraper Citation Information=====================
-    cazy_webscraper version: {VERSION_INFO}
+    cazy_webscraper version: {__version__}
 
     When publishing work that uses cazy_webscraper please cite:
-    Citation: {CITATION_INFO}
+    Citation: {__citation__}
 
     cazy_webscraper depends on a number of tools. To recognise the contributions that the 
     authors and developers have made, please also cite the following:
@@ -193,7 +194,7 @@ def display_version_info():
 
     message = f"""
     =====================cazy_webscraper Version Information=====================
-    cazy_webscraper version: {VERSION_INFO}
+    cazy_webscraper version: {__version__}
 
     Third party tools used by cazy_webscraper:
     beautifulsoup4: {bs4.__version__}
