@@ -42,15 +42,22 @@
 import logging
 import sys
 
+import pandas as pd
+
+from datetime import datetime
 from typing import List, Optional
 
 from saintBioutils.utilities.logger import config_logger
 
-from src import CITATION_INFO, VERSION_INFO
+from src import CITATION_INFO, VERSION_INFO, closing_message
 from src.utilities.parsers.parse_cmd import build_parser
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
+    time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
+    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
+    start_time = pd.to_datetime(start_time)
+
     if argv is None:
         args = build_parser()
     else:
@@ -74,7 +81,9 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
     logger.info("command-line: %s", args.cmdline)
 
     # run subcommand
-    returnval = args.func(args)
+    returnval = args.func(args, time_stamp, start_time)
+    print(returnval)
+    closing_message("cazy_webscraper", start_time, args)
     return returnval
 
 

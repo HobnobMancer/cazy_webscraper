@@ -1,23 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2022
-# (c) University of Strathclyde 2022
-# (c) James Hutton Institute 2022
+# (c) University of St Andrews 2024
+# (c) University of Strathclyde 2024
+# (c) James Hutton Institute 2024
 #
 # Author:
 # Emma E. M. Hobbs
 #
 # Contact
-# eemh1@st-andrews.ac.uk
-#
-# Emma E. M. Hobbs,
-# Biomolecular Sciences Building,
-# University of St Andrews,
-# North Haugh Campus,
-# St Andrews,
-# KY16 9ST
-# Scotland,
-# UK
+# ehobbs@ebi.ac.uk
 #
 # The MIT License
 #
@@ -43,72 +34,40 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 """
 
 
-import argparse
+
 import logging
 
-from datetime import datetime
-from typing import List, Optional
-
-import pandas as pd
+from argparse import Namespace
 
 from pathlib import Path
 
 from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
-from saintBioutils.utilities.logger import config_logger
 
-from cazy_webscraper import (
-    closing_message,
-    display_citation_info,
-    display_version_info,
-)
-from cazy_webscraper.cazy.download import get_cazy_db_dump
-from cazy_webscraper.cazy.filter_data import (
+from src.cazy.download import get_cazy_db_dump
+from src.cazy.filter_data import (
     apply_tax_filters,
     apply_class_and_family_filters,
     drop_subfamilies
 )
-from cazy_webscraper.cazy.multi_taxa import process_multi_taxa
-from cazy_webscraper.database.connect import (
+from src.cazy.multi_taxa import process_multi_taxa
+from src.database.connect import (
     connect_to_new_db,
     connect_existing_db,
 )
-from cazy_webscraper.database.scrape_log import add_main_scrape_message
-from cazy_webscraper.database.cazy import dump_cazy_txt, drop_temptable
-from cazy_webscraper.sql.sql_interface.add_data import add_cazy_data
-from cazy_webscraper.utilities import (
+from src.database.scrape_log import add_main_scrape_message
+from src.database.cazy import dump_cazy_txt, drop_temptable
+from src.sql.sql_interface.add_data import add_cazy_data
+from src.utilities import (
     parse_configuration,
     sanity_checks
 )
-from cazy_webscraper.utilities.parsers.cazy_webscraper_parser import build_parser
 
 
 logger = logging.getLogger(__name__)
 
 
-def main(argv: Optional[List[str]] = None):
-    """Set up parser, logger and coordinate overal scrapping of CAZy."""
-    time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
-    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
-    start_time = pd.to_datetime(start_time)
-
-    if not argv:
-        parser = build_parser()
-        args = parser.parse_args()
-    else:
-        parser = build_parser(argv)
-        args = parser.parse_args()
-
-    config_logger(args, logger_name=__name__)
-
-    if args.version:
-        display_version_info()
-        return
-
-    if args.citation:
-        display_citation_info()
-        return
-
+def main(args: Namespace, time_stamp: str, start_time):
     db = sanity_checks.sanity_check_main_input(time_stamp, args)  # path to the local cazyme db
 
     if args.skip_ncbi_tax:
@@ -186,7 +145,7 @@ def main(argv: Optional[List[str]] = None):
         db,
     )
 
-    closing_message("cazy_webscraper", start_time, args)
+    return "scrape_cazy"
 
 
 def get_cazy_data(
@@ -197,7 +156,7 @@ def get_cazy_data(
     cache_dir: Path,
     logger_name: str,
     time_stamp: str,
-    args: argparse.Namespace,
+    args: Namespace,
     db: Path,
 ):
     """Coordinate retrieval of data from the CAZy website.
