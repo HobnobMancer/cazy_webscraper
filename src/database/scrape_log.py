@@ -43,8 +43,8 @@
 import argparse
 import logging
 
-from cazy_webscraper.sql import sql_interface, sql_orm
-from cazy_webscraper.utilities import termcolour
+from src.sql import sql_interface, sql_orm
+from src.utilities import termcolour
 
 
 logger = logging.getLogger(__name__)

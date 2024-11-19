@@ -49,15 +49,15 @@ from pathlib import Path
 from sqlalchemy import delete, text
 from tqdm import tqdm
 
-from cazy_webscraper.sql.sql_interface import insert_data
-from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
+from src.sql.sql_interface import insert_data
+from src.sql.sql_interface.get_data.get_table_dicts import (
     get_kingdom_table_dict,
     get_taxs_table_dict,
     get_fams_table_dict,
     get_protein_table_dict,
     get_prot_fam_table_dict,
 )
-from cazy_webscraper.sql.sql_orm import proteins_families
+from src.sql.sql_orm import proteins_families
 
 
 logger = logging.getLogger(__name__)

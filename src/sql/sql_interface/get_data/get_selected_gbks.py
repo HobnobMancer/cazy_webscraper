@@ -51,7 +51,7 @@ from tqdm import tqdm
 from cazy_webscraper.sql.sql_orm import (
     CazyFamily,
     Ec,
-    Genbank,
+    Protein,
     Kingdom,
     Taxonomy,
     Session,
@@ -68,10 +68,10 @@ CLASS_ABBREVIATIONS = {
 }
 
 
-def get_ids(genbank_accessions, connection, cache_dir):
+def get_ids(protein_accessions, connection, cache_dir):
     """Get the local CAZyme database IDs for the list of provided GenBank accessions.
     
-    :param genbank_accessions: set of GenBank accessions
+    :param protein_accessions: set of GenBank accessions
     :param connection: open sqlalchemy engine connection
     :param cache_dir: path to cache directory
     
@@ -81,14 +81,14 @@ def get_ids(genbank_accessions, connection, cache_dir):
     logger = logging.getLogger(__name__)
     gbk_dict = {}
 
-    for accession in tqdm(genbank_accessions, desc="Getting local db record IDs"):
+    for accession in tqdm(protein_accessions, desc="Getting local db record IDs"):
         with Session(bind=connection) as session:
-            gbk_query = session.query(Genbank).\
-                filter(Genbank.genbank_accession == accession).\
+            gbk_query = session.query(Protein).\
+                filter(Protein.protein_accession == accession).\
                 first()
         
         try:
-            gbk_dict[accession] = gbk_query.genbank_id
+            gbk_dict[accession] = gbk_query.protein_id
         except AttributeError:
             logger.error(
                 f"Could not retrieve record with accessions {accession}\n"
@@ -103,7 +103,7 @@ def get_ids(genbank_accessions, connection, cache_dir):
     return gbk_dict
     
 
-def get_genbank_accessions(
+def get_protein_accessions(
     class_filters,
     family_filters,
     taxonomy_filters,
@@ -125,7 +125,7 @@ def get_genbank_accessions(
     logger = logging.getLogger(__name__)
     
     # retrieve GenBank accessions of proteins in user selected CAZy classes and (sub)families
-    initially_selected_gbk = get_class_fam_genbank_accessions(
+    initially_selected_gbk = get_class_fam_protein_accessions(
         class_filters,
         family_filters,
         connection,
@@ -166,10 +166,10 @@ def get_genbank_accessions(
             connection,
         )
     
-    # extract the accession numbers from the db Genbank objects and their db genbank_id
+    # extract the accession numbers from the db Protein objects and their db protein_id
     gbk_dict = {}
     for obj in filtered_gbk_accessions:
-        gbk_dict[obj.genbank_accession] = obj.genbank_id
+        gbk_dict[obj.protein_accession] = obj.protein_id
     
     if len(list(gbk_dict.keys())) == 0:
         logger.error(
@@ -182,7 +182,7 @@ def get_genbank_accessions(
     return gbk_dict
 
     
-def get_class_fam_genbank_accessions(
+def get_class_fam_protein_accessions(
     class_filters,
     family_filters,
     connection,
@@ -193,7 +193,7 @@ def get_class_fam_genbank_accessions(
     :param family_filters: set of CAZy families to retrieve data for
     :param connection: open sqlaclchemy connection for an SQLite db
     
-    Return list of db objects containing a Genbank obj, Taxonomy obj and Kingdom obj.
+    Return list of db objects containing a Protein obj, Taxonomy obj and Kingdom obj.
     """
     logger = logging.getLogger(__name__)
 
@@ -203,14 +203,14 @@ def get_class_fam_genbank_accessions(
         logger.warning("No class or family filters applied")
         # could retrieve all GenBank accessions
         with Session(bind=connection) as session:
-            gbk_query = session.query(Genbank, Taxonomy, Kingdom).\
+            gbk_query = session.query(Protein, Taxonomy, Kingdom).\
                 join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
-                join(Genbank, (Genbank.taxonomy_id == Taxonomy.taxonomy_id)).\
-                join(CazyFamily, Genbank.families).\
+                join(Protein, (Protein.taxonomy_id == Taxonomy.taxonomy_id)).\
+                join(CazyFamily, Protein.families).\
                 all()
 
             initially_selected_gbk = gbk_query
-        
+        print("*", initially_selected_gbk)
         return initially_selected_gbk
 
     if len(class_filters) != 0:
@@ -231,10 +231,10 @@ def get_class_fam_genbank_accessions(
 
         # perform query to retrieve proteins in the CAZy families
         with Session(bind=connection) as session:
-            gbk_query = session.query(Genbank, Taxonomy, Kingdom).\
+            gbk_query = session.query(Protein, Taxonomy, Kingdom).\
                 join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
-                join(Genbank, (Genbank.taxonomy_id == Taxonomy.taxonomy_id)).\
-                join(CazyFamily, Genbank.families).\
+                join(Protein, (Protein.taxonomy_id == Taxonomy.taxonomy_id)).\
+                join(CazyFamily, Protein.families).\
                 filter(CazyFamily.family.in_(stmt)).\
                 all()
 
@@ -253,19 +253,19 @@ def get_class_fam_genbank_accessions(
 
         if cazy_family.find('_') != -1:  # subfamily
             with Session(bind=connection) as session:
-                gbk_query = session.query(Genbank, Taxonomy, Kingdom).\
+                gbk_query = session.query(Protein, Taxonomy, Kingdom).\
                     join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
-                    join(Genbank, (Genbank.taxonomy_id == Taxonomy.taxonomy_id)).\
-                    join(CazyFamily, Genbank.families).\
+                    join(Protein, (Protein.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(CazyFamily, Protein.families).\
                     filter(CazyFamily.subfamily.in_(stmt)).\
                     all()
         
         else:
             with Session(bind=connection) as session:
-                gbk_query = session.query(Genbank, Taxonomy, Kingdom).\
+                gbk_query = session.query(Protein, Taxonomy, Kingdom).\
                     join(Taxonomy, (Taxonomy.kingdom_id == Kingdom.kingdom_id)).\
-                    join(Genbank, (Genbank.taxonomy_id == Taxonomy.taxonomy_id)).\
-                    join(CazyFamily, Genbank.families).\
+                    join(Protein, (Protein.taxonomy_id == Taxonomy.taxonomy_id)).\
+                    join(CazyFamily, Protein.families).\
                     filter(CazyFamily.family.in_(stmt)).\
                     all()
 
@@ -282,12 +282,12 @@ def apply_tax_filters(
     """Filter retrieved GenBank accessions by taxonomy filters.
     
     :param initally_selected_records: list of db objs retrieved from the db
-        including a Genbank, Taxonomy and Kingdom record
+        including a Protein, Taxonomy and Kingdom record
     :param taxonomy_filters: dict of taxonom filters to limit the retrieval of data to
     :param kingdom_filters: set of tax kingdoms to limit the retrieval of data to
     :param connection: open sqlaclchemy connection for an SQLite db
     
-    Return set of db Genbank objs
+    Return set of db Protein objs
     """
     logger = logging.getLogger(__name__)
     
@@ -299,7 +299,7 @@ def apply_tax_filters(
         gbks = [obj[0] for obj in initally_selected_records]
         return set(gbks)
  
-    tax_filtered_gbks = set()  # Set of Genbank records from the local database
+    tax_filtered_gbks = set()  # Set of Protein records from the local database
 
     if len(kingdom_filters) == 0:
         logger.warning("Not applying kingdom filter(s)")
@@ -337,23 +337,23 @@ def apply_ec_filters(
     ec_filters,
     connection,
 ):
-    """Apply EC number filter to the retrieved Genbank records.
+    """Apply EC number filter to the retrieved Protein records.
     
-    :param current_gbk_objs: list of db Genbank objs retrieved from the db
+    :param current_gbk_objs: list of db Protein objs retrieved from the db
     :param ec_filters: set of EC numbers to limit the retrieval of data to
     :param connection: open sqlaclchemy connection for an SQLite db
     
-    Return set of db Genbank objects.
+    Return set of db Protein objects.
     """
     logger = logging.getLogger(__name__)
     
     ec_gbk_ids = set()
 
-    # Retrieve all Genbank.genbank_ids for each EC number
+    # Retrieve all Protein.protein_ids for each EC number
     for ec in tqdm(ec_filters, desc="Retrieving gbks for EC# filters"):
         with Session(bind=connection) as session:
-            gbk_query = session.query(Genbank.genbank_id).\
-                join(Ec, Genbank.ecs).\
+            gbk_query = session.query(Protein.protein_id).\
+                join(Ec, Protein.ecs).\
                 filter(Ec.ec_number == ec).\
                 all()
 
@@ -371,7 +371,7 @@ def apply_ec_filters(
     ec_filtered_gbks = set()
 
     for gbk_record in tqdm(current_gbk_objs, desc="Checking gbk records against EC filters"):
-        if (gbk_record.genbank_id,) in ec_gbk_ids:
+        if (gbk_record.protein_id,) in ec_gbk_ids:
             ec_filtered_gbks.add(gbk_record)
         
     return ec_filtered_gbks

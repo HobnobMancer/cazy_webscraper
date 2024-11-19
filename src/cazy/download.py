@@ -54,7 +54,7 @@ from urllib3.exceptions import HTTPError, RequestError
 from urllib.request import urlopen
 from requests.exceptions import ConnectionError, MissingSchema
 
-from cazy_webscraper import DOWNLOAD_URL
+from src import DOWNLOAD_URL
 
 
 logger = logging.getLogger(__name__)

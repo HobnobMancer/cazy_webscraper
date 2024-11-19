@@ -59,9 +59,11 @@ from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
-from cazy_webscraper import closing_message, connect_existing_db
+from cazy_webscraper import closing_message
 from cazy_webscraper.cache.ncbi import get_cache_seqs
-from cazy_webscraper.ncbi.sequences import post_accessions_to_entrez, fetch_ncbi_seqs, get_protein_accession
+from cazy_webscraper.database.connect import connect_existing_db
+
+from cazy_webscraper.ncbi.sequences import post_accessions_to_entrez, fetch_ncbi_seqs
 from cazy_webscraper.sql import sql_orm, sql_interface
 from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks
 from cazy_webscraper.sql.sql_interface.add_data import add_genbank_data
@@ -87,7 +89,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         logger = logging.getLogger(__package__)
         config_logger(args)
 
-    logger.info("Providing user email address to NCBI.Entrez")
     Entrez.email = args.email
 
     if args.seq_update:
@@ -95,7 +96,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
 
-    if args.cache_dir is not None:  # use user defined cache dir
+    if args.cache_dir:
         cache_dir = args.cache_dir
         make_output_directory(cache_dir, args.force, args.nodelete_cache)
     else:
@@ -111,7 +112,6 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         ec_filters,
     ) = get_expansion_configuration(args)
 
-    # add log to the local CAZyme database
     logger.info("Adding log of scrape to the local CAZyme database")
     with sql_orm.Session(bind=connection) as session:
         retrieved_data = "GenBank protein sequences"
@@ -246,7 +246,7 @@ def get_records_to_retrieve(
 
     else:
         logger.warning("Getting GenBank accessions of proteins matching the provided criteria from the local CAZyme db")
-        gbk_dict = get_selected_gbks.get_genbank_accessions(
+        gbk_dict = get_selected_gbks.get_protein_accessions(
             class_filters,
             family_filters,
             taxonomy_filter_dict,
@@ -531,7 +531,7 @@ def parse_failed_connections(
             batches_with_invalid_ids += new_batches_with_invalid_ids
             # remove batches with invalid IDs, so don't retry connection
             for batch in batches_with_invalid_ids:
-                failed_connections_batches["_".join(batch)]
+                failed_connections_batches[batch]
                 failed_batches.remove(batch)
 
             # remove batches that were processed successfully and 

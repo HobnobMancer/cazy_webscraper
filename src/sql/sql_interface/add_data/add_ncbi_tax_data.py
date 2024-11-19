@@ -47,9 +47,9 @@ import sqlite3
 from sqlalchemy import text
 from tqdm import tqdm
 
-from cazy_webscraper.sql.sql_interface import insert_data
-from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import get_ncbi_tax_table, get_no_tax_gbk_table_dict
-from cazy_webscraper.ncbi.taxonomy.multiple_taxa import NcbiProtein
+from src.sql.sql_interface import insert_data
+from src.sql.sql_interface.get_data.get_table_dicts import get_ncbi_tax_table, get_no_tax_gbk_table_dict
+from src.ncbi.taxonomy.multiple_taxa import NcbiProtein
 
 
 logger = logging.getLogger(__name__)

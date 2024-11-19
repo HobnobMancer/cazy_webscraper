@@ -53,8 +53,8 @@ from tqdm import tqdm
 
 from Bio import Entrez
 
-from cazy_webscraper.ncbi.taxonomy.multiple_taxa import get_ncbi_tax
-from cazy_webscraper.sql.sql_interface.add_data.add_ncbi_tax_data import replace_ncbi_taxonomy
+from src.ncbi.taxonomy.multiple_taxa import get_ncbi_tax
+from src.sql.sql_interface.add_data.add_ncbi_tax_data import replace_ncbi_taxonomy
 
 
 logger = logging.getLogger(__name__)
@@ -148,10 +148,10 @@ def use_latest_taxa(
     """Retrieve the latest taxonomy from NCBI and use this for
     the taxonomy"""
     batches = get_chunks_list(protein_ids, args.ncbi_batch_size)
+    success = False
     for batch in tqdm(batches, desc=f"Batch retrieving tax info from NCBI. Batch size:{args.ncbi_batch_size}"):
         id_post_list = str(",".join(batch))
         success = False
-
         try:
             epost_results = Entrez.read(
                 entrez_retry(

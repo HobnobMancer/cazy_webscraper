@@ -47,7 +47,7 @@ import re
 import sys
 import yaml
 
-from cazy_webscraper.utilities.parse_configuration.cazy_class_synonym_dict import cazy_synonym_dict
+from src.utilities.parse_configuration.cazy_class_synonym_dict import cazy_synonym_dict
 
 
 def parse_configuration(args):

@@ -51,7 +51,7 @@ from pathlib import Path
 from tqdm import tqdm
 from zipfile import ZipFile
 
-from cazy_webscraper import crawler
+from src import crawler
 
 
 def get_cazy_file():

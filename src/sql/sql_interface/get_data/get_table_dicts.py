@@ -46,7 +46,7 @@ import sqlite3
 
 from tqdm import tqdm
 
-from cazy_webscraper.sql.sql_orm import (
+from src.sql.sql_orm import (
     CazyFamily,
     Ec,
     Genome,
