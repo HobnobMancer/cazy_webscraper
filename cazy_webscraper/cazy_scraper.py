@@ -112,7 +112,7 @@ from cazy_webscraper.utilities.parsers.cazy_webscraper_parser import build_parse
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
     """Set up parser, logger and coordinate overal scrapping of CAZy."""
-    cazy_home_url = "http://www.cazy.org"
+    cazy_home_url = "https://www.cazy.org"
 
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # used in naming files
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # used in terminating message
