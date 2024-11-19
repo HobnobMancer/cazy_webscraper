@@ -46,7 +46,7 @@ import sqlite3
 
 from tqdm import tqdm
 
-from cazy_webscraper.sql import sql_orm
+from src.sql import sql_orm
 
 
 logger = logging.getLogger(__name__)
