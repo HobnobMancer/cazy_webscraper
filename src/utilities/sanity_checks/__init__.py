@@ -72,8 +72,7 @@ def sanity_check_main_input(time_stamp: str, args: argparse.ArgumentParser) -> N
         sys.exit(5)
 
     if args.db_output and args.db_output.exists() and args.force:
-        error_message = """Local db %s already exists
-        Force is True therefore, ovewriting existing database.""" % args.db_output
+        error_message = "Local db %s already exists. Force is True therefore, ovewriting existing database." % args.db_output
         logger.warning(termcolour(error_message, "yellow"))
         os.remove(args.db_output)
 
