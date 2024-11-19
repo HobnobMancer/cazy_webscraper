@@ -115,7 +115,7 @@ def get_cazy_file(out_path, args, **kwargs):
     Return nothing
     """
     logger = logging.getLogger(__name__)
-    download_url = 'http://www.cazy.org/IMG/cazy_data/cazy_data.zip'
+    download_url = 'https://www.cazy.org/IMG/cazy_data/cazy_data.zip'
 
     # HTTPError, URLError or timeout error may be raised, handled by wrapper
     response = urlopen(download_url, timeout=args.timeout)
