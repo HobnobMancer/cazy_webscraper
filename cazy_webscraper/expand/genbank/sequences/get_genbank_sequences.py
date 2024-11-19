@@ -531,7 +531,7 @@ def parse_failed_connections(
             batches_with_invalid_ids += new_batches_with_invalid_ids
             # remove batches with invalid IDs, so don't retry connection
             for batch in batches_with_invalid_ids:
-                failed_connections_batches["_".join(batch)]
+                failed_connections_batches[batch]
                 failed_batches.remove(batch)
 
             # remove batches that were processed successfully and 
