@@ -81,8 +81,8 @@ GITHUB_ISSUES = "https://github.com/HobnobMancer/cazy_webscraper/issues"
 
 AUTHOR_EMAIL = "eemh1@st-andrews.ac.uk"
 
-CAZY_URL = "http://www.cazy.org"
-DOWNLOAD_URL = 'http://www.cazy.org/IMG/cazy_data/cazy_data.zip'
+CAZY_URL = "https://www.cazy.org"
+DOWNLOAD_URL = 'https://www.cazy.org/IMG/cazy_data/cazy_data.zip'
 
 
 def closing_message(job, start_time, args, early_term=False):
