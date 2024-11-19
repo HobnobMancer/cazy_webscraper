@@ -46,8 +46,8 @@ from pathlib import Path
 
 from saintBioutils.utilities.file_io import make_output_directory
 
-from cazy_webscraper.sql import sql_orm
-from cazy_webscraper import closing_message
+from src.sql import sql_orm
+from src import closing_message
 
 
 def connect_existing_db(args, time_stamp, start_time):
@@ -105,34 +105,10 @@ def connect_to_new_db(args, time_stamp, start_time):
     logger = logging.getLogger(__name__)
 
     if args.db_output:  # user defined target output for the NEW database
-
-        if os.path.isfile(args.db_output):  # target file exists
-            if args.force:
-                logger.warning(
-                    "Overwriting existing local CAZyme database at:\n%s",
-                    args.db_output
-                )
-
-            else:
-                logger.warning(
-                    "Target path for new database already exists.\n"
-                    "Either enable forced overwriting (-f) or add data this data (-D).\n"
-                    "Terminating program."
-                )
-                closing_message("cazy_webscraper", start_time, args)
-                sys.exit(1)
-
-        else:  # may need to build dirs
-            logger.info(
-                "Building new local CAZyme database\n"
-                "Output directory: %s\n"
-                "Force overwriting exiting output file: %s",
-                (args.db_output).parent, args.force
-            )
-
-        if str((args.db_output).parent) != '.':  # dirs defined in output put
+        if str((args.db_output).parent) != '.':  # dirs defined in output
             output_dir = (args.db_output).parent
-            make_output_directory(output_dir, args.force, args.nodelete)
+            if not output_dir.exists():
+                output_dir.mkdir(exist_ok=True, parents=True)
             cache_dir = Path(f"{str(output_dir)}/.cazy_webscraper_{time_stamp}")
 
         else:  # writing to cwd
@@ -147,9 +123,11 @@ def connect_to_new_db(args, time_stamp, start_time):
         cache_dir = Path(f".cazy_webscraper_{time_stamp}")
         logger_name = f'cazy_webscraper_{time_stamp}'
 
+    logger.info("Building new local CAZyme database: %s\n", args.db_output)
+
     try:
         connection = sql_orm.get_db_connection(db_path, args.sql_echo, new=True)
-        logger.warning("Built new local CAZyme database at\n%s", db_path)
+        logger.warning("Built new local CAZyme database at%s", db_path)
     except Exception:
         logger.error(
             "Failed to build new SQL database\n."
