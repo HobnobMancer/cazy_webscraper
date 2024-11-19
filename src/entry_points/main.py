@@ -82,8 +82,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # run subcommand
     returnval = args.func(args, time_stamp, start_time)
-    print(returnval)
-    closing_message("cazy_webscraper", start_time, args)
+    closing_message(f"cazy_webscraper: {returnval}", start_time, args)
     return returnval
 
 
