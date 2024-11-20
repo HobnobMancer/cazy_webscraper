@@ -80,6 +80,13 @@ def build_parser(argv: Optional[List] = None) -> Namespace:
         help="logfile location",
     )
     parser_main.add_argument(
+        "--sql_echo",
+        dest="sql_echo",
+        action="store_true",
+        default=False,
+        help="Set SQLite engine echo to True (SQLite will print its log messages)",
+    )
+    parser_main.add_argument(
         "-v",
         "--verbose",
         action="store_true",
