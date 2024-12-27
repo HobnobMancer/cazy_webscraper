@@ -155,13 +155,6 @@ def build_parser(
         default=False,
         help="Only add seqs provided via JSON and/or FASTA file. Do not retrieve data from NCBI",
     )
-    operational_group.add_argument(
-        "--seq_update",
-        dest="seq_update",
-        action="store_true",
-        default=False,
-        help="Enable overwriting sequences in the database if the retrieved sequence is different",
-    )
 
     utilities_group.add_argument(
         "--batch_size",
