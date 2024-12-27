@@ -63,9 +63,9 @@ __version__ = "3.0.0.0"
 
 __citation__ = (
     "\tHobbs, E. E. M., Gloster, T. M., and Pritchard, L.\n"
-    "\t(2022) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets',\n"
-    "\tbioRxiv\n"
-    "\thttps://doi.org/10.1101/2022.12.02.518825"
+    "\t(2023) 'cazy_webscraper: local compilation and interrogation of comprehensive CAZyme datasets',\n"
+    "\tMicrobial Genomics, 9(8)\n"
+    "\thttps://doi.org/10.1099/mgen.0.001086"
 )
 
 VERSION_INFO = f"cazy_webscraper version: {__version__}"

@@ -20,3 +20,6 @@ cover/
 htmlcov/
 .coverage
 .coverage.*
+
+# IDE and editor caches
+**/__pycache__/
