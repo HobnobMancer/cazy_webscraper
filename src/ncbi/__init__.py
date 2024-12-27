@@ -40,43 +40,104 @@
 
 
 import logging
+import re
+
+from http.client import IncompleteRead
+from typing import Optional
 
 from Bio import Entrez
+from Bio.SeqRecord import SeqRecord
+from Bio.Entrez.Parser import NotXMLError, CorruptedXMLError
 from saintBioutils.genbank import entrez_retry
 
 
-def post_ids(ids, database, args):
-    """Post protein IDs to Entrez
-    
-    :param ids: list, GenBank protein accession numbers
-    :param database: str, Name of database from which IDs are sourced
-    :param args: cmd-line args parser
-    
-    Return None (x2) if fails
-    Else return query_key and web_env
-    """
-    logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-    if type(ids) is str:
-        ids = [ids]
+
+def call_entrez(func, retries: int, **kwargs):
+    """
+    Wrapper for Entrez calls with exception handling.
+
+    Parameters:
+    - func: The Entrez function to be called (e.g., Entrez.epost, Entrez.efetch).
+    - retries: Number of retries for the Entrez function.
+    - kwargs: Parameters to pass to the Entrez function.
+
+    Returns:
+    - result: The result of the Entrez function call, or None if errors occur.
+    - invalid_err: Flag indicating invalid IDs.
+    - connection_err: Flag indicating connection-related errors.
+    """
+    invalid_err = False
+    connection_err = False
+    result = None
 
     try:
-        with entrez_retry(
-            args.retries,
-            Entrez.epost,
-            db=database,
-            id=",".join(ids),
-        ) as handle:
-            posted_records = Entrez.read(handle, validate=False)
+        result = Entrez.read(entrez_retry(retries, func, **kwargs), validate=False)
 
-    # if no record is returned from call to Entrez
+    except RuntimeError as err:
+        if repr(err).startswith("RuntimeError('Some IDs have invalid value and were omitted.") \
+                or repr(err).startswith("RuntimeError('Empty ID list; Nothing to store')"):
+            invalid_err = True
+        else:
+            logger.warning(
+                "Runtime error occurred during Entrez call. Error returned:\n%s", err
+            )
+            invalid_err = True
+
+    except (IncompleteRead, CorruptedXMLError) as err:
+        logger.warning(
+            "IncompleteRead or CorruptedXMLError during Entrez call:\n%s", err
+        )
+        connection_err = True
+
+    except NotXMLError as err:
+        logger.warning(
+            "NotXMLError during Entrez call:\n%s", err
+        )
+        connection_err = True
+
     except (TypeError, AttributeError) as err:
         logger.warning(
-            f"Failed to post IDs to Entrez {database} db:\nError messaage\n{err}\nIds:\n{ids}"
+            "TypeError or AttributeError during Entrez call:\n%s", err
         )
-        return None, None
+        connection_err = True
 
-    query_key = posted_records['QueryKey']
-    web_env = posted_records['WebEnv']
+    except Exception as err:
+        logger.warning(
+            "Unhandled exception during Entrez call:\n%s", err
+        )
+        connection_err = True
 
-    return query_key, web_env
+    return result, invalid_err, connection_err
+
+
+def get_protein_accession(record: SeqRecord, acc_to_retrieve: Optional[list] = None) -> Optional[str]:
+    """Extract NCBI Protein accession from SeqRecord."""
+    patterns = [
+        r"\D{3}\d+\.\d+",
+        r"\D{2}_\d+\.\d+",
+        r"\D\d+\.\d+",
+        r"\D\d{2}\D+\d+\.\d+",
+        r"\D\d+\.\d+",
+        r"\D\d{2}\D+\d+",
+        r"\D\d+"
+    ]
+
+    for pattern in patterns:
+        match = re.match(pattern, record.id)
+        if match:
+            return match.group()
+
+    if acc_to_retrieve:
+        for acc in acc_to_retrieve:
+            if acc in record.id:
+                return acc
+
+    parts = record.id.split("|")
+    if len(parts) == 3:
+        if parts[0] == "sp" and parts[1]:
+            return parts[1]
+        return parts[2] if not parts[1] else parts[1]
+
+    return None

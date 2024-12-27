@@ -52,7 +52,6 @@ from saintBioutils.genbank import entrez_retry
 from saintBioutils.misc import get_chunks_list
 from tqdm import tqdm
 
-
 from src.cache.ncbi import cache_connection_errors
 from src.databases.ncbi import call_entrez, get_protein_accession
 
