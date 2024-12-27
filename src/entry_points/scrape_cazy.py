@@ -44,7 +44,7 @@ from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
 
 from src.databases.cazy.download import get_cazy_db_dump
-from src.databases.cazy.dump_data import dump_cazy_txt, drop_temptable
+from src.databases.cazy.dump_data import dump_cazy_txt
 from src.databases.cazy.filter_data import (
     apply_tax_filters,
     apply_class_and_family_filters,
@@ -56,6 +56,7 @@ from src.sql.interface.add_data import add_cazy_data, scrape_log
 from src.utilities import (
     parse_configuration
 )
+from src.sql.interface.delete_data import drop_temptable
 from src.utilities.sanity_checks.scrape_cazy import sanity_check_main_input
 
 logger = logging.getLogger(__name__)

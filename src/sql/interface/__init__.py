@@ -44,8 +44,6 @@
 import logging
 import sqlite3
 
-from src.sql import sql_orm
-
 
 logger = logging.getLogger(__name__)
 
