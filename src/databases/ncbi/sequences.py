@@ -40,139 +40,118 @@
 
 
 import logging
-import re
 
+from argparse import Namespace
 from http.client import IncompleteRead
+from pathlib import Path
 
 from Bio import Entrez, SeqIO
 from Bio.Entrez.Parser import NotXMLError, CorruptedXMLError
 from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-from Bio.Entrez.Parser import NotXMLError
 from saintBioutils.genbank import entrez_retry
 from saintBioutils.misc import get_chunks_list
 from tqdm import tqdm
- 
 
-def post_accessions_to_entrez(batch, args):
+
+from src.cache.ncbi import cache_connection_errors
+from src.databases.ncbi import call_entrez, get_protein_accession
+
+
+logger = logging.getLogger(__name__) 
+
+
+def get_seqs_from_ncbi(
+    protein_accs: list[str],
+    cache_dir: Path,
+    args: Namespace
+) -> dict[str, Seq]:
+    batches = get_chunks_list(protein_accs, args.batch_size)
+    seq_dict = {}
+    connection_err_cache = []
+    for batch in tqdm(batches, desc="Querying NCBI"):
+
+        validated_batch, connection_err_cache = validate_batch(batch, connection_err_cache, args)
+
+        if validated_batch:
+            epost_webenv, epost_query_key, invalid_err, connection_err = post_acc_to_entrez(validated_batch, args)
+            if connection_err:
+                connection_err_cache.append(validated_batch)
+                continue
+
+            new_seqs, invalid_err, connection_err = fetch_seqs_from_entrez(epost_webenv, epost_query_key, protein_accs, args)
+            if connection_err:
+                connection_err_cache.append(validated_batch)
+                continue
+            seq_dict.update(new_seqs)
+
+    if connection_err_cache:
+        cache_connection_errors(connection_err_cache, cache_dir)
+
+    return seq_dict
+
+
+def validate_batch(
+    batch: list[str],
+    connection_err_cache: list[list[str]],
+    args: Namespace
+) -> list[str]:
+    """Valididate a batch by attempting to post and splitting recursively if it fails.
+    Batches may contain IDs that are not in NCBI (termed in valid accessions)."""
+    try:
+        epost_webenv, epost_query_key, invalid_err, connection_err = post_acc_to_entrez(batch, args)
+        if connection_err:
+            connection_err_cache.append(batch)
+            return [], connection_err_cache
+        if invalid_err:
+            if len(batch) == 1:
+                logger.warning("Invalid ID. Accessions '%s' not listed in NCBI", batch[0])
+                return []
+            raise ValueError("Batch post failed")
+
+    except ValueError:
+        mid = len(batch) // 2
+        valid_left = validate_batch(batch[:mid], connection_err_cache, args)
+        valid_right = validate_batch(batch[mid:], connection_err_cache, args)
+        return valid_left + valid_right, connection_err_cache
+
+    return batch, connection_err_cache
+
+
+def post_acc_to_entrez(batch: list[str], args: Namespace) -> tuple[any, any, bool, bool]:
     """Post NCBI protein accessions to NCBI via Entrez, and capture error message if one returned.
-
-    :param batch: list of genbank accessions
-    :param args: CLI args parser
-
     Return Entrez ePost web environment and query key.
     """
-    logger = logging.getLogger(__name__)
-    success, epost_result = None, None
-    
-    try:
-        epost_result = Entrez.read(
-            entrez_retry(
-                args.retries,
-                Entrez.epost,
-                db="Protein",
-                id=",".join(batch),
-            ),
-            validate=False,
-        )
+    invalid_err, connection_err = False, False
+    epost_webenv, epost_query_key = None, None
 
-    except RuntimeError as err:
-        if repr(err).startswith("RuntimeError('Some IDs have invalid value and were omitted.") or repr(err).startswith("RuntimeError('Empty ID list; Nothing to store')"):
-            
-            if len(batch) == 1:
-                logger.warning(
-                    f"Accession '{batch[0]}' not listed in NCBI. Querying NCBI returns the error:\n"
-                    f"{repr(err)}\n"
-                    f"Not retrieving seq for '{batch[0]}'"
-                )
-                success = "Invalid ID"
-            
-            else:
-                logger.warning(
-                    "Batch contains an accession no longer listed in NCBI\n"
-                    f"Querying NCBI returns the error:\n{err}\n"
-                    "Will identify invalid ID(s) later"
-                )
-                success = "Contains invalid ID"
+    epost_result, invalid_err, connection_err = call_entrez(
+        Entrez.epost,
+        retries=args.retries,
+        db="Protein",
+        id=",".join(batch)
+    )
 
-        else:  # unrecognised Runtime error
-            if len(batch) == 1:
-                logger.warning(
-                    f"Runtime error occured when querying NCBI by accession '{batch[0]}'\n"
-                    f"Error returned:\n{err}\n"
-                    "Interrupting error as recognition of an invalid ID. Therefore,\n"
-                    f"not adding seq for '{batch[0]} to the local CAZyme db'"
-                )
-                success = "Invalid ID"
+    if not invalid_err or not connection_err:
+        try:
+            epost_webenv = epost_result["WebEnv"]
+            epost_query_key = epost_result["QueryKey"]
+        except (TypeError, AttributeError) as err:
+            logger.warning("Error occurred when query NCBI. Error:\n%sCaching this batches accessions", err)
+            connection_err = True
 
-            else:
-                logger.warning(
-                    f"Runtime error occured when querying NCBI with batch of gbk accessions\n"
-                    f"Error returned:\n{err}\n"
-                    "Interrupting error as batch containing invalid ID.\n"
-                    "Will identify invalid ID(s) later"
-                )
-                success = "Contains invalid ID"
-
-    except (IncompleteRead, CorruptedXMLError) as err:
-        logger.warning(
-            "Incomplete Read or Corrupted XML error raised when querying NCBI:\n"
-            f"{err}\n"
-            "Will reattempt NCBI query later"
-        )
-        success = "Failed connection"
-
-    except NotXMLError as err:
-        logger.warning(
-            "NotXMLError raised when querying NCBI:\n"
-            f"{err}\n"
-            "Will reattempt NCBI query later"
-        )
-        success = "Failed connection"
-
-    except (TypeError, AttributeError) as err:  # if no record is returned from call to Entrez
-        logger.warning(
-            f"Error occurenced when batch posting IDs to NCBI\n"
-            "Error retrieved:\n"
-            f"{repr(err)}\n"
-            "Will retry batch later"
-        )
-        success = "Failed connection"
-
-    except Exception as err:  # if no record is returned from call to Entrez
-        logger.warning(
-            f"Error occurenced when posting IDs to NCBI\n"
-            "Error retrieved:\n"
-            f"{repr(err)}\n"
-            "Will retry batch later"
-        )
-        success = "Failed connection"
-
-    # retrieve the web environment and query key from the Entrez post
-    try:
-        epost_webenv = epost_result["WebEnv"]
-        epost_query_key = epost_result["QueryKey"]
-        success = "Complete"
-    except (TypeError, AttributeError):
-        epost_webenv, epost_query_key = None, None
-        pass  # raised when could not epost failed
-
-    return epost_webenv, epost_query_key, success
+    return epost_webenv, epost_query_key, invalid_err, connection_err
 
 
-def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve, args):
-    """Retrieve protein sequences from NCBI from ePost of protein v.accs.
-
-    :param seq_records: list of Bio.SeqRecords
-    :param epost_websenv: Entrez ePost webenvironment
-    :param epost_query_key: Entrez ePost query key
-    :param acc_to_retrieve: set of NCBI protein version accessions to retrieve seqs for
-    :param args: CLI args parser
-
-    Return updated list of SeqRecords and string marking success/failure or seq retrieval.
-    """
-    logger = logging.getLogger(__name__)
-    success, successful_accessions = None, set()
+def fetch_seqs_from_entrez(
+    epost_webenv,
+    epost_query_key,
+    all_acc: list[str],
+    args: Namespace
+):
+    """Retrieve protein sequences from NCBI using ePost results."""
+    invalid_err = False
+    connection_err = False
+    new_seqs = {}
 
     try:
         with entrez_retry(
@@ -182,158 +161,42 @@ def fetch_ncbi_seqs(seq_records, epost_webenv, epost_query_key, acc_to_retrieve,
             query_key=epost_query_key,
             WebEnv=epost_webenv,
             rettype="fasta",
-            retmode="text",
+            retmode="text"
         ) as seq_handle:
             for record in SeqIO.parse(seq_handle, "fasta"):
-                retrieved_accession = get_protein_accession(record, acc_to_retrieve=acc_to_retrieve)
-
-                if retrieved_accession not in acc_to_retrieve:
-                    retrieved_accession = None
-
-                if retrieved_accession is None:
-                    logger.error(
-                        "Could not retrieve a NCBI protein version accession matching\n"
-                        f"an accession from the local database from the record id '{record.id}'\n"
-                        "The sequence from this record will not be added to the db"
+                retrieved_acc = get_protein_accession(record.id)
+                if not retrieved_acc:
+                    logger.warning(
+                        "Could not extract protein accession from '%s'."
+                        "Sequence will not be added to the database", record.id
                     )
                     continue
-    
-                seq_records.append(record)
-                successful_accessions.add(retrieved_accession)
+                if retrieved_acc not in all_acc:
+                    logger.warning(
+                        "Protein accession from NCBI record ID '%s' (id: '%s) does not match any IDs in the batches.\n"
+                        "Sequence will not be added to the database", record.id, retrieved_acc
+                    )
+                    continue
+                new_seqs[retrieved_acc] = Seq(record.seq)
 
     except RuntimeError as err:
-        if repr(err).startswith("RuntimeError('Some IDs have invalid value and were omitted.") or repr(err).startswith("RuntimeError('Empty ID list; Nothing to store')"):
-            
-            if len(batch) == 1:
-                logger.warning(
-                    f"Accession '{batch[0]}' not listed in NCBI. Querying NCBI returns the error:\n"
-                    f"{repr(err)}\n"
-                    f"Not retrieving seq for '{batch[0]}'"
-                )
-                success = "Invalid ID"
-            
-            else:
-                logger.warning(
-                    "Batch contains an accession no longer listed in NCBI\n"
-                    f"Querying NCBI returns the error:\n{err}\n"
-                    "Will identify invalid ID(s) later"
-                )
-                success = "Contains invalid ID"
-
-        else:  # unrecognised Runtime error
-            if len(batch) == 1:
-                logger.warning(
-                    f"Runtime error occured when fetching record from NCBI for accession '{batch[0]}'\n"
-                    f"Error returned:\n{err}\n"
-                    "Interrupting error as recognition of an invalid ID. Therefore,\n"
-                    f"not adding seq for '{batch[0]} to the local CAZyme db'"
-                )
-                success = "Invalid ID"
-
-            else:
-                logger.warning(
-                    f"Runtime error occured when fetching records from NCBI\n"
-                    f"Error returned:\n{err}\n"
-                    "Interrupting error as batch containing invalid ID.\n"
-                    "Will identify invalid ID(s) later"
-                )
-                success = "Contains invalid ID"
+        logger.warning("Runtime error occurred during Entrez call. Error returned:\n%s", err)
+        invalid_err = True
 
     except (IncompleteRead, CorruptedXMLError) as err:
-        logger.warning(
-            "Incomplete Read or Corrupted XML error raised when fetching record from NCBI:\n"
-            f"{err}\n"
-            "Will reattempt NCBI query later"
-        )
-        success = "Failed connection"
+        logger.warning("IncompleteRead or CorruptedXMLError during Entrez call:\n%s", err)
+        connection_err = True
 
     except NotXMLError as err:
-        logger.warning(
-            "NotXMLError raised when fetching record(s) from NCBI:\n"
-            f"{err}\n"
-            "Will reattempt NCBI query later"
-        )
-        success = "Failed connection"
+        logger.warning("NotXMLError during Entrez call:\n%s", err)
+        connection_err = True
 
-    except (TypeError, AttributeError) as err:  # if no record is returned from call to Entrez
-        logger.warning(
-            f"Error occurenced when fetching records from NCBI\n"
-            "Error retrieved:\n"
-            f"{repr(err)}\n"
-            "Will retry batch later"
-        )
-        success = "Failed connection"
+    except (TypeError, AttributeError) as err:
+        logger.warning("TypeError or AttributeError during Entrez call:\n%s", err)
+        connection_err = True
 
-    except Exception as err:  # if no record is returned from call to Entrez
-        logger.warning(
-            f"Error occurenced when fetching sequences from NCBI\n"
-            "Error retrieved:\n"
-            f"{repr(err)}\n"
-            "Will retry batch later"
-        )
-        success = "Failed connection"
+    except Exception as err:
+        logger.warning("Unhandled exception during Entrez call:\n%s", err)
+        connection_err = True
 
-    return seq_records, success, list(successful_accessions)
-
-
-def get_protein_accession(record, acc_to_retrieve=None):
-    """Extract NCBI Protein accession from SeqRecord.
-
-    :param record: BioPython SeqRecord obj
-    :param acc_to_retrieve: list of acc to retrieve seqs for
-
-    Return str (accession) or None:
-    """
-    logger = logging.getLogger(__name__)
-    retrieved_accession = None
-
-    # check if multiple items returned in ID
-    # try re search for accession in string
-    try:
-        retrieved_accession = re.match(r"\D{3}\d+\.\d+", record.id).group()
-
-    except AttributeError:
-        try:
-            retrieved_accession = re.match(r"\D{2}_\d+\.\d+", record.id).group()
-
-        except AttributeError:
-            if acc_to_retrieve is not None:
-                for acc in acc_to_retrieve:
-                    if record.id.find(acc) != -1:
-                        retrieved_accession = acc
-
-    if retrieved_accession is None:
-        # Accession may be a UniProt entry name or ID
-        # e.g. 'prf||2109195A'or 'sp|B2FSW8.1|EALGL_STRMK'
-        if len(record.id.split("|")) == 3:
-
-            if record.id.startswith("sp"):
-                if len(record.id.split("|")[1]) == 0:
-                    retrieved_accession = record.id.split("|")[2]
-                else:
-                    retrieved_accession = record.id.split("|")[1]
-            
-            elif len(record.id.split("|")[1]) == 0:
-                retrieved_accession = record.id.split("|")[2]
-
-        if retrieved_accession is None:  # Accept Uniprot-style accessions which ar sometimes used
-            try:
-                retrieved_accession = re.match(r"\D\d+\.\d+", record.id).group()
-            except AttributeError:
-                try:
-                    retrieved_accession = re.match(r"\D\d{2}\D+\d+\.\d+", record.id).group()
-                except AttributeError:
-                    try:
-                        retrieved_accession = re.match(r"\D\d+\.\d+", record.id).group()
-                    except AttributeError:
-                        try:
-                            if record.id == re.match(r"\D\d{2}\D+\d+", record.id).group():
-                                retrieved_accession = re.match(r"\D\d{2}\D+\d+", record.id).group()
-                        except AttributeError:
-                            try:
-                                if record.id == re.match(r"\D\d+", record.id).group():
-                                    retrieved_accession = re.match(r"\D\d+", record.id).group()
-                            except AttributeError:
-                                retrieved_accession = None
-    
-    return retrieved_accession
+    return new_seqs, invalid_err, connection_err
