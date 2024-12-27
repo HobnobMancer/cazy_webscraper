@@ -54,7 +54,7 @@ from tqdm import tqdm
 from Bio import Entrez
 
 from src.ncbi.taxonomy.multiple_taxa import get_ncbi_tax
-from src.sql.sql_interface.add_data.add_ncbi_tax_data import replace_ncbi_taxonomy
+from src.sql.interface.add_data.add_ncbi_tax_data import replace_ncbi_taxonomy
 
 
 logger = logging.getLogger(__name__)

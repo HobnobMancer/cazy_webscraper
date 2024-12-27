@@ -41,8 +41,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 
 from src import closing_message
-from src.ncbi import get_protein_accession
-from src.ncbi.sequences import get_protein_accession
+from src.databases.ncbi import get_protein_accession
 
 
 logger = logging.getLogger(__name__)

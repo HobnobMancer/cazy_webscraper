@@ -45,7 +45,9 @@ import logging
 from sqlalchemy import delete, text
 from tqdm import tqdm
 
-from cazy_webscraper.sql.sql_orm import Ec, Pdb
+from pathlib import Path
+
+from src.sql.sql_orm import Ec, Pdb
 
 
 logger = logging.getLogger(__name__)

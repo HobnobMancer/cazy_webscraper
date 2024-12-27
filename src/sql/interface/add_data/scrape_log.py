@@ -34,7 +34,7 @@
 import argparse
 import logging
 
-from src.sql import sql_interface, sql_orm
+from src.sql import interface, sql_orm
 from src.utilities import termcolour
 
 
@@ -69,7 +69,7 @@ def add_main_scrape_message(
 
     logger.info("Adding log of scrape to the local CAZyme database")
     with sql_orm.Session(bind=connection) as session:
-        sql_interface.log_scrape_in_db(
+        interface.log_scrape_in_db(
             time_stamp,
             config_dict,
             kingdom_filters,
