@@ -122,6 +122,8 @@ def main(args: Namespace, time_stamp: str, start_time):
         if seq_acc_to_retrieve:
             new_seqs = get_seqs_from_ncbi(seq_acc_to_retrieve, cache_dir, args)
             seq_dict.update(new_seqs)
+    
+    print(seq_dict)
 
     if not seq_dict:
         logger.warning("No seqs to add to db")

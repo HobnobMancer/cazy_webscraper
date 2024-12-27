@@ -163,7 +163,7 @@ def fetch_seqs_from_entrez(
             retmode="text"
         ) as seq_handle:
             for record in SeqIO.parse(seq_handle, "fasta"):
-                retrieved_acc = get_protein_accession(record.id)
+                retrieved_acc = get_protein_accession(record)
                 if not retrieved_acc:
                     logger.warning(
                         "Could not extract protein accession from '%s'."
@@ -179,23 +179,23 @@ def fetch_seqs_from_entrez(
                 new_seqs[retrieved_acc] = Seq(record.seq)
 
     except RuntimeError as err:
-        logger.warning("Runtime error occurred during Entrez call. Error returned:\n%s", err)
+        logger.warning("Runtime error occurred during Entrez call. Error returned:\n%s\nRecord:%s", err, record.id)
         invalid_err = True
 
     except (IncompleteRead, CorruptedXMLError) as err:
-        logger.warning("IncompleteRead or CorruptedXMLError during Entrez call:\n%s", err)
+        logger.warning("IncompleteRead or CorruptedXMLError during Entrez call:\n%s\nRecord:%s", err, record.id)
         connection_err = True
 
     except NotXMLError as err:
-        logger.warning("NotXMLError during Entrez call:\n%s", err)
+        logger.warning("NotXMLError during Entrez call:\n%s\nRecord:%s", err, record.id)
         connection_err = True
 
     except (TypeError, AttributeError) as err:
-        logger.warning("TypeError or AttributeError during Entrez call:\n%s", err)
+        logger.warning("TypeError or AttributeError during Entrez call:\n%s\nRecord:%s", err, record.id)
         connection_err = True
 
     except Exception as err:
-        logger.warning("Unhandled exception during Entrez call:\n%s", err)
+        logger.warning("Unhandled exception during Entrez call:\n%s\nRecord:%s", err, record.id)
         connection_err = True
 
     return new_seqs, invalid_err, connection_err
