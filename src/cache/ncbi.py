@@ -7,16 +7,7 @@
 # Emma E. M. Hobbs
 
 # Contact
-# eemh1@st-andrews.ac.uk
-
-# Emma E. M. Hobbs,
-# Biomolecular Sciences Building,
-# University of St Andrews,
-# North Haugh Campus,
-# St Andrews,
-# KY16 9ST
-# Scotland,
-# UK
+# ehobbs@ebi.ac.uk
 
 # The MIT License
 #
@@ -37,101 +28,112 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Cache data retrieved from the remove NCBI database"""
+"""Read and write cache data retrieved from the remote NCBI database"""
 
 
 import argparse
 import logging
 import json
 
-from Bio import SeqIO
-from Bio.Seq import Seq 
-from Bio.SeqRecord import SeqRecord
+from pathlib import Path
 
-from cazy_webscraper import closing_message
-from cazy_webscraper.ncbi.sequences import get_protein_accession
+from Bio import SeqIO
+from Bio.Seq import Seq
+
+from src import closing_message
+from src.databases.ncbi import get_protein_accession
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_cache_seqs(
     start_time: str,
     args: argparse.ArgumentParser
-):
+) -> dict[str, Seq]:
     """Extract protein sequences from FASTA and/or JSON file, which will be added to the
     local CAZyme database
-
-    :param seq_dict: dict, {genbank_acc: Bio.Seq}
-
-    Return update seq_dict and list of SeqRecords
     """
-    logger = logging.getLogger(__name__)
-
     seq_dict = {}
-    seq_records = []
 
     if args.seq_dict:
-        logger.warning("Getting sequences from JSON cache:\n%s", args.seq_dict)
-
-        try:
-            with open(args.seq_dict, "r") as fh:
-                cache_dict = json.load(fh)
-
-        except FileNotFoundError:
-            logger.error(
-                "Could not find JSON file of protein sequences at:\n"
-                "%s\n"
-                "Check the path is correct. Terminating program",
-                args.seq_dict
-            )
+        seq_dict = load_json_seqs(args.seq_dict, seq_dict)
+        if not seq_dict:
             closing_message("Get GenBank seqs", start_time, args, early_term=True)
-
-        # convert strs to SeqRecords
-        for key in cache_dict:
-            seq_dict[key] = Seq(cache_dict[key])
 
     if args.seq_file:
-        logger.warning("Getting sequences from FASTA cache:\n%s", args.seq_file)
-
-        try:
-            for record in SeqIO.parse(args.seq_file, "fasta"):
-                retrieved_accession = get_protein_accession(record)
-
-                if retrieved_accession is None:
-                    logger.error(
-                        "Could not retrieve a NCBI protein version accession from cache\n"
-                        "from the record id '%s'\n"
-                        "The sequence from this record will not be added to the db",
-                        record.id
-                    )
-                    continue
-
-                try:
-                    if seq_dict[retrieved_accession] != record.seq:
-                        logger.warning(
-                            "Retrieved seq for %s from JSON file which does NOT match "
-                            "the seq in the FASTA file.\n"
-                            "Adding seq from the FASTA file to the local CAZyme database\n"
-                            "JSON seq: %s\n"
-                            "FASTA seq: %s",
-                            retrieved_accession,
-                            seq_dict[retrieved_accession],
-                            record.seq
-                        )
-                        seq_dict[retrieved_accession] = record.seq
-                except KeyError:
-                    seq_dict[retrieved_accession] = record.seq
-
-        except FileNotFoundError:
-            logger.error(
-                "Could not find FASTA file of protein sequences at:\n"
-                "%s\n"
-                "Check the path is correct. Terminating program",
-                args.seq_file
-            )
+        seq_dict = load_fasta_seq(args.seq_file, seq_dict)
+        if not seq_dict:
             closing_message("Get GenBank seqs", start_time, args, early_term=True)
 
-    for key, value in seq_dict.items():
-        seq_records.append(SeqRecord(id=key, seq=Seq(value)))
+    logger.warning("Retrieved %s from cache", len(seq_dict.keys()))
 
-    logger.warning("Retrieved %s from cache", len(seq_records))
+    return seq_dict
 
-    return seq_dict, seq_records
+
+def load_json_seqs(seq_dict_path: Path, seq_dict: dict[str, Seq]) -> dict[str, Seq]:
+    logger.warning("Getting sequences from JSON cache:\n%s", seq_dict_path)
+    try:
+        with open(seq_dict_path, "r") as fh:
+            cache_dict = json.load(fh)
+    except FileNotFoundError:
+        logger.error(
+            "Could not find JSON file of protein sequences at:%s\n"
+            "Check the path is correct. Terminating program",
+            seq_dict_path
+        )
+        return
+
+    for key in cache_dict:  # convert strs to SeqRecords
+        seq_dict[key] = Seq(cache_dict[key])
+    return seq_dict
+
+
+def load_fasta_seq(fasta_path: Path, seq_dict: dict[str, Seq]) -> dict[str, Seq]:
+    logger.warning("Getting sequences from FASTA cache:\n%s", fasta_path)
+    try:
+        for record in SeqIO.parse(fasta_path, "fasta"):
+            retrieved_accession = get_protein_accession(record)
+
+            if retrieved_accession is None:
+                logger.error(
+                    "Could not retrieve a NCBI protein version accession from cache\n"
+                    "from the record id '%s'\n"
+                    "The sequence from this record will not be added to the db",
+                    record.id
+                )
+                continue
+
+            try:
+                if seq_dict[retrieved_accession] != record.seq:
+                    logger.warning(
+                        "Retrieved seq for %s from JSON file which does NOT match "
+                        "the seq in the FASTA file.\n"
+                        "Adding seq from the FASTA file to the local CAZyme database\n"
+                        "JSON seq: %s\n"
+                        "FASTA seq: %s",
+                        retrieved_accession,
+                        seq_dict[retrieved_accession],
+                        record.seq
+                    )
+                    seq_dict[retrieved_accession] = record.seq
+            except KeyError:
+                seq_dict[retrieved_accession] = record.seq
+
+    except FileNotFoundError:
+        logger.error(
+            "Could not find FASTA file of protein sequences at:%s\n"
+            "Check the path is correct. Terminating program",
+            fasta_path
+        )
+        return
+
+    return seq_dict
+
+
+def cache_connection_errors(batches: list[list[str]], cache_dir: Path):
+    cache_path = cache_dir / "failed_connections.out"
+    with open(cache_path, "w") as fh:
+        for batch in batches:
+            text = '\n'.join(batch)
+            fh.write(f"{text}\n")

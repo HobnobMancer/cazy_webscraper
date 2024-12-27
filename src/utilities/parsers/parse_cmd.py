@@ -41,7 +41,8 @@ from typing import List, Optional
 
 from src import __version__, __citation__
 from src.utilities.parsers.subcmds import (
-    scrape_cazy_parser
+    scrape_cazy_parser,
+    gbk_seq_parser
 )
 
 
@@ -80,6 +81,13 @@ def build_parser(argv: Optional[List] = None) -> Namespace:
         help="logfile location",
     )
     parser_main.add_argument(
+        "--sql_echo",
+        dest="sql_echo",
+        action="store_true",
+        default=False,
+        help="Set SQLite engine echo to True (SQLite will print its log messages)",
+    )
+    parser_main.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -90,6 +98,7 @@ def build_parser(argv: Optional[List] = None) -> Namespace:
 
     # add subcommand parser
     scrape_cazy_parser.build_parser(subparsers)
+    gbk_seq_parser.build_parser(subparsers)
 
     # Parse arguments
     # The list comprehension is to allow PosixPaths to be defined and passed in testing

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2022
-# (c) University of Strathclyde 2022
-# (c) James Hutton Institute 2022
+# (c) University of St Andrews 2024
+# (c) University of Strathclyde 2024
+# (c) James Hutton Institute 2024
 #
 # Author:
 # Emma E. M. Hobbs
@@ -46,18 +46,14 @@ import sqlite3
 
 from pathlib import Path
 
-from sqlalchemy import delete, text
-from tqdm import tqdm
-
-from src.sql.sql_interface import insert_data
-from src.sql.sql_interface.get_data.get_table_dicts import (
+from src.sql.interface import insert_data
+from src.sql.interface.get_data.get_table_dicts import (
     get_kingdom_table_dict,
     get_taxs_table_dict,
     get_fams_table_dict,
     get_protein_table_dict,
     get_prot_fam_table_dict,
 )
-from src.sql.sql_orm import proteins_families
 
 
 logger = logging.getLogger(__name__)

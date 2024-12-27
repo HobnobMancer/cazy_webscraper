@@ -34,7 +34,6 @@ Web scraper to scrape CAZy website and retrieve all protein data.
 """
 
 
-
 import logging
 
 from argparse import Namespace
@@ -44,31 +43,27 @@ from pathlib import Path
 from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
 
-from src.cazy.download import get_cazy_db_dump
-from src.cazy.filter_data import (
+from src.databases.cazy.download import get_cazy_db_dump
+from src.databases.cazy.dump_data import dump_cazy_txt
+from src.databases.cazy.filter_data import (
     apply_tax_filters,
     apply_class_and_family_filters,
     drop_subfamilies
 )
-from src.cazy.multi_taxa import process_multi_taxa
-from src.database.connect import (
-    connect_to_new_db,
-    connect_existing_db,
-)
-from src.database.scrape_log import add_main_scrape_message
-from src.database.cazy import dump_cazy_txt, drop_temptable
-from src.sql.sql_interface.add_data import add_cazy_data
+from src.databases.cazy.multi_taxa import process_multi_taxa
+from src.sql.interface.connect import connect_to_new_db, connect_existing_db
+from src.sql.interface.add_data import add_cazy_data, scrape_log
 from src.utilities import (
-    parse_configuration,
-    sanity_checks
+    parse_configuration
 )
-
+from src.sql.interface.delete_data import drop_temptable
+from src.utilities.sanity_checks.scrape_cazy import sanity_check_main_input
 
 logger = logging.getLogger(__name__)
 
 
 def main(args: Namespace, time_stamp: str, start_time):
-    db = sanity_checks.sanity_check_main_input(time_stamp, args)  # path to the local cazyme db
+    db = sanity_check_main_input(time_stamp, args)  # path to the local cazyme db
 
     if args.skip_ncbi_tax:
         logger.warning(
@@ -116,7 +111,7 @@ def main(args: Namespace, time_stamp: str, start_time):
         # write the additional log files to the .cazy_webscraper cache dire
         logger_name = "log"
 
-    add_main_scrape_message(
+    scrape_log.add_main_scrape_message(
         kingdom_filters,
         taxonomy_filter_set,
         taxonomy_filter_dict,
@@ -222,7 +217,3 @@ def get_cazy_data(
     add_cazy_data.add_protein_fam_relationships(db)
 
     drop_temptable(db)
-
-
-if __name__ == "__main__":
-    main()

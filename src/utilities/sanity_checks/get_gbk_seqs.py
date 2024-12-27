@@ -2,21 +2,12 @@
 # -*- coding: utf-8 -*-
 # (c) University of St Andrews 2022
 # (c) University of Strathclyde 2022
-# (c) Jame Hutton Institute 2022
+# (c) James Hutton Institute 2022
 # Author:
 # Emma E. M. Hobbs
 #
 # Contact
-# eemh1@st-andrews.ac.uk
-#
-# Emma E. M. Hobbs,
-# Biomolecular Sciences Building,
-# University of St Andrews,
-# North Haugh Campus,
-# St Andrews,
-# KY16 9ST
-# Scotland,
-# UK
+# ehobbs@ebi.ac.uk
 #
 # The MIT License
 #
@@ -37,4 +28,24 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Retrieve protein sequences from the NCBI GenBank database"""
+"""Sanity checks for user inputs"""
+
+
+import argparse
+import logging
+import sys
+
+from src.utilities import termcolour
+
+
+logger = logging.getLogger(__name__)
+
+
+def sanity_check_inputs(args: argparse.Namespace) -> None:
+    if args.genbank_accessions and args.file_only:
+        error_message = """::ARGUMENT ERROR:: Cannot provide a list of protein accessions and disable seq retrieval.
+        args.genbank_accessions and args.file_only were both used, but the latter disables retrieval
+        of protein seqs from NCBI. Terminating program.
+        """
+        logger.error(termcolour(error_message, "red"))
+        sys.exit(22)

@@ -45,7 +45,19 @@ import logging
 from sqlalchemy import delete, text
 from tqdm import tqdm
 
-from cazy_webscraper.sql.sql_orm import Ec, Pdb
+from pathlib import Path
+
+from src.sql.sql_orm import Ec, Pdb
+
+
+logger = logging.getLogger(__name__)
+
+
+def drop_temptable(db: Path) -> None:
+    conn = sqlite3.connect(db)
+    conn.execute("DROP TABLE IF EXISTS TempTable")
+    conn.commit()
+    conn.close()
 
 
 def delete_old_relationships(

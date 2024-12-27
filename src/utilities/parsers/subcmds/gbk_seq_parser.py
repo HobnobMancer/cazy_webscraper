@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2024
-# (c) University of Strathclyde 2024
-# (c) James Hutton Institute 2024
+# (c) University of St Andrews 2022
+# (c) University of Strathclyde 2022
+# (c) James Hutton Institute 2022
 #
 # Author:
 # Emma E. M. Hobbs
@@ -35,27 +35,33 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, _SubParsersA
 from pathlib import Path
 from typing import List, Optional
 
-from src.entry_points import scrape_cazy
+from src.entry_points import get_gbk_seqs
+
 
 def build_parser(
     subps: _SubParsersAction, parents: Optional[List[ArgumentParser]] = None
 ) -> None:
     parser = subps.add_parser(
-        "scrape_cazy",
-        description="Scrapes the CAZy database",
-        help="Download data from CAZy and build a local SQLite database",
+        "get_gbk_seqs",
+        description="Retrieve NCBI-GenBank sequences",
+        help="Download NCBI-GenBank sequences and import the sequences into the local CAZyme database",
         formatter_class=ArgumentDefaultsHelpFormatter
+    )
+
+    # Add positional/required arguments
+    parser.add_argument(
+        "database",
+        type=Path,
+        help="Path to local CAZy database",
     )
 
     parser.add_argument(
         "email",
         type=str,
-        help=(
-            "User email address.\n"
-            "Required NCBI Entrez - used to get source organsism data.\n"
-            "The email address is not stored be cazy_webscraper."
-        )
+        help="User email address, requirement of NCBI-Entrez. The address is not stored by cazy_webscraper",
     )
+
+    # Add optional arguments to parser
 
     filters_group = parser.add_argument_group("Filtering arguments")
     operational_group = parser.add_argument_group("Operational arguments")
@@ -71,13 +77,16 @@ def build_parser(
         "--families",
         type=str,
         default=None,
-        help="Families to scrape. Separate families by commas 'GH1,GH2' (case sensitive)"
+        help="Families to scrape. Separate families by commas 'GH1,GH2'",
     )
     filters_group.add_argument(
         "--kingdoms",
         type=str,
         default=None,
-        help="Tax Kingdoms to restrict the scrape to"
+        help=(
+            "Kingdoms to scrape. Separate by a single comma.\n"
+            "Options= archaea, bacteria, eukaryota, viruses, unclassified (not case sensitive)"
+        ),
     )
     filters_group.add_argument(
         "--genera",
@@ -100,79 +109,78 @@ def build_parser(
             "(written as Genus Species Strain)"
         ),
     )
+    filters_group.add_argument(
+        "--ec_filter",
+        type=str,
+        default=None,
+        help="Limit retrieval to proteins annotated with the provided EC numbers. Separate EC numbers with single commas"
+    )
 
-    operational_group.add_argument(
-        "-o",
-        "--db_output",
-        type=Path,
-        default=None,
-        help="Build a NEW database. Provide the path to build new SQL database",
-    )
-    operational_group.add_argument(
-        "-d",
-        "--database",
-        type=Path,
-        default=None,
-        help="Path to an EXISTING local CAZy SQL database. Add data to this database",
-    )
-    operational_group.add_argument(
-        "-s",
-        "--subfamilies",
-        dest="subfamilies",
-        action="store_true",
-        default=False,
-        help="Enable retrieval of subfamilies from CAZy",
-    )
     operational_group.add_argument(
         "-c",
         "--config",
         type=Path,
-        metavar="config file",
+        metavar="Config file",
         default=None,
         help="Path to configuration file. Default: None, scrapes entire database",
     )
     operational_group.add_argument(
-        "-f",
-        "--force",
-        dest="force",
-        action="store_true",
-        default=False,
-        help="Force over writting an EXISTING database",
-    )
-    operational_group.add_argument(
-        "--cazy_data",
+        "--genbank_accessions",
         type=Path,
         default=None,
-        help="Path predownloaded CAZy txt file",
-    )
-    operational_group.add_argument(
-        "--delete_old_relationships",
-        dest="delete_old_relationships",
-        action="store_true",
-        default=False,
         help=(
-            "Delete old GenBank accession - CAZy family relationships (annotations)\n"
-            "that are in the local db but are not in CAZy, e.g. when CAZy has moved a\n"
-            "protein from one fam to another, delete the old family annotation."
+            "Path to a text file containing a list of GenBank accessions to retrieve data for.\n"
+            "Note, protein accessions will NOT be retrieved from local CAZyme database.\n"
+            "Sequences will only be retrieved for accessions in this file (and cache files if\n"
+            "--seq_dict and/or --seq_file are used)."
         ),
     )
     operational_group.add_argument(
-        "--skip_ncbi_tax",
-        dest="skip_ncbi_tax",
+        "--seq_dict",
+        type=Path,
+        default=None,
+        help=(
+            "Path to a JSON file, keyed by GenBank accessions and valued by protein sequence\n"
+            "Add seqs in file to the local CAZyme database.\n"
+            "This is created by cazy_webscraper during get_gbk_seqs"
+        ),
+    )
+    operational_group.add_argument(
+        "--seq_file",
+        type=Path,
+        default=None,
+        help=(
+            "Path to a FASTA file of protein sequences\n"
+            "Add seqs in file to the local CAZyme database"
+        ),
+    )
+    operational_group.add_argument(
+        "-F",
+        "--file_only",
+        dest="file_only",
         action="store_true",
         default=False,
-        help=(
-            "Skip retrieving the latest tax classification from the NCBI Taxonomy db for proteins\n"
-            "listed with multiple taxs in CAZy.\n"
-            "For these proteins the first taxonomy listed in CAZy is added to the local CAZyme db"
-        ),
+        help="Only add seqs provided via JSON and/or FASTA file. Do not retrieve data from NCBI",
+    )
+    operational_group.add_argument(
+        "--seq_update",
+        dest="seq_update",
+        action="store_true",
+        default=False,
+        help="Enable overwriting sequences in the database if the retrieved sequence is different",
     )
 
+    utilities_group.add_argument(
+        "--batch_size",
+        type=int,
+        default=150,
+        help="Batch size for queries sent to NCBI.Entrez"
+    )
     utilities_group.add_argument(
         "--cache_dir",
         type=Path,
         default=None,
-        help="Target path for cache dir to be used instead of default path",
+        help="Path to cache directory",
     )
     utilities_group.add_argument(
         "--cazy_synonyms",
@@ -181,17 +189,19 @@ def build_parser(
         help="Path to JSON file containing CAZy class synoymn names",
     )
     utilities_group.add_argument(
-        "--ncbi_batch_size",
-        type=int,
-        default=200,
-        help="Number of genbank accessions in each NCBI Taxonomy db batch query"
+        "-f",
+        "--force",
+        dest="force",
+        action="store_true",
+        default=False,
+        help="Force writing in existing cache directory",
     )
     utilities_group.add_argument(
         "--nodelete_cache",
         dest="nodelete_cache",
         action="store_true",
         default=False,
-        help="When called, content in the existing cache dir is NOT deleted",
+        help="Do not delete content in existing cache dir",
     )
     utilities_group.add_argument(
         "-r",
@@ -200,12 +210,5 @@ def build_parser(
         default=10,
         help="Number of times to retry scraping a family or class page if error encountered",
     )
-    utilities_group.add_argument(
-        "-t",
-        "--timeout",
-        type=int,
-        default=45,
-        help="Connection timeout limit (seconds)"
-    )
 
-    parser.set_defaults(func=scrape_cazy.main)
+    parser.set_defaults(func=get_gbk_seqs.main)

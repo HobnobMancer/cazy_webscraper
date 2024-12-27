@@ -114,30 +114,30 @@ def get_gbk_ec_table_dict(connection):
     """Load the Proteins_Ecs table into memory and compile a dict.
 
     The the result dict is keyed by GENBANK IDS.
-    
+
     The table contains the current Protein and EC number relationships in 
     the local CAZyme db.
-    
+
     :param connection: open sqlalchemy connection to an SQLite db
-    
+
     Return dict {gbk_id: {ec ids}}
     """
     with Session(bind=connection) as session:
         all_gbk_ec_records = session.query(Protein, Ec).\
             join(Ec, Protein.ecs).\
             all()
-        
+
     gbk_ec_table_dict = {}
-    
+
     for record in all_gbk_ec_records:
         genbank_id = record[0].genbank_id
         ec_id = record[1].ec_id
-        
+
         try:
             gbk_ec_table_dict[genbank_id].add(ec_id)
         except KeyError:
             gbk_ec_table_dict[genbank_id] = {ec_id}
-    
+
     return gbk_ec_table_dict
 
 
@@ -151,7 +151,7 @@ def get_fams_table_dict(connection: sqlite3.Connection) -> dict:
     for row in fam_cur:
         # [0] fam_id, [1] fam, [2] subfamily
         subfam = row[2] if not None else '_'
-        db_fam_dict[f"{row[1]} {subfam}"] = row[1]
+        db_fam_dict[f"{row[1]} {subfam}"] = row[0]
     fam_cur.close()
     return db_fam_dict
 

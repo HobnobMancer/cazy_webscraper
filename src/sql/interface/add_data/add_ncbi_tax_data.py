@@ -47,8 +47,8 @@ import sqlite3
 from sqlalchemy import text
 from tqdm import tqdm
 
-from src.sql.sql_interface import insert_data
-from src.sql.sql_interface.get_data.get_table_dicts import get_ncbi_tax_table, get_no_tax_gbk_table_dict
+from src.sql.interface import insert_data
+from src.sql.interface.get_data.get_table_dicts import get_ncbi_tax_table, get_no_tax_gbk_table_dict
 from src.ncbi.taxonomy.multiple_taxa import NcbiProtein
 
 

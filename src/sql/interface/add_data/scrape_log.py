@@ -1,23 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2022
-# (c) University of Strathclyde 2022
-# (c) James Hutton Institute 2022
+# (c) University of St Andrews 2024
+# (c) University of Strathclyde 2024
+# (c) James Hutton Institute 2024
 #
 # Author:
 # Emma E. M. Hobbs
 #
 # Contact
-# eemh1@st-andrews.ac.uk
-#
-# Emma E. M. Hobbs,
-# Biomolecular Sciences Building,
-# University of St Andrews,
-# North Haugh Campus,
-# St Andrews,
-# KY16 9ST
-# Scotland,
-# UK
+# ehobbs@ebi.ac.uk
 #
 # The MIT License
 #
@@ -38,25 +29,57 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Submodule to interact with local SQLite database, and adding data other than CAZyme records."""
 
 
+import argparse
 import logging
-import sqlite3
 
-from tqdm import tqdm
-
-from src.sql import sql_orm
+from src.sql import interface, sql_orm
+from src.utilities import termcolour
 
 
 logger = logging.getLogger(__name__)
 
 
-class SqlInterfaceException(Exception):
-    """General exception for SQL interface"""
+def add_main_scrape_message(
+    kingdom_filters: set[str],
+    taxonomy_filters: set[str],
+    taxonomy_filter_dict: dict,
+    time_stamp: str,
+    config_dict: dict,
+    args: argparse.Namespace,
+    connection
+) -> None:
+    """add information of scraping CAZy to the local CAZyme database"""
+    scrape_config_message = (
+        "Configuration:\n"
+        f"Classes to scrape: {config_dict['classes']}\n"
+        f"GH fams to scrape: {config_dict['Glycoside Hydrolases (GHs)']}\n"
+        f"GT fams to scrape: {config_dict['GlycosylTransferases (GTs)']}\n"
+        f"PL fams to scrape: {config_dict['Polysaccharide Lyases (PLs)']}\n"
+        f"CE fams to scrape: {config_dict['Carbohydrate Esterases (CEs)']}\n"
+        f"AA fams to scrape: {config_dict['Auxiliary Activities (AAs)']}\n"
+        f"CBM fams to scrape: {config_dict['Carbohydrate-Binding Modules (CBMs)']}\n"
+        f"Scraping subfamilies: {args.subfamilies}"
+    )
+    scrape_config_message += "\nTaxonomy filters applied." if len(taxonomy_filters) != 0 else ""
+    scrape_config_message += f"\nScraping only tax kingdoms: {kingdom_filters}" if len(kingdom_filters) < 5 else ""
+    
+    logger.info(termcolour(scrape_config_message, "cyan"))
 
-    def __init__(self, message):
-        self.message = message
+    logger.info("Adding log of scrape to the local CAZyme database")
+    with sql_orm.Session(bind=connection) as session:
+        interface.log_scrape_in_db(
+            time_stamp,
+            config_dict,
+            kingdom_filters,
+            taxonomy_filter_dict,
+            set(),  # ec_filters not applied when scraping CAZy
+            'CAZy',
+            'CAZy annotations',
+            session,
+            args,
+        )
 
 
 def log_scrape_in_db(
@@ -217,57 +240,3 @@ def log_scrape_in_db(
     session.commit()
 
     return
-
-
-def insert_data(
-    connection: sqlite3.Connection,
-    table_name: str,
-    column_names: list[str],
-    insert_values: list[tuple[str]]
-):
-    """Insert values into one or multiple rows in the database.
-
-    :param connection: open connection to SQLite db engine
-    :param table_name: str, name of table to be inserted into
-    :param column_names: list of columns (str) to insert data into
-    :param insert_values: list of tuples, one tuple per inserted row in the db
-
-    Return nothing.
-    """
-    logger.info("Bulk inserting data into db")
-
-    # Set up placeholders for the VALUES statement
-    placeholders = ', '.join(['?' for _ in column_names])
-
-    query = f"INSERT INTO {table_name} ({', '.join(column_names)}) VALUES ({placeholders})"
-
-    insert_cur = connection.cursor()
-    try:
-        insert_cur.executemany(query, insert_values)
-        connection.commit()
-    except Exception as db_error:
-        connection.rollback()
-        raise SqlInterfaceException(f"Database error: {str(db_error)}") from db_error
-    finally:
-        insert_cur.close()
-
-
-def get_gbk_table_dict(connection):
-    """Compile a dict of the data in the Genbanks table
-    
-    :param connection: open connection to an SQLite3 database
-    
-    Return dict {gbk accession : gbk id}
-    """
-    logger = logging.getLogger(__name__)
-
-    logger.info("Compiling Genbank protein table into dict")
-
-    with sql_orm.Session(bind=connection) as session:
-        all_genbank = session.query(sql_orm.Genbank).all()
-
-    db_gbk_dict = {}  # {genbank_accession: db genbank id number}
-    for gbk in all_genbank:
-        db_gbk_dict[f"{gbk.genbank_accession}"] = gbk.genbank_id
-    
-    return db_gbk_dict
