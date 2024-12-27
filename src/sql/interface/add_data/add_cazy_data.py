@@ -107,12 +107,12 @@ def add_source_organisms(db: Path) -> None:
         else:
             tax_insert_values.add((row[1], row[2], kingdom_table_dict[row[0]]))
 
-    if len(tax_insert_values) != 0:
+    if tax_insert_values:
         logger.warning("Inserting %s new taxs into the local db", len(tax_insert_values))
         insert_data(conn, 'Taxs', ['genus', 'species', 'kingdom_id'], list(tax_insert_values))
 
-    if len(records_to_update) != 0:
-        logger.warning("Updating %s tax records in th local CAZyme db", len(records_to_update))
+    if records_to_update:
+        logger.warning("Updating %s tax records in the local CAZyme db", len(records_to_update))
         for record in records_to_update:
             conn.execute(
                 """UPDATE Taxs SET kingdom_id = ? WHERE genus = ? AND species = ?""",
