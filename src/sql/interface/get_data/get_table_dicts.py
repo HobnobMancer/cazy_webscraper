@@ -170,7 +170,8 @@ def get_protein_table_dict(connection: sqlite3.Connection) -> dict:
         # [6] uniprot_id, [7] source
         db_protein_dict[f"{row[1]}"] = {
             'taxa_id': row[4],
-            'protein_id': row[0]
+            'protein_id': row[0],
+            'sequence': row[2]
         }
     prot_cur.close()
     return db_protein_dict
