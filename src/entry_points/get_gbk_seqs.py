@@ -58,7 +58,6 @@ logger = logging.getLogger(__name__)
 def main(args: Namespace, time_stamp: str, start_time):
     sanity_check_inputs(args)
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
-    date_today = time_stamp.split("_")[0]
     Entrez.email = args.email
 
     if args.seq_update:
@@ -128,7 +127,7 @@ def main(args: Namespace, time_stamp: str, start_time):
         logger.warning("No seqs to add to db")
         return("get_gbk_seqs")
 
-    update_ncbi_seqs(seq_dict, args.database, args.seq_update)
+    update_ncbi_seqs(seq_dict, args.database, time_stamp, args.seq_update)
     return("get_gbk_seqs")
 
 
