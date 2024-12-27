@@ -44,6 +44,7 @@ from src.cache.ncbi import get_cache_seqs
 from src.databases.ncbi.sequences import get_seqs_from_ncbi
 from src.sql import sql_orm
 from src.sql.interface.add_data.scrape_log import log_scrape_in_db
+from src.sql.interface.add_data.add_ncbi_seqs import update_ncbi_seqs
 from src.sql.interface.connect import connect_existing_db
 from src.sql.interface.filter_data.protein import filter_to_db_acc
 from src.sql.interface.get_data.get_selected_gbks import get_ncbi_prot_accessions
@@ -122,14 +123,12 @@ def main(args: Namespace, time_stamp: str, start_time):
         if seq_acc_to_retrieve:
             new_seqs = get_seqs_from_ncbi(seq_acc_to_retrieve, cache_dir, args)
             seq_dict.update(new_seqs)
-    
-    print(seq_dict)
 
     if not seq_dict:
         logger.warning("No seqs to add to db")
         return("get_gbk_seqs")
 
-    # add seqs in seq dict to the local CAZyme database
+    update_ncbi_seqs(seq_dict, args.database, args.seq_update)
     return("get_gbk_seqs")
 
 
