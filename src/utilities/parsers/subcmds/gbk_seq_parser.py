@@ -8,16 +8,7 @@
 # Emma E. M. Hobbs
 #
 # Contact
-# eemh1@st-andrews.ac.uk
-#
-# Emma E. M. Hobbs,
-# Biomolecular Sciences Building,
-# University of St Andrews,
-# North Haugh Campus,
-# St Andrews,
-# KY16 9ST
-# Scotland,
-# UK
+# ehobbs@ebi.ac.uk
 #
 # The MIT License
 #
@@ -51,9 +42,9 @@ def build_parser(
     subps: _SubParsersAction, parents: Optional[List[ArgumentParser]] = None
 ) -> None:
     parser = subps.add_parser(
-        "get_gkb_seqs",
+        "get_gbk_seqs",
         description="Retrieve NCBI-GenBank sequences",
-        help="Download NCBI-GenBank sequences and import into the local CAZyme database",
+        help="Download NCBI-GenBank sequences and import the sequences into the local CAZyme database",
         formatter_class=ArgumentDefaultsHelpFormatter
     )
 
@@ -134,18 +125,15 @@ def build_parser(
         help="Path to configuration file. Default: None, scrapes entire database",
     )
     operational_group.add_argument(
-        "-F",
-        "--file_only",
-        dest="file_only",
-        action="store_true",
-        default=False,
-        help="Only add seqs provided via JSON and/or FASTA file. Do not retrieved data from NCBI",
-    )
-    operational_group.add_argument(
         "--genbank_accessions",
         type=Path,
         default=None,
-        help="Path to a text file containing a list of GenBank accessions to retrieve data for",
+        help=(
+            "Path to a text file containing a list of GenBank accessions to retrieve data for.\n"
+            "Note, protein accessions will NOT be retrieved from local CAZyme database.\n"
+            "Sequences will only be retrieved for accessions in this file (and cache files if\n"
+            "--seq_dict and/or --seq_file are used)."
+        ),
     )
     operational_group.add_argument(
         "--seq_dict",
@@ -165,6 +153,14 @@ def build_parser(
             "Path to a FASTA file of protein sequences\n"
             "Add seqs in file to the local CAZyme database"
         ),
+    )
+    operational_group.add_argument(
+        "-F",
+        "--file_only",
+        dest="file_only",
+        action="store_true",
+        default=False,
+        help="Only add seqs provided via JSON and/or FASTA file. Do not retrieve data from NCBI",
     )
     operational_group.add_argument(
         "--seq_update",
