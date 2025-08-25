@@ -54,7 +54,7 @@ from cazy_webscraper.sql.sql_interface.get_data.get_assemblies import (
 )
 
 
-def add_assembly_data(assembly_prot_dict, ncbi_genome_dict, gbk_dict, connection, args):
+def update_assembly_data(assembly_prot_dict, ncbi_genome_dict, gbk_dict, connection, args):
     """Coordinate adding genomic data and associting proteins with genomes in the local database
 
     :param assembly_prot_dict: dict, {assembly_name: {protein_accessions}}

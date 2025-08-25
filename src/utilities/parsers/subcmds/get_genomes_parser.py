@@ -135,25 +135,6 @@ def build_parser(
         ),
     )
     operational_group.add_argument(
-        "--seq_dict",
-        type=Path,
-        default=None,
-        help=(
-            "Path to a JSON file, keyed by GenBank accessions and valued by protein sequence\n"
-            "Add seqs in file to the local CAZyme database.\n"
-            "This is created by cazy_webscraper during get_gbk_seqs"
-        ),
-    )
-    operational_group.add_argument(
-        "--seq_file",
-        type=Path,
-        default=None,
-        help=(
-            "Path to a FASTA file of protein sequences\n"
-            "Add seqs in file to the local CAZyme database"
-        ),
-    )
-    operational_group.add_argument(
         "-F",
         "--file_only",
         dest="file_only",

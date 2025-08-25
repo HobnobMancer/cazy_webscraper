@@ -53,7 +53,7 @@ from tqdm import tqdm
 
 from Bio import Entrez
 
-from src.ncbi.taxonomy.multiple_taxa import get_ncbi_tax
+from src.databases.ncbi.taxonomies import get_ncbi_tax
 from src.sql.interface.add_data.add_ncbi_tax_data import replace_ncbi_taxonomy
 
 

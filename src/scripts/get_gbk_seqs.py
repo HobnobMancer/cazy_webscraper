@@ -39,7 +39,6 @@ from argparse import Namespace
 from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
 
-from src import closing_message
 from src.cache.ncbi import get_cache_seqs
 from src.databases.ncbi.sequences import get_seqs_from_ncbi
 from src.sql import sql_orm

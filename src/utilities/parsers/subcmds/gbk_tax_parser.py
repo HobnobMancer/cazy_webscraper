@@ -159,6 +159,13 @@ def build_parser(
         default=False,
         help="Only add seqs provided via JSON and/or FASTA file. Do not retrieve data from NCBI",
     )
+    operational_group.add_argument(
+        "--update_taxs",
+        dest="update_taxs",
+        action="store_true",
+        default=False,
+        help="Overwrite and update existing, outdated taxonomies in the local CAZyme database",
+    )
 
     utilities_group.add_argument(
         "--batch_size",

@@ -3,6 +3,7 @@
 # (c) University of St Andrews 2024
 # (c) University of Strathclyde 2024
 # (c) James Hutton Institute 2024
+#
 # Author:
 # Emma E. M. Hobbs
 #
@@ -28,39 +29,33 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Get lineage database from NCBI"""
-
+"""Retrieve genomic assembly accessions from GenBank and populate the local database"""
 
 import logging
-
 from argparse import Namespace
 
 from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
 
-from src.cache.ncbi import load_lineage_cache
-from src.databases.ncbi.taxonomies import get_ncbi_tax_ids
 from src.sql import sql_orm
-from src.sql.interface.add_data.scrape_log import log_scrape_in_db
-from src.sql.interface.add_data.add_ncbi_tax_data import update_ncbi_taxs
 from src.sql.interface.connect import connect_existing_db
-from src.sql.interface.get_data.get_records import get_ncbi_acc_for_uniprot_acc
+from src.sql.interface.add_data.scrape_log import log_scrape_in_db
+from src.sql.sql_interface.add_data.add_genome_data import update_assebmly_data
 from src.sql.interface.get_data.get_selected_gbks import get_ncbi_prot_accessions
 from src.utilities.parse_configuration import get_expansion_configuration
 from src.utilities.parse_configuration.accession_files import get_acc_from_file
-from src.utilities.sanity_checks.get_gbk_tax import sanity_check_inputs
 
 
 logger = logging.getLogger(__name__)
 
-
 def main(args: Namespace, time_stamp: str, start_time):
-    sanity_check_inputs(args)
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
     Entrez.email = args.email
 
-    cache_dir = args.cache_dir if args.cache_dir else (cache_dir / "ncbi_tax_retrieval")
+
+    cache_dir = args.cache_dir if args.cache_dir else (cache_dir / "ncbi_genome_retrieval")
     make_output_directory(cache_dir, args.force, args.nodelete_cache)
+
     (
         config_dict,
         class_filters,
@@ -71,51 +66,59 @@ def main(args: Namespace, time_stamp: str, start_time):
     ) = get_expansion_configuration(args)
 
     with sql_orm.Session(bind=connection) as session:
-        retrieved_data = "Taxonomies"
+        retrieved_data = "NCBI genomic accessions"
         log_scrape_in_db(
             time_stamp,
             config_dict,
             kingdom_filters,
             taxonomy_filter_dict,
             ec_filters,
-            'NCBI',
+            'GenBank',
             retrieved_data,
             session,
             args,
         )
 
-    # tax_prot_dict = {tax_id: {linaege info, 'proteins' {local db protein ids}}
-    tax_prot_dict = {}
-    if args.lineage_cache:
-        tax_prot_dict = load_lineage_cache(args.lineage_cache)
-
-    if args.file_only:
-        logger.warning("Only using data from cache")
+    if args.genbank_accessions:
+        seq_acc_to_retrieve = get_acc_from_file(
+            args.genbank_accessions,
+            args.database,
+        )
     else:
-        if args.genbank_accessions or args.uniprot_accessions:
-            ncbi_acc_to_retrieve = []
-            if args.genbank_accessions:
-                ncbi_acc_to_retrieve.append(get_acc_from_file(args.genbank_accessions, args.database))
-            if args.uniprot_accessions:
-                uniprot_acc_to_retrieve = get_acc_from_file(args.genbank_accessions, args.database, table="UniProt")
-                # get ncbi acc for the uniprots
-                ncbi_acc_to_retrieve.append(get_ncbi_acc_for_uniprot_acc(uniprot_acc_to_retrieve, args.database))
-        else:
-            # get acc from the db
-            ncbi_acc_to_retrieve = get_ncbi_prot_accessions(
-                class_filters,
-                family_filters,
-                kingdom_filters,
-                taxonomy_filter_dict,
-                ec_filters,
-                args.database
-            )
+        seq_acc_to_retrieve = get_ncbi_prot_accessions(
+            class_filters,
+            family_filters,
+            kingdom_filters,
+            taxonomy_filter_dict,
+            ec_filters,
+            args.database
+        )
 
-        cached_prots = {prot for prots in tax_prot_dict.values() for prot in prots}
-        ncbi_acc_to_retrieve = [prot for prot in ncbi_acc_to_retrieve if prot not in cached_prots]
+    assembly_dict, genome_dict = None, None
 
-        if ncbi_acc_to_retrieve:
-            tax_prot_dict.update(get_ncbi_tax_ids(ncbi_acc_to_retrieve, cache_dir, args))
+    if seq_acc_to_retrieve:
+        gbk_accessions = set()
+        refseq_accessions = set()
 
-    update_ncbi_taxs(tax_prot_dict, args.database, args)
-    return("get_ncbi_taxs")
+        for accession in tqdm(seq_acc_to_retrieve, desc="Separting GenBank and RefSeq accessions"):
+            if accession[2] == '_':
+                refseq_accessions.add(accession)
+            else:
+                gbk_accessions.add(accession)
+
+        logger.info(f"Retrieved {len(gbk_accessions)} GenBank accessions from the local db")
+        logger.info(f"Retrieved {len(refseq_accessions)} RefSeq accessions from the local db")
+
+        assembly_dict, genome_dict = get_ncbi_assembly_data(
+            gbk_accessions,
+            refseq_accessions,
+            cache_dir,
+            args,
+        )   
+
+    if not assembly_dict and not genome_dict:
+        logger.warning("No genomic assembly data to add to db")
+        return("get_ncbi_genomes")
+
+    update_assembly_data(assembly_dict, args.database, time_stamp, args.update)
+    return("get_genbank_seqs")
