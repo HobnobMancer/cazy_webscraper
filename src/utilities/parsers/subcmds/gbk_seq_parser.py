@@ -35,14 +35,14 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, _SubParsersA
 from pathlib import Path
 from typing import List, Optional
 
-from src.entry_points import get_gbk_seqs
+from src.scripts import get_gbk_seqs
 
 
 def build_parser(
     subps: _SubParsersAction, parents: Optional[List[ArgumentParser]] = None
 ) -> None:
     parser = subps.add_parser(
-        "get_gbk_seqs",
+        "get_genbank_seqs",
         description="Retrieve NCBI-GenBank sequences",
         help="Download NCBI-GenBank sequences and import the sequences into the local CAZyme database",
         formatter_class=ArgumentDefaultsHelpFormatter
@@ -128,7 +128,11 @@ def build_parser(
         "--genbank_accessions",
         type=Path,
         default=None,
-        help="Path to a text file containing a list of GenBank accessions to retrieve data for",
+        help=(
+            "Path to a text file containing a list of GenBank accessions to retrieve data for.\n"
+            "Note, accessions from the local DB will not be retrieved, only the accessions in this\n"
+            "this file will be used."
+        ),
     )
     operational_group.add_argument(
         "--seq_dict",

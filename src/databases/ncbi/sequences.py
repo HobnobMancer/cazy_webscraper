@@ -1,22 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2022
-# (c) University of Strathclyde 2022
+# (c) James Hutton Institute 2024
+# (c) University of St Andrews 2024
+# (c) University of Strathclyde 2024
 # Author:
 # Emma E. M. Hobbs
-
+#
 # Contact
-# eemh1@st-andrews.ac.uk
-
-# Emma E. M. Hobbs,
-# Biomolecular Sciences Building,
-# University of St Andrews,
-# North Haugh Campus,
-# St Andrews,
-# KY16 9ST
-# Scotland,
-# UK
-
+# ehobbs@ebi.ac.uk
+#
 # The MIT License
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -36,7 +28,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Get the protein records for a provided list of gene names"""
+"""Get sequences from NCBI GenBank"""
 
 
 import logging
@@ -51,9 +43,10 @@ from Bio.Seq import Seq
 from saintBioutils.genbank import entrez_retry
 from saintBioutils.misc import get_chunks_list
 from tqdm import tqdm
+from typing import Tuple
 
 from src.cache.ncbi import cache_connection_errors
-from src.databases.ncbi import call_entrez, get_protein_accession
+from src.databases.ncbi import post_acc_to_entrez, get_protein_accession, validate_batch
 
 
 logger = logging.getLogger(__name__) 
@@ -67,86 +60,66 @@ def get_seqs_from_ncbi(
     batches = get_chunks_list(protein_accs, args.batch_size)
     seq_dict = {}
     connection_err_cache = []
-    for batch in tqdm(batches, desc="Querying NCBI"):
+    invalid_id_cache = []
+
+    def process_batch(batch):
+        nonlocal seq_dict, connection_err_cache, invalid_id_cache
 
         validated_batch, connection_err_cache = validate_batch(batch, connection_err_cache, args)
 
-        if validated_batch:
-            epost_webenv, epost_query_key, invalid_err, connection_err = post_acc_to_entrez(validated_batch, args)
-            if connection_err:
-                connection_err_cache.append(validated_batch)
-                continue
+        if not validated_batch:
+            return
 
-            new_seqs, invalid_err, connection_err = fetch_seqs_from_entrez(epost_webenv, epost_query_key, protein_accs, args)
-            if connection_err:
-                connection_err_cache.append(validated_batch)
-                continue
-            seq_dict.update(new_seqs)
+        epost_webenv, epost_query_key, invalid_err, connection_err = post_acc_to_entrez(validated_batch, args)
+        if connection_err:
+            connection_err_cache.append(validated_batch)
+            return
+        if invalid_err:
+            # If batch size is 1, cache as invalid ID
+            if len(validated_batch) == 1:
+                invalid_id_cache.append(validated_batch[0])
+            else:
+                # Split batch in half and retry
+                mid = len(validated_batch) // 2
+                process_batch(validated_batch[:mid])
+                process_batch(validated_batch[mid:])
+            return
+
+        new_seqs, invalid_err, connection_err = fetch_seqs_from_entrez(epost_webenv, epost_query_key, protein_accs, args)
+        if connection_err:
+            connection_err_cache.append(validated_batch)
+            return
+        if invalid_err:
+            if len(validated_batch) == 1:
+                invalid_id_cache.append(validated_batch[0])
+            else:
+                mid = len(validated_batch) // 2
+                process_batch(validated_batch[:mid])
+                process_batch(validated_batch[mid:])
+            return
+
+        seq_dict.update(new_seqs)
+
+    for batch in tqdm(batches, desc="Querying NCBI"):
+        process_batch(batch)
 
     if connection_err_cache:
         cache_connection_errors(connection_err_cache, cache_dir)
+    if invalid_id_cache:
+        # Cache invalid IDs to a file in cache_dir
+        invalid_id_path = Path(cache_dir) / "invalid_id_cache.txt"
+        with open(invalid_id_path, "a") as f:
+            for invalid_id in invalid_id_cache:
+                f.write(f"{invalid_id}\n")
 
     return seq_dict
-
-
-def validate_batch(
-    batch: list[str],
-    connection_err_cache: list[list[str]],
-    args: Namespace
-) -> list[str]:
-    """Valididate a batch by attempting to post and splitting recursively if it fails.
-    Batches may contain IDs that are not in NCBI (termed in valid accessions)."""
-    try:
-        epost_webenv, epost_query_key, invalid_err, connection_err = post_acc_to_entrez(batch, args)
-        if connection_err:
-            connection_err_cache.append(batch)
-            return [], connection_err_cache
-        if invalid_err:
-            if len(batch) == 1:
-                logger.warning("Invalid ID. Accessions '%s' not listed in NCBI", batch[0])
-                return []
-            raise ValueError("Batch post failed")
-
-    except ValueError:
-        mid = len(batch) // 2
-        valid_left = validate_batch(batch[:mid], connection_err_cache, args)
-        valid_right = validate_batch(batch[mid:], connection_err_cache, args)
-        return valid_left + valid_right, connection_err_cache
-
-    return batch, connection_err_cache
-
-
-def post_acc_to_entrez(batch: list[str], args: Namespace) -> tuple[any, any, bool, bool]:
-    """Post NCBI protein accessions to NCBI via Entrez, and capture error message if one returned.
-    Return Entrez ePost web environment and query key.
-    """
-    invalid_err, connection_err = False, False
-    epost_webenv, epost_query_key = None, None
-
-    epost_result, invalid_err, connection_err = call_entrez(
-        Entrez.epost,
-        retries=args.retries,
-        db="Protein",
-        id=",".join(batch)
-    )
-
-    if not invalid_err or not connection_err:
-        try:
-            epost_webenv = epost_result["WebEnv"]
-            epost_query_key = epost_result["QueryKey"]
-        except (TypeError, AttributeError) as err:
-            logger.warning("Error occurred when query NCBI. Error:\n%sCaching this batches accessions", err)
-            connection_err = True
-
-    return epost_webenv, epost_query_key, invalid_err, connection_err
-
 
 def fetch_seqs_from_entrez(
     epost_webenv,
     epost_query_key,
     all_acc: list[str],
     args: Namespace
-):
+) -> Tuple[dict[str, any], bool, bool]:
     """Retrieve protein sequences from NCBI using ePost results."""
     invalid_err = False
     connection_err = False
@@ -188,14 +161,14 @@ def fetch_seqs_from_entrez(
 
     except NotXMLError as err:
         logger.warning("NotXMLError during Entrez call:\n%s\nRecord:%s", err, record.id)
-        connection_err = True
+        invalid_err = True
 
     except (TypeError, AttributeError) as err:
         logger.warning("TypeError or AttributeError during Entrez call:\n%s\nRecord:%s", err, record.id)
-        connection_err = True
+        invalid_err = True
 
     except Exception as err:
         logger.warning("Unhandled exception during Entrez call:\n%s\nRecord:%s", err, record.id)
-        connection_err = True
+        invalid_err = True
 
     return new_seqs, invalid_err, connection_err

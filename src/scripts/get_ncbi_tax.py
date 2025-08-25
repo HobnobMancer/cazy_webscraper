@@ -38,10 +38,15 @@ from argparse import Namespace
 from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
 
+from src import closing_message
+from src.cache.ncbi import load_lineage_cache
 from src.sql import sql_orm
 from src.sql.interface.add_data.scrape_log import log_scrape_in_db
 from src.sql.interface.connect import connect_existing_db
+from src.sql.interface.get_data.get_records import get_ncbi_acc_for_uniprot_acc
+from src.sql.interface.get_data.get_selected_gbks import get_ncbi_prot_accessions
 from src.utilities.parse_configuration import get_expansion_configuration
+from src.utilities.parse_configuration.accession_files import get_acc_from_file
 from src.utilities.sanity_checks.get_gbk_tax import sanity_check_inputs
 
 
@@ -55,7 +60,6 @@ def main(args: Namespace, time_stamp: str, start_time):
 
     cache_dir = args.cache_dir if args.cache_dir else (cache_dir / "ncbi_tax_retrieval")
     make_output_directory(cache_dir, args.force, args.nodelete_cache)
-    
     (
         config_dict,
         class_filters,
@@ -66,7 +70,7 @@ def main(args: Namespace, time_stamp: str, start_time):
     ) = get_expansion_configuration(args)
 
     with sql_orm.Session(bind=connection) as session:
-        retrieved_data = "NCBI taxonomy update"
+        retrieved_data = "Taxonomies"
         log_scrape_in_db(
             time_stamp,
             config_dict,
@@ -78,3 +82,37 @@ def main(args: Namespace, time_stamp: str, start_time):
             session,
             args,
         )
+
+    # tax_prot_dict = {tax_id: {linaege info, 'proteins' {local db protein ids}}
+    tax_prot_dict = {}
+    if args.lineage_cache:
+        tax_prot_dict = load_lineage_cache(args.lineage_cache)
+
+    if args.file_only:
+        logger.warning("Only using data from cache")
+    else:
+        if args.genbank_accessions or args.uniprot_accessions:
+            ncbi_acc_to_retrieve = []
+            if args.genbank_accessions:
+                ncbi_acc_to_retrieve.append(get_acc_from_file(args.genbank_accessions, args.database))
+            if args.uniprot_accessions:
+                uniprot_acc_to_retrieve = get_acc_from_file(args.genbank_accessions, args.database, table="UniProt")
+                # get ncbi acc for the uniprots
+                ncbi_acc_to_retrieve.append(get_ncbi_acc_for_uniprot_acc(uniprot_acc_to_retrieve, args.database))
+        else:
+            # get acc from the db
+            ncbi_acc_to_retrieve = get_ncbi_prot_accessions(
+                class_filters,
+                family_filters,
+                kingdom_filters,
+                taxonomy_filter_dict,
+                ec_filters,
+                args.database
+            )
+        cached_prots = {prot for prots in tax_prot_dict.values() for prot in prots}
+        ncbi_acc_to_retrieve = [prot for prot in ncbi_acc_to_retrieve if prot not in cached_prots]
+        if ncbi_acc_to_retrieve:
+            # tax_prot_dict.update(get_taxs_from_ncbi(ncbi_acc_to_retrieve, cache_dir, args))
+            pass
+
+    closing_message("get_ncbi_taxs", start_time, args)

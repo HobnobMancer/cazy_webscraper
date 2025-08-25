@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2022
-# (c) University of Strathclyde 2022
-# (c) James Hutton Institute 2022
+# (c) University of St Andrews 2024
+# (c) University of Strathclyde 2024
+# (c) James Hutton Institute 2024
 # Author:
 # Emma E. M. Hobbs
 
@@ -34,6 +34,7 @@
 import argparse
 import logging
 import json
+import sys
 
 from pathlib import Path
 
@@ -82,7 +83,7 @@ def load_json_seqs(seq_dict_path: Path, seq_dict: dict[str, Seq]) -> dict[str, S
             "Check the path is correct. Terminating program",
             seq_dict_path
         )
-        return
+        sys.exit(1)
 
     for key in cache_dict:  # convert strs to SeqRecords
         seq_dict[key] = Seq(cache_dict[key])
@@ -126,7 +127,7 @@ def load_fasta_seq(fasta_path: Path, seq_dict: dict[str, Seq]) -> dict[str, Seq]
             "Check the path is correct. Terminating program",
             fasta_path
         )
-        return
+        sys.exit(1)
 
     return seq_dict
 
@@ -137,3 +138,16 @@ def cache_connection_errors(batches: list[list[str]], cache_dir: Path):
         for batch in batches:
             text = '\n'.join(batch)
             fh.write(f"{text}\n")
+
+
+def load_lineage_cache(lineage_cache: Path) -> dict[str, list[str]]:
+    try:
+        with open(lineage_cache, "r") as fh:
+            tax_prot_dict = json.load(fh)
+    except FileNotFoundError:
+        logger.error(
+            "Could not find lineage cache at %s\nCheck path is correct. Terminating program",
+            lineage_cache
+        )
+        sys.exit(1)
+    return tax_prot_dict

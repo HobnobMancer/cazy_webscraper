@@ -42,7 +42,7 @@
 
 
 import logging
-from sqlalchemy import delete, text
+import sqlite3
 from tqdm import tqdm
 
 from pathlib import Path
@@ -91,7 +91,7 @@ def delete_old_relationships(
     :param annotation: str, Type of annotation, e.g. ec_numbers or pdbs
         - matches key in uniprot_dict!
     :param table_name: str, name of relationship table in the local db
-    :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param connection: open sqlite3 conenction to an SQLite db engine
     :param args: cmd-line args parser
 
     Return nothing
@@ -156,7 +156,7 @@ def delete_old_annotations(annotation_table, relationship_table, table_name, con
     :param annotation: str, Type of annotation, e.g. ec_numbers or pdbs
         - matches key in uniprot_dict!
     :param table_name: str, name of relationship table in the local db
-    :param connection: open sqlalchemy conenction to an SQLite db engine
+    :param connection: open sqlite3 conenction to an SQLite db engine
     :param args: cmd-line args parser
 
     Return nothing

@@ -35,13 +35,13 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, _SubParsersA
 from pathlib import Path
 from typing import List, Optional
 
-from src.entry_points import scrape_cazy
+from src.scripts import scrape_cazy
 
 def build_parser(
     subps: _SubParsersAction, parents: Optional[List[ArgumentParser]] = None
 ) -> None:
     parser = subps.add_parser(
-        "scrape_cazy",
+        "download",
         description="Scrapes the CAZy database",
         help="Download data from CAZy and build a local SQLite database",
         formatter_class=ArgumentDefaultsHelpFormatter

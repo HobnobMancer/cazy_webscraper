@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2022
-# (c) University of Strathclyde 2022
-# (c) James Hutton Institute 2022
+# (c) University of St Andrews 2024
+# (c) University of Strathclyde 2024
+# (c) James Hutton Institute 2024
 # Author:
 # Emma E. M. Hobbs
 #
 # Contact
-# eemh1@st-andrews.ac.uk
+# ehobbs@ebi.ac.uk
 #
 # Emma E. M. Hobbs,
 # Biomolecular Sciences Building,

@@ -44,9 +44,15 @@
 
 
 import logging
+import sqlite3
 import sys
 
+from pathlib import Path
+
 from tqdm import tqdm
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_user_genbank_sequences(gbk_table_dict, args):
@@ -134,3 +140,22 @@ def get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args):
         gbk_dict[gbk_accession] = gbk_id
 
     return gbk_dict
+
+
+def get_ncbi_acc_for_uniprot_acc(uniprot_accs: list[str], db: Path) -> set[str]:
+    ncbi_acc = set()
+    conn = sqlite3.connect(db)
+    cur = conn.cursor()
+    placeholders = ','.join('?' for _ in uniprot_accs)
+    query = f"""SELECT protein_accession
+        FROM Proteins
+        LEFT JOIN Uniprots ON Proteins.uniprot_id = Uniprots.protein_id
+        WHERE Uniprots.uniprot_accession IN ({placeholders})"""
+    cur.execute(query, tuple(uniprot_accs))
+    for row in cur:
+        ncbi_acc.add(row[0])
+
+    if not ncbi_acc:
+        logger.warning("Did not retrieve any NCBI accessions for the %s UniProt accessions", len(uniprot_accs))
+
+    return ncbi_acc

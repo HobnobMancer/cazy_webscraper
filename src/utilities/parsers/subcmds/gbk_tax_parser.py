@@ -35,7 +35,7 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, _SubParsersA
 from pathlib import Path
 from typing import List, Optional
 
-from src.entry_points import get_ncbi_tax
+from src.scripts import get_ncbi_tax
 
 
 def build_parser(
@@ -128,18 +128,22 @@ def build_parser(
         "--genbank_accessions",
         type=Path,
         default=None,
-        help="Path to a text file containing a list of GenBank accessions to retrieve data for",
+        help=(
+            "Path to a text file containing a list of GenBank accessions to retrieve data for.\n"
+            "When used, accessions will not be retrieved from the local db using the filtering criteria"
+        )
     )
     operational_group.add_argument(
         "--uniprot_accessions",
         type=Path,
         default=None,
         help=(
-            "Path to a text file containing a list of UniPRot accessions to retrieve data for"
-        ),
+            "Path to a text file containing a list of UniProt accessions to retrieve data for.\n"
+            "When used, accessions will not be retrieved from the local db using the filtering criteria"
+        )
     )
     operational_group.add_argument(
-        "--use_lineage_cache",
+        "--lineage_cache",
         type=Path,
         default=None,
         help=(
