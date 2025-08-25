@@ -15,7 +15,7 @@ Requirements
 ------------
 
 * A POSIX-compliant operating system, e.g. Linux or MacOS.
-* Python 3.8 or later
+* Python 3.10 or later
 * An internet connection (to access CAZy and download data)
 
 ----------------------------
@@ -23,7 +23,7 @@ Installing with ``Bioconda``
 ----------------------------
 
 .. TIP::
-   The most recent stable release of ``cazy_webscraper`` should always be avaiable from the ``bioconda`` channel.
+   The most recent stable release of ``cazy_webscraper`` should always be available from the ``bioconda`` channel.
 
 To install ``cazy_webscraper`` using `bioconda <https://bioconda.github.io/>`_ and all required packages, you can use the following command:
 
@@ -39,7 +39,7 @@ Installing with ``pip``/PyPI
 ----------------------------
 
 .. TIP::
-   The most recent stable release of ``cazy_webscraper`` should always be avaiable from ``PyPI``.
+   The most recent stable release of ``cazy_webscraper`` should always be available from ``PyPI``.
 
 To install ``cazy_webscraper`` and all required packages using `pip <https://pypi.python.org/pypi/cazy_webscraper>`_, you can use the following command:
 
@@ -98,7 +98,7 @@ All third-party packages can be installed using ``pip``/PyPI:
 
    pip install -r requirements.txt
    pip install -r requirements-dev.txt  # only needed if you are developing the code
-   pip install -r requirements-pip.txt  # only needed if you are developing the code
+   pip install -r requirements-pip.txt
 
 ***************
 Using ``conda``
@@ -109,8 +109,8 @@ The ``conda`` package manager can be used to install all required packages for r
 .. code-block:: bash
 
    conda install --file requirements.txt
-   conda install --file requirements-dev.txt  # only needed if you are developing the code
-   pip install -r requirements-pip.txt        # only needed if you are developing the code
+   conda install --file requirements-dev.txt # only needed if you are developing the code
+   pip install -r requirements-pip.txt        
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Installing ``cazy_webscraper``

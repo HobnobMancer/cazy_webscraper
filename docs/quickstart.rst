@@ -2,72 +2,76 @@
 Quickstart
 ==============================
 
-------------
-Installation
-------------
+For all subcommands, when no options are specified, data is retrieved for all CAZymes in the local CAZyme database, and all available data is retrieved from external databases.
 
-The most recent version of ``cazy_webscraper`` can be installed on your local machine using ``conda`` or ``pip``. Both methods will install the ``cazy_webscraper`` command-line tool, and the Python package ``cazy_webscraper``.
+-----------------------
+Downloading all of CAZy
+-----------------------
 
-^^^^^^^^^
-``conda``
-^^^^^^^^^
-
-.. code-block:: bash
-
-   conda install cazy_webscraper
-
-^^^^^^^
-``pip``
-^^^^^^^
-
-``pip`` should distribute the latest version of ``cazy_webscraper``, although there may be some minor lag between GitHub releases and ``pip``.
+To download the entire CAZy dataset, and save the data set to the current working directory with the file name 
+``cazy_webscraper_<date>_<time>.db``, use the following command structure: 
 
 .. code-block:: bash
 
-   pip3 install cazy_webscraper
+   cazy_webscraper download <user_email> [options]
 
-.. TIP::
-    ``cazy_webscraper`` can also be installed directly from source. More detailed, and alternative installation instructions can be found in the :ref:`installation` section.
+-------------------------------
+Retrieve NCBI GenBank sequences
+-------------------------------
 
-
-----------------------
-Getting Started Poster
-----------------------
-
-For a quick summary of how to get started, check out our poster:
-
-    Hobbs, Emma E. M.; Pritchard, Leighton; Gloster, Tracey M.; Chapman, Sean (2021): cazy_webscraper - getting started. FigShare. Poster. `https://doi.org/10.6084/m9.figshare.14370869.v3 <https://doi.org/10.6084/m9.figshare.14370869.v3>`_ 
-
------------------------------------
-Getting Help From `cazy_webscraper`
------------------------------------
-
-To invoke the webscraper and get basic help, call the webscraper at the command line:  
+To supplement an existing local CAZyme database with protein sequences from NCBI GenBank, use the following command structure:
 
 .. code-block:: bash
 
-  cazy_webscraper -h
+   cazy_webscraper get_genbank_seqs <path to local cazyme db> <user_email> [options]
 
-The default behaviour of the scraper is:
 
-* Scrape all entries in the CAZy database
-* Write the resulting data to STDOUT
-* Do not retrieve subfamilies (subfamily members will be retrieved but only their parent family be listed)
-* Do not retrieve FASTA files from GenBank
-* Do not retrieve protein sequences from PDB
+----------------------------
+Retrieve NCBI taxonomic data 
+----------------------------
 
--------------------------
-Downloading a CAZy Family
--------------------------
-
-To download the single CAZy family GH169, use the command:
+To update an existing local CAZyme database with new taxonomic classifications from NCBI, use the following command structure:
 
 .. code-block:: bash
 
-  cazy_webscraper <user email> --families GH169 -o GH169
+   cazy_webscraper get_ncbi_taxs <path to local cazyme db> <user_email> [options]
 
-This will create a new directory ``GH169`` in the current working directory, and will download all CAZy entries in the GH169 family to a new SQLite3 database in that directory.
+--------------------------------
+Retrieve UniProt data
+--------------------------------
 
-.. note::
-   To retrieve data from NCBI ``cazy_webscraper`` utilises Entrez, and therefore, a user email address must be provided as this a requirement of Entrez. When downloading CAZyme records from CAZy, ``cazy_webscraper`` retrieves the latest taxonomic classification for proteins assigned to multiple taxonomies in NCBI, and thus ``cazy_webscraper`` requires an email address.
+To update an existing local CAZyme database with new UniProt data, use the following command structure:
 
+.. code-block:: bash
+
+   cazy_webscraper get_uniprot_data <path to local cazyme db> [options]
+
+--------------------------------
+Retrieve PDB structure files
+--------------------------------
+
+To download protein structure files from RCSB PDB for proteins in an existing local CAZyme database, use the following command structure:
+
+.. code-block:: bash
+
+   cazy_webscraper get_pdb_structures <path to local cazyme db> [options]
+
+--------------------------------
+Retrieve GTDB taxonomic data
+--------------------------------
+
+To update an existing local CAZyme database with new GTDB taxonomic classifications, use the following command structure:
+
+.. code-block:: bash
+
+   cazy_webscraper get_gtdb_taxs <path to local cazyme db> [options]
+
+-----------------------------------------
+Extract data from a local CAZyme database
+-----------------------------------------
+
+To query a local CAZyme database and output results in a variety of formats, use the following command structure:
+
+.. code-block:: bash
+
+   cazy_webscraper extract_data <path to local cazyme db> [options]
