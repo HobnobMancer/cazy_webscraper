@@ -35,16 +35,16 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, _SubParsersA
 from pathlib import Path
 from typing import List, Optional
 
-from src.scripts import get_gbk_seqs
+from src.scripts import get_ncbi_genomes
 
 
 def build_parser(
     subps: _SubParsersAction, parents: Optional[List[ArgumentParser]] = None
 ) -> None:
     parser = subps.add_parser(
-        "get_gbk_seqs",
-        description="Retrieve NCBI-GenBank sequences",
-        help="Download NCBI-GenBank sequences and import the sequences into the local CAZyme database",
+        "get_ncbi_genomes",
+        description="Get genomic assembly accessions from NCBI",
+        help="Download and store genomic assemblies from NCBI",
         formatter_class=ArgumentDefaultsHelpFormatter
     )
 
@@ -162,11 +162,14 @@ def build_parser(
         help="Only add seqs provided via JSON and/or FASTA file. Do not retrieve data from NCBI",
     )
     operational_group.add_argument(
-        "--seq_update",
-        dest="seq_update",
+        "--update",
+        dest="update",
         action="store_true",
         default=False,
-        help="Enable overwriting sequences in the database if the retrieved sequence is different",
+        help=(
+            "Update assembly data in the database.\n"
+            "Warning: updating records will overwrite existing data in the db/."
+        ),
     )
 
     utilities_group.add_argument(
@@ -210,4 +213,4 @@ def build_parser(
         help="Number of times to retry scraping a family or class page if error encountered",
     )
 
-    parser.set_defaults(func=get_gbk_seqs.main)
+    parser.set_defaults(func=get_ncbi_genomes.main)
