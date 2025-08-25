@@ -42,7 +42,7 @@ def build_parser(
     subps: _SubParsersAction, parents: Optional[List[ArgumentParser]] = None
 ) -> None:
     parser = subps.add_parser(
-        "get_gbk_seqs",
+        "get_ncbi_seqs",
         description="Retrieve NCBI-GenBank sequences",
         help="Download NCBI-GenBank sequences and import the sequences into the local CAZyme database",
         formatter_class=ArgumentDefaultsHelpFormatter

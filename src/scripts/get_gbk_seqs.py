@@ -122,7 +122,7 @@ def main(args: Namespace, time_stamp: str, start_time):
 
     if not seq_dict:
         logger.warning("No seqs to add to db")
-        return("get_gbk_seqs")
+        return("get_ncbi_seqs")
 
     update_ncbi_seqs(seq_dict, args.database, time_stamp, args.seq_update)
-    return("get_genbank_seqs")
+    return("get_ncbi_seqs")

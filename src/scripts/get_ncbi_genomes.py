@@ -34,13 +34,16 @@
 import logging
 from argparse import Namespace
 
+from tqdm import tqdm
+
 from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
 
+from src.databases.ncbi.genomes import get_ncbi_assembly_data
 from src.sql import sql_orm
 from src.sql.interface.connect import connect_existing_db
 from src.sql.interface.add_data.scrape_log import log_scrape_in_db
-from src.sql.sql_interface.add_data.add_genome_data import update_assebmly_data
+from src.sql.interface.add_data.add_genome_data import update_assembly_data
 from src.sql.interface.get_data.get_selected_gbks import get_ncbi_prot_accessions
 from src.utilities.parse_configuration import get_expansion_configuration
 from src.utilities.parse_configuration.accession_files import get_acc_from_file
@@ -100,7 +103,7 @@ def main(args: Namespace, time_stamp: str, start_time):
         gbk_accessions = set()
         refseq_accessions = set()
 
-        for accession in tqdm(seq_acc_to_retrieve, desc="Separting GenBank and RefSeq accessions"):
+        for accession in tqdm(seq_acc_to_retrieve, desc="Separating GenBank and RefSeq accessions"):
             if accession[2] == '_':
                 refseq_accessions.add(accession)
             else:
@@ -109,16 +112,19 @@ def main(args: Namespace, time_stamp: str, start_time):
         logger.info(f"Retrieved {len(gbk_accessions)} GenBank accessions from the local db")
         logger.info(f"Retrieved {len(refseq_accessions)} RefSeq accessions from the local db")
 
-        assembly_dict, genome_dict = get_ncbi_assembly_data(
-            gbk_accessions,
-            refseq_accessions,
+        # Combine both GenBank and RefSeq accessions into a single list
+        all_accessions = list(gbk_accessions) + list(refseq_accessions)
+        
+        assembly_dict = get_ncbi_assembly_data(
+            all_accessions,
             cache_dir,
             args,
         )   
 
-    if not assembly_dict and not genome_dict:
+    if not assembly_dict:
         logger.warning("No genomic assembly data to add to db")
         return("get_ncbi_genomes")
 
+    # You'll need to update this function call to match the new signature
     update_assembly_data(assembly_dict, args.database, time_stamp, args.update)
-    return("get_genbank_seqs")
+    return("get_ncbi_genomes")
