@@ -49,6 +49,7 @@ from src.sql.interface.connect import connect_existing_db
 from src.sql.interface.filter_data.protein import filter_to_db_acc
 from src.sql.interface.get_data.get_selected_gbks import get_ncbi_prot_accessions
 from src.utilities.parse_configuration import get_expansion_configuration
+from src.utilities.parse_configuration.accession_files import get_acc_from_file
 from src.utilities.sanity_checks.get_gbk_seqs import sanity_check_inputs
 
 
@@ -58,17 +59,13 @@ logger = logging.getLogger(__name__)
 def main(args: Namespace, time_stamp: str, start_time):
     sanity_check_inputs(args)
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
-    date_today = time_stamp.split("_")[0]
     Entrez.email = args.email
 
     if args.seq_update:
         logger.warning("Enabled updating sequences")
-    if args.cache_dir:
-        cache_dir = args.cache_dir
-        make_output_directory(cache_dir, args.force, args.nodelete_cache)
-    else:
-        cache_dir = cache_dir / "genbank_seq_retrieval"
-        make_output_directory(cache_dir, args.force, args.nodelete_cache)
+
+    cache_dir = args.cache_dir if args.cache_dir else (cache_dir / "ncbi_seq_retrieval")
+    make_output_directory(cache_dir, args.force, args.nodelete_cache)
 
     (
         config_dict,
@@ -107,8 +104,8 @@ def main(args: Namespace, time_stamp: str, start_time):
         # get accession of records to retrieve sequences for
         if args.genbank_accessions:
             seq_acc_to_retrieve = get_acc_from_file(
-                args,
-                start_time
+                args.genbank_accessions,
+                args.database,
             )
         else:
             seq_acc_to_retrieve = get_ncbi_prot_accessions(
@@ -128,29 +125,5 @@ def main(args: Namespace, time_stamp: str, start_time):
         logger.warning("No seqs to add to db")
         return("get_gbk_seqs")
 
-    update_ncbi_seqs(seq_dict, args.database, args.seq_update)
-    return("get_gbk_seqs")
-
-
-def get_acc_from_file(
-    args: Namespace,
-    start_time: str
-) -> set[str]:
-    """Get accession from user file and add to seq_acc_to_retrieve"""
-    logger.warning("Getting GenBank accessions from file: %s", args.genbank_accessions)
-    seq_acc_to_retrieve = set()
-    try:
-        with open(args.genbank_accessions, "r") as fh:
-            for line in fh:
-                seq_acc_to_retrieve.add(line.strip())
-    except FileNotFoundError:
-        logging.error(
-            "Could not find list of GenBank accessions at: %s\n"
-            "Check the path is correct\n"
-            "Terminating program", args.genbank_accessions
-        )
-        closing_message("Get GenBank seqs", start_time, args, early_term=True)
-
-    seq_acc_to_retrieve = filter_to_db_acc(args.database, seq_acc_to_retrieve)
-
-    return seq_acc_to_retrieve
+    update_ncbi_seqs(seq_dict, args.database, time_stamp, args.seq_update)
+    return("get_genbank_seqs")

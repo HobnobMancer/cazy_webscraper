@@ -42,10 +42,9 @@ logger = logging.getLogger(__name__)
 
 
 def sanity_check_inputs(args: argparse.Namespace) -> None:
-    if args.genbank_accessions and args.file_only:
-        error_message = """::ARGUMENT ERROR:: Cannot provide a list of protein accessions and disable seq retrieval.
-        args.genbank_accessions and args.file_only were both used, but the latter disables retrieval
-        of protein seqs from NCBI. Terminating program.
+    if (args.genbank_accessions or args.uniprot_accessions) and args.file_only:
+        error_message = """::ARGUMENT ERROR:: Cannot provide a list of protein accessions (GenBank and/or UniProt) 
+        and disable retrieval dating from NCBI (using the --file_only flag).
         """
         logger.error(termcolour(error_message, "red"))
         sys.exit(22)

@@ -38,7 +38,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-def filter_to_db_acc(db_path: Path, prot_acc: set[str], db_acc=False) -> set[str]:
+def filter_to_db_acc(db_path: Path, prot_acc: set[str], db_acc=False, table="Protein") -> set[str]:
     """Filter a set of protein accessions to only those that are in the local CAZym db"""
     filtered_acc = set()
 
@@ -46,7 +46,10 @@ def filter_to_db_acc(db_path: Path, prot_acc: set[str], db_acc=False) -> set[str
     cur = conn.cursor()
 
     placeholders = ','.join('?' for _ in prot_acc)
-    query = f"SELECT protein_accession FROM Protein WHERE protein_accession IN ({placeholders})"
+    if table == "Protein":
+        query = f"SELECT protein_accession FROM Proteins WHERE protein_accession IN ({placeholders})"
+    elif table == "UniProt":
+        query = f"SELECT uniprot_accession FROM UniProts WHERE uniprot_accession IN ({placeholders})"
     cur.execute(query, tuple(prot_acc))
     for row in cur:
         filtered_acc.add(row[0])
@@ -55,7 +58,7 @@ def filter_to_db_acc(db_path: Path, prot_acc: set[str], db_acc=False) -> set[str
         logger.warning(
             "%s accessions (retrieved from %s) were\n"
             "not found in the local CAZyme datbase %s\n"
-            "Sequences will not be retrieved from NCBI for these accessions.", 
+            "Data will not be retrieved for these accessions.", 
             (len(prot_acc) - len(filtered_acc)),
             ("the db and/or file of accessions" if db_acc else "json and/or fasta file"),
             (db_path)

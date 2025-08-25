@@ -42,7 +42,8 @@ from typing import List, Optional
 from src import __version__, __citation__
 from src.utilities.parsers.subcmds import (
     scrape_cazy_parser,
-    gbk_seq_parser
+    gbk_seq_parser,
+    gbk_tax_parser
 )
 
 
@@ -99,6 +100,7 @@ def build_parser(argv: Optional[List] = None) -> Namespace:
     # add subcommand parser
     scrape_cazy_parser.build_parser(subparsers)
     gbk_seq_parser.build_parser(subparsers)
+    gbk_tax_parser.build_parser(subparsers)
 
     # Parse arguments
     # The list comprehension is to allow PosixPaths to be defined and passed in testing

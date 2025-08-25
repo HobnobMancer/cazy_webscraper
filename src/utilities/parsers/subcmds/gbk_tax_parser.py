@@ -35,16 +35,16 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, _SubParsersA
 from pathlib import Path
 from typing import List, Optional
 
-from src.scripts import get_gbk_seqs
+from src.scripts import get_ncbi_tax
 
 
 def build_parser(
     subps: _SubParsersAction, parents: Optional[List[ArgumentParser]] = None
 ) -> None:
     parser = subps.add_parser(
-        "get_genbank_seqs",
-        description="Retrieve NCBI-GenBank sequences",
-        help="Download NCBI-GenBank sequences and import the sequences into the local CAZyme database",
+        "get_ncbi_taxs",
+        description="Retrieve lineage data from NCBI Taxonomy",
+        help="Download the latest taxonomy data from NCBI and update these taxs in the local CAZyme database",
         formatter_class=ArgumentDefaultsHelpFormatter
     )
 
@@ -130,27 +130,25 @@ def build_parser(
         default=None,
         help=(
             "Path to a text file containing a list of GenBank accessions to retrieve data for.\n"
-            "Note, accessions from the local DB will not be retrieved, only the accessions in this\n"
-            "this file will be used."
-        ),
+            "When used, accessions will not be retrieved from the local db using the filtering criteria"
+        )
     )
     operational_group.add_argument(
-        "--seq_dict",
+        "--uniprot_accessions",
         type=Path,
         default=None,
         help=(
-            "Path to a JSON file, keyed by GenBank accessions and valued by protein sequence\n"
-            "Add seqs in file to the local CAZyme database.\n"
-            "This is created by cazy_webscraper during get_gbk_seqs"
-        ),
+            "Path to a text file containing a list of UniProt accessions to retrieve data for.\n"
+            "When used, accessions will not be retrieved from the local db using the filtering criteria"
+        )
     )
     operational_group.add_argument(
-        "--seq_file",
+        "--lineage_cache",
         type=Path,
         default=None,
         help=(
-            "Path to a FASTA file of protein sequences\n"
-            "Add seqs in file to the local CAZyme database"
+            "Path to previously cached lineage dict containing lineages\n"
+            "and protein seq acc (called lineage_data.json)"
         ),
     )
     operational_group.add_argument(
@@ -160,13 +158,6 @@ def build_parser(
         action="store_true",
         default=False,
         help="Only add seqs provided via JSON and/or FASTA file. Do not retrieve data from NCBI",
-    )
-    operational_group.add_argument(
-        "--seq_update",
-        dest="seq_update",
-        action="store_true",
-        default=False,
-        help="Enable overwriting sequences in the database if the retrieved sequence is different",
     )
 
     utilities_group.add_argument(
@@ -210,4 +201,4 @@ def build_parser(
         help="Number of times to retry scraping a family or class page if error encountered",
     )
 
-    parser.set_defaults(func=get_gbk_seqs.main)
+    parser.set_defaults(func=get_ncbi_tax.main)
