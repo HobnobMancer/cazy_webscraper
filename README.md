@@ -423,6 +423,68 @@ Utility arguments:
 2. `seq_retrieved.txt` which list GenBank accessiosn for which a sequence was retrieved from GenBank
 3. JSON file keyed by GenBank accessions and valued by the retrieved protein sequence
 
+
+## Retrieving NCBI taxonomies
+
+Taxonomic opinions frequently change, and CAZy can fall out of sync with the latest taxonomic classifications with NCBI. To maintain an updated CAZyme database, `cazy_webscraper get_ncbi_taxs` can be used to retrieve the latest taxonomic classifications from NCBI for CAZymes in a local CAZyme database that meet the user's specified criteria. The downloaded taxonomic data is added to the local CAZyme database.
+
+The complete lineage data is retrieved from NCBI. Whereas CAZy lists only the kingdom, genus, species and strain, `cazy_webscraper` retrieves the full taxonomic lineage from NCBI and stores the complete lineage in the `NcbiTaxs` table in the local CAZyme database. This include:
+- Kingdom
+- Phylum
+- Class (stored as `tax_class` in the local CAZyme database due to keyword classes in Python)
+- Order(stored as `tax_order` in the local CAZyme database due to keyword classes in SQL)
+- Family
+- Genus
+- Species
+- Strain
+
+To download the taxonomic classifications from NCBI for all proteins in a local CAZyme database:
+```bash
+cazy_webscraper get_ncbi_taxs <path to cazyme db> <email address>
+```
+
+REQUIRED arguments 
+  database              Path to local CAZy database
+  email                 User email address, requirement of NCBI-Entrez. The address is not stored by cazy_webscraper
+
+OPTIONAL arguments
+
+Filtering arguments:
+  --classes CLASSES     Classes from which all families are to be scraped. Separate classes by ',' (default: None)
+  --families FAMILIES   Families to scrape. Separate families by commas 'GH1,GH2' (default: None)
+  --kingdoms KINGDOMS   Kingdoms to scrape. Separate by a single comma. Options= archaea, bacteria, eukaryota, viruses, unclassified (not case
+                        sensitive) (default: None)
+  --genera GENERA       Genera to restrict the scrape to (default: None)
+  --species SPECIES     Species (written as Genus Species) to restrict the scrape to (default: None)
+  --strains STRAINS     Specific strains of organisms to restrict the scrape to (written as Genus Species Strain) (default: None)
+  --ec_filter EC_FILTER
+                        Limit retrieval to proteins annotated with the provided EC numbers. Separate EC numbers with single commas (default: None)
+
+Operational arguments:
+  -c Config file, --config Config file
+                        Path to configuration file. Default: None, scrapes entire database (default: None)
+  --genbank_accessions GENBANK_ACCESSIONS
+                        Path to a text file containing a list of GenBank accessions to retrieve data for. When used, accessions will not be retrieved
+                        from the local db using the filtering criteria (default: None)
+  --uniprot_accessions UNIPROT_ACCESSIONS
+                        Path to a text file containing a list of UniProt accessions to retrieve data for. When used, accessions will not be retrieved
+                        from the local db using the filtering criteria (default: None)
+  --lineage_cache LINEAGE_CACHE
+                        Path to previously cached lineage dict containing lineages and protein seq acc (called lineage_data.json) (default: None)
+  -F, --file_only       Only add seqs provided via JSON and/or FASTA file. Do not retrieve data from NCBI (default: False)
+
+Utility arguments:
+  --batch_size BATCH_SIZE
+                        Batch size for queries sent to NCBI.Entrez (default: 150)
+  --cache_dir CACHE_DIR
+                        Path to cache directory (default: None)
+  --cazy_synonyms CAZY_SYNONYMS
+                        Path to JSON file containing CAZy class synoymn names (default: None)
+  -f, --force           Force writing in existing cache directory (default: False)
+  --nodelete_cache      Do not delete content in existing cache dir (default: False)
+  -r RETRIES, --retries RETRIES
+                        Number of times to retry scraping a family or class page if error encountered (default: 10)
+
 ## Extracting protein sequences from the local CAZyme database and building a BLAST database
 
 Protein sequences from GenBank and UniProt that are stored in the local CAZyme database can be extracted using `cazy_webscraper`, and written to any combination of:
@@ -597,66 +659,6 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
 
-## Retrieving NCBI taxonomies
-
-Taxonomic opinions frequently change, and CAZy can fall out of sync with the latest taxonomic classifications with NCBI. To maintain an updated CAZyme database, `cazy_webscraper get_ncbi_taxs` can be used to retrieve the latest taxonomic classifications from NCBI for CAZymes in a local CAZyme database that meet the user's specified criteria. The downloaded taxonomic data is added to the local CAZyme database.
-
-The complete lineage data is retrieved from NCBI. Whereas CAZy lists only the kingdom, genus, species and strain, `cazy_webscraper` retrieves the full taxonomic lineage from NCBI and stores the complete lineage in the `NcbiTaxs` table in the local CAZyme database. This include:
-- Kingdom
-- Phylum
-- Class (stored as `tax_class` in the local CAZyme database due to keyword classes in Python)
-- Order(stored as `tax_order` in the local CAZyme database due to keyword classes in SQL)
-- Family
-- Genus
-- Species
-- Strain
-
-To download the taxonomic classifications from NCBI for all proteins in a local CAZyme database:
-```bash
-cazy_webscraper get_ncbi_taxs <path to cazyme db> <email address>
-```
-
-  database              Path to local CAZy database
-  email                 User email address, requirement of NCBI-Entrez. The address is not stored by cazy_webscraper
-
-options:
-  -h, --help            show this help message and exit
-
-Filtering arguments:
-  --classes CLASSES     Classes from which all families are to be scraped. Separate classes by ',' (default: None)
-  --families FAMILIES   Families to scrape. Separate families by commas 'GH1,GH2' (default: None)
-  --kingdoms KINGDOMS   Kingdoms to scrape. Separate by a single comma. Options= archaea, bacteria, eukaryota, viruses, unclassified (not case
-                        sensitive) (default: None)
-  --genera GENERA       Genera to restrict the scrape to (default: None)
-  --species SPECIES     Species (written as Genus Species) to restrict the scrape to (default: None)
-  --strains STRAINS     Specific strains of organisms to restrict the scrape to (written as Genus Species Strain) (default: None)
-  --ec_filter EC_FILTER
-                        Limit retrieval to proteins annotated with the provided EC numbers. Separate EC numbers with single commas (default: None)
-
-Operational arguments:
-  -c Config file, --config Config file
-                        Path to configuration file. Default: None, scrapes entire database (default: None)
-  --genbank_accessions GENBANK_ACCESSIONS
-                        Path to a text file containing a list of GenBank accessions to retrieve data for. When used, accessions will not be retrieved
-                        from the local db using the filtering criteria (default: None)
-  --uniprot_accessions UNIPROT_ACCESSIONS
-                        Path to a text file containing a list of UniProt accessions to retrieve data for. When used, accessions will not be retrieved
-                        from the local db using the filtering criteria (default: None)
-  --lineage_cache LINEAGE_CACHE
-                        Path to previously cached lineage dict containing lineages and protein seq acc (called lineage_data.json) (default: None)
-  -F, --file_only       Only add seqs provided via JSON and/or FASTA file. Do not retrieve data from NCBI (default: False)
-
-Utility arguments:
-  --batch_size BATCH_SIZE
-                        Batch size for queries sent to NCBI.Entrez (default: 150)
-  --cache_dir CACHE_DIR
-                        Path to cache directory (default: None)
-  --cazy_synonyms CAZY_SYNONYMS
-                        Path to JSON file containing CAZy class synoymn names (default: None)
-  -f, --force           Force writing in existing cache directory (default: False)
-  --nodelete_cache      Do not delete content in existing cache dir (default: False)
-  -r RETRIES, --retries RETRIES
-                        Number of times to retry scraping a family or class page if error encountered (default: 10)
 
 ## Retrieving genomic assembly data from NCBI
 

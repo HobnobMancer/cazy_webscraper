@@ -126,9 +126,9 @@ For details and updates on development, please consult the `GitHub repository <h
    
    installation
    quickstart
-   scrapeCazy
-   database
-   schema
+   01scrapeCazy
+   02genbankSeqs
+   03ncbiTaxs
    uniprot
    uniprottutorial
    genbank
@@ -137,14 +137,13 @@ For details and updates on development, please consult the `GitHub repository <h
    sequencetutorial
    pdb
    pdbtutorial
-   ncbitax
-   ncbitaxtutorial
    genomes
    genomestutorial
    gtdbtax
    gtdbtaxtutorial
    api
    apitutorial
+   database
    cache
    integrate
    contributing
