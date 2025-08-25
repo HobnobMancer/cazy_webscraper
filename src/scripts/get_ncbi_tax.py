@@ -38,8 +38,8 @@ from argparse import Namespace
 from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
 
-from src import closing_message
 from src.cache.ncbi import load_lineage_cache
+from src.databases.ncbi.taxonomies import get_ncbi_tax_ids
 from src.sql import sql_orm
 from src.sql.interface.add_data.scrape_log import log_scrape_in_db
 from src.sql.interface.connect import connect_existing_db
@@ -109,10 +109,12 @@ def main(args: Namespace, time_stamp: str, start_time):
                 ec_filters,
                 args.database
             )
+
         cached_prots = {prot for prots in tax_prot_dict.values() for prot in prots}
         ncbi_acc_to_retrieve = [prot for prot in ncbi_acc_to_retrieve if prot not in cached_prots]
+
         if ncbi_acc_to_retrieve:
-            # tax_prot_dict.update(get_taxs_from_ncbi(ncbi_acc_to_retrieve, cache_dir, args))
+            tax_prot_dict.update(get_ncbi_tax_ids(ncbi_acc_to_retrieve, cache_dir, args))
             pass
 
-    closing_message("get_ncbi_taxs", start_time, args)
+    return("get_ncbi_taxs")

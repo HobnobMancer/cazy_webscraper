@@ -45,7 +45,7 @@ from saintBioutils.misc import get_chunks_list
 from tqdm import tqdm
 from typing import Tuple
 
-from src.cache.ncbi import cache_connection_errors
+from src.cache.ncbi import cache_connection_errors, cache_invalid_ids
 from src.databases.ncbi import post_acc_to_entrez, get_protein_accession, validate_batch
 
 
@@ -105,12 +105,9 @@ def get_seqs_from_ncbi(
 
     if connection_err_cache:
         cache_connection_errors(connection_err_cache, cache_dir)
+    
     if invalid_id_cache:
-        # Cache invalid IDs to a file in cache_dir
-        invalid_id_path = Path(cache_dir) / "invalid_id_cache.txt"
-        with open(invalid_id_path, "a") as f:
-            for invalid_id in invalid_id_cache:
-                f.write(f"{invalid_id}\n")
+        cache_invalid_ids(invalid_id_cache, cache_dir)
 
     return seq_dict
 

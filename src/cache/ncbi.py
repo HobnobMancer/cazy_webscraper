@@ -140,6 +140,12 @@ def cache_connection_errors(batches: list[list[str]], cache_dir: Path):
             fh.write(f"{text}\n")
 
 
+def cache_invalid_ids(invalid_ids: set[str], cache_dir: Path):
+    invalid_id_path = Path(cache_dir) / "invalid_id_cache.txt"
+    with open(invalid_id_path, "a") as f:
+        for invalid_id in invalid_ids:
+            f.write(f"{invalid_id}\n")
+
 def load_lineage_cache(lineage_cache: Path) -> dict[str, list[str]]:
     try:
         with open(lineage_cache, "r") as fh:

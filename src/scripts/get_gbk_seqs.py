@@ -126,4 +126,4 @@ def main(args: Namespace, time_stamp: str, start_time):
         return("get_gbk_seqs")
 
     update_ncbi_seqs(seq_dict, args.database, time_stamp, args.seq_update)
-    return("get_gbk_seqs")
+    return("get_genbank_seqs")
