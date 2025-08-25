@@ -1,8 +1,8 @@
-====================
-Usage: Scraping CAZy
-====================
+==================
+How to scrape CAZy
+==================
 
-``cazy_webscraper`` can be used to retrieve user-specified data sets from the CAZy database. The ``cazy_webscraper`` application can be invoked via the command line
+``cazy_webscraper download`` can be used to retrieve user-specified data sets from the CAZy database. The ``cazy_webscraper`` application can be invoked via the command line
 
 To download the entire CAZy dataset, and save the data set to the current working directory with the final name 
 ``cazy_webscraper_<date>_<time>.db``, use the following command structure:  
@@ -18,20 +18,6 @@ To download the entire CAZy dataset, and save the data set to the current workin
 
 .. NOTE::
   Typically, downloading the entire CAZy dataset takes 5-15 minutes, although this is dependent on the amount of available memory.
-
-To print citation information (including the citations of third party tools used by ``cazy_webscraper``):
-
-.. code-block:: bash
-  
-   cazy_webscraper --citation
-
-
-To print version information (including the versions of third party tools used by ``cazy_webscraper``):
-
-.. code-block:: bash
-  
-   cazy_webscraper --version
-
 
 --------------------
 Command line options
@@ -89,7 +75,7 @@ Utility arguments:
 Defining CAZy families and classes to scrape
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The 'definition' arguments (e.g. ``--classes`` and ``--families``) indicate which groups of data will be selected for scraping from CAZy, e.g.
+The ``--classes`` and ``--families`` arguments indicate which groups of data will be selected for scraping from CAZy, e.g.
 
 .. code-block:: bash
 
@@ -113,9 +99,65 @@ and members of distinct families and classes can be selected simultaneously, e.g
   CAZy families should be named using the standard CAZy syntax.
   GH1 is **accepted** (case-insensitive). "Glycoside hydrolase 1" is **not** accepted.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Specifying output data location
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
+Taxonomic Filters
+^^^^^^^^^^^^^^^^^
+
+CAZy classifies source organisms under one of 5 kingdoms:
+
+* Archaea
+* Bacteria
+* Eukaryota
+* Viruses
+* Unclassified
+
+To restrict the scraping of CAZy to retrieve proteins that are only derived from taxonomic lineages
+of interest use the ``-kingdoms``, ``--genera``, ``--species`` and ``--strains`` flags, in any combination:
+
+
+Scrape by kingdom:
+
+.. code-block:: bash
+
+   cazy_webscraper --kingdoms bacteria,eukaryota
+
+Scrape by genus:
+
+.. code-block:: bash
+
+   cazy_webscraper --genera Aspergillus,Trichoderma
+
+Scrape by species (use quotes if there are spaces):
+
+.. code-block:: bash
+
+   cazy_webscraper --species "Aspergillus niger,Trichoderma reesei"
+
+Scrape by strain:
+
+.. code-block:: bash
+
+   cazy_webscraper --strains "Aspergillus niger ATCC 1015"
+
+You can combine these filters as needed. For example, to retrieve all CAZymes from viral species, Aspergillus genus, and specific Layia species:
+
+.. code-block:: bash
+
+   cazy_webscraper --kingdoms viruses --genera Aspergillus --species "Layia carnosa,Layia chrysanthemoides"
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Retrieving Subfamily Annotations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To store CAZy subfamily annotations in the local CAZyme database, use the ``--subfamilies`` flag:
+
+.. code-block:: bash
+
+   cazy_webscraper --families GH3 --subfamilies
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Build a new local CAZyme database
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default ``cazy_webscraper`` writes out a SQL database file to the current working directory, with a 
 filename with the following structure ``cazy_webscraper_<date>_<time>.db``, where the date and time mark 
@@ -129,6 +171,10 @@ To specify the location of the output database the ``--db_output`` / ``-o`` opti
 
 will write an SQL database file to ``GH169_output.db``.
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Overwrite an existing local CAZyme database
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 If the target output file already exists, ``cazy_webscraper`` by default will not overwrite the existing file and will terminate. To 
 overwrite an existing file use the ``--force`` / ``-f`` options:
 
@@ -136,27 +182,9 @@ overwrite an existing file use the ``--force`` / ``-f`` options:
 
   cazy_webscraper download <email> --families GH169 -o GH169_output.db -f
 
-A multi-layered path can be provided to ``cazy_webscraper``. If any of the parent directories for the target 
-output path do not exist, ``cazy_webscraper`` will build the necessary output direcotires. In the following command if 
-the ``cazy`` and ``families`` directories do not exist, ``cazy_webscraper`` will build these directories:
-
-.. code-block:: bash
-
-  cazy_webscraper download <email> --families GH169 -o cazy/families/GH169_output.db 
-
-If any of the output directories exist, by default, ``cazy_webscraper`` will terminate. To write to an existing output 
-directory use the ``--force`` / ``-f`` options:
-
-.. code-block:: bash
-
-  cazy_webscraper download <email> --families GH169 -o GH169_output.db -f
-
-By default ``cazy_webscraper`` will delete the existing content in the existing output files. To not delete the content 
-in the existing output directories use the ``--nodelete`` / ``-n``:
-
-.. code-block:: bash
-
-  cazy_webscraper download <email> --families GH169 -o GH169_output.db -f -n
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Adding data to an existing local CAZyme database
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you already have an existing CAZy database, then specifying this database with the ``-d`` / ``--database`` option will cause the scraper to use the existing database rather than creating a new one:
 
@@ -164,33 +192,19 @@ If you already have an existing CAZy database, then specifying this database wit
 
   cazy_webscraper download <email> --families GH169 -d GH169/GH169_output.db
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Filtering CAZy families and classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
+Other Useful Options
+^^^^^^^^^^^^^^^^^^^^
 
-Options that apply a *filter* to restrict which CAZymes from a class or familiy are scraped from CAZy (e.g.  ``--families`` and ``--species``) may be applied in combination. For example:
+- Use ``--help`` for a summary of all options
+- Use ``--cazy_data <file>`` to scrape from a downloaded CAZy text file.
+- Use ``--log <file>`` to write terminal output to a log file.
+- Use ``--verbose`` for detailed logging.
+- Use ``--timeout <seconds>`` to set the connection timeout.
 
-.. code-block:: bash
-
-  cazy_webscraper download <email> --families GH169 \
-      --species "Escherichia coli" \
-      -o GH169_speciesEscherichia_coli.db
-
-will download only the CAZymes in the GH169 family that are from the species *Escherichia coli*. The command:
-
-.. code-block:: bash
-
-  cazy_webscraper download <email> --families PL14,PL15,PL16 \
-      -o PL14_ec1.2.3.4_kingdomBacteria
-
-will download only CAZymes in the PL14, PL15 and PL16 families that are from the kingdom *Bacteria*.
-
-.. NOTE::
-  ``cazy_webscraper`` input options can also be specified in a **YAML configuration file**, to enable transparency and reproducibility.
-
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Configuration using a YAML file
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All command-line options to control CAZy scraping can be provided instead *via* a YAML configuration file. This supports reproducible documentation of ``cazy_webscraper`` usage.
 

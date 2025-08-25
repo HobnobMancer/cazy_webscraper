@@ -126,8 +126,7 @@ For details and updates on development, please consult the `GitHub repository <h
    
    installation
    quickstart
-   usage
-   tutorial
+   scrapeCazy
    database
    schema
    uniprot
