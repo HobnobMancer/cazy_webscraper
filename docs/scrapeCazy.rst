@@ -119,31 +119,34 @@ Scrape by kingdom:
 
 .. code-block:: bash
 
-   cazy_webscraper --kingdoms bacteria,eukaryota
+   cazy_webscraper download --kingdoms bacteria,eukaryota
 
 Scrape by genus:
 
 .. code-block:: bash
 
-   cazy_webscraper --genera Aspergillus,Trichoderma
+   cazy_webscraper download --genera Aspergillus,Trichoderma
 
 Scrape by species (use quotes if there are spaces):
 
 .. code-block:: bash
 
-   cazy_webscraper --species "Aspergillus niger,Trichoderma reesei"
+   cazy_webscraper download --species "Aspergillus niger,Trichoderma reesei"
 
 Scrape by strain:
 
 .. code-block:: bash
 
-   cazy_webscraper --strains "Aspergillus niger ATCC 1015"
+   cazy_webscraper download --strains "Aspergillus niger ATCC 1015"
 
 You can combine these filters as needed. For example, to retrieve all CAZymes from viral species, Aspergillus genus, and specific Layia species:
 
 .. code-block:: bash
 
-   cazy_webscraper --kingdoms viruses --genera Aspergillus --species "Layia carnosa,Layia chrysanthemoides"
+   cazy_webscraper download \
+       --kingdoms viruses \
+       --genera Aspergillus \
+       --species "Layia carnosa,Layia chrysanthemoides"
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Retrieving Subfamily Annotations
@@ -153,7 +156,7 @@ To store CAZy subfamily annotations in the local CAZyme database, use the ``--su
 
 .. code-block:: bash
 
-   cazy_webscraper --families GH3 --subfamilies
+   cazy_webscraper download --families GH3 --subfamilies
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Build a new local CAZyme database
