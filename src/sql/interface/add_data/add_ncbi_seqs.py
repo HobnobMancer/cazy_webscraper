@@ -56,16 +56,16 @@ def update_ncbi_seqs(seq_dict: dict[str, Seq], db: Path, time_stamp: str, update
         if protein_acc not in protein_table:
             logger.warning("Retrieved seq for %s but this protein acc is not in the local db", protein_acc)
             continue
-        if not seq_dict[protein_acc]:
+        if not protein_table[protein_acc]['sequence']:
             records_to_update.add( (str(seq), time_stamp, protein_acc) )
-        elif seq_dict[protein_acc] and update:
+        elif protein_table[protein_acc]['sequence'] and update:
             records_to_update.add( (str(seq), time_stamp, protein_acc) )
 
     if records_to_update:
         logger.warning("Updating %s seq records in the local CAZyme db", len(records_to_update))
         for record in records_to_update:
             conn.execute(
-                """UPDATE Proteins SET sequence = ? AND seq_update_data = ? WHERE protein_accession = ?""",
+                "UPDATE Proteins SET sequence = ?, seq_update_date = ? WHERE protein_accession = ?",
                 record
             )
 

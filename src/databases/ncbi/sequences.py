@@ -105,7 +105,7 @@ def get_seqs_from_ncbi(
 
     if connection_err_cache:
         cache_connection_errors(connection_err_cache, cache_dir)
-    
+
     if invalid_id_cache:
         cache_invalid_ids(invalid_id_cache, cache_dir)
 

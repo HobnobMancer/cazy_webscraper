@@ -104,7 +104,7 @@ def main(args: Namespace, time_stamp: str, start_time):
         refseq_accessions = set()
 
         for accession in tqdm(seq_acc_to_retrieve, desc="Separating GenBank and RefSeq accessions"):
-            if accession[2] == '_':
+            if accession.startswith(("NP_", "XP_", "WP_")):
                 refseq_accessions.add(accession)
             else:
                 gbk_accessions.add(accession)
@@ -114,7 +114,7 @@ def main(args: Namespace, time_stamp: str, start_time):
 
         # Combine both GenBank and RefSeq accessions into a single list
         all_accessions = list(gbk_accessions) + list(refseq_accessions)
-        
+
         assembly_dict = get_ncbi_assembly_data(
             all_accessions,
             cache_dir,
@@ -125,6 +125,5 @@ def main(args: Namespace, time_stamp: str, start_time):
         logger.warning("No genomic assembly data to add to db")
         return("get_ncbi_genomes")
 
-    # You'll need to update this function call to match the new signature
     update_assembly_data(assembly_dict, args.database, time_stamp, args.update)
     return("get_ncbi_genomes")
