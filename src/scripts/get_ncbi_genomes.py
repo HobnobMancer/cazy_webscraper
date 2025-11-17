@@ -29,7 +29,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Retrieve genomic assembly accessions from GenBank and populate the local database"""
+"""Retrieve genomic genome accessions from GenBank and populate the local database"""
 
 import logging
 from argparse import Namespace
@@ -39,11 +39,11 @@ from tqdm import tqdm
 from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
 
-from src.databases.ncbi.genomes import get_ncbi_assembly_data
+from src.databases.ncbi.genomes import get_ncbi_genome_data
 from src.sql import sql_orm
 from src.sql.interface.connect import connect_existing_db
 from src.sql.interface.add_data.scrape_log import log_scrape_in_db
-from src.sql.interface.add_data.add_genome_data import update_assembly_data
+from src.sql.interface.add_data.add_genome_data import update_genome_data
 from src.sql.interface.get_data.get_selected_gbks import get_ncbi_prot_accessions
 from src.utilities.parse_configuration import get_expansion_configuration
 from src.utilities.parse_configuration.accession_files import get_acc_from_file
@@ -97,7 +97,7 @@ def main(args: Namespace, time_stamp: str, start_time):
             args.database
         )
 
-    assembly_dict, genome_dict = None, None
+    genome_dict = None
 
     if seq_acc_to_retrieve:
         gbk_accessions = set()
@@ -115,15 +115,17 @@ def main(args: Namespace, time_stamp: str, start_time):
         # Combine both GenBank and RefSeq accessions into a single list
         all_accessions = list(gbk_accessions) + list(refseq_accessions)
 
-        assembly_dict = get_ncbi_assembly_data(
+        genome_dict = get_ncbi_genome_data(
             all_accessions,
             cache_dir,
             args,
         )   
 
-    if not assembly_dict:
-        logger.warning("No genomic assembly data to add to db")
+    if not genome_dict:
+        logger.warning("No genomic genome data to add to db")
         return("get_ncbi_genomes")
+    
+    print("genome dict: ", genome_dict)
 
-    update_assembly_data(assembly_dict, args.database, time_stamp, args.update)
+    update_genome_data(genome_dict, args.database, time_stamp, args.update)
     return("get_ncbi_genomes")

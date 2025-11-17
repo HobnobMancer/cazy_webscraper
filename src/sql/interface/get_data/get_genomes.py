@@ -38,14 +38,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Retrieve proteins with no assembly data in the local database."""
+"""Retrieve proteins with no genome data in the local database."""
 
 import sqlite3
 from tqdm import tqdm
 
 
-def get_no_assembly_proteins(gbk_dict, connection):
-    """Filter a gbk_dict to retain only those proteins with no assembly data in the local db
+def get_no_genome_proteins(gbk_dict, connection):
+    """Filter a gbk_dict to retain only those proteins with no genome data in the local db
 
     :param gbk_dict: dict, {protein gbk acc: db id}
     :param connection: open sqlite db connection
@@ -53,7 +53,7 @@ def get_no_assembly_proteins(gbk_dict, connection):
     Return gbk_dict"""
     filtered_gbk_dict = {}
 
-    for gbk_acc in tqdm(gbk_dict, desc="Filtering for proteins with no assembly data in the db"):
+    for gbk_acc in tqdm(gbk_dict, desc="Filtering for proteins with no genome data in the db"):
         cursor = connection.execute(
             """SELECT Genbanks.genbank_id, Genomes.genome_id 
                FROM Genbanks 
@@ -71,7 +71,7 @@ def get_no_assembly_proteins(gbk_dict, connection):
 
 
 def get_records_to_update(gbk_dict, connection):
-    """Filter a gbk_dict to retain only those proteins with no assembly data in the local db
+    """Filter a gbk_dict to retain only those proteins with no genome data in the local db
 
     :param gbk_dict: dict, {protein gbk acc: db id}
     :param connection: open sqlite db connection
@@ -80,7 +80,7 @@ def get_records_to_update(gbk_dict, connection):
     update_gbk_dict = {}  # proteins to update the new genome data
     add_gbk_dict = {}  # proteins to add new genome data
 
-    for gbk_acc in tqdm(gbk_dict, desc="Filtering for proteins with no assembly data in the db"):
+    for gbk_acc in tqdm(gbk_dict, desc="Filtering for proteins with no genome data in the db"):
         cursor = connection.execute(
             """SELECT Genbanks.genbank_id, Genomes.genome_id 
                FROM Genbanks 
@@ -99,13 +99,13 @@ def get_records_to_update(gbk_dict, connection):
     return update_gbk_dict, add_gbk_dict
 
 
-def get_assembly_table(genomes_of_interest, connection):
-    """Load assembly table into a dict
+def get_genome_table(genomes_of_interest, connection):
+    """Load genome table into a dict
 
-    :param genomes_of_interest: list of assembly names
+    :param genomes_of_interest: list of genome names
     :param connection: open sql db connection
 
-    Return dict {assembly name: db id}
+    Return dict {genome name: db id}
     """
     if not genomes_of_interest:
         return {}
@@ -114,16 +114,16 @@ def get_assembly_table(genomes_of_interest, connection):
     placeholders = ','.join('?' * len(genomes_of_interest))
     
     cursor = connection.execute(
-        f"""SELECT assembly_name, genome_id 
+        f"""SELECT genome_name, genome_id 
             FROM Genomes 
-            WHERE assembly_name IN ({placeholders})""",
+            WHERE genome_name IN ({placeholders})""",
         genomes_of_interest
     )
     
     db_genome_dict = {}
     for row in tqdm(cursor.fetchall(), desc="Retrieving genome records from the local db"):
-        assembly_name, genome_id = row
-        db_genome_dict[assembly_name] = genome_id
+        genome_name, genome_id = row
+        db_genome_dict[genome_name] = genome_id
 
     return db_genome_dict
 

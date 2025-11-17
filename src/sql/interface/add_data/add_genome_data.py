@@ -1,66 +1,64 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Add genomic assembly information to the local CAZyme database."""
+"""Add genomic genome information to the local CAZyme database."""
 
 import logging
-from tqdm import tqdm
-from typing import Dict
-from src.sql.interface.get_data.get_assemblies import (
-    get_assembly_table,
+from src.sql.interface.get_data.get_genomes import (
+    get_genome_table,
     get_gbk_genome_table_data,
 )
-from src.databases.ncbi.genomes import NcbiAssembly
+from src.databases.ncbi.genomes import NcbiGenome
 
 logger = logging.getLogger(__name__)
 
-def update_assembly_data(assembly_prot_dict: Dict[str, list], ncbi_assembly_dict: Dict[str, NcbiAssembly], gbk_dict: Dict[str, int], connection, args):
+def update_genome_data(genome_prot_dict: dict, ncbi_genome_dict: dict, gbk_dict: dict, args):
     """Add/update genomic data and link proteins with genomes in the local database.
 
     Args:
-        assembly_prot_dict: {assembly_name: [protein_accs]}
-        ncbi_assembly_dict: {assembly_name: NcbiAssembly}
+        genome_prot_dict: {genome_name: [protein_accs]}
+        ncbi_genome_dict: {genome_name: NcbiGenome}
         gbk_dict: {protein_acc: genbank_id}
         connection: Database connection
         args: Command line arguments
     """
-    # Get assembly names from the NcbiAssembly objects
-    assembly_names = list(ncbi_assembly_dict.keys())
-    db_genome_table_dict = get_assembly_table(assembly_names, connection)
+    # Get genome names from the NcbiGenome objects
+    genome_names = list(ncbi_genome_dict.keys())
+    db_genome_table_dict = get_genome_table(genome_names, connection)
     genomes_to_add, genomes_to_update = [], []
 
-    for assembly_name in assembly_names:
-        (genomes_to_update if assembly_name in db_genome_table_dict else genomes_to_add).append(assembly_name)
+    for genome_name in genome_names:
+        (genomes_to_update if genome_name in db_genome_table_dict else genomes_to_add).append(genome_name)
 
     genomes_of_interest = genomes_to_add + genomes_to_update
 
     if args.update and genomes_to_update:
-        update_genomic_data(genomes_to_update, db_genome_table_dict, ncbi_assembly_dict, connection)
-        db_genome_table_dict = get_assembly_table(genomes_of_interest, connection)
+        update_genomic_data(genomes_to_update, db_genome_table_dict, ncbi_genome_dict, connection)
+        db_genome_table_dict = get_genome_table(genomes_of_interest, connection)
 
     if genomes_to_add:
-        add_genomic_data(ncbi_assembly_dict, genomes_to_add, connection)
-        db_genome_table_dict = get_assembly_table(genomes_of_interest, connection)
+        add_genomic_data(ncbi_genome_dict, genomes_to_add, connection)
+        db_genome_table_dict = get_genome_table(genomes_of_interest, connection)
 
-    add_prot_genome_relationships(assembly_prot_dict, gbk_dict, db_genome_table_dict, connection)
+    add_prot_genome_relationships(genome_prot_dict, gbk_dict, db_genome_table_dict, connection)
 
-def add_genomic_data(ncbi_assembly_dict: Dict[str, NcbiAssembly], genomes_of_interest: list, connection):
-    """Add new genomic assembly data to the database.
+def add_genomic_data(ncbi_genome_dict: dict, genomes_of_interest: list, connection):
+    """Add new genomic genome data to the database.
 
     Args:
-        ncbi_assembly_dict: Dictionary mapping assembly names to NcbiAssembly objects
-        genomes_of_interest: List of assembly names to add
+        ncbi_genome_dict: Dictionary mapping genome names to NcbiGenome objects
+        genomes_of_interest: List of genome names to add
         connection: Database connection
     """
     records = []
     for name in genomes_of_interest:
-        if name in ncbi_assembly_dict:
-            assembly = ncbi_assembly_dict[name]
+        if name in ncbi_genome_dict:
+            genome = ncbi_genome_dict[name]
             records.append((
                 name,
-                assembly.genbank_acc,
-                assembly.assembly_id,
-                assembly.refseq_acc,
-                assembly.assembly_id,  # Using assembly_id for both since we may not have separate UIDs
+                genome.genbank_acc,
+                genome.genome_id,
+                genome.refseq_acc,
+                genome.genome_id,  # Using genome_id for both since we may not have separate UIDs
             ))
     
     if records:
@@ -68,7 +66,7 @@ def add_genomic_data(ncbi_assembly_dict: Dict[str, NcbiAssembly], genomes_of_int
             with connection:
                 connection.executemany(
                     """INSERT INTO Genomes (
-                        assembly_name, gbk_version_accession, gbk_ncbi_id,
+                        genome_name, gbk_version_accession, gbk_ncbi_id,
                         refseq_version_accession, refseq_ncbi_id
                     ) VALUES (?, ?, ?, ?, ?)""",
                     records
@@ -77,28 +75,28 @@ def add_genomic_data(ncbi_assembly_dict: Dict[str, NcbiAssembly], genomes_of_int
         except Exception as e:
             logger.error(f"Failed to insert genomic data: {e}")
 
-def update_genomic_data(genomes_of_interest: list, genome_table_dict: Dict[str, int], ncbi_assembly_dict: Dict[str, NcbiAssembly], connection, unit_test=False):
-    """Update existing genomic assembly data in the database.
+def update_genomic_data(genomes_of_interest: list, genome_table_dict: dict, ncbi_genome_dict: dict, connection, unit_test=False):
+    """Update existing genomic genome data in the database.
     
     Args:
-        genomes_of_interest: List of assembly names to update
-        genome_table_dict: Dictionary mapping assembly names to database IDs
-        ncbi_assembly_dict: Dictionary mapping assembly names to NcbiAssembly objects
+        genomes_of_interest: List of genome names to update
+        genome_table_dict: Dictionary mapping genome names to database IDs
+        ncbi_genome_dict: Dictionary mapping genome names to NcbiGenome objects
         connection: Database connection
         unit_test: Whether this is a unit test (for rollback)
     """
     for name in genomes_of_interest:
-        if name not in ncbi_assembly_dict:
+        if name not in ncbi_genome_dict:
             continue
             
         db_id = genome_table_dict[name]
-        assembly = ncbi_assembly_dict[name]
+        genome = ncbi_genome_dict[name]
         
         vals = (
-            assembly.genbank_acc,
-            assembly.assembly_id,
-            assembly.refseq_acc,
-            assembly.assembly_id,  # Using assembly_id for both since we may not have separate UIDs
+            genome.genbank_acc,
+            genome.genome_id,
+            genome.refseq_acc,
+            genome.genome_id,  # Using genome_id for both since we may not have separate UIDs
             db_id,
         )
         
@@ -116,24 +114,24 @@ def update_genomic_data(genomes_of_interest: list, genome_table_dict: Dict[str, 
         except Exception as e:
             logger.error(f"Failed to update genome {name}: {e}")
 
-def add_prot_genome_relationships(assembly_prot_dict: Dict[str, list], gbk_dict: Dict[str, int], db_genome_table_dict: Dict[str, int], connection):
+def add_prot_genome_relationships(genome_prot_dict: dict[str, list], gbk_dict: dict[str, int], db_genome_table_dict: dict[str, int], connection):
     """Link proteins and genomes in the Genbanks_Genomes table.
     
     Args:
-        assembly_prot_dict: Dictionary mapping assembly names to lists of protein accessions
+        genome_prot_dict: Dictionary mapping genome names to lists of protein accessions
         gbk_dict: Dictionary mapping protein accessions to GenBank IDs
-        db_genome_table_dict: Dictionary mapping assembly names to genome IDs
+        db_genome_table_dict: Dictionary mapping genome names to genome IDs
         connection: Database connection
     """
     existing = get_gbk_genome_table_data(connection)
     to_add = set()
     
-    for assembly_name, protein_accs in assembly_prot_dict.items():
-        if assembly_name not in db_genome_table_dict:
-            logger.warning(f"Assembly {assembly_name} not found in database")
+    for genome_name, protein_accs in genome_prot_dict.items():
+        if genome_name not in db_genome_table_dict:
+            logger.warning(f"Assembly {genome_name} not found in database")
             continue
             
-        genome_id = db_genome_table_dict[assembly_name]
+        genome_id = db_genome_table_dict[genome_name]
         
         for protein_acc in protein_accs:
             if protein_acc not in gbk_dict:
