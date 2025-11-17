@@ -97,7 +97,7 @@ def main(args: Namespace, time_stamp: str, start_time):
             args.database
         )
 
-    genome_dict = None
+    genomes = None
 
     if seq_acc_to_retrieve:
         gbk_accessions = set()
@@ -115,17 +115,15 @@ def main(args: Namespace, time_stamp: str, start_time):
         # Combine both GenBank and RefSeq accessions into a single list
         all_accessions = list(gbk_accessions) + list(refseq_accessions)
 
-        genome_dict = get_ncbi_genome_data(
+        genomes = get_ncbi_genome_data(
             all_accessions,
             cache_dir,
             args,
         )   
 
-    if not genome_dict:
+    if not genomes:
         logger.warning("No genomic genome data to add to db")
         return("get_ncbi_genomes")
-    
-    print("genome dict: ", genome_dict)
 
-    update_genome_data(genome_dict, args.database, time_stamp, args.update)
+    update_genome_data(genomes, args.database, time_stamp, args.update)
     return("get_ncbi_genomes")

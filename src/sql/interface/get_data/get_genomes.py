@@ -116,7 +116,7 @@ def get_genome_table(genomes_of_interest, connection):
     cursor = connection.execute(
         f"""SELECT genome_name, genome_id 
             FROM Genomes 
-            WHERE genome_name IN ({placeholders})""",
+            WHERE assembly_name IN ({placeholders})""",
         genomes_of_interest
     )
     

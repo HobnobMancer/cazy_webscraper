@@ -3,43 +3,52 @@
 """Add genomic genome information to the local CAZyme database."""
 
 import logging
+import sqlite3
+
+from pathlib import Path
+
 from src.sql.interface.get_data.get_genomes import (
     get_genome_table,
     get_gbk_genome_table_data,
 )
-from src.databases.ncbi.genomes import NcbiGenome
 
 logger = logging.getLogger(__name__)
 
-def update_genome_data(genome_prot_dict: dict, ncbi_genome_dict: dict, gbk_dict: dict, args):
+def update_genome_data(genomes: list, db_path: Path, time_stamp: str, update: bool):
     """Add/update genomic data and link proteins with genomes in the local database.
 
     Args:
-        genome_prot_dict: {genome_name: [protein_accs]}
-        ncbi_genome_dict: {genome_name: NcbiGenome}
-        gbk_dict: {protein_acc: genbank_id}
-        connection: Database connection
-        args: Command line arguments
+        genomes: List of NcbiGenome objects
+        db_path: Path to the local SQLite database
+        time_stamp: Timestamp for logging
+        update: Whether to update existing records
     """
+    conn = sqlite3.connect(db_path)
+
     # Get genome names from the NcbiGenome objects
-    genome_names = list(ncbi_genome_dict.keys())
-    db_genome_table_dict = get_genome_table(genome_names, connection)
+    genome_names = [genome.genome_name for genome in genomes]
+    db_genome_table_dict = get_genome_table(genome_names, conn)
     genomes_to_add, genomes_to_update = [], []
 
-    for genome_name in genome_names:
-        (genomes_to_update if genome_name in db_genome_table_dict else genomes_to_add).append(genome_name)
+    for genome in genomes:
+        (genomes_to_update if genome.genome_name in db_genome_table_dict and update else genomes_to_add).append(genome)
 
-    genomes_of_interest = genomes_to_add + genomes_to_update
-
-    if args.update and genomes_to_update:
-        update_genomic_data(genomes_to_update, db_genome_table_dict, ncbi_genome_dict, connection)
-        db_genome_table_dict = get_genome_table(genomes_of_interest, connection)
+    if update and genomes_to_update:
+        # need to update
+        # just use the genomes to update the records
+        update_genomic_data(genomes_to_update, conn)
 
     if genomes_to_add:
-        add_genomic_data(ncbi_genome_dict, genomes_to_add, connection)
-        db_genome_table_dict = get_genome_table(genomes_of_interest, connection)
+        # need to update
+        # just use the genomes to add new records
+        add_genomic_data(genomes_to_add, conn)
 
-    add_prot_genome_relationships(genome_prot_dict, gbk_dict, db_genome_table_dict, connection)
+    # load the the gbk table dict for acc to id in the function
+    # use the genomes list to get the genome id map so that we can update the relationship table
+    add_prot_genome_relationships(genomes, conn)
+
+    conn.commit()
+    conn.close()
 
 def add_genomic_data(ncbi_genome_dict: dict, genomes_of_interest: list, connection):
     """Add new genomic genome data to the database.
