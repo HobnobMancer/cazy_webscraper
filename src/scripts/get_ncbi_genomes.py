@@ -40,7 +40,8 @@ from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
 
 from src.databases.ncbi.genomes import get_ncbi_genome_data
-from src.sql import sql_orm, temp_tables
+from src.sql import sql_orm
+from src.sql.interface import temp_tables
 from src.sql.interface.connect import connect_existing_db
 from src.sql.interface.add_data.scrape_log import log_scrape_in_db
 from src.sql.interface.add_data.add_genome_data import persist_genome_data

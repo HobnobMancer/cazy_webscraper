@@ -56,7 +56,7 @@ from src.sql.interface.add_data import add_cazy_data, scrape_log
 from src.utilities import (
     parse_configuration
 )
-from src.sql.interface.temp_tables import build_temptable, drop_temptable
+from src.sql.interface.temp_tables import build_temp_table, drop_temp_table
 from src.utilities.sanity_checks.scrape_cazy import sanity_check_main_input
 
 logger = logging.getLogger(__name__)
@@ -171,7 +171,7 @@ def get_cazy_data(
 
     Return nothing.
     """
-    build_temptable(db)
+    build_temp_table(db)
 
     if args.cazy_data:
         dump_cazy_txt(args.cazy_data, db)
@@ -218,4 +218,4 @@ def get_cazy_data(
     add_cazy_data.add_proteins(db)
     add_cazy_data.add_protein_fam_relationships(db)
 
-    drop_temptable(db)
+    drop_temp_table(db)
