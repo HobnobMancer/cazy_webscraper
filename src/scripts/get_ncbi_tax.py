@@ -48,7 +48,7 @@ from src.sql.interface.get_data.get_records import get_ncbi_acc_for_uniprot_acc
 from src.sql.interface.get_data.get_proteins import get_ncbi_prot_accessions
 from src.utilities.parse_configuration import get_expansion_configuration
 from src.utilities.parse_configuration.accession_files import get_acc_from_file
-from src.utilities.sanity_checks.get_gbk_tax import sanity_check_inputs
+from src.utilities.sanity_checks.get_ncbi_tax import sanity_check_inputs
 
 
 logger = logging.getLogger(__name__)

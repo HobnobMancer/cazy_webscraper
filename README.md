@@ -178,7 +178,7 @@ cazy_webscraper --citation
 ### Subcommand summary
 
 `download` - Download data from CAZy and build a local SQLite database
-`get_gbk_seqs` - Download NCBI-GenBank sequences and import the sequences into the local CAZyme database  
+`get_ncbi_seqs` - Download NCBI-GenBank sequences and import the sequences into the local CAZyme database  
 `get_ncbi_taxs` - Download the latest taxonomy data from NCBI and update these taxa in the local CAZyme database  
 `get_ncbi_genomes` - Download the genomic assembly name, id and version accession from which a protein sequence was stored, and store these data in the local CAZyme database   
 
@@ -367,13 +367,16 @@ Limit	  Details
 
 ## Retrieveing protein seqences from GenBank
 
-Protein amino acid sequences can be retrieved for proteins in a local CAZyme database using `cazy_webscraper get_genbank_seqs`. Protein sequences can be retrieved for a specific subset of proteins, identified through the use of CAZy class, CAZy family, taxonomy (kingdom, genus, species and strain) filters, and EC number filters. The retrieved protein sequences are written to the local CAZyme database.
+Protein amino acid sequences can be retrieved for proteins in a local CAZyme database using `cazy_webscraper get_ncbi_seqs`. Protein sequences can be retrieved for a specific subset of proteins, identified through the use of CAZy class, CAZy family, taxonomy (kingdom, genus, species and strain) filters, and EC number filters. The retrieved protein sequences are written to the local CAZyme database.
+
+Sequences are persisted in the local CAZyme database as they are retrieved, therefore a download of the sequence
+data can be resumed without the need to start again if the `cazy_webscraper get_ncbi_seqs` command is interrupted.
 
 _Extracting protein sequences from the local CAZyme database and writing them to a BLAST database and/or FASTA file(s) is covered in the next section._
 
 To retrieve all GenBank protein seuqneces for all proteins in a local CAZyme datbase, using the following command:
 ```bash
-cazy_webscraper get_genbank_seqs <path_to_local_CAZyme_db>
+cazy_webscraper get_ncbi_seqs <path_to_local_CAZyme_db>
 ```
 
 REQUIRED arguments:
@@ -399,11 +402,7 @@ Operational arguments:
   --genbank_accessions GENBANK_ACCESSIONS
                         Path to a text file containing a list of GenBank accessions to retrieve data for. Note, accessions from the local DB will not
                         be retrieved, only the accessions in this this file will be used. (default: None)
-  --seq_dict SEQ_DICT   Path to a JSON file, keyed by GenBank accessions and valued by protein sequence Add seqs in file to the local CAZyme
-                        database. This is created by cazy_webscraper during get_gbk_seqs (default: None)
-  --seq_file SEQ_FILE   Path to a FASTA file of protein sequences Add seqs in file to the local CAZyme database (default: None)
-  -F, --file_only       Only add seqs provided via JSON and/or FASTA file. Do not retrieve data from NCBI (default: False)
-  --seq_update          Enable overwriting sequences in the database if the retrieved sequence is different (default: False)
+  --update          Enable overwriting sequences in the database if the retrieved sequence is different (default: False)
 
 Utility arguments:
   --batch_size BATCH_SIZE

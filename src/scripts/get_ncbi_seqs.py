@@ -49,7 +49,7 @@ from src.sql.interface.filter_data.protein import filter_to_db_acc
 from src.sql.interface.get_data.get_proteins import get_ncbi_prot_accessions
 from src.utilities.parse_configuration import get_expansion_configuration
 from src.utilities.parse_configuration.accession_files import get_acc_from_file
-from src.utilities.sanity_checks.get_gbk_seqs import sanity_check_inputs
+from src.utilities.sanity_checks.get_ncbi_seqs import sanity_check_inputs
 
 
 logger = logging.getLogger(__name__)
@@ -89,41 +89,24 @@ def main(args: Namespace, time_stamp: str, start_time):
             args,
         )
 
-    if args.seq_dict or args.seq_file:
-        seq_dict = get_cache_seqs(start_time, args)  # {genbank_acc: Bio.Seq}
-        # only keep acc that are in the db
-        acc_in_db = filter_to_db_acc(args.database, set(seq_dict.keys()))
-        seq_dict = {k: v for k, v in seq_dict.items() if k in acc_in_db}
+    # get accession of records to retrieve sequences for
+    if args.genbank_accessions:
+        seq_acc_to_retrieve = get_acc_from_file(
+            args.genbank_accessions,
+            args.database,
+        )
     else:
-        seq_dict = {}
+        seq_acc_to_retrieve = get_ncbi_prot_accessions(
+            class_filters,
+            family_filters,
+            kingdom_filters,
+            taxonomy_filter_dict,
+            ec_filters,
+            args.database
+        )
 
-    if args.file_only:
-        logger.warning("Only adding Seqs in JSON and/or FASTA file. Not retrieving seqs from NCBI")
-    else:
-        # get accession of records to retrieve sequences for
-        if args.genbank_accessions:
-            seq_acc_to_retrieve = get_acc_from_file(
-                args.genbank_accessions,
-                args.database,
-            )
-        else:
-            seq_acc_to_retrieve = get_ncbi_prot_accessions(
-                class_filters,
-                family_filters,
-                kingdom_filters,
-                taxonomy_filter_dict,
-                ec_filters,
-                args.database
-            )
+    if seq_acc_to_retrieve:
+        logger.warning("Retrieving %s sequences from NCBI", len(seq_acc_to_retrieve))
+        get_seqs_from_ncbi(seq_acc_to_retrieve, cache_dir, time_stamp, args)
 
-        if seq_acc_to_retrieve:
-            logger.warning("Retrieving %s sequences from NCBI", len(seq_acc_to_retrieve))
-            new_seqs = get_seqs_from_ncbi(seq_acc_to_retrieve, cache_dir, args)
-            seq_dict.update(new_seqs)
-
-    if not seq_dict:
-        logger.warning("No seqs to add to db")
-        return("get_ncbi_seqs")
-
-    update_ncbi_seqs(seq_dict, args.database, time_stamp, args.update)
-    return("get_ncbi_seqs")
+    return "get_ncbi_seqs"

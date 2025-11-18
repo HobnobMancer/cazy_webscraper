@@ -35,7 +35,7 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, _SubParsersA
 from pathlib import Path
 from typing import List, Optional
 
-from src.scripts import get_gbk_seqs
+from src.scripts import get_ncbi_seqs
 
 
 def build_parser(
@@ -135,33 +135,6 @@ def build_parser(
         ),
     )
     operational_group.add_argument(
-        "--seq_dict",
-        type=Path,
-        default=None,
-        help=(
-            "Path to a JSON file, keyed by GenBank accessions and valued by protein sequence\n"
-            "Add seqs in file to the local CAZyme database.\n"
-            "This is created by cazy_webscraper during get_gbk_seqs"
-        ),
-    )
-    operational_group.add_argument(
-        "--seq_file",
-        type=Path,
-        default=None,
-        help=(
-            "Path to a FASTA file of protein sequences\n"
-            "Add seqs in file to the local CAZyme database"
-        ),
-    )
-    operational_group.add_argument(
-        "-F",
-        "--file_only",
-        dest="file_only",
-        action="store_true",
-        default=False,
-        help="Only add seqs provided via JSON and/or FASTA file. Do not retrieve data from NCBI",
-    )
-    operational_group.add_argument(
         "--update",
         dest="update",
         action="store_true",
@@ -210,4 +183,4 @@ def build_parser(
         help="Number of times to retry scraping a family or class page if error encountered",
     )
 
-    parser.set_defaults(func=get_gbk_seqs.main)
+    parser.set_defaults(func=get_ncbi_seqs.main)

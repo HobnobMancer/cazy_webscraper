@@ -42,8 +42,8 @@ from typing import List, Optional
 from src import __version__, __citation__
 from src.utilities.parsers.subcmds import (
     scrape_cazy_parser,
-    gbk_seq_parser,
-    gbk_tax_parser,
+    ncbi_seq_parser,
+    ncbi_tax_parser,
     get_genomes_parser
 )
 
@@ -100,8 +100,8 @@ def build_parser(argv: Optional[List] = None) -> Namespace:
 
     # add subcommand parser
     scrape_cazy_parser.build_parser(subparsers)
-    gbk_seq_parser.build_parser(subparsers)
-    gbk_tax_parser.build_parser(subparsers)
+    ncbi_seq_parser.build_parser(subparsers)
+    ncbi_tax_parser.build_parser(subparsers)
     get_genomes_parser.build_parser(subparsers)
 
     # Parse arguments
