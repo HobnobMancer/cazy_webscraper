@@ -102,6 +102,7 @@ def apply_tax_filters(
 def apply_class_and_family_filters(
     class_filter: list[str],
     fam_filter: set[str],
+    subfamilies: bool,
     db: Path,
 ):
     query = "DELETE FROM TEMP_TABLE WHERE"
@@ -123,12 +124,21 @@ def apply_class_and_family_filters(
             query += " AND "
 
         if re.match(r"^\D{2,3}\d+_\d$", fam):  # subfam, only keep specific subfam
-            query += f"family NOT LIKE '{fam}'"
+            if not subfamilies:
+                logger.warning(
+                    f"Subfamily {fam} specified in family filters, but subfamilies "
+                    "are not being retained. This filter will have no effect."
+                )
+                continue
+            query += f"family != '{fam}'"
         else:  # keep fam and all it's subfamilies
-            query += f"family NOT LIKE '{fam}'"
-            query += f" AND family NOT LIKE '{fam}_%'"
+            query += f"family != '{fam}'"
+            if subfamilies:
+                query += f" AND family NOT LIKE '{fam}_%'"
 
     query += ")"
+
+    print("Query:", query)
 
     conn = sqlite3.connect(db)
     cur = conn.cursor()

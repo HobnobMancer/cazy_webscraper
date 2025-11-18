@@ -197,7 +197,7 @@ def get_cazy_data(
 
     if any([class_filters, fam_filters]):
         logger.warning("Applying class and family filters")
-        apply_class_and_family_filters(class_filters, fam_filters, db)
+        apply_class_and_family_filters(class_filters, fam_filters, args.subfamilies, db)
 
     if not args.subfamilies:
         logger.warning("Dropping subfamilies")
