@@ -60,7 +60,7 @@ def main(args: Namespace, time_stamp: str, start_time):
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
     Entrez.email = args.email
 
-    if args.seq_update:
+    if args.update:
         logger.warning("Enabled updating sequences")
 
     cache_dir = args.cache_dir if args.cache_dir else (cache_dir / "ncbi_seq_retrieval")
@@ -125,5 +125,5 @@ def main(args: Namespace, time_stamp: str, start_time):
         logger.warning("No seqs to add to db")
         return("get_ncbi_seqs")
 
-    update_ncbi_seqs(seq_dict, args.database, time_stamp, args.seq_update)
+    update_ncbi_seqs(seq_dict, args.database, time_stamp, args.update)
     return("get_ncbi_seqs")
