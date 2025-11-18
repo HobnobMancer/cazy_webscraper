@@ -60,7 +60,7 @@ logger = logging.getLogger(__name__)
 
 
 def add_kingdoms(db: Path) -> None:
-    """Add new Kingdoms objects to database from the TempTable
+    """Add new Kingdoms objects to database from the TEMP_TABLE
 
     Check existing kingdom objects in the db against kingdoms retrieved from the 
     CAZy txt file, so as to only add new kingdoms.
@@ -70,7 +70,7 @@ def add_kingdoms(db: Path) -> None:
 
     # retrieve the Kingdoms retrieved from the CAZy txt file
     cur = conn.cursor()
-    cur.execute("""SELECT DISTINCT(kingdom) FROM TempTable""")
+    cur.execute("""SELECT DISTINCT(kingdom) FROM TEMP_TABLE""")
     # create list of tuples for db insert
     kingdoms_db_insert_values = [(row[0],) for row in cur if row[0] not in kingdom_table_dict]
     cur.close()
@@ -83,7 +83,7 @@ def add_kingdoms(db: Path) -> None:
 
 
 def add_source_organisms(db: Path) -> None:
-    """Add taxonomy (source organism) data from TempTable to the Tax table in
+    """Add taxonomy (source organism) data from TEMP_TABLE to the Tax table in
     the local CAZyme database
 
     Check existing kingdom objects in the db against kingdoms retrieved from the 
@@ -99,7 +99,7 @@ def add_source_organisms(db: Path) -> None:
     tax_insert_values = set()  # new taxa to add to db (kingdom_id, genus, species)
     records_to_update = set()  # used incase kingdom has changed for a species
     cur = conn.cursor()
-    cur.execute("""SELECT DISTINCT kingdom, genus, species FROM TempTable""")
+    cur.execute("""SELECT DISTINCT kingdom, genus, species FROM TEMP_TABLE""")
     for row in cur:
         if f"{row[1]} {row[2]}" in tax_table_dict:
             if int(row[0]) != int(tax_table_dict[f"{row[1]} {row[2]}"]['kingdom_id']):
@@ -130,7 +130,7 @@ def add_cazy_families(db: Path) -> None:
 
     families_db_insert_values = set()  # new fam records to add to db
     cur = conn.cursor()
-    cur.execute("""SELECT DISTINCT family FROM TempTable""")
+    cur.execute("""SELECT DISTINCT family FROM TEMP_TABLE""")
     for row in cur:
         fam, subfam = (row[0].split('_')[0], row[0]) if '_' in row[0] else (row[0], None)
 
@@ -149,7 +149,7 @@ def add_cazy_families(db: Path) -> None:
 
 
 def add_proteins(db: Path) -> None:
-    """Add GenBank accs from TempTable to Proteins table"""
+    """Add GenBank accs from TEMP_TABLE to Proteins table"""
     conn = sqlite3.connect(db)
     protein_table_dict = get_protein_table_dict(conn)
     # {prot acc: {'taxa_id': str, 'id': int}}
@@ -160,7 +160,7 @@ def add_proteins(db: Path) -> None:
     prot_db_insert_values = set()
 
     cur = conn.cursor()
-    cur.execute("""SELECT DISTINCT protein_id, source, genus, species FROM TempTable""")
+    cur.execute("""SELECT DISTINCT protein_id, source, genus, species FROM TEMP_TABLE""")
     for row in cur:
         protein_acc = row[0]
         tax_id = taxa_table_dict[f"{row[2]} {row[3]}"]['tax_id']
@@ -203,7 +203,7 @@ def add_protein_fam_relationships(db: Path) -> None:
     prot_fam_table_dict = get_prot_fam_table_dict(conn)  # {protein_id: {family_id}}
 
     cur = conn.cursor()
-    cur.execute("""SELECT DISTINCT protein_id, family FROM TempTable""")
+    cur.execute("""SELECT DISTINCT protein_id, family FROM TEMP_TABLE""")
 
     for row in cur:
         protein_acc = row[0]

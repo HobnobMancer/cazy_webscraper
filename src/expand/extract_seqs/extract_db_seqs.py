@@ -60,7 +60,7 @@ from saintBioutils.utilities.file_io import make_output_directory
 from saintBioutils.utilities.logger import config_logger
 
 from cazy_webscraper import closing_message, connect_existing_db
-from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data import get_proteins, get_table_dicts
 from cazy_webscraper.sql.sql_interface.get_data.get_records import (
     get_user_genbank_sequences,
     get_user_uniprot_sequences
@@ -140,7 +140,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
         gbk_dict.update(get_user_uniprot_sequences(gbk_table_dict, uniprot_table_dict, args))
 
     if len(list(gbk_dict.keys())) == 0:
-        gbk_dict = get_selected_gbks.get_genbank_accessions(
+        gbk_dict = get_proteins.get_genbank_accessions(
             class_filters,
             family_filters,
             taxonomy_filter_dict,

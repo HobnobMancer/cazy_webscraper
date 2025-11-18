@@ -46,7 +46,7 @@ from src.sql.interface.add_data.scrape_log import log_scrape_in_db
 from src.sql.interface.add_data.add_ncbi_seqs import update_ncbi_seqs
 from src.sql.interface.connect import connect_existing_db
 from src.sql.interface.filter_data.protein import filter_to_db_acc
-from src.sql.interface.get_data.get_selected_gbks import get_ncbi_prot_accessions
+from src.sql.interface.get_data.get_proteins import get_ncbi_prot_accessions
 from src.utilities.parse_configuration import get_expansion_configuration
 from src.utilities.parse_configuration.accession_files import get_acc_from_file
 from src.utilities.sanity_checks.get_gbk_seqs import sanity_check_inputs

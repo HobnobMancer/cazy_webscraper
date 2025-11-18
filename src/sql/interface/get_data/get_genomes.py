@@ -40,63 +40,32 @@
 # SOFTWARE.
 """Retrieve proteins with no genome data in the local database."""
 
+
 import sqlite3
+
 from tqdm import tqdm
 
 
-def get_no_genome_proteins(gbk_dict, connection):
-    """Filter a gbk_dict to retain only those proteins with no genome data in the local db
+def get_cached_proteins(protein_accs: list[str], db_connection: sqlite3.Connection) -> set[str]:
+    """Get protein accessions that are already cached in temp tables
 
-    :param gbk_dict: dict, {protein gbk acc: db id}
-    :param connection: open sqlite db connection
+    Args:
+        protein_accs: List of protein accessions to check
+        db_connection: Database connection
 
-    Return gbk_dict"""
-    filtered_gbk_dict = {}
+    Returns:
+        Set of protein accessions that are already cached
+    """
+    cursor = db_connection.cursor()
+    placeholders = ','.join('?' * len(protein_accs))
+    cursor.execute(f"""
+        SELECT DISTINCT p.protein_accession 
+        FROM Proteins p 
+        JOIN TEMP_GENOME2PROTEIN tg2p ON p.protein_id = tg2p.protein_id
+        WHERE p.protein_accession IN ({placeholders})
+    """, protein_accs)
 
-    for gbk_acc in tqdm(gbk_dict, desc="Filtering for proteins with no genome data in the db"):
-        cursor = connection.execute(
-            """SELECT Genbanks.genbank_id, Genomes.genome_id 
-               FROM Genbanks 
-               INNER JOIN Genbanks_Genomes ON Genbanks.genbank_id = Genbanks_Genomes.genbank_id
-               INNER JOIN Genomes ON Genbanks_Genomes.genome_id = Genomes.genome_id
-               WHERE Genbanks.genbank_accession = ?""",
-            (gbk_acc,)
-        )
-        
-        results = cursor.fetchall()
-        if results:
-            filtered_gbk_dict[gbk_acc] = gbk_dict[gbk_acc]
-
-    return filtered_gbk_dict
-
-
-def get_records_to_update(gbk_dict, connection):
-    """Filter a gbk_dict to retain only those proteins with no genome data in the local db
-
-    :param gbk_dict: dict, {protein gbk acc: db id}
-    :param connection: open sqlite db connection
-
-    Return gbk_dict"""
-    update_gbk_dict = {}  # proteins to update the new genome data
-    add_gbk_dict = {}  # proteins to add new genome data
-
-    for gbk_acc in tqdm(gbk_dict, desc="Filtering for proteins with no genome data in the db"):
-        cursor = connection.execute(
-            """SELECT Genbanks.genbank_id, Genomes.genome_id 
-               FROM Genbanks 
-               INNER JOIN Genbanks_Genomes ON Genbanks.genbank_id = Genbanks_Genomes.genbank_id
-               INNER JOIN Genomes ON Genbanks_Genomes.genome_id = Genomes.genome_id
-               WHERE Genbanks.genbank_accession = ?""",
-            (gbk_acc,)
-        )
-        
-        results = cursor.fetchall()
-        if len(results) == 0:
-            add_gbk_dict[gbk_acc] = gbk_dict[gbk_acc]
-        else:
-            update_gbk_dict[gbk_acc] = gbk_dict[gbk_acc]
-
-    return update_gbk_dict, add_gbk_dict
+    return set(row[0] for row in cursor.fetchall())
 
 
 def get_genome_table(genomes_of_interest, connection):
@@ -109,34 +78,34 @@ def get_genome_table(genomes_of_interest, connection):
     """
     if not genomes_of_interest:
         return {}
-    
+
     # Create placeholders for the IN clause
     placeholders = ','.join('?' * len(genomes_of_interest))
-    
+
     cursor = connection.execute(
         f"""SELECT genome_name, genome_id 
             FROM Genomes 
             WHERE assembly_name IN ({placeholders})""",
         genomes_of_interest
     )
-    
+
     db_genome_dict = {}
-    for row in tqdm(cursor.fetchall(), desc="Retrieving genome records from the local db"):
+    for row in cursor:
         genome_name, genome_id = row
         db_genome_dict[genome_name] = genome_id
 
     return db_genome_dict
 
 
-def get_gbk_genome_table_data(connection):
+def get_protein_genome_table_data(connection):
     """Parse the Genbanks_Genomes table into a set of tuples, one row per tuple.
 
     :param connection: open sql db connection
 
-    Return set of tuples
+    Return set of tuples [(protein_id, genome_id), ...]
     """
-    cursor = connection.execute("SELECT genbank_id, genome_id FROM Genbanks_Genomes")
-    
+    cursor = connection.execute("SELECT protein_id, genome_id FROM Genbanks_Genomes")
+
     prot_gnm_records = set()
     for row in cursor.fetchall():
         prot_gnm_records.add((row[0], row[1]))
@@ -146,6 +115,8 @@ def get_gbk_genome_table_data(connection):
 
 def get_genomes(gbk_dict, args, connection):
     """Retrieve genomic version accessions for proteins in gbk_dict
+
+    I TIHNK THIS IS NEEDED FOR GTDB TAX RETRIEVAL
 
     :param gbk_dict: dict, gbk_ver_acc: local db ID
     :param args: CLI argument parser

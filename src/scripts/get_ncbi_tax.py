@@ -45,7 +45,7 @@ from src.sql.interface.add_data.scrape_log import log_scrape_in_db
 from src.sql.interface.add_data.add_ncbi_tax_data import update_ncbi_taxs
 from src.sql.interface.connect import connect_existing_db
 from src.sql.interface.get_data.get_records import get_ncbi_acc_for_uniprot_acc
-from src.sql.interface.get_data.get_selected_gbks import get_ncbi_prot_accessions
+from src.sql.interface.get_data.get_proteins import get_ncbi_prot_accessions
 from src.utilities.parse_configuration import get_expansion_configuration
 from src.utilities.parse_configuration.accession_files import get_acc_from_file
 from src.utilities.sanity_checks.get_gbk_tax import sanity_check_inputs

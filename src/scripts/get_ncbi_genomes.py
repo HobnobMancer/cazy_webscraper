@@ -40,11 +40,11 @@ from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
 
 from src.databases.ncbi.genomes import get_ncbi_genome_data
-from src.sql import sql_orm
+from src.sql import sql_orm, temp_tables
 from src.sql.interface.connect import connect_existing_db
 from src.sql.interface.add_data.scrape_log import log_scrape_in_db
-from src.sql.interface.add_data.add_genome_data import update_genome_data
-from src.sql.interface.get_data.get_selected_gbks import get_ncbi_prot_accessions
+from src.sql.interface.add_data.add_genome_data import persist_genome_data
+from src.sql.interface.get_data.get_proteins import get_ncbi_prot_accessions
 from src.utilities.parse_configuration import get_expansion_configuration
 from src.utilities.parse_configuration.accession_files import get_acc_from_file
 
@@ -97,8 +97,7 @@ def main(args: Namespace, time_stamp: str, start_time):
             args.database
         )
 
-    genomes = None
-
+    genome_count = 0
     if seq_acc_to_retrieve:
         gbk_accessions = set()
         refseq_accessions = set()
@@ -115,15 +114,18 @@ def main(args: Namespace, time_stamp: str, start_time):
         # Combine both GenBank and RefSeq accessions into a single list
         all_accessions = list(gbk_accessions) + list(refseq_accessions)
 
-        genomes = get_ncbi_genome_data(
+        genome_count = get_ncbi_genome_data(
             all_accessions,
             cache_dir,
-            args,
+            args
         )   
 
-    if not genomes:
+    if not genome_count:
         logger.warning("No genomic genome data to add to db")
         return("get_ncbi_genomes")
 
-    update_genome_data(genomes, args.database, time_stamp, args.update)
+    persist_genome_data(args)
+
+    temp_tables.rm_temp_genome_tables(args.database)
+
     return("get_ncbi_genomes")

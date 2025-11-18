@@ -76,7 +76,7 @@ from cazy_webscraper.sql.sql_interface.get_data.get_records import (
     get_user_genbank_sequences,
     get_user_uniprot_sequences
 )
-from cazy_webscraper.sql.sql_interface.get_data.get_selected_gbks import get_genbank_accessions
+from cazy_webscraper.sql.sql_interface.get_data.get_proteins import get_genbank_accessions
 from cazy_webscraper.sql.sql_interface.get_data.get_assemblies import get_genomes
 from cazy_webscraper.sql.sql_interface.add_data.add_gtdb_tax import (
     add_gtdb_taxs,

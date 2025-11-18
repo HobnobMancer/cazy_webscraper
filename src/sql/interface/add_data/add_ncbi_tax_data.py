@@ -148,7 +148,7 @@ def replace_ncbi_taxonomy(
     cur = conn.cursor()
 
     cur.execute("""
-        UPDATE TempTable
+        UPDATE TEMP_TABLE
         SET genus = ?,
             species = ?,
             kingdom = ?

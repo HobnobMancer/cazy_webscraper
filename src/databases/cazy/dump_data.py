@@ -71,7 +71,7 @@ def dump_cazy_txt(cazy_txt_path: Path, db: Path):
                 sp = ' '.join([_ for _ in data if _ not in [fam, king, genus, protein_id, source]])
                 cur.execute(
                     """
-                    INSERT INTO TempTable (family, kingdom, genus, species, protein_id, source)
+                    INSERT INTO TEMP_TABLE (family, kingdom, genus, species, protein_id, source)
                     VALUES (?, ?, ?, ?, ?, ?)
                     """,
                     (fam, king, genus, sp, protein_id, source)

@@ -83,10 +83,10 @@ def process_multi_taxa(
     # Execute the query
     cursor.execute("""
     SELECT protein_id
-    FROM TempTable
+    FROM TEMP_TABLE
     WHERE protein_id IN (
         SELECT protein_id
-        FROM TempTable
+        FROM TEMP_TABLE
         GROUP BY protein_id
         HAVING COUNT(DISTINCT genus || species) > 1
     ) AND source != 'jgi'
@@ -122,14 +122,14 @@ def keep_first_taxa(protein_id: str, conn: sqlite3.Connection) -> None:
     cur = conn.cursor()
     cur.execute("""
         SELECT *
-        FROM TempTable
+        FROM TEMP_TABLE
         WHERE protein_id = ?;
     """, (protein_id,)
     )
 
     first_row = cur.fetchone()
     cur.execute("""
-        DELETE FROM TempTable
+        DELETE FROM TEMP_TABLE
         WHERE protein_id = ? 
             AND (genus != ? OR species != ?);
     """, (protein_id, first_row[1], first_row[2]))

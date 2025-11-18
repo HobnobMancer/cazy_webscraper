@@ -66,7 +66,7 @@ def apply_tax_filters(
         'strains': {'Alternaria alternata SRC1lrK2f v1.0', 'Genus species strain'}
     }
     """
-    query = "DELETE FROM TempTable WHERE"
+    query = "DELETE FROM TEMP_TABLE WHERE"
     parameters = []
 
     if kingdoms:
@@ -104,7 +104,7 @@ def apply_class_and_family_filters(
     fam_filter: set[str],
     db: Path,
 ):
-    query = "DELETE FROM TempTable WHERE"
+    query = "DELETE FROM TEMP_TABLE WHERE"
 
     for i, cazy_class in enumerate(class_filter):
         if i == 0:
@@ -141,7 +141,7 @@ def apply_class_and_family_filters(
 def drop_subfamilies(db: Path):
     conn = sqlite3.connect(db)
     cur = conn.cursor()
-    cur.execute("DELETE FROM TempTable WHERE family LIKE '%\\_%' ESCAPE '\\'")
+    cur.execute("DELETE FROM TEMP_TABLE WHERE family LIKE '%\\_%' ESCAPE '\\'")
     conn.commit()
     cur.close()
     conn.close()

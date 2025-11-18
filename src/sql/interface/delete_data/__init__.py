@@ -53,13 +53,6 @@ from src.sql.sql_orm import Ec, Pdb
 logger = logging.getLogger(__name__)
 
 
-def drop_temptable(db: Path) -> None:
-    conn = sqlite3.connect(db)
-    conn.execute("DROP TABLE IF EXISTS TempTable")
-    conn.commit()
-    conn.close()
-
-
 def delete_old_relationships(
     uniprot_dict,
     gbk_dict,

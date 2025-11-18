@@ -55,7 +55,7 @@ from cazy_webscraper.sql.sql_orm import (
     Taxonomy,
     Uniprot,
 )
-from cazy_webscraper.sql.sql_interface.get_data.get_selected_gbks import (
+from cazy_webscraper.sql.sql_interface.get_data.get_proteins import (
     get_class_fam_genbank_accessions
 )
 
