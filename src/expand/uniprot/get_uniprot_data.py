@@ -71,7 +71,7 @@ from cazy_webscraper.sql.sql_interface.add_data.add_uniprot_data import (
     add_uniprot_taxs,
 )
 from cazy_webscraper.sql.sql_interface.delete_data import delete_old_relationships, delete_old_annotations
-from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data import get_proteins, get_table_dicts
 from cazy_webscraper.sql import sql_orm
 from cazy_webscraper.utilities.parsers.uniprot_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
@@ -330,10 +330,10 @@ def get_db_gbk_accs(
         accessions = [line.strip() for line in lines if len(line) != 0]
         accessions = set(accessions)
 
-        gbk_dict = get_selected_gbks.get_ids(accessions, connection)
+        gbk_dict = get_proteins.get_ids(accessions, connection)
 
     else:
-        gbk_dict = get_selected_gbks.get_genbank_accessions(
+        gbk_dict = get_proteins.get_genbank_accessions(
             class_filters,
             family_filters,
             taxonomy_filter_dict,

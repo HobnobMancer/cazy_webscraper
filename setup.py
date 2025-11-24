@@ -56,7 +56,7 @@ setuptools.setup(
     version="2.3.0.3",
     # Metadata
     author="Emma E. M. Hobbs",
-    author_email="eemh1@st-andrews.ac.uk",
+    author_email="ehobbs@ebi.ac.uk",
     description="".join(
         [
             (
@@ -70,21 +70,12 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
-    keywords="bioinforamtics protein webscraper",
+    keywords="bioinformatics protein webscraper",
     platforms="Posix, MacOS X",
     url="https://github.com/HobnobMancer/cazy_webscraper",
     entry_points={
         "console_scripts": [
-            "cazy_webscraper = cazy_webscraper.cazy_scraper:main",
-            "cw_get_genbank_seqs = cazy_webscraper.expand.genbank.sequences.get_genbank_sequences:main",
-            "cw_get_ncbi_taxs = cazy_webscraper.expand.genbank.taxonomy.get_ncbi_taxs:main",
-            "cw_get_genomics = cazy_webscraper.expand.genbank.genomes.get_genome_accs:main",
-            "cw_get_gtdb_taxs = cazy_webscraper.expand.gtdb.get_gtdb_tax:main",
-            "cw_get_uniprot_data = cazy_webscraper.expand.uniprot.get_uniprot_data:main",
-            "cw_extract_db_seqs = cazy_webscraper.expand.extract_seqs.extract_db_seqs:main",
-            "cw_get_pdb_structures = cazy_webscraper.expand.pdb.get_pdb_structures:main",
-            "cw_query_database = cazy_webscraper.api.cw_query_database:main",
-            "cw_get_db_schema = cazy_webscraper.sql.get_schema:main",
+            "cazy_webscraper = src.cli:main",
         ]
     },
     install_requires=[

@@ -43,7 +43,7 @@
 """Retrieve PDB accessions matching user criteria from the local CAZyme db"""
 
 
-from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_table_dicts
+from cazy_webscraper.sql.sql_interface.get_data import get_proteins, get_table_dicts
 
 
 def get_pdb_accessions(
@@ -69,7 +69,7 @@ def get_pdb_accessions(
     """
 
     # retrieve the GenBank accessions of Gbk records matching the user criteria
-    selected_gbks = get_selected_gbks.get_genbank_accessions(
+    selected_gbks = get_proteins.get_genbank_accessions(
         class_filters,
         family_filters,
         taxonomy_filters,

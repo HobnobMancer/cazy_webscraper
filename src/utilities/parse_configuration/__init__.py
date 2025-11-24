@@ -401,6 +401,7 @@ def get_cmd_defined_families(config_dict, args):
     cmd_families = (args.families).strip().split(",")
 
     for fam in cmd_families:
+        fam = fam.upper().strip()
         try:
             if fam.startswith("GH"):
                 re.match(r"GH\d+", fam, re.IGNORECASE).group()

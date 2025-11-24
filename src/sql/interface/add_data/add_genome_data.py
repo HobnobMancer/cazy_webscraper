@@ -1,24 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2022
-# (c) University of Strathclyde 2022
-# (c) James Hutton Institute 2022
-#
+# (c) University of St Andrews 2020-2021
+# (c) University of Strathclyde 2020-2021
 # Author:
 # Emma E. M. Hobbs
-#
+
 # Contact
-# eemh1@st-andrews.ac.uk
-#
-# Emma E. M. Hobbs,
-# Biomolecular Sciences Building,
-# University of St Andrews,
-# North Haugh Campus,
-# St Andrews,
-# KY16 9ST
-# Scotland,
-# UK
-#
+# ehobbbs@ebi.ac.uk
+
 # The MIT License
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,10 +16,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-#
+
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-#
+
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,169 +27,338 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Add genomic assembly information to the local CAZyme database."""
+"""Add genomic genome information to the local CAZyme database."""
 
 
 import logging
+import sqlite3
 
-from sqlalchemy import text
-from tqdm import tqdm
-
-from cazy_webscraper.sql.sql_interface import insert_data
-from cazy_webscraper.sql.sql_interface.get_data.get_assemblies import (
-    get_records_to_update,
-    get_assembly_table,
-    get_gbk_genome_table_data,
-)
+from argparse import Namespace
 
 
-def add_assembly_data(assembly_prot_dict, ncbi_genome_dict, gbk_dict, connection, args):
-    """Coordinate adding genomic data and associting proteins with genomes in the local database
+logger = logging.getLogger(__name__)
 
-    :param assembly_prot_dict: dict, {assembly_name: {protein_accessions}}
-    :param ncbi_genome_dict: dict, listing assembly meta data -- data retrieved from ncbi
-    :param gbk_dict: dict, {gbk_accession: local db id}
-    :param connection: open sqlite db connection
-    :param args: cmd-line args parser
 
-    Return nothing
+def persist_genome_data(args: Namespace, batch_size: int = 1000) -> dict:
+    """Persist genome data from temporary tables to main database tables.
+
+    Args:
+        db_path: Path to the local SQLite database
+        update: Whether to update existing records
+        batch_size: Number of records to process in each batch
+
+    Returns:
+        Dictionary with statistics about the operation
     """
-    logger = logging.getLogger(__name__)
+    conn = sqlite3.connect(args.database)
+    cursor = conn.cursor()
 
-    db_genome_table_dict = get_assembly_table(ncbi_genome_dict, connection)
+    stats = {
+        'genomes_added': 0,
+        'genomes_updated': 0,
+        'protein_relationships_added': 0
+    }
 
+    try:
+        # Step 1: Get count of temp genomes for batching
+        cursor.execute("SELECT COUNT(*) FROM TEMP_GENOME")
+        total_genomes = cursor.fetchone()[0]
+
+        # Step 2: Process genomes in batches
+        offset = 0
+        while offset < total_genomes:
+            batch_stats = _process_genome_batch(conn, offset, batch_size, args.update)
+
+            # Update overall stats
+            for key in stats:
+                stats[key] += batch_stats[key]
+
+            offset += batch_size
+
+            # Commit after each batch to avoid large transactions
+            conn.commit()
+
+            logger.debug("Processed batch %d-%d: added %d, updated %d", 
+                        offset - batch_size + 1, min(offset, total_genomes),
+                        batch_stats['genomes_added'], batch_stats['genomes_updated'])
+
+        # Step 3: Update TEMP_GENOME2PROTEIN with genome_ids in batches
+        _update_temp_protein_genome_ids(conn, batch_size)
+
+        # Step 4: Process protein-genome relationships in batches
+        relationship_stats = _process_protein_relationships(conn, batch_size)
+        stats['protein_relationships_added'] = relationship_stats['added']
+
+        conn.commit()
+
+        # Log final statistics
+        logger.warning("Genome data persistence completed:")
+        logger.warning("  - Genomes added: %d", stats['genomes_added'])
+        logger.warning("  - Genomes updated: %d", stats['genomes_updated'])
+        logger.warning("  - Protein relationships added: %d", stats['protein_relationships_added'])
+
+    except Exception as e:
+        conn.rollback()
+        logger.error("Error persisting genome data: %s", e)
+        raise
+    finally:
+        conn.close()
+
+    return stats
+
+
+def _process_genome_batch(conn: sqlite3.Connection, offset: int, batch_size: int, update: bool) -> dict:
+    """Process a batch of genomes from TEMP_GENOME table.
+
+    Args:
+        conn: Database connection
+        offset: Starting offset for the batch
+        batch_size: Size of the batch
+        update: Whether to update existing records
+
+    Returns:
+        Dictionary with batch statistics
+    """
+    cursor = conn.cursor()
+    batch_stats = {'genomes_added': 0, 'genomes_updated': 0, 'protein_relationships_added': 0}
+
+    # Get batch of temp genomes
+    cursor.execute("""
+        SELECT ncbi_genome_id, assembly_accession, assembly_name 
+        FROM TEMP_GENOME
+        LIMIT ? OFFSET ?
+    """, (batch_size, offset))
+    temp_genomes = cursor.fetchall()
+
+    if not temp_genomes:
+        return batch_stats
+
+    # Get existing genome data for this batch
+    ncbi_ids = [row[0] for row in temp_genomes]
+    placeholders = ','.join('?' * len(ncbi_ids))
+
+    cursor.execute(f"""
+        SELECT genome_id, assembly_name, gbk_ncbi_id, refseq_ncbi_id,
+               gbk_version_accession, refseq_version_accession
+        FROM Genomes
+        WHERE gbk_ncbi_id IN ({placeholders}) OR refseq_ncbi_id IN ({placeholders})
+    """, ncbi_ids + ncbi_ids)
+
+    existing_genomes = cursor.fetchall()
+
+    # Create lookup dictionaries
+    gbk_ncbi_to_genome = {}
+    refseq_ncbi_to_genome = {}
+
+    for row in existing_genomes:
+        genome_id, assembly_name, gbk_ncbi_id, refseq_ncbi_id, gbk_acc, refseq_acc = row
+        if gbk_ncbi_id:
+            gbk_ncbi_to_genome[gbk_ncbi_id] = {
+                'genome_id': genome_id,
+                'assembly_name': assembly_name,
+                'gbk_version_accession': gbk_acc
+            }
+        if refseq_ncbi_id:
+            refseq_ncbi_to_genome[refseq_ncbi_id] = {
+                'genome_id': genome_id,
+                'assembly_name': assembly_name,
+                'refseq_version_accession': refseq_acc
+            }
+
+    # Process each genome in the batch
     genomes_to_add = []
-    genomes_to_update = []
+    genomes_to_update_gbk = []
+    genomes_to_update_refseq = []
 
-    for assembly_name in ncbi_genome_dict:
-        try:
-            db_genome_table_dict[assembly_name]
-            genomes_to_update.append(assembly_name)
+    for ncbi_genome_id, assembly_accession, assembly_name in temp_genomes:
+        is_refseq = assembly_accession.startswith("GCF_")
 
-        except KeyError:  # assembly name not in the local db, so need to add new record
-            genomes_to_add.append(assembly_name)
+        if is_refseq:
+            if ncbi_genome_id in refseq_ncbi_to_genome:
+                existing = refseq_ncbi_to_genome[ncbi_genome_id]
+                if (update and 
+                    (existing['assembly_name'] != assembly_name or 
+                     existing['refseq_version_accession'] != assembly_accession)):
+                    genomes_to_update_refseq.append((
+                        assembly_name, assembly_accession, existing['genome_id']
+                    ))
+            else:
+                genomes_to_add.append((assembly_name, None, None, assembly_accession, ncbi_genome_id))
+        else:
+            if ncbi_genome_id in gbk_ncbi_to_genome:
+                existing = gbk_ncbi_to_genome[ncbi_genome_id]
+                if (update and 
+                    (existing['assembly_name'] != assembly_name or 
+                     existing['gbk_version_accession'] != assembly_accession)):
+                    genomes_to_update_gbk.append((
+                        assembly_name, assembly_accession, existing['genome_id']
+                    ))
+            else:
+                genomes_to_add.append((assembly_name, assembly_accession, ncbi_genome_id, None, None))
 
-    genomes_of_interst = genomes_to_add + genomes_to_update  # list of assembly names
+    # Execute batch operations
+    if genomes_to_add:
+        cursor.executemany("""
+            INSERT INTO Genomes (assembly_name, gbk_version_accession, gbk_ncbi_id, 
+                               refseq_version_accession, refseq_ncbi_id)
+            VALUES (?, ?, ?, ?, ?)
+        """, genomes_to_add)
+        batch_stats['genomes_added'] = len(genomes_to_add)
 
-    if args.update and len(genomes_to_update) > 0:
-        update_genomic_data(genomes_to_update, db_genome_table_dict, ncbi_genome_dict, connection)
-        # load updated table
-        db_genome_table_dict = get_assembly_table(genomes_of_interst, connection)
+    if genomes_to_update_gbk:
+        cursor.executemany("""
+            UPDATE Genomes 
+            SET assembly_name = ?, gbk_version_accession = ?
+            WHERE genome_id = ?
+        """, genomes_to_update_gbk)
+        batch_stats['genomes_updated'] += len(genomes_to_update_gbk)
 
-    if len(genomes_to_add) > 0:
-        add_genomic_data(ncbi_genome_dict, genomes_to_add, connection)
-        # load updated table
-        db_genome_table_dict = get_assembly_table(genomes_of_interst, connection)
+    if genomes_to_update_refseq:
+        cursor.executemany("""
+            UPDATE Genomes 
+            SET assembly_name = ?, refseq_version_accession = ?
+            WHERE genome_id = ?
+        """, genomes_to_update_refseq)
+        batch_stats['genomes_updated'] += len(genomes_to_update_refseq)
 
-    # add genbank protein ids and genome ids to Genbanks_Genomes table to link proteins and genomes
-    add_prot_genome_relationships(assembly_prot_dict, gbk_dict, db_genome_table_dict, connection)
-
-    return
+    return batch_stats
 
 
-def add_genomic_data(ncbi_genome_dict, genomes_of_interst, connection):
-    """Add new genomic assembly data to the local CAZyme database
+def _update_temp_protein_genome_ids(conn: sqlite3.Connection, batch_size: int) -> None:
+    """Update TEMP_GENOME2PROTEIN with genome_ids in batches.
 
-    :param ncbi_genome_dict: dict, listing assembly meta data
-    :param genomes_of_interst: list, assembly names of new assemblies to add to the db
-    :param connection: open sqlite db connection
-
-    Return nothing
+    Args:
+        conn: Database connection
+        batch_size: Size of batches to process
     """
-    logger = logging.getLogger(__name__)
+    cursor = conn.cursor()
 
-    records_to_add = set()
+    # Get count of records to update
+    cursor.execute("SELECT COUNT(*) FROM TEMP_GENOME2PROTEIN WHERE genome_id IS NULL")
+    total_to_update = cursor.fetchone()[0]
 
-    for assembly_name in tqdm(ncbi_genome_dict, desc="Compiling data to add to db"):
-        if assembly_name not in genomes_of_interst:
-            continue
-        gbk_ver_acc = ncbi_genome_dict[assembly_name]['gbk_acc']
-        gbk_ncbi_id = ncbi_genome_dict[assembly_name]['gbk_uid']
-        ref_ver_acc = ncbi_genome_dict[assembly_name]['refseq_acc']
-        ref_ncbi_id = ncbi_genome_dict[assembly_name]['refseq_uid']
+    if not total_to_update:
+        logger.info("All TEMP_GENOME2PROTEIN records already have genome_ids")
+        return
 
-        records_to_add.add((assembly_name, gbk_ver_acc, gbk_ncbi_id, ref_ver_acc, ref_ncbi_id))
+    logger.info("Updating %d protein-genome mappings with genome_ids in batches of %d", 
+               total_to_update, batch_size)
 
-    if len(records_to_add) != 0:
-        insert_data(
-            connection,
-            'Genomes',
-            ['assembly_name', 'gbk_version_accession', 'gbk_ncbi_id', 'refseq_version_accession', 'refseq_ncbi_id'],
-            list(records_to_add),
-        )
+    # Process in batches using ROWID for consistent ordering
+    offset = 0
+    updated_count = 0
 
-    return
-
-
-def update_genomic_data(genomes_of_interest, genome_table_dict, ncbi_genome_dict, connection, unit_test=False):
-    """Update existing genomic assembly data in the local CAZyme database
-
-    :param genomes_of_interest: list, assembly names of records to update in the local db
-    :param genome_table_dict: dict, assembly_name: db_dib
-    :param ncbi_genome_dict: dict, listing assembly meta data
-    :param connection: open sqlite db connection
-
-    Return nothing
-    """
-    logger = logging.getLogger(__name__)
-
-    for assembly_name in tqdm(ncbi_genome_dict, desc="Updating data in the db"):
-        if assembly_name not in genomes_of_interest:
-            continue
-
-        db_id = genome_table_dict[assembly_name]
-
-        gbk_ver_acc = ncbi_genome_dict[assembly_name]['gbk_acc']
-        gbk_ncbi_id = ncbi_genome_dict[assembly_name]['gbk_uid']
-        ref_ver_acc = ncbi_genome_dict[assembly_name]['refseq_acc']
-        ref_ncbi_id = ncbi_genome_dict[assembly_name]['refseq_uid']
-
-        with connection.begin():
-            connection.execute(
-                text(
-                    "UPDATE Genomes "
-                    f"SET gbk_version_accession = {gbk_ver_acc} AND "
-                    f"gbk_ncbi_id = {gbk_ncbi_id} AND "
-                    f"refseq_version_accession = {ref_ver_acc} AND "
-                    f"refseq_ncbi_id = {ref_ncbi_id} AND "
-                    f"WHERE genome_id = '{db_id}'"
-                )
+    while offset < total_to_update:
+        # Update a batch of records
+        cursor.execute("""
+            UPDATE TEMP_GENOME2PROTEIN 
+            SET genome_id = (
+                SELECT g.genome_id 
+                FROM Genomes g 
+                JOIN TEMP_GENOME tg ON g.assembly_name = tg.assembly_name
+                WHERE tg.assembly_accession = TEMP_GENOME2PROTEIN.assembly_accession
             )
-            if unit_test:
-                connection.rollback()
+            WHERE ROWID IN (
+                SELECT ROWID FROM TEMP_GENOME2PROTEIN 
+                WHERE genome_id IS NULL 
+                LIMIT ? OFFSET ?
+            )
+        """, (batch_size, offset))
 
-    return
+        batch_updated = cursor.rowcount
+        updated_count += batch_updated
+        offset += batch_size
+
+        # Commit after each batch
+        conn.commit()
+
+        logger.debug("Updated batch: %d records (total: %d/%d)", 
+                    batch_updated, updated_count, total_to_update)
+
+        if batch_updated == 0:
+            break  # No more records to update
+
+    logger.info("Updated %d protein-genome mappings with genome_ids", updated_count)
 
 
-def add_prot_genome_relationships(assembly_prot_dict, gbk_dict, db_genome_table_dict, connection):
-    """Add protein (Gbk) and genome links to the Genbanks_Genomes table
+def _process_protein_relationships(conn: sqlite3.Connection, batch_size: int) -> dict:
+    """Process protein-genome relationships in batches.
 
-    :param assembly_prot_dict: dict, {assembly_name: {protein_accessions}}
-    :param db_genome_table_dict: Genomes table loaded into dict
-    :param gbk_dict: dict, {gbk_accession: local db id}
-    :param connection: open sqlite db connection
+    Args:
+        conn: Database connection
+        batch_size: Size of batches to process
 
-    Return nothing
+    Returns:
+        Dictionary with relationship statistics
     """
-    # load Genbanks_Genomes table --> set of tuples, each tuple is one row (gbk_id, genome_id)
-    gbk_genome_table_data = get_gbk_genome_table_data(connection)  
-    relationships_to_add = set()
+    cursor = conn.cursor()
+    stats = {'added': 0}
 
-    for assembly_name in tqdm(assembly_prot_dict, desc="Linking proteins and genomes"):
-        assembly_proteins = assembly_prot_dict[assembly_name]
-        for protein in assembly_proteins:
-            protein_id = gbk_dict[protein]
-            assembly_id = db_genome_table_dict[assembly_name]
+    # Get count of temp relationships
+    cursor.execute("SELECT COUNT(*) FROM TEMP_GENOME2PROTEIN WHERE genome_id IS NOT NULL")
+    total_relationships = cursor.fetchone()[0]
 
-            relationship = (protein_id, assembly_id)
+    if not total_relationships:
+        logger.info("No protein-genome relationships to process")
+        return stats
 
-            if relationship not in gbk_genome_table_data:
-                relationships_to_add.add(relationship)
+    logger.info("Processing %d protein-genome relationships in batches of %d", 
+               total_relationships, batch_size)
 
-    if len(relationships_to_add) > 0:
-        insert_data(
-            connection,
-            'Genbanks_Genomes',
-            ['genbank_id', 'genome_id'],
-            list(relationships_to_add),
-        )
+    # Get existing relationships in batches to avoid memory issues
+    existing_relationships = set()
+    cursor.execute("SELECT COUNT(*) FROM Proteins_Genomes")
+    existing_count = cursor.fetchone()[0]
+
+    if existing_count > 0:
+        logger.info("Loading %d existing protein-genome relationships", existing_count)
+        offset = 0
+        while offset < existing_count:
+            cursor.execute("SELECT protein_id, genome_id FROM Proteins_Genomes LIMIT ? OFFSET ?", 
+                          (batch_size, offset))
+            batch_existing = cursor.fetchall()
+            existing_relationships.update(batch_existing)
+            offset += batch_size
+
+            if len(batch_existing) < batch_size:
+                break
+
+    # Process temp relationships in batches
+    offset = 0
+    while offset < total_relationships:
+        cursor.execute("""
+            SELECT DISTINCT protein_id, genome_id 
+            FROM TEMP_GENOME2PROTEIN 
+            WHERE genome_id IS NOT NULL
+            LIMIT ? OFFSET ?
+        """, (batch_size, offset))
+
+        temp_batch = cursor.fetchall()
+        if not temp_batch:
+            break
+
+        # Filter out existing relationships
+        relationships_to_add = []
+        for protein_id, genome_id in temp_batch:
+            if (protein_id, genome_id) not in existing_relationships:
+                relationships_to_add.append((protein_id, genome_id))
+                existing_relationships.add((protein_id, genome_id))  # Avoid duplicates in subsequent batches
+
+        # Add new relationships
+        if relationships_to_add:
+            cursor.executemany("""
+                INSERT INTO Proteins_Genomes (protein_id, genome_id)
+                VALUES (?, ?)
+            """, relationships_to_add)
+            stats['added'] += len(relationships_to_add)
+
+            logger.debug("Added %d new relationships in batch %d-%d", 
+                        len(relationships_to_add), offset + 1, offset + len(temp_batch))
+
+        offset += batch_size
+
+        # Commit after each batch
+        conn.commit()
+
+    logger.info("Added %d new protein-genome relationships", stats['added'])
+    return stats

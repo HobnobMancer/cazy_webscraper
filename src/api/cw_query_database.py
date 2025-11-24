@@ -56,7 +56,7 @@ from saintBioutils.utilities import file_io
 from tqdm import tqdm
 
 from cazy_webscraper import cazy_scraper, closing_message
-from cazy_webscraper.sql.sql_interface.get_data import get_selected_gbks, get_api_data
+from cazy_webscraper.sql.sql_interface.get_data import get_proteins, get_api_data
 from cazy_webscraper.utilities.parsers.api_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
@@ -140,7 +140,7 @@ def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = No
 
     # get the records of GenBank accessions matching the criteria of interest
     # {gbk_acc: gbk_id}
-    gbk_dict = get_selected_gbks.get_genbank_accessions(
+    gbk_dict = get_proteins.get_genbank_accessions(
         class_filters,
         family_filters,
         taxonomy_filter_dict,

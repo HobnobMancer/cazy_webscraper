@@ -390,23 +390,20 @@ def get_gbk_kingdom_dict(connection):
     return genbank_kingdom_dict
 
 
-def get_ncbi_tax_table(connection):
+def get_ncbi_tax_table(connection: sqlite3.Connection) -> dict:
     """Load NCBITaxs table into a dict
-    
-    :param connection: open connection to an sql db
-    
-    Retur dict {ncbi tax id: local db id}
-    """
-    with Session(bind=connection) as session:
-        query_results = session.query(NcbiTax).\
-            all()
-    
-    ncbi_tax_dict = {}
 
-    for record in tqdm(query_results, desc="Loading NcbiTax table into dict"):
-        ncbi_tax_id = record.ncbi_tax_id
-        ncbi_tax_dict[ncbi_tax_id] = ncbi_tax_id
-    
+    :param connection: open connection to an sqlite3 db
+
+    Return dict {ncbi_tax_id: local db id}
+    """
+    ncbi_cur = connection.cursor()
+    ncbi_cur.execute("""SELECT * FROM NCBITaxs""")
+    ncbi_tax_dict = {}
+    for row in ncbi_cur:
+        # [0] local db id, [1] ncbi_tax_id
+        ncbi_tax_dict[row[1]] = row[0]
+    ncbi_cur.close()
     return ncbi_tax_dict
 
 

@@ -98,7 +98,7 @@ def add_gbk_seqs_to_db(seq_dict, retrieval_date, gbk_dict, connection, cache_dir
         if existing_record['sequence'] is None:
             records.add( (db_id, seq) )
         else:
-            if (args.seq_update) and (retrieval_date < existing_record['seq_date']):
+            if (args.update) and (retrieval_date < existing_record['seq_date']):
                 records.add( (db_id, seq) )
 
     if len(records) != 0:

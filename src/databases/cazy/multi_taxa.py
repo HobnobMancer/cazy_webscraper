@@ -53,7 +53,7 @@ from tqdm import tqdm
 
 from Bio import Entrez
 
-from src.ncbi.taxonomy.multiple_taxa import get_ncbi_tax
+from src.databases.ncbi.taxonomies import get_taxonomy
 from src.sql.interface.add_data.add_ncbi_tax_data import replace_ncbi_taxonomy
 
 
@@ -83,10 +83,10 @@ def process_multi_taxa(
     # Execute the query
     cursor.execute("""
     SELECT protein_id
-    FROM TempTable
+    FROM TEMP_TABLE
     WHERE protein_id IN (
         SELECT protein_id
-        FROM TempTable
+        FROM TEMP_TABLE
         GROUP BY protein_id
         HAVING COUNT(DISTINCT genus || species) > 1
     ) AND source != 'jgi'
@@ -122,14 +122,14 @@ def keep_first_taxa(protein_id: str, conn: sqlite3.Connection) -> None:
     cur = conn.cursor()
     cur.execute("""
         SELECT *
-        FROM TempTable
+        FROM TEMP_TABLE
         WHERE protein_id = ?;
     """, (protein_id,)
     )
 
     first_row = cur.fetchone()
     cur.execute("""
-        DELETE FROM TempTable
+        DELETE FROM TEMP_TABLE
         WHERE protein_id = ? 
             AND (genus != ? OR species != ?);
     """, (protein_id, first_row[1], first_row[2]))
@@ -207,7 +207,7 @@ def use_latest_taxa(
                 keep_first_taxa(protein_id, conn)
 
         else:
-            ncbi_data = get_ncbi_tax(epost_results, args)
+            ncbi_data = get_taxonomy(epost_results, args)
             if not ncbi_data:
                 for protein_id in batch:
                     keep_first_taxa(protein_id, conn)

@@ -40,7 +40,7 @@ For full details see our publication in [Microbial Genomics](https://www.microbi
 
 **[GenBank](https://www.ncbi.nlm.nih.gov/genbank/):**  
 - Protein sequences 
-- Latest taxonomic classification - including complete lineage (including phylum, class, order and family)
+- Latest taxonomic classification - including complete lineage (phylum, class, order and family)
 - Latest genomic assembly data - GenBank and RefSeq (when available) version accession and ID numbers
 
 **[UniProt](https://www.uniprot.org/):** 
@@ -178,8 +178,9 @@ cazy_webscraper --citation
 ### Subcommand summary
 
 `download` - Download data from CAZy and build a local SQLite database
-`get_gbk_seqs` - Download NCBI-GenBank sequences and import the sequences into the local CAZyme database
-`get_ncbi_taxs` - Download the latest taxonomy data from NCBI and update these taxs in the local CAZyme database
+`get_ncbi_seqs` - Download NCBI-GenBank sequences and import the sequences into the local CAZyme database  
+`get_ncbi_taxs` - Download the latest taxonomy data from NCBI and update these taxa in the local CAZyme database  
+`get_ncbi_genomes` - Download the genomic assembly name, id and version accession from which a protein sequence was stored, and store these data in the local CAZyme database   
 
 ## Creating a local CAZyme database
 The `download` subcommand which is used to scrape CAZy and compile a local SQLite database.
@@ -366,13 +367,16 @@ Limit	  Details
 
 ## Retrieveing protein seqences from GenBank
 
-Protein amino acid sequences can be retrieved for proteins in a local CAZyme database using `cazy_webscraper get_genbank_seqs`. Protein sequences can be retrieved for a specific subset of proteins, identified through the use of CAZy class, CAZy family, taxonomy (kingdom, genus, species and strain) filters, and EC number filters. The retrieved protein sequences are written to the local CAZyme database.
+Protein amino acid sequences can be retrieved for proteins in a local CAZyme database using `cazy_webscraper get_ncbi_seqs`. Protein sequences can be retrieved for a specific subset of proteins, identified through the use of CAZy class, CAZy family, taxonomy (kingdom, genus, species and strain) filters, and EC number filters. The retrieved protein sequences are written to the local CAZyme database.
+
+Sequences are persisted in the local CAZyme database as they are retrieved, therefore a download of the sequence
+data can be resumed without the need to start again if the `cazy_webscraper get_ncbi_seqs` command is interrupted.
 
 _Extracting protein sequences from the local CAZyme database and writing them to a BLAST database and/or FASTA file(s) is covered in the next section._
 
 To retrieve all GenBank protein seuqneces for all proteins in a local CAZyme datbase, using the following command:
 ```bash
-cazy_webscraper get_genbank_seqs <path_to_local_CAZyme_db>
+cazy_webscraper get_ncbi_seqs <path_to_local_CAZyme_db>
 ```
 
 REQUIRED arguments:
@@ -398,11 +402,7 @@ Operational arguments:
   --genbank_accessions GENBANK_ACCESSIONS
                         Path to a text file containing a list of GenBank accessions to retrieve data for. Note, accessions from the local DB will not
                         be retrieved, only the accessions in this this file will be used. (default: None)
-  --seq_dict SEQ_DICT   Path to a JSON file, keyed by GenBank accessions and valued by protein sequence Add seqs in file to the local CAZyme
-                        database. This is created by cazy_webscraper during get_gbk_seqs (default: None)
-  --seq_file SEQ_FILE   Path to a FASTA file of protein sequences Add seqs in file to the local CAZyme database (default: None)
-  -F, --file_only       Only add seqs provided via JSON and/or FASTA file. Do not retrieve data from NCBI (default: False)
-  --seq_update          Enable overwriting sequences in the database if the retrieved sequence is different (default: False)
+  --update          Enable overwriting sequences in the database if the retrieved sequence is different (default: False)
 
 Utility arguments:
   --batch_size BATCH_SIZE
@@ -658,8 +658,6 @@ cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 `--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
-
-
 ## Retrieving genomic assembly data from NCBI
 
 CAZy does not list the source genomic assembly for proteins catalogued in its database. `cazy_webscraper` can be used to retrieve the latest genomic assembly data from NCBI for CAZymes in 
@@ -671,60 +669,51 @@ to the local CAZyme database entails:
 - RefSeq genomic version accession
 - RefSeq genomic ID
 
-The command for retrieving genomic assembly data from the NCBI Assembly database using cazy_webscraper is `cw_get_genomics`.
-
-### Configuring retrieving genomic assembly data
-
-Below are listed the command-line flags for configuring the retrieval of genomic assembly data from the NCBI Assembly database, and adding the data to the local CAZyme database.
-
-`database` - \[REQUIRED\] Path to a local CAZyme database to add UniProt data to.
-
-`email` - \[REQUIRED\] User email address (required by Entrez)
-
-`--batch_size` - Size of an individual batch query of NCBI sequence version accessions to NCBI. Default is 150.
-
-`--cache_dir` - Path to cache dir to be used instead of default cache dir path.
-
-`--cazy_synonyms` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
-
-`--config`, `-c` - Path to a configuration YAML file. Default: None.
-
-`--classes` - List of classes from which all families are to be scrape.
-
-`--ec_filter` - Limist retrieval of protein data to proteins annotated with a provided list of EC numbers. Separate the EC numbers bu single commas without spaces. Recommend to wrap the entire str in quotation marks, for example:
+To download the genomic assembly data from NCBI for all proteins in a local CAZyme database:
 ```bash
-cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
+cazy_webscraper get_ncbi_genomes <path to cazyme db> <email address>
 ```
 
-`--families` - List of CAZy (sub)families to scrape.
+REQUIRED arguments
+  database              Path to local CAZy database
+  email                 User email address, requirement of NCBI-Entrez. The address is not stored by cazy_webscraper
 
-`--force` - Force writing to exiting cache directory.
+OPTIONAL arguments
 
-`--genbank_accessions` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+Filtering arguments:
+  --classes CLASSES     Classes from which all families are to be scraped. Separate classes by ',' (default: None)
+  --families FAMILIES   Families to scrape. Separate families by commas 'GH1,GH2' (default: None)
+  --kingdoms KINGDOMS   Kingdoms to scrape. Separate by a single comma. Options= archaea, bacteria, eukaryota, viruses, unclassified
+                        (not case sensitive) (default: None)
+  --genera GENERA       Genera to restrict the scrape to (default: None)
+  --species SPECIES     Species (written as Genus Species) to restrict the scrape to (default: None)
+  --strains STRAINS     Specific strains of organisms to restrict the scrape to (written as Genus Species Strain) (default: None)
+  --ec_filter EC_FILTER
+                        Limit retrieval to proteins annotated with the provided EC numbers. Separate EC numbers with single commas
+                        (default: None)
 
-`--genera` - List of genera to restrict the scrape to. Default: None, filter not applied to scrape.
+Operational arguments:
+  -c Config file, --config Config file
+                        Path to configuration file. Default: None, scrapes entire database (default: None)
+  --genbank_accessions GENBANK_ACCESSIONS
+                        Path to a text file containing a list of GenBank accessions to retrieve data for. Note, accessions from the
+                        local DB will not be retrieved, only the accessions in this this file will be used. (default: None)
+  -F, --file_only       Only add seqs provided via JSON and/or FASTA file. Do not retrieve data from NCBI (default: False)
+  --update              Update assembly data in the database. Warning: updating records will overwrite existing data in the db/.
+                        (default: False)
 
-`--kingdoms` - List of taxonomy kingdoms to retrieve UniProt data for.
+Utility arguments:
+  --batch_size BATCH_SIZE
+                        Batch size for queries sent to NCBI.Entrez (default: 150)
+  --cache_dir CACHE_DIR
+                        Path to cache directory (default: None)
+  --cazy_synonyms CAZY_SYNONYMS
+                        Path to JSON file containing CAZy class synoymn names (default: None)
+  -f, --force           Force writing in existing cache directory (default: False)
+  --nodelete_cache      Do not delete content in existing cache dir (default: False)
+  -r RETRIES, --retries RETRIES
+                        Number of times to retry scraping a family or class page if error encountered (default: 10)
 
-`--log`, `-l` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
-
-`--nodelete_cache` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
-
-`--retries`, `-r` - Define the number of times to retry making a connection to NCBI if the connection should fail. Default: 10.
-
-`--sql_echo` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
-
-`--species` - List of species written as Genus Species) to restrict the scraping of CAZymes to. CAZymes will be retrieved for **all** strains of each given species.
-
-`--strains` - List of specific species strains to restrict the scraping of CAZymes to.
-
-`--timeout` - Connection timeout threshold (s). (Default: 45s).
-
-`--uniprot_accessions` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
-
-`--update` - Update assembly data in the database. Warning: updating records will overwrite existing data in the database. (Default: False, data is not updated).
-
-`--verbose`, `-v` - Enable verbose logging. This does not set the SQLite engine `echo` parameter to True. Default: False.
 
 ## Retrieving GTDB Taxonomies
 

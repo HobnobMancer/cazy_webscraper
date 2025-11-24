@@ -63,7 +63,7 @@ def sanity_check_main_input(time_stamp: str, args: argparse.ArgumentParser) -> N
         sys.exit(22)
 
     if args.db_output and args.db_output.exists() and not args.force:
-        error_message = """::INPUT ERROR:: Not allowed to overwrite existing database.
+        error_message = """::FILE ERROR:: Unable to overwrite an existing database.
             A database already exists at %s
             and --force/-f was not used, therefore, cazy_webscraper cannot overwrite this database
             Terminating program.""" % args.db_output
@@ -80,7 +80,7 @@ def sanity_check_main_input(time_stamp: str, args: argparse.ArgumentParser) -> N
         error_message = """No database name provided.
         Using default name (%s) and writing to PWD""" % db
         logger.warning(termcolour(error_message, "yellow"))
-        
+
     else:
         if args.db_output:
             db = args.db_output
