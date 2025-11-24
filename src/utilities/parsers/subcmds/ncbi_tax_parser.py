@@ -143,25 +143,8 @@ def build_parser(
         )
     )
     operational_group.add_argument(
-        "--lineage_cache",
-        type=Path,
-        default=None,
-        help=(
-            "Path to previously cached lineage dict containing lineages\n"
-            "and protein seq acc (called lineage_data.json)"
-        ),
-    )
-    operational_group.add_argument(
-        "-F",
-        "--file_only",
-        dest="file_only",
-        action="store_true",
-        default=False,
-        help="Only add seqs provided via JSON and/or FASTA file. Do not retrieve data from NCBI",
-    )
-    operational_group.add_argument(
-        "--update_taxs",
-        dest="update_taxs",
+        "--update",
+        dest="update",
         action="store_true",
         default=False,
         help="Overwrite and update existing, outdated taxonomies in the local CAZyme database",

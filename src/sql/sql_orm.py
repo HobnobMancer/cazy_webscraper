@@ -414,6 +414,7 @@ class NcbiTax(Base):
 
     # define columns before table_args so subfam column can be called
     ncbi_tax_id = Column(Integer, primary_key=True)
+    domain = Column(ReString)
     kingdom = Column(ReString)
     phylum = Column(ReString)
     tax_class = Column(ReString)

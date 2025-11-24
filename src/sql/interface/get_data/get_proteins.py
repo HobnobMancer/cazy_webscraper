@@ -52,7 +52,9 @@ def get_ncbi_prot_accessions(
     kingdom_filters: set[str],
     taxonomy_filter_dict: dict[str, set[str]],
     ec_filters: set[str],
-    db_path: Path
+    db_path: Path,
+    additional_join: str = None,
+    additional_filter: str = None
 ) -> list[str]:
     query = """
     SELECT Proteins.protein_accession
@@ -63,8 +65,12 @@ def get_ncbi_prot_accessions(
     LEFT JOIN Kingdoms ON Taxs.kingdom_id = Kingdoms.kingdom_id
     LEFT JOIN Proteins_Ecs ON Proteins.protein_id = Proteins_Ecs.protein_id
     LEFT JOIN ECs ON Proteins_Ecs.ec_id = ECs.ec_id
-    WHERE Proteins.source = 'ncbi'
     """
+
+    if additional_join:
+        query += f" {additional_join}"
+
+    query += " WHERE Proteins.source = 'ncbi'"
 
     params = []
     if class_filters:
@@ -100,6 +106,9 @@ def get_ncbi_prot_accessions(
     if ec_filters:
         query += " AND (" + " OR ".join("ECs.ec_number = ?" for _ in ec_filters) + ")"
         params.extend(ec_filters)
+
+    if additional_filter:
+        query += f" AND ({additional_filter})"
 
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()

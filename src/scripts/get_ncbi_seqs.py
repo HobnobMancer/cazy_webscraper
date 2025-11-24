@@ -43,9 +43,7 @@ from src.cache.ncbi import get_cache_seqs
 from src.databases.ncbi.sequences import get_seqs_from_ncbi
 from src.sql import sql_orm
 from src.sql.interface.add_data.scrape_log import log_scrape_in_db
-from src.sql.interface.add_data.add_ncbi_seqs import update_ncbi_seqs
 from src.sql.interface.connect import connect_existing_db
-from src.sql.interface.filter_data.protein import filter_to_db_acc
 from src.sql.interface.get_data.get_proteins import get_ncbi_prot_accessions
 from src.utilities.parse_configuration import get_expansion_configuration
 from src.utilities.parse_configuration.accession_files import get_acc_from_file
@@ -95,7 +93,7 @@ def main(args: Namespace, time_stamp: str, start_time):
             args.genbank_accessions,
             args.database,
         )
-    else:
+    elif args.update:
         seq_acc_to_retrieve = get_ncbi_prot_accessions(
             class_filters,
             family_filters,
@@ -103,6 +101,16 @@ def main(args: Namespace, time_stamp: str, start_time):
             taxonomy_filter_dict,
             ec_filters,
             args.database
+        )
+    else:
+        seq_acc_to_retrieve = get_ncbi_prot_accessions(
+            class_filters,
+            family_filters,
+            kingdom_filters,
+            taxonomy_filter_dict,
+            ec_filters,
+            args.database,
+            additional_filter="Proteins.sequence IS NULL"
         )
 
     if seq_acc_to_retrieve:

@@ -88,7 +88,7 @@ def main(args: Namespace, time_stamp: str, start_time):
             args.genbank_accessions,
             args.database,
         )
-    else:
+    elif args.update:
         seq_acc_to_retrieve = get_ncbi_prot_accessions(
             class_filters,
             family_filters,
@@ -96,6 +96,20 @@ def main(args: Namespace, time_stamp: str, start_time):
             taxonomy_filter_dict,
             ec_filters,
             args.database
+        )
+    else:
+        seq_acc_to_retrieve = get_ncbi_prot_accessions(
+            class_filters,
+            family_filters,
+            kingdom_filters,
+            taxonomy_filter_dict,
+            ec_filters,
+            args.database,
+            additional_join="""
+            LEFT JOIN Proteins_Genomes PG ON Proteins.protein_id = PG.protein_id
+            LEFT JOIN Genomes G ON PG.genome_id = G.genome_id
+            """,
+            additional_filter="G.genome_id IS NULL"
         )
 
     genome_count = 0

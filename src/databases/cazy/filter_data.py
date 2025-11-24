@@ -138,8 +138,6 @@ def apply_class_and_family_filters(
 
     query += ")"
 
-    print("Query:", query)
-
     conn = sqlite3.connect(db)
     cur = conn.cursor()
     cur.execute(query)

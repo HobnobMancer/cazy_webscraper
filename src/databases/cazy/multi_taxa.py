@@ -53,7 +53,7 @@ from tqdm import tqdm
 
 from Bio import Entrez
 
-from src.databases.ncbi.taxonomies import get_ncbi_tax
+from src.databases.ncbi.taxonomies import get_taxonomy
 from src.sql.interface.add_data.add_ncbi_tax_data import replace_ncbi_taxonomy
 
 
@@ -207,7 +207,7 @@ def use_latest_taxa(
                 keep_first_taxa(protein_id, conn)
 
         else:
-            ncbi_data = get_ncbi_tax(epost_results, args)
+            ncbi_data = get_taxonomy(epost_results, args)
             if not ncbi_data:
                 for protein_id in batch:
                     keep_first_taxa(protein_id, conn)
