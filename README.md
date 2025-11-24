@@ -22,6 +22,11 @@
 > This branch includes a significantly faster and lightweight deployment of `cazy_webscraper`, capable
 > of compiling a local CAZyme database containing all CAZyme records from CAZy in 2m5s on a 
 > standard office laptop.
+> Supported features:
+> - downloading CAZy and building a local CAZyme database
+> - retrieving genomic assembly information from NCBI
+> - retrieving protein sequence database from NCBI
+> - retrieving taxonomic classifications from NCBI
 
 ## cazy_webscraper
 
