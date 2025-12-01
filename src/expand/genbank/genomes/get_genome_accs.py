@@ -79,7 +79,7 @@ from cazy_webscraper.sql.sql_interface.get_data.get_table_dicts import (
 )
 from cazy_webscraper.sql.sql_interface.get_data.get_assemblies import get_no_assembly_proteins
 from cazy_webscraper.utilities import parse_configuration
-from cazy_webscraper.utilities.parsers.get_genomes_parser import build_parser
+from cazy_webscraper.utilities.parsers.ncbi_genome_parser import build_parser
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
