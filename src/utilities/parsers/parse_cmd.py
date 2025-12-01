@@ -44,7 +44,8 @@ from src.utilities.parsers.subcmds import (
     scrape_cazy_parser,
     ncbi_seq_parser,
     ncbi_tax_parser,
-    ncbi_genome_parser
+    ncbi_genome_parser,
+    uniprot_parser
 )
 
 
@@ -103,6 +104,7 @@ def build_parser(argv: Optional[List] = None) -> Namespace:
     ncbi_seq_parser.build_parser(subparsers)
     ncbi_tax_parser.build_parser(subparsers)
     ncbi_genome_parser.build_parser(subparsers)
+    uniprot_parser.build_parser(subparsers)
 
     # Parse arguments
     # The list comprehension is to allow PosixPaths to be defined and passed in testing

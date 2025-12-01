@@ -107,7 +107,7 @@ def main(args: Namespace, time_stamp: str, start_time):
             taxonomy_filter_dict,
             ec_filters,
             args.database,
-            additional_filter="Proteins.ncbi_tax_id IS NULL"
+            additional_filter="P.ncbi_tax_id IS NULL"
         )
 
     get_ncbi_taxa(ncbi_acc_to_retrieve, cache_dir, args)

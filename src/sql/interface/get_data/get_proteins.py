@@ -57,20 +57,20 @@ def get_ncbi_prot_accessions(
     additional_filter: str = None
 ) -> list[str]:
     query = """
-    SELECT Proteins.protein_accession
-    FROM Proteins
-    LEFT JOIN Proteins_CazyFamilies ON Proteins.protein_id = Proteins_CazyFamilies.protein_id
+    SELECT P.protein_accession
+    FROM Proteins P
+    LEFT JOIN Proteins_CazyFamilies ON P.protein_id = Proteins_CazyFamilies.protein_id
     LEFT JOIN CazyFamilies ON Proteins_CazyFamilies.family_id = CazyFamilies.family_id
-    LEFT JOIN Taxs ON Proteins.taxonomy_id = Taxs.taxonomy_id
+    LEFT JOIN Taxs ON P.taxonomy_id = Taxs.taxonomy_id
     LEFT JOIN Kingdoms ON Taxs.kingdom_id = Kingdoms.kingdom_id
-    LEFT JOIN Proteins_Ecs ON Proteins.protein_id = Proteins_Ecs.protein_id
+    LEFT JOIN Proteins_Ecs ON P.protein_id = Proteins_Ecs.protein_id
     LEFT JOIN ECs ON Proteins_Ecs.ec_id = ECs.ec_id
     """
 
     if additional_join:
         query += f" {additional_join}"
 
-    query += " WHERE Proteins.source = 'ncbi'"
+    query += " WHERE P.source = 'ncbi'"
 
     params = []
     if class_filters:
