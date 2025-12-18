@@ -151,7 +151,7 @@ def get_cazy_class_synonym_dict(args):
     logger = logging.getLogger(__name__)
 
     if args.cazy_synonyms is None:
-        logger.warning("Using default CAZy class synonyms")
+        logger.info("Using default CAZy class synonyms")
         cazy_class_synonym_dict = cazy_synonym_dict()
         return cazy_class_synonym_dict
 

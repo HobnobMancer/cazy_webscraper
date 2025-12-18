@@ -39,7 +39,6 @@ from argparse import Namespace
 from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
 
-from src.cache.ncbi import get_cache_seqs
 from src.databases.ncbi.sequences import get_seqs_from_ncbi
 from src.sql import sql_orm
 from src.sql.interface.add_data.scrape_log import log_scrape_in_db
@@ -110,7 +109,7 @@ def main(args: Namespace, time_stamp: str, start_time):
             taxonomy_filter_dict,
             ec_filters,
             args.database,
-            additional_filter="Proteins.sequence IS NULL"
+            additional_filter="P.sequence IS NULL"
         )
 
     if seq_acc_to_retrieve:

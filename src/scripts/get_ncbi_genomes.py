@@ -56,7 +56,6 @@ def main(args: Namespace, time_stamp: str, start_time):
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
     Entrez.email = args.email
 
-
     cache_dir = args.cache_dir if args.cache_dir else (cache_dir / "ncbi_genome_retrieval")
     make_output_directory(cache_dir, args.force, args.nodelete_cache)
 

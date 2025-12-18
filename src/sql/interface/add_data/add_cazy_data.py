@@ -47,13 +47,13 @@ import sqlite3
 from pathlib import Path
 
 from src.sql.interface import insert_data
-from src.sql.interface.get_data.get_table_dicts import (
+from src.sql.interface.get_data.get_cazy_data import (
     get_kingdom_table_dict,
     get_taxs_table_dict,
     get_fams_table_dict,
-    get_protein_table_dict,
-    get_prot_fam_table_dict,
+    get_prot_fam_table_dict
 )
+from src.sql.interface.get_data.get_proteins import get_protein_table_dict
 
 
 logger = logging.getLogger(__name__)

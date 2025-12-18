@@ -47,7 +47,9 @@ import re
 import sqlite3
 
 from sqlalchemy import (
+    Boolean,
     Column,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -186,6 +188,21 @@ proteins_pdbs = Table(
     PrimaryKeyConstraint("protein_id", "pdb_id"),
 )
 
+proteins_pfams = Table(
+    "Proteins_Pfams",
+    Base.metadata,
+    Column("protein_id", Integer, ForeignKey("Proteins.protein_id")),
+    Column("pfam_id", Integer, ForeignKey("Pfams.pfam_id")),
+    PrimaryKeyConstraint("protein_id", "pfam_id"),
+)
+
+proteins_gos = Table(
+    "Proteins_GoTerms",
+    Base.metadata,
+    Column("protein_id", Integer, ForeignKey("Proteins.protein_id")),
+    Column("go_id", Integer, ForeignKey("GoTerms.go_id")),
+    PrimaryKeyConstraint("protein_id", "go_id"),
+)
 
 class Protein(Base):
     """Represents a protein (NCBI or JGI) accession number and protein seq.
@@ -238,6 +255,19 @@ class Protein(Base):
         back_populates="protein",
         lazy="dynamic",
     )
+    pfams = relationship(
+        "Pfam",
+        secondary=proteins_pfams,
+        back_populates="protein",
+        lazy="dynamic",
+    )
+    goterms = relationship(
+        "GoTerms",
+        secondary=proteins_gos,
+        back_populates="proteins",
+        lazy="dynamic",
+    )
+
 
     def __str__(self):
         return f"-Protein accession={self.protein_accession}-"
@@ -328,6 +358,31 @@ class Genome(Base):
         return (
             f"<Class Genome: Gbk={self.gkb_version_accession}, RefSeq={self.refseq_version_accession}>"
         )
+
+
+class GoTerms(Base):
+    """Describe GO terms."""
+    __tablename__ = "GoTerms"
+    __table_args__ = (
+        UniqueConstraint("go_id"),
+    )
+
+    go_id = Column(Integer, primary_key=True)
+    description = Column(ReString, index=True)
+
+    proteins = relationship(
+        "Protein",
+        secondary=proteins_gos,
+        back_populates="goterms",
+        lazy="dynamic",
+    )
+
+    def __str__(self):
+        return f"-GO term={self.description}, id={self.go_id}-"
+
+    def __repr__(self):
+        return f"<Class GoTerm, GO term={self.description}, id={self.go_id}>"
+
 
 
 class GtdbTax(Base):
@@ -456,13 +511,15 @@ class Uniprot(Base):
 
     uniprot_id = Column(Integer, primary_key=True)
     uniprot_accession = Column(String)
-    uniprot_name = Column(ReString)
+    uniparc_id = Column(String)
+    name = Column(ReString)
+    swissprot = Column(Boolean)
     sequence = Column(ReString)
+    md5 = Column(String)
+    molecular_weight = Column(Integer)
     seq_update_date = Column(ReString)
-    uniprot_tax_id = Column(Integer, ForeignKey("UniprotTaxs.uniprot_tax_id"))
 
     protein = relationship("Protein", back_populates="uniprot")
-    taxs = relationship("UniprotTax", back_populates="uniprots")
 
     def __str__(self):
         return (
@@ -475,35 +532,6 @@ class Uniprot(Base):
         return(
             f"<Uniprot, accession={self.uniprot_accession}, "
             f"name={self.uniprot_name}, id={self.uniprot_id}>"
-        )
-
-
-class UniprotTax(Base):
-    """Describes a NCBI Taxonomy lineage."""
-    __tablename__ = "UniprotTaxs"
-
-    uniprot_tax_id = Column(Integer, primary_key=True)
-    genus = Column(ReString)
-    species = Column(ReString)
-
-    __table_args__ = (
-        UniqueConstraint("genus", "species"),
-        Index("uniprot_tax_index", "uniprot_tax_id", "genus", "species"),
-    )
-
-    uniprots = relationship(
-        "Uniprot",
-        back_populates="taxs",
-        lazy="dynamic",
-    )
-
-    def __str__(self):
-        return f"-UniProt Tax,  genus={self.genus}, species={self.species}-"
-
-    def __repr__(self):
-        """Return string representation of UniProt Tax record."""
-        return(
-            f"<Class UniProtTax, genus={self.genus}, species={self.species}>"
         )
 
 
@@ -540,6 +568,8 @@ class Pdb(Base):
 
     pdb_id = Column(Integer, primary_key=True)
     pdb_accession = Column(String)
+    method = Column(String)
+    resolution = Column(Float)
 
     Index('pdb_idx', pdb_accession)
 
@@ -555,6 +585,36 @@ class Pdb(Base):
 
     def __repr__(self):
         return f"<Class Pdb accession={self.pdb_accession}, id={self.pdb_id}>"
+
+
+class Pfam(Base):
+    """Describe a Pfam annotation."""
+    __tablename__ = "Pfams"
+    __table_args__ = (
+        UniqueConstraint("pfam_id"),
+    )
+
+    pfam_id = Column(Integer, primary_key=True)
+    accession = Column(String)
+    name = Column(ReString)
+    description = Column(ReString)
+    annotation_type = Column(String)
+    release = Column(String)
+
+    Index('pfam_idx', accession)
+
+    protein = relationship(
+        "Protein",
+        secondary=proteins_pfams,
+        back_populates="pfams",
+        lazy="dynamic",
+    )
+
+    def __str__(self):
+        return f"-Pfam accession={self.accession}, id={self.pfam_id}-"
+
+    def __repr__(self):
+        return f"<Class Pfam accession={self.accession}, id={self.pfam_id}>"
 
 
 class Log(Base):

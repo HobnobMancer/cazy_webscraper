@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) University of St Andrews 2024
-# (c) University of Strathclyde 2024
-# (c) James Hutton Institute 2024
+# (c) University of St Andrews 2025
+# (c) University of Strathclyde 2025
+# (c) James Hutton Institute 2025
+#
 # Author:
 # Emma E. M. Hobbs
 #
@@ -28,36 +29,30 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Get lineage database from NCBI"""
-
 
 import logging
 
 from argparse import Namespace
 
-from Bio import Entrez
 from saintBioutils.utilities.file_io import make_output_directory
 
-from src.databases.ncbi.taxonomies import get_ncbi_taxa
+from src.databases.uniprot import get_uniprot_data
 from src.sql import sql_orm
 from src.sql.interface.add_data.scrape_log import log_scrape_in_db
+from src.sql.interface.get_data.get_proteins import get_ncbi_prot_accessions
 from src.sql.interface.connect import connect_existing_db
-from src.sql.interface.get_data.get_proteins import get_ncbi_prot_accessions, get_ncbi_acc_for_uniprot_acc
 from src.utilities.parse_configuration import get_expansion_configuration
 from src.utilities.parse_configuration.accession_files import get_acc_from_file
-from src.utilities.sanity_checks.get_ncbi_tax import sanity_check_inputs
 
 
 logger = logging.getLogger(__name__)
 
-
 def main(args: Namespace, time_stamp: str, start_time):
-    sanity_check_inputs(args)
     connection, logger_name, cache_dir = connect_existing_db(args, time_stamp, start_time)
-    Entrez.email = args.email
 
-    cache_dir = args.cache_dir if args.cache_dir else (cache_dir / "ncbi_tax_retrieval")
+    cache_dir = args.cache_dir if args.cache_dir else (cache_dir / "uniprot_data_retrieval")
     make_output_directory(cache_dir, args.force, args.nodelete_cache)
+
     (
         config_dict,
         class_filters,
@@ -68,29 +63,27 @@ def main(args: Namespace, time_stamp: str, start_time):
     ) = get_expansion_configuration(args)
 
     with sql_orm.Session(bind=connection) as session:
-        retrieved_data = "Taxonomies"
+        retrieved_data = "NCBI genomic accessions"
         log_scrape_in_db(
             time_stamp,
             config_dict,
             kingdom_filters,
             taxonomy_filter_dict,
             ec_filters,
-            'NCBI',
+            'UniProt',
             retrieved_data,
             session,
             args,
         )
 
-    if args.genbank_accessions or args.uniprot_accessions:
-        ncbi_acc_to_retrieve = []
-        if args.genbank_accessions:
-            ncbi_acc_to_retrieve.append(get_acc_from_file(args.genbank_accessions, args.database))
-        if args.uniprot_accessions:
-            uniprot_acc_to_retrieve = get_acc_from_file(args.genbank_accessions, args.database, table="UniProt")
-            # get ncbi acc for the uniprots
-            ncbi_acc_to_retrieve.append(get_ncbi_acc_for_uniprot_acc(uniprot_acc_to_retrieve, args.database))
+    if args.genbank_accessions:
+        seq_acc_to_retrieve = get_acc_from_file(
+            args.genbank_accessions,
+            args.database,
+        )
     elif args.update:
-        ncbi_acc_to_retrieve = get_ncbi_prot_accessions(
+        # retreive everything as we can update these fields
+        seq_acc_to_retrieve = get_ncbi_prot_accessions(
             class_filters,
             family_filters,
             kingdom_filters,
@@ -99,16 +92,19 @@ def main(args: Namespace, time_stamp: str, start_time):
             args.database
         )
     else:
-        ncbi_acc_to_retrieve = get_ncbi_prot_accessions(
+        # only retrieve accessions without uniprot data
+        seq_acc_to_retrieve = get_ncbi_prot_accessions(
             class_filters,
             family_filters,
             kingdom_filters,
             taxonomy_filter_dict,
             ec_filters,
             args.database,
-            additional_filter="P.ncbi_tax_id IS NULL"
+            additional_filter="P.uniprot_id IS NULL"
         )
 
-    get_ncbi_taxa(ncbi_acc_to_retrieve, cache_dir, args)
+    if seq_acc_to_retrieve:
+        logger.warning("Retrieving UniProt data for %d accessions", len(seq_acc_to_retrieve))
+        get_uniprot_data(seq_acc_to_retrieve, cache_dir, time_stamp, args)
 
-    return("get_ncbi_taxs")
+    return "get_uniprot_data"

@@ -39,7 +39,7 @@ from pathlib import Path
 
 from Bio.Seq import Seq
 
-from src.sql.interface.get_data.get_table_dicts import get_protein_table_dict
+from src.sql.interface.get_data.get_proteins import get_protein_table_dict
 
 logger = logging.getLogger(__name__)
 
