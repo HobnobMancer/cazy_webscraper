@@ -49,6 +49,7 @@ import sqlite3
 from sqlalchemy import (
     Boolean,
     Column,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -510,8 +511,8 @@ class Uniprot(Base):
 
     uniprot_id = Column(Integer, primary_key=True)
     uniprot_accession = Column(String)
-    uniprot_name = Column(ReString)
-    uniParcId = Column(String)
+    uniparc_id = Column(String)
+    name = Column(ReString)
     swissprot = Column(Boolean)
     sequence = Column(ReString)
     md5 = Column(String)
@@ -567,6 +568,8 @@ class Pdb(Base):
 
     pdb_id = Column(Integer, primary_key=True)
     pdb_accession = Column(String)
+    method = Column(String)
+    resolution = Column(Float)
 
     Index('pdb_idx', pdb_accession)
 

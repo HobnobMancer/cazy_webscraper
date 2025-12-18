@@ -44,10 +44,7 @@
 import logging
 import sqlite3
 
-from sqlalchemy import text
-from tqdm import tqdm
-
-from src.sql.interface.get_data.get_table_dicts import get_ncbi_tax_table
+from src.sql.interface.get_data.get_taxonomies import get_ncbi_tax_table
 from src.databases.ncbi.taxonomies import NcbiProtein
 
 

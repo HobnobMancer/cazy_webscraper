@@ -86,24 +86,3 @@ def insert_data(
         raise SqlInterfaceException(f"Database error: {str(db_error)}") from db_error
     finally:
         insert_cur.close()
-
-
-# # def get_gbk_table_dict(connection):
-# #     """Compile a dict of the data in the Genbanks table
-    
-# #     :param connection: open connection to an SQLite3 database
-    
-# #     Return dict {gbk accession : gbk id}
-# #     """
-# #     logger = logging.getLogger(__name__)
-
-# #     logger.info("Compiling Genbank protein table into dict")
-
-# #     with sql_orm.Session(bind=connection) as session:
-# #         all_genbank = session.query(sql_orm.Genbank).all()
-
-# #     db_gbk_dict = {}  # {genbank_accession: db genbank id number}
-# #     for gbk in all_genbank:
-# #         db_gbk_dict[f"{gbk.genbank_accession}"] = gbk.genbank_id
-    
-# #     return db_gbk_dict

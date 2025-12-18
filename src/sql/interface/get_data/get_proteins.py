@@ -117,3 +117,54 @@ def get_ncbi_prot_accessions(
     conn.close()
 
     return seq_acc_to_retrieve
+
+
+def get_ncbi_acc_for_uniprot_acc(uniprot_accs: list[str], db: Path) -> set[str]:
+    ncbi_acc = set()
+    conn = sqlite3.connect(db)
+    cur = conn.cursor()
+    placeholders = ','.join('?' for _ in uniprot_accs)
+    query = f"""SELECT protein_accession
+        FROM Proteins
+        LEFT JOIN Uniprots ON Proteins.uniprot_id = Uniprots.protein_id
+        WHERE Uniprots.uniprot_accession IN ({placeholders})"""
+    cur.execute(query, tuple(uniprot_accs))
+    for row in cur:
+        ncbi_acc.add(row[0])
+
+    if not ncbi_acc:
+        logger.warning("Did not retrieve any NCBI accessions for the %s UniProt accessions", len(uniprot_accs))
+
+    return ncbi_acc
+
+
+def get_ncbi_acc_to_id(conn: sqlite3.Connection, ncbi_accs: set[str]) -> dict[str, int]:
+    cur = conn.cursor()
+    cur.execute("""SELECT ncbi_accession, protein_id FROM Proteins""")
+    acc2id = {}
+    for row in cur:
+        if row[0] in ncbi_accs:
+            acc2id[row[0]] = row[1]
+    cur.close()
+    return acc2id
+
+
+def get_protein_table_dict(connection: sqlite3.Connection) -> dict:
+    """Compile a dict of the data in the Proteins table
+    Return dict {genbank_accession: 'taxa_id': int, 'protein_id': int}
+    """
+    prot_cur = connection.cursor()
+    prot_cur.execute("""SELECT * FROM Proteins""")
+    db_protein_dict = {}  # {genbank_accession: 'taxa_id': str, 'id': int}
+    for row in prot_cur:
+        # [0] protein_id, [1] protein_accession
+        # [2] sequence, [3] sequence_update
+        # [4] taxonomy_id, [5] ncbi_tax_id
+        # [6] uniprot_id, [7] source
+        db_protein_dict[f"{row[1]}"] = {
+            'taxa_id': row[4],
+            'protein_id': row[0],
+            'sequence': row[2]
+        }
+    prot_cur.close()
+    return db_protein_dict
