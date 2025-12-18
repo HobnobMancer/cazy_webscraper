@@ -39,7 +39,7 @@ from pathlib import Path
 
 from src.sql.interface import insert_data
 from src.sql.interface.get_data.get_uniprot_data import (
-    get_uniprot_summary,
+    get_uniprot_summary, get_uniprot_to_id,
     get_db_ecs, get_ec_to_id,
     get_db_pdbs, get_pdb_to_id,
     get_db_gos, get_go_to_id
@@ -63,22 +63,12 @@ def add_uniprot_records(records: list, db: Path, update_seq: bool, batch_size: i
     """
     conn = sqlite3.connect(db)
     records_to_update = []
-    records_to_add = []
+    records_to_add = set()  # There are a few cases of multiple ncbis --> 1 uniprot
     db_table = get_uniprot_summary(conn)  # uniprot_acc: bool if it has a seq
 
     for record in records:
-        if record.uniprot_id in db_table and db_table[record.uniprot_id] and update_seq:
-            records_to_update.append(
-                (
-                    record.sequence,
-                    record.md5,
-                    record.mol_weight,
-                    record.sequence_date,
-                    record.uniprot_id,
-                )
-            )
-        else:
-            records_to_add.append(
+        if record.uniprot_id not in db_table:
+            records_to_add.add(
                 (
                     record.uniprot_id,
                     record.uniparc_id,
@@ -90,9 +80,19 @@ def add_uniprot_records(records: list, db: Path, update_seq: bool, batch_size: i
                     record.sequence_date,
                 )
             )
+        elif not db_table[record.uniprot_id] or update_seq:
+            records_to_update.append(
+                (
+                    record.sequence,
+                    record.md5,
+                    record.mol_weight,
+                    record.sequence_date,
+                    record.uniprot_id,
+                )
+            )
 
     if records_to_add:
-        insert_data(conn, "Uniprots", ["uniprot_accession", "uniparc_id", "name", "swissprot", "sequence", "md5", "molecular_weight", "seq_update_date"], records_to_add)
+        insert_data(conn, "Uniprots", ["uniprot_accession", "uniparc_id", "name", "swissprot", "sequence", "md5", "molecular_weight", "seq_update_date"], list(records_to_add))
 
     cursor = conn.cursor()
     for i in range(0, len(records_to_update), batch_size):
@@ -103,11 +103,12 @@ def add_uniprot_records(records: list, db: Path, update_seq: bool, batch_size: i
         )
         logger.debug("Processed batch %d-%d of %d records for uniprot seq update", i + 1, min(i + batch_size, len(records_to_update)), len(records_to_update))
 
-    protein_records_updates = [(record.ncbi_acc, record.uniprot_id) for record in records]
+    uniprot2dbid = get_uniprot_to_id(conn, set([record.uniprot_id for record in records]))
+    protein_records_updates = [(uniprot2dbid[record.uniprot_id], record.ncbi_acc) for record in records]
     for i in range(0, len(protein_records_updates), batch_size):
         batch = protein_records_updates[i:i + batch_size]
         cursor.executemany(
-            "UPDATE Proteins SET uniprot_id = ? WHERE ncbi_acc = ?",
+            "UPDATE Proteins SET uniprot_id = ? WHERE protein_accession = ?",
             batch
         )
         logger.debug("Processed batch %d-%d of %d records for ncbi-uniprot update", i + 1, min(i + batch_size, len(protein_records_updates)), len(protein_records_updates))
