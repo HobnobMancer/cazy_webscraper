@@ -156,6 +156,12 @@ cazy_webscraper download
 
 ## Subcommand summary
 
+To see all supported subcommands, please use:
+
+```bash
+cazy_webscraper --help
+```
+
 - `download` - Download data from CAZy and build a local SQLite database
 - `get_ncbi_seqs` - Download NCBI sequences and import the sequences into the local CAZyme database  
 - `get_ncbi_taxs` - Download the latest taxonomy data from NCBI and update these taxa in the local CAZyme database  
@@ -171,6 +177,12 @@ The `download` subcommand is used to scrape CAZy and compile a local SQLite data
 • **`email`** - User email address required for NCBI Entrez (used to get source organism data). The email address is not stored by cazy_webscraper.
 
 ### Optional Arguments
+
+To see all command line flag, please use:
+
+```bash
+cazy_webscraper download --help
+```
 
 #### Filtering Arguments
 
@@ -200,23 +212,7 @@ The `download` subcommand is used to scrape CAZy and compile a local SQLite data
 
 • **`--cazy_data CAZY_DATA`** - Path to pre-downloaded CAZy txt file (default: None)
 
-• **`--delete_old_relationships`** - Delete old GenBank accession-CAZy family relationships that are in the local database but not in CAZy (e.g., when CAZy moves a protein from one family to another) (default: False)
-
 • **`--skip_ncbi_tax`** - Skip retrieving the latest taxonomic classification from NCBI Taxonomy database for proteins with multiple taxonomies in CAZy. Uses the first taxonomy listed in CAZy (default: False)
-
-#### Utility Arguments
-
-• **`--cache_dir CACHE_DIR`** - Target path for cache directory (overrides default path) (default: None)
-
-• **`--cazy_synonyms CAZY_SYNONYMS`** - Path to JSON file containing CAZy class synonym names (default: None)
-
-• **`--ncbi_batch_size NCBI_BATCH_SIZE`** - Number of GenBank accessions in each NCBI Taxonomy database batch query (default: 200)
-
-• **`--nodelete_cache`** - Preserve existing content in cache directory (do not delete) (default: False)
-
-• **`-r RETRIES, --retries RETRIES`** - Number of times to retry scraping a family or class page if error encountered (default: 10)
-
-• **`-t TIMEOUT, --timeout TIMEOUT`** - Connection timeout limit in seconds (default: 45)
 
 ### Example Usage
 
@@ -224,8 +220,8 @@ The `download` subcommand is used to scrape CAZy and compile a local SQLite data
 # Basic usage - scrape entire CAZy database
 cazy_webscraper download user@email.com -o my_cazy_database.db
 
-# Filter by specific families
-cazy_webscraper download user@email.com -o my_cazy_database.db --families GH1,GH2,CE1
+# Filter for bacteria and specific families
+cazy_webscraper download user@email.com -o my_cazy_database.db --families GH1,GH2,CE1 --kingdoms Bacteria
 
 # Filter by taxonomic groups
 cazy_webscraper download user@email.com -o my_cazy_database.db --kingdoms Bacteria --genera Escherichia
