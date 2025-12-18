@@ -272,7 +272,7 @@ def get_uniprot_data(
 
         stats["uniprot ids retrieved"] += len(records)
 
-        new_record_count, updated_seq_count = add_uniprot_records(records, args.database, args.update_sequence)
+        new_record_count, updated_seq_count = add_uniprot_records(records, args.database, args.update)
         stats["new uniprot records"] += new_record_count
         stats["sequences updated"] += updated_seq_count
 
@@ -304,9 +304,9 @@ def get_uniprot_data(
     if args.go:
         merge_temp_go_relationships(args.database)
 
-    drop_temp_ec_protein_table(args.database.db_path)
-    drop_temp_pdb_protein_table(args.database.db_path)
-    drop_temp_go_protein_table(args.database.db_path)
+    drop_temp_ec_protein_table(args.database)
+    drop_temp_pdb_protein_table(args.database)
+    drop_temp_go_protein_table(args.database)
 
     connection_err_cache.close()
     failed_ids_cache.close()

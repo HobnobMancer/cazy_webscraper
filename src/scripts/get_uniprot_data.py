@@ -81,7 +81,7 @@ def main(args: Namespace, time_stamp: str, start_time):
             args.genbank_accessions,
             args.database,
         )
-    elif args.update_sequence:
+    elif args.update:
         # retreive everything as we can update these fields
         seq_acc_to_retrieve = get_ncbi_prot_accessions(
             class_filters,
