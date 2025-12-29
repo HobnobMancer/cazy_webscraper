@@ -113,55 +113,57 @@ def add_uniprot_records(records: list, db: Path, update_seq: bool, batch_size: i
         )
         logger.debug("Processed batch %d-%d of %d records for ncbi-uniprot update", i + 1, min(i + batch_size, len(protein_records_updates)), len(protein_records_updates))
 
+    conn.commit()
+    cursor.close()
+
     return len(records_to_add), len(records_to_update)
 
 
-def add_ec_numbers(records: list, db: Path, batch_size: int = 500) -> int:
-    conn = sqlite3.connect(db)
-
+def add_ec_numbers(records: list, conn: sqlite3.Connection, batch_size: int = 500) -> int:
     db_ecs = get_db_ecs(conn)
-    records_to_add = []
+    records_to_add = set()
     all_ecs = set()
     for record in records:
         for ec in record.ec_nums:
             if ec not in db_ecs:
-                records_to_add.append( (ec,) )
+                records_to_add.add( (ec,) )
             all_ecs.add(ec)
 
+    records_to_add = list(records_to_add)
     for i in range(0, len(records_to_add), batch_size):
         batch = records_to_add[i:i + batch_size]
         insert_data(conn, "Ecs", ["ec_number"], batch)
         logger.debug("Processed batch %d-%d of %d EC numbers", i + 1, min(i + batch_size, len(records_to_add)), len(records_to_add))
 
     ec2id = get_ec_to_id(conn, all_ecs)
-    all_relationships = set()
-    for record in records:
-        for ec in record.ec_numbers:
-            ec_id = ec2id[ec]
-            all_relationships.add( (record.protein_id, ec_id) )
+    if ec2id:
+        all_relationships = set()
+        for record in records:
+            for ec in record.ec_nums:
+                ec_id = ec2id[ec]
+                all_relationships.add( (record.protein_id, ec_id) )
 
-    create_temp_ec_protein_table(conn)
-    insert_data(conn, "TEMP_EC_PROTEIN", ["protein_id", "ec_id"], list(all_relationships))
+        create_temp_ec_protein_table(conn)
+        insert_data(conn, "TEMP_EC_PROTEIN", ["protein_id", "ec_id"], list(all_relationships))
 
     conn.commit()
-    conn.close()
 
     return len(records_to_add)
 
 
-def add_pdbs(records: list, db: Path, batch_size: int = 500) -> int:
+def add_pdbs(records: list, conn: sqlite3.Connection, batch_size: int = 500) -> int:
     """Add PDB accessions to the database"""
-    conn = sqlite3.connect(db)
-
     db_pdbs = get_db_pdbs(conn)
     pdbs_to_update = []  # if the resolution has changed
     pdbs_to_add = []
+    all_pdbs = set()
     for record in records:
-        for pdb in record.pdbs:
-            if pdb[0] not in db_pdbs:
-                pdbs_to_add.append(pdb)  # already a tuple (accession, method, resolution)
-            elif pdb[2] != db_pdbs[pdb[0]]:
-                pdbs_to_update.append(pdb)  # already a tuple (accession, method, resolution)
+        for pdb_acc, method, resolution in record.pdbs:
+            all_pdbs.add(pdb_acc)
+            if pdb_acc not in db_pdbs:
+                pdbs_to_add.append((pdb_acc, method, resolution))
+            elif resolution != db_pdbs[pdb_acc]:
+                pdbs_to_update.append((pdb_acc, method, resolution))
 
     cursor = conn.cursor()
     for i in range(0, len(pdbs_to_update), batch_size):
@@ -177,52 +179,50 @@ def add_pdbs(records: list, db: Path, batch_size: int = 500) -> int:
         batch = pdbs_to_add[i:i + batch_size]
         insert_data(conn, "PDBs", ["pdb_accession", "method", "resolution"], batch)
 
-    conn.close()
+    pdb2id = get_pdb_to_id(conn, all_pdbs)
+    if pdb2id:
+        all_relationships = set()
+        for record in records:
+            for pdb_ac in all_pdbs:
+                pdb_id = pdb2id[pdb_ac]
+                all_relationships.add( (record.protein_id, pdb_id) )
 
-    create_temp_pdb_protein_table(conn)
-    pdb2id = get_pdb_to_id(conn, set([pdb[0] for pdb in pdbs_to_add]))
-    all_relationships = set()
-    for record in records:
-        for pdb in record.pdbs:
-            pdb_id = pdb2id[pdb[0]]
-            all_relationships.add( (record.protein_id, pdb_id) )
-
-    insert_data(conn, "TEMP_PDB_PROTEIN", ["protein_id", "pdb_id"], list(all_relationships))
+        create_temp_pdb_protein_table(conn)
+        insert_data(conn, "TEMP_PDB_PROTEIN", ["protein_id", "pdb_id"], list(all_relationships))
 
     conn.commit()
-    conn.close()
 
     return len(pdbs_to_add)
 
 
-def add_go_terms(records: list, db: Path, batch_size: int = 500) -> int:
+def add_go_terms(records: list, conn: sqlite3.Connection, batch_size: int = 500) -> int:
     """Add GO terms to the database"""
-    conn = sqlite3.connect(db)
 
     db_gos = get_db_gos(conn)
     gos_to_add = []
+    all_gos = set()
     for record in records:
-        for go_id, go_term in record.go_terms.items():
-            if go_id not in db_gos:
-                gos_to_add.append( (go_id, go_term) )
+        for goterm_id, desc in record.go_terms.items():
+            all_gos.add(goterm_id)
+            if goterm_id not in db_gos:
+                gos_to_add.append( (goterm_id, desc) )
 
     for i in range(0, len(gos_to_add), batch_size):
         batch = gos_to_add[i:i + batch_size]
-        insert_data(conn, "GOs", ["go_id", "go_term"], batch)
-        logger.debug("Processed batch %d-%d of %d GO terms", i + 1, min(i + batch_size, len(gos_to_add)), len(gos_to_add))
+        insert_data(conn, "GoTerms", ["goterm_id", "description"], batch)
 
-    go2id = get_go_to_id(conn, set([go[0] for go in gos_to_add]))
-    all_relationships = set()
-    for record in records:
-        for go_id in record.go_terms.keys():
-            go_db_id = go2id[go_id]
-            all_relationships.add( (record.protein_id, go_db_id) )
+    go2id = get_go_to_id(conn, all_gos)
+    if go2id:
+        all_relationships = set()
+        for record in records:
+            for go_id in all_gos:
+                go_db_id = go2id[go_id]
+                all_relationships.add( (record.protein_id, go_db_id) )
 
-    create_temp_go_protein_table(conn)
-    insert_data(conn, "TEMP_GO_PROTEIN", ["protein_id", "go_id"], list(all_relationships))
+        create_temp_go_protein_table(conn)
+        insert_data(conn, "TEMP_GO_PROTEIN", ["protein_id", "go_id"], list(all_relationships))
 
     conn.commit()
-    conn.close()
 
     return len(gos_to_add)
 
@@ -239,6 +239,14 @@ def merge_temp_ec_relationships(db_path: str) -> int:
     cursor = conn.cursor()
 
     # Insert relationships that don't already exist
+    cursor.execute("""
+        DELETE FROM TEMP_EC_PROTEIN
+        WHERE rowid NOT IN (
+            SELECT MIN(rowid)
+            FROM TEMP_EC_PROTEIN
+            GROUP BY protein_id, ec_id
+        );
+    """)
     cursor.execute("""
         INSERT OR IGNORE INTO Proteins_Ecs (protein_id, ec_id)
         SELECT protein_id, ec_id
@@ -265,6 +273,14 @@ def merge_temp_pdb_relationships(db_path: str) -> int:
 
     # Insert relationships that don't already exist
     cursor.execute("""
+        DELETE FROM TEMP_PDB_PROTEIN
+        WHERE rowid NOT IN (
+            SELECT MIN(rowid)
+            FROM TEMP_PDB_PROTEIN
+            GROUP BY protein_id, pdb_id
+        );
+    """)
+    cursor.execute("""
         INSERT OR IGNORE INTO Proteins_PDBs (protein_id, pdb_id)
         SELECT protein_id, pdb_id
         FROM TEMP_PDB_PROTEIN
@@ -290,7 +306,15 @@ def merge_temp_go_relationships(db_path: str) -> int:
 
     # Insert relationships that don't already exist
     cursor.execute("""
-        INSERT OR IGNORE INTO Proteins_GOs (protein_id, go_id)
+        DELETE FROM TEMP_GO_PROTEIN
+        WHERE rowid NOT IN (
+            SELECT MIN(rowid)
+            FROM TEMP_GO_PROTEIN
+            GROUP BY protein_id, go_id
+        );
+    """)
+    cursor.execute("""
+        INSERT OR IGNORE INTO Proteins_GoTerms (protein_id, go_id)
         SELECT protein_id, go_id
         FROM TEMP_GO_PROTEIN
     """)
