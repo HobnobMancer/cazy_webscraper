@@ -140,7 +140,7 @@ def get_ncbi_acc_for_uniprot_acc(uniprot_accs: list[str], db: Path) -> set[str]:
 
 def get_ncbi_acc_to_id(conn: sqlite3.Connection, ncbi_accs: set[str]) -> dict[str, int]:
     cur = conn.cursor()
-    cur.execute("""SELECT ncbi_accession, protein_id FROM Proteins""")
+    cur.execute("""SELECT protein_accession, protein_id FROM Proteins""")
     acc2id = {}
     for row in cur:
         if row[0] in ncbi_accs:

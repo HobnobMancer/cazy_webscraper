@@ -31,6 +31,7 @@
 """Retrieve and parse data from UniProt KB"""
 
 
+import sqlite3
 import logging
 
 
@@ -178,7 +179,6 @@ class UniProtKB:
             sequence_date = record.get("entryAudit", {}).get("lastSequenceUpdateDate")
 
             if get_pdbs:
-                pdbs = set()
                 for value in record.get("uniProtKBCrossReferences", []):
                     if value.get("database") == "PDB":
                         method = resolution = None
@@ -193,11 +193,10 @@ class UniProtKB:
                         pdbs.add((value.get("id"), method, resolution))
 
             if get_gos:
-                go_terms = {}
-                for db_ref in record.get("dbReferences", []):
-                    if db_ref.get("database") == "GO":  # Fixed typo: "databbase" -> "database"
-                        go_id = db_ref.get("id")
-                        for prop in db_ref.get("properties", []):
+                for value in record.get("uniProtKBCrossReferences", []):
+                    if value.get("database") == "GO":
+                        go_id = value.get("id")
+                        for prop in value.get("properties", []):
                             if prop.get("key") == "GoTerm":
                                 go_term = prop.get("value")
                                 go_terms[go_id] = go_term
@@ -278,19 +277,21 @@ def get_uniprot_data(
 
         if args.ec or args.pdb or args.go:
             # map protein ids to local db records
-            conn = args.database.connect()
+            conn = sqlite3.connect(args.database)
             ncbi2id = get_ncbi_acc_to_id(conn, set([record.ncbi_acc for record in records]))
-            conn.close()
             for record in records:
                 if record.ncbi_acc in ncbi2id:
                     record.protein_id = ncbi2id[record.ncbi_acc]
 
             if args.ec:
-                stats["new ecs"] += add_ec_numbers(records, args.database)
+                stats["new ecs"] += add_ec_numbers(records, conn)
             if args.pdb:
-                stats["new pdbs"] += add_pdbs(records, args.database)
+                stats["new pdbs"] += add_pdbs(records, conn)
             if args.go:
-                stats["new go terms"] += add_go_terms(records, args.database)
+                stats["new go terms"] += add_go_terms(records, conn)
+
+            conn.commit()
+            conn.close()
 
     for batch in tqdm(batches, desc="Retrieving UniProt data"):
         process_batch(batch)

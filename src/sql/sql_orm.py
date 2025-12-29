@@ -368,7 +368,8 @@ class GoTerms(Base):
     )
 
     go_id = Column(Integer, primary_key=True)
-    description = Column(ReString, index=True)
+    goterm_id = Column(String, index=True)
+    description = Column(ReString)
 
     proteins = relationship(
         "Protein",
