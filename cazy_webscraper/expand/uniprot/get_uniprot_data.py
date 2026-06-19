@@ -52,6 +52,7 @@ from typing import List, Optional
 import pandas as pd
 
 from bioservices import UniProt
+from bioservices.services import BioServicesError
 from saintBioutils.misc import get_chunks_list
 from saintBioutils.uniprot import get_uniprot_accessions
 from saintBioutils.utilities.file_io import make_output_directory
@@ -59,7 +60,11 @@ from saintBioutils.utilities.logger import config_logger
 from tqdm import tqdm
 
 from cazy_webscraper import closing_message, connect_existing_db
-from cazy_webscraper.cache.uniprot import get_uniprot_cache, cache_uniprot_data
+from cazy_webscraper.cache.uniprot import (
+    get_uniprot_cache,
+    cache_uniprot_data,
+    write_uniprot_checkpoint,
+)
 from cazy_webscraper.sql import sql_interface
 from cazy_webscraper.sql.sql_interface.add_data.add_uniprot_data import (
     add_ec_numbers,
@@ -77,6 +82,11 @@ from cazy_webscraper.utilities.parsers.uniprot_parser import build_parser
 from cazy_webscraper.utilities.parse_configuration import get_expansion_configuration
 
 import sys
+
+# number of successfully retrieved batches between writing a checkpoint of uniprot_dict to
+# cache_dir, so an interrupted run (e.g. a transient UniProt outage exhausting all retries)
+# does not lose all data retrieved so far in the run
+CHECKPOINT_INTERVAL = 10
 
 
 def main(argv: Optional[List[str]] = None, logger: Optional[logging.Logger] = None):
@@ -385,6 +395,7 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
 
     uniprot_dict = {}  # see doc string
     all_batches = {}  # {'acc,acc': int(tries), batch: int(tries)}
+    batches_since_checkpoint = 0
 
     # [[acc, acc], [acc, acc]]
     bioservices_queries = get_chunks_list(
@@ -415,10 +426,10 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
                         "NCBI accessions will be written to cache"
                     )
                     failed_acc = batch.split(",")
-                    with open("failed_connections_cache", a) as fh:
+                    with open(failed_connections_cache, "a") as fh:
                         for acc in failed_acc:
                             fh.write(f"{acc}\n")
-                        
+
                 else:  # still attempts remaining
                     logger.warning(
                         f"Failled to retrieve data from UniProt for batch after {all_batches[batch]}"
@@ -482,6 +493,11 @@ def get_uniprot_data(ncbi_accessions, cache_dir, args):
                 # do not process the batch again
                 del all_batches[batch]
 
+                batches_since_checkpoint += 1
+                if batches_since_checkpoint >= CHECKPOINT_INTERVAL:
+                    write_uniprot_checkpoint(uniprot_dict, cache_dir)
+                    batches_since_checkpoint = 0
+
     return uniprot_dict
 
 
@@ -520,19 +536,26 @@ def map_to_uniprot(accessions):
     
     Or returns None if connection could not be made
     """
+    logger = logging.getLogger(__name__)
     try:
         mapping_results = UniProt().mapping(
             fr="EMBL-GenBank-DDBJ_CDS",
             to="UniProtKB",
             query=accessions,  # str of ids, separated by commas
         )
-    except TypeError:
-        # raised by bioservices
+    except (TypeError, BioServicesError) as err:
+        # TypeError: raised by bioservices
         #   File ".../python3.11/site-packages/bioservices/uniprot.py", line 485, in mapping
         # if results != 500 and 'results' in results:
         # TypeError: argument of type 'int' is not iterable
+        #
+        # BioServicesError: raised when the UniProt id mapping job itself errors out
+        # server-side (e.g. a transient SSL handshake failure on UniProt's backend).
+        # Treat both as a failed connection attempt so the caller retries the batch,
+        # instead of letting it crash the whole (multi-hour) download.
+        logger.warning(f"Failed to map batch to UniProt, will retry: {err}")
         return None
-    
+
     return mapping_results
 
 
