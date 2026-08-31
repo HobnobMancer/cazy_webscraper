@@ -20,10 +20,10 @@ This page runs through examples of how to combine the various 'filters' that can
 the retrieval of genomic assembly data from NCBI. These tutorials are designed for those with less experience using command-line tools.
 
 .. NOTE::
-  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cw_get_genomics`` - this is the method used in this tutorial.  
+  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cazy_webscraper get_ncbi_genomes`` - this is the method used in this tutorial.  
   If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/expand/genbank/genomes/get_genome_accs.py``.
 
-From this point on, we will be discussed the ``cw_get_genomics``, which is the entry point for 
+From this point on, we will be discussed the ``cazy_webscraper get_ncbi_genomes``, which is the entry point for 
 retrieving data from NCBI Assembly. We also presume you are comfortable configuring ``cazy_webscraper`` for the 
 scraping of data from CAZy.
 
@@ -44,13 +44,13 @@ For RefSeq version accessions, the following data is retrieved from NCBI Assembl
 Configuration via the command line
 ----------------------------------
 
-``cw_get_genomics`` has two required argument:
+``cazy_webscraper get_ncbi_genomes`` has two required argument:
 * The path to the local CAZyme database created using ``cazy_webscraper``
 * The user email address (required by NCBI)
 
 .. code-block:: bash
     
-    cw_get_genomics cazy/cazyme_db.db dummyEmail@domain.com
+    cazy_webscraper get_ncbi_genomes cazy/cazyme_db.db dummyEmail@domain.com
 
 When no optional arguments are provided, the default behaviour is invoked. The default behaviour is to: 
 Retrieve the latest genomic assembly data from NCBI for all proteins in the local CAZyme database which do 
@@ -92,13 +92,13 @@ For example, if you want to retrieve genomic assembly data for all CAZymes from 
 
 .. code-block:: bash
 
-   cw_get_genomics cazy/cazyme.db dummyEmail@domain.com --classes GH,CE
+   cazy_webscraper get_ncbi_genomes cazy/cazyme.db dummyEmail@domain.com --classes GH,CE
 
 OR
 
 .. code-block:: bash
 
-   cw_get_genomics cazy/cazyme.db dummyEmail@domain.com --classes Glycoside Hydrolases,Carbohydrate Esterases
+   cazy_webscraper get_ncbi_genomes cazy/cazyme.db dummyEmail@domain.com --classes Glycoside Hydrolases,Carbohydrate Esterases
 
 Retrieving genomic assembly data for proteins from specific specific CAZy families is achieved using the ``--families`` flag. For 
 example, to retrieve genomic assembly data for all proteins in PL1, PL2 and PL3 in the local CAZyme database, use the 
@@ -106,10 +106,10 @@ following command:
 
 .. code-block:: bash
 
-   cw_get_genomics cazy/cazyme.db dummyEmail@domain.com --families PL1,PL2,PL3
+   cazy_webscraper get_ncbi_genomes cazy/cazyme.db dummyEmail@domain.com --families PL1,PL2,PL3
 
 .. WARNING::
-   ``cw_get_genomics`` only accpets families written in the proper CAZy family syntax.
+   ``cazy_webscraper get_ncbi_genomes`` only accpets families written in the proper CAZy family syntax.
    GH1 is accepted.
    gh1 and GlycosideHydrolases1 are not accepted.
 
@@ -118,13 +118,13 @@ genomic assembly data for all CAZymes in PL1, PL2, PL3 and *all* of GH and CE bo
 
 .. code-block:: bash
 
-   cw_get_genomics cazy/cazyme.db dummyEmail@domain.com --families PL1,PL2,PL3 --classes GH,CE
+   cazy_webscraper get_ncbi_genomes cazy/cazyme.db dummyEmail@domain.com --families PL1,PL2,PL3 --classes GH,CE
 
 **AND**
 
 .. code-block:: bash
 
-   cw_get_genomics cazy/cazyme.db dummyEmail@domain.com --classes GH,CE --families PL1,PL2,PL3
+   cazy_webscraper get_ncbi_genomes cazy/cazyme.db dummyEmail@domain.com --classes GH,CE --families PL1,PL2,PL3
 
 are accepted.
 
@@ -142,7 +142,7 @@ For example, if you want to retrieve data for all CAZymes in a local CAZyme data
 
 .. code-block:: bash
 
-   cw_get_genomics cazy/cazyme.db dummyEmail@domain.com --kingdoms bacteria,eukaryota
+   cazy_webscraper get_ncbi_genomes cazy/cazyme.db dummyEmail@domain.com --kingdoms bacteria,eukaryota
 
 .. warning::
    The kingdoms must be spelt the same way CAZy spells them, for example use 'eukaryot**a**' instead of 'eukaryot**e**'.
@@ -155,12 +155,12 @@ For example, if you want to retrieve data for all CAZymes in a local CAZyme data
 
 You can combine any combination of the optional flags, including combining the taxonomic filters. For example,
 you may wish to retrieve genomic assembly data for all CAZymes in a local CAZyme database that are derived from all viral species, Aspergillus species, Layia carnosa, Layia chrysanthemoides, Trichoderma reesei QM6a and 
-Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cw_get_genomics`` command. The command 
+Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cazy_webscraper get_ncbi_genomes`` command. The command 
 we would use would be:
 
 .. code-block:: bash
 
-   cw_get_genomics cazy/cazyme.db dummyEmail@domain.com --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
+   cazy_webscraper get_ncbi_genomes cazy/cazyme.db dummyEmail@domain.com --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
 
 .. note::
    The order that the flags are used and the order taxa  are listed does **not** matter, and separate multiple taxa names with a single comma 
@@ -177,7 +177,7 @@ we would use would be:
    ASPERGILLUS NIGER is **incorrect**
 
 .. warning::
-   When you specify a species ``cw_get_genomics`` will retrieve genomic assembly data from *all* strains of the species.
+   When you specify a species ``cazy_webscraper get_ncbi_genomes`` will retrieve genomic assembly data from *all* strains of the species.
 
 
 -------------------------
@@ -193,7 +193,7 @@ wish to retrieve genomic assembly data for CAZymes annotated with specific EC nu
 
 .. code-block:: bash
    
-   cw_get_genomics cazy/cazyme.db dummyEmail@domain.com --ec_filter "EC1.2.3.4,EC2.3.4.5"
+   cazy_webscraper get_ncbi_genomes cazy/cazyme.db dummyEmail@domain.com --ec_filter "EC1.2.3.4,EC2.3.4.5"
 
 
 .. NOTE::
@@ -212,19 +212,19 @@ wish to retrieve genomic assembly data for CAZymes annotated with specific EC nu
     EC number list in single or double quotation marks. Some terminals may misinterpret EC1.2.-.- as trying to invoke the options '.'
 
 .. NOTE::
-    ``cw_get_genomics`` will retrieve the NCBI genomic assembly data for all proteins in the local CAZyme 
+    ``cazy_webscraper get_ncbi_genomes`` will retrieve the NCBI genomic assembly data for all proteins in the local CAZyme 
     database that are annotated with **at least one** of the given EC numbers. Therefore, if multiple 
     EC numbers are given this **does not mean** genomic assembly data will only be retrieved for 
     CAZymes annotated for all provided EC numbers.
 
 ``--ec_filter`` is based upon EC number annotations stored within the local CAZyme database. For 
 example, if protein A is annotated with the EC1.2.3.4, but this annotation is not stored in the 
-local CAZyme database, using ``--ec_filter EC1.2.3.4`` will **not** cause ``cw_get_genomics`` to retrieve
-data for protein A. This is because ``cw_get_genomics`` does not know protein A is annotated with 
+local CAZyme database, using ``--ec_filter EC1.2.3.4`` will **not** cause ``cazy_webscraper get_ncbi_genomes`` to retrieve
+data for protein A. This is because ``cazy_webscraper get_ncbi_genomes`` does not know protein A is annotated with 
 EC1.2.3.4, because this annotation is not within its database.
 
 .. WARNING::
-    If ``--ec_filter`` is used along side ``--ec``, ``cw_get_genomics`` will retrieve **all** EC number 
+    If ``--ec_filter`` is used along side ``--ec``, ``cazy_webscraper get_ncbi_genomes`` will retrieve **all** EC number 
     annotations from UniProt for all proteins in the local CAZyme database that are associated with 
     at least one of the EC numbers provided via ``--ec_filter`` within the CAZyme database.
 
@@ -244,7 +244,7 @@ To genomic assembly data for all CAZymes in GH, GT, CE1, CE5 and CE8, and which 
 
 .. code-block:: bash
 
-   cw_get_genomics cazy/cazyme.db dummyEmail@domain.com --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
+   cazy_webscraper get_ncbi_genomes cazy/cazyme.db dummyEmail@domain.com --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
 
 
 **Example 2:**
@@ -252,7 +252,7 @@ To genomic assembly data for all CAZymes in GH and which are derived from *Aspeg
 
 .. code-block:: bash
 
-   cw_get_genomics cazy/cazyme.db dummyEmail@domain.com --classes GH --genera Aspegillus,Trichoderma
+   cazy_webscraper get_ncbi_genomes cazy/cazyme.db dummyEmail@domain.com --classes GH --genera Aspegillus,Trichoderma
 
 
 **Example 3:**
@@ -261,7 +261,7 @@ EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, we use the command:
 
 .. code-block:: bash
 
-   cw_get_genomics cazy/cazyme.db dummyEmail@domain.com --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
+   cazy_webscraper get_ncbi_genomes cazy/cazyme.db dummyEmail@domain.com --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
 .. NOTE::
    The order the structure file formats are provided does **not** matter.
@@ -271,18 +271,18 @@ Providing a list of accessions
 ------------------------------
 
 Instead of retrieving genomic assembly data for all CAZymes matching a defined set of criteria, 
-``cw_get_genomics`` can retrieve genomic assembly data for a set of CAZymes defined by their 
+``cazy_webscraper get_ncbi_genomes`` can retrieve genomic assembly data for a set of CAZymes defined by their 
 GenBank and/or UniProt accession.
 
-The flag ``--genbank_accessions`` can be used to provide ``cw_get_genomics`` a list of GenBank accessions 
+The flag ``--genbank_accessions`` can be used to provide ``cazy_webscraper get_ncbi_genomes`` a list of GenBank accessions 
 to identify the specific set of CAZymes to retrieve genomic assembly data for.
 
-The flag ``--uniprot_accessions`` can be used to provide ``cw_get_genomics`` a list of UniProt accessions 
+The flag ``--uniprot_accessions`` can be used to provide ``cazy_webscraper get_ncbi_genomes`` a list of UniProt accessions 
 to identify the specific set of CAZymes to retrieve genomic assembly data for.
 
 In both instances (for ``--genbank_accessions`` and ``--uniprot_accessions``) the list of respective accessions 
 are provided via a plain text file, with a unique protein accession of each line. The path to this file is 
-then passed to ``cw_get_genomics`` via the respective ``--genbank_accessions`` and ``--uniprot_accessions`` flag.
+then passed to ``cazy_webscraper get_ncbi_genomes`` via the respective ``--genbank_accessions`` and ``--uniprot_accessions`` flag.
 
 ``--genbank_accessions`` and ``--uniprot_accessions`` can be used at the same time to define all 
 CAZymes of interest.
@@ -290,9 +290,9 @@ CAZymes of interest.
 .. WARNING::
    ``--genbank_accessions`` and ``--uniprot_accessions`` take president over the filter flags.
 
-   When either ``--genbank_accessions`` or ``--uniprot_accessions`` is used, ``cw_get_genomics`` will 
+   When either ``--genbank_accessions`` or ``--uniprot_accessions`` is used, ``cazy_webscraper get_ncbi_genomes`` will 
    **not** retrieve any CAZymes from the local database matching a set of criteria.
 
-   Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cw_get_genomics`` will ignore 
+   Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cazy_webscraper get_ncbi_genomes`` will ignore 
    the ``--classes`` flag and only genomic assembly data for the proteins listed in the file provided via 
    the ``--genbank_accessions``.

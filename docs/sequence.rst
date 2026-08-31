@@ -2,6 +2,17 @@
 Extract protein squences from the local database
 ================================================
 
+.. warning::
+   **Not yet available in version 3.**
+
+   This page documents the version 2 interface. Extraction of sequences from a local database has not yet been migrated to the
+   version 3 subcommand interface, so the ``cw_extract_db_seqs`` command shown below is not currently
+   available from the single ``cazy_webscraper`` entry point. The pages for the subcommands
+   that *are* available in version 3 (``download_cazy``, ``get_ncbi_seqs``, ``get_ncbi_taxs``,
+   ``get_ncbi_genomes`` and ``get_uniprot_data``) have been updated.
+
+
+
 ``cazy_webscraper`` can be used to extract protein sequences stored in the local CAZyme database.
 
 The extracted protein sequences can be written to any combination of:

@@ -1,5 +1,5 @@
 beautifulsoup4
-biopython
+biopython>=1.85
 bioservices>=1.11.0
 html5lib
 lxml

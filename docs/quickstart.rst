@@ -13,7 +13,7 @@ To download the entire CAZy dataset, and save the data set to the current workin
 
 .. code-block:: bash
 
-   cazy_webscraper download <user_email> [options]
+   cazy_webscraper download_cazy <user_email> [options]
 
 -------------------------------
 Retrieve NCBI GenBank sequences
@@ -23,7 +23,7 @@ To supplement an existing local CAZyme database with protein sequences from NCBI
 
 .. code-block:: bash
 
-   cazy_webscraper get_genbank_seqs <path to local cazyme db> <user_email> [options]
+   cazy_webscraper get_ncbi_seqs <path to local cazyme db> <user_email> [options]
 
 
 ----------------------------

@@ -2,14 +2,14 @@
 How to scrape CAZy
 ==================
 
-``cazy_webscraper download`` can be used to retrieve user-specified data sets from the CAZy database. The ``cazy_webscraper`` application can be invoked via the command line
+``cazy_webscraper download_cazy`` can be used to retrieve user-specified data sets from the CAZy database. The ``cazy_webscraper`` application can be invoked via the command line
 
 To download the entire CAZy dataset, and save the data set to the current working directory with the final name 
 ``cazy_webscraper_<date>_<time>.db``, use the following command structure:  
 
 .. code-block:: bash
   
-   cazy_webscraper download <email> <user_email>
+   cazy_webscraper download_cazy <email> <user_email>
 
 .. NOTE::
    The user email address is a requirement of NCBI. NCBI is queried to identify the currect source organism 
@@ -23,7 +23,7 @@ To download the entire CAZy dataset, and save the data set to the current workin
 Command line options
 --------------------
 
-Listed below are the required and optional command-line options when using ``cazy_webscraper download <email>`` 
+Listed below are the required and optional command-line options when using ``cazy_webscraper download_cazy <email>`` 
 to download data from CAZy.
 
 REQUIRED arguments:
@@ -79,21 +79,21 @@ The ``--classes`` and ``--families`` arguments indicate which groups of data wil
 
 .. code-block:: bash
 
-  cazy_webscraper download <email> --families GH169 -o GH169.db
-  cazy_webscraper download <email> --classes AA -o AA.db
+  cazy_webscraper download_cazy <email> --families GH169 -o GH169.db
+  cazy_webscraper download_cazy <email> --classes AA -o AA.db
 
 will download all CAZymes from the GH169 family, and the AA class, respectively. More than one class or family can be specified, e.g.
 
 .. code-block:: bash
 
-  cazy_webscraper download <email> --families GH169,GH1,GH2,GH3 -o GH_families.db
-  cazy_webscraper download <email> --classes AA,CBM -o other_classes.db
+  cazy_webscraper download_cazy <email> --families GH169,GH1,GH2,GH3 -o GH_families.db
+  cazy_webscraper download_cazy <email> --classes AA,CBM -o other_classes.db
 
 and members of distinct families and classes can be selected simultaneously, e.g.
 
 .. code-block:: bash
 
-  cazy_webscraper download <email> --families GH169,GH1,GH2,GH3 --classes AA,CBM -o complex_query.db
+  cazy_webscraper download_cazy <email> --families GH169,GH1,GH2,GH3 --classes AA,CBM -o complex_query.db
 
 .. NOTE::
   CAZy families should be named using the standard CAZy syntax.
@@ -119,31 +119,31 @@ Scrape by kingdom:
 
 .. code-block:: bash
 
-   cazy_webscraper download --kingdoms bacteria,eukaryota
+   cazy_webscraper download_cazy --kingdoms bacteria,eukaryota
 
 Scrape by genus:
 
 .. code-block:: bash
 
-   cazy_webscraper download --genera Aspergillus,Trichoderma
+   cazy_webscraper download_cazy --genera Aspergillus,Trichoderma
 
 Scrape by species (use quotes if there are spaces):
 
 .. code-block:: bash
 
-   cazy_webscraper download --species "Aspergillus niger,Trichoderma reesei"
+   cazy_webscraper download_cazy --species "Aspergillus niger,Trichoderma reesei"
 
 Scrape by strain:
 
 .. code-block:: bash
 
-   cazy_webscraper download --strains "Aspergillus niger ATCC 1015"
+   cazy_webscraper download_cazy --strains "Aspergillus niger ATCC 1015"
 
 You can combine these filters as needed. For example, to retrieve all CAZymes from viral species, Aspergillus genus, and specific Layia species:
 
 .. code-block:: bash
 
-   cazy_webscraper download \
+   cazy_webscraper download_cazy \
        --kingdoms viruses \
        --genera Aspergillus \
        --species "Layia carnosa,Layia chrysanthemoides"
@@ -156,7 +156,7 @@ To store CAZy subfamily annotations in the local CAZyme database, use the ``--su
 
 .. code-block:: bash
 
-   cazy_webscraper download --families GH3 --subfamilies
+   cazy_webscraper download_cazy --families GH3 --subfamilies
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Build a new local CAZyme database
@@ -170,7 +170,7 @@ To specify the location of the output database the ``--db_output`` / ``-o`` opti
 
 .. code-block:: bash
 
-  cazy_webscraper download <email> --families GH169 -o GH169_output.db
+  cazy_webscraper download_cazy <email> --families GH169 -o GH169_output.db
 
 will write an SQL database file to ``GH169_output.db``.
 
@@ -183,7 +183,7 @@ overwrite an existing file use the ``--force`` / ``-f`` options:
 
 .. code-block:: bash
 
-  cazy_webscraper download <email> --families GH169 -o GH169_output.db -f
+  cazy_webscraper download_cazy <email> --families GH169 -o GH169_output.db -f
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Adding data to an existing local CAZyme database
@@ -193,7 +193,7 @@ If you already have an existing CAZy database, then specifying this database wit
 
 .. code-block:: bash
 
-  cazy_webscraper download <email> --families GH169 -d GH169/GH169_output.db
+  cazy_webscraper download_cazy <email> --families GH169 -d GH169/GH169_output.db
 
 ^^^^^^^^^^^^^^^^^^^^
 Other Useful Options

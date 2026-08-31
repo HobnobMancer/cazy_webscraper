@@ -16,23 +16,23 @@ This page runs through examples of how to combine the various 'filters' that can
 the retrieval of data from UniProt. These tutorials are designed for those with less experience using command-line tools.
 
 .. NOTE::
-  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cw_get_uniprot_data`` - this is the method used in this tutorial.  
+  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cazy_webscraper get_uniprot_data`` - this is the method used in this tutorial.  
   If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/expand/uniprot/get_uniprot_data.py``.
 
-From this point on, we will be discusseing the ``cw_get_uniprot_data`` command, which is used by ``cazy_webscraper`` for 
+From this point on, we will be discusseing the ``cazy_webscraper get_uniprot_data`` command, which is used by ``cazy_webscraper`` for 
 retrieving data from UniProt. We also presume you are comfortable configuring ``cazy_webscraper`` for the 
 scraping of data from CAZy.
 
-All data retrieved from UniProt by ``cw_get_uniprot_data`` is added to the local CAZyme database.
+All data retrieved from UniProt by ``cazy_webscraper get_uniprot_data`` is added to the local CAZyme database.
 
 ----------------------------------
 Configuration via the command line
 ----------------------------------
 
-``cw_get_uniprot_data`` only requires one argument: the path to the local CAZyme database created 
+``cazy_webscraper get_uniprot_data`` only requires one argument: the path to the local CAZyme database created 
 using ``cazy_webscraper``.
 
-Therefore, ``cw_get_uniprot_data`` can be enabled using a simple command structure:
+Therefore, ``cazy_webscraper get_uniprot_data`` can be enabled using a simple command structure:
 
 .. code-block:: bash
 
@@ -45,7 +45,7 @@ For example, if our database was stored in ``cazy/cazyme.db``, we would used:
   cazy_webscraper cazy/cazyme.db
 
 .. NOTE::
-   Make sure ``cw_get_uniprot_data`` is pointed directly at the database file.
+   Make sure ``cazy_webscraper get_uniprot_data`` is pointed directly at the database file.
 
 When no optional arguments are provided, the default behaviour is invoked. The default behaviour is to:
 
@@ -57,7 +57,7 @@ When no optional arguments are provided, the default behaviour is invoked. The d
 Options configurable at the command line 
 -----------------------------------------
 
-The following behaviours of the ``cw_get_uniprot_data`` can be configured at the command-line in the terminal:  
+The following behaviours of the ``cazy_webscraper get_uniprot_data`` can be configured at the command-line in the terminal:  
 
 * Limit the retrieve of UniProt protein data to CAZymes in the local databaes from specific CAZy classes, CAZy families, kingdoms, genuera, species, strains and/or EC numbers
 * Enable retrieving EC number annotations
@@ -87,13 +87,13 @@ For example, if you want to retrieve protein data for all CAZymes from Glycoside
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --classes GH,CE
+   cazy_webscraper get_uniprot_data cazy/cazyme.db --classes GH,CE
 
 OR
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --classes Glycoside Hydrolases,Carbohydrate Esterases
+   cazy_webscraper get_uniprot_data cazy/cazyme.db --classes Glycoside Hydrolases,Carbohydrate Esterases
 
 Retrieving protein data for proteins from specific specific CAZy families is achieved using the ``--families`` flag. For 
 example, to retrieve protein data for all proteins in PL1, PL2 and PL3 in the local CAZyme database use the 
@@ -101,10 +101,10 @@ following command:
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --families PL1,PL2,PL3
+   cazy_webscraper get_uniprot_data cazy/cazyme.db --families PL1,PL2,PL3
 
 .. WARNING::
-   ``cw_get_uniprot_data`` only accpets families written in the proper CAZy family syntax.
+   ``cazy_webscraper get_uniprot_data`` only accpets families written in the proper CAZy family syntax.
    GH1 is accepted.
    gh1 and GlycosideHydrolases1 are not accepted.
 
@@ -113,13 +113,13 @@ protein data for all CAZymes in PL1, PL2, PL3 and *all* of GH and CE both:
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --families PL1,PL2,PL3 --classes GH,CE
+   cazy_webscraper get_uniprot_data cazy/cazyme.db --families PL1,PL2,PL3 --classes GH,CE
 
 **AND**
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --classes GH,CE --families PL1,PL2,PL3
+   cazy_webscraper get_uniprot_data cazy/cazyme.db --classes GH,CE --families PL1,PL2,PL3
 
 are accepted.
 
@@ -137,7 +137,7 @@ For example, if you want to retrieve protein data for all CAZymes in a local CAZ
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --kingdoms bacteria,eukaryota
+   cazy_webscraper get_uniprot_data cazy/cazyme.db --kingdoms bacteria,eukaryota
 
 .. warning::
    The kingdoms must be spelt the same way CAZy spells them, for example use 'eukaryot**a**' instead of 'eukaryot**e**'.
@@ -150,12 +150,12 @@ For example, if you want to retrieve protein data for all CAZymes in a local CAZ
 
 You can combine any combination of the optional flags, including combining the taxonomic filters. For example,
 you may wish to retrieve protein data for all CAZymes in a local CAZyme database that are derived from all viral species, Aspergillus species, Layia carnosa, Layia chrysanthemoides, Trichoderma reesei QM6a and 
-Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cw_get_uniprot_data`` command. The command 
+Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cazy_webscraper get_uniprot_data`` command. The command 
 we would use would be:
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
+   cazy_webscraper get_uniprot_data cazy/cazyme.db --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
 
 .. note::
    The order that the flags are used and the order taxa  are listed does **not** matter, and separate multiple taxa names with a single comma 
@@ -172,7 +172,7 @@ we would use would be:
    ASPERGILLUS NIGER is **incorrect**
 
 .. warning::
-   When you specify a species ``cw_get_uniprot_data`` will retrieval CAZymes from *all* strains of the species.
+   When you specify a species ``cazy_webscraper get_uniprot_data`` will retrieval CAZymes from *all* strains of the species.
 
 
 -------------------------
@@ -188,7 +188,7 @@ wish to retrieve protein data for CAZymes annotated with specific EC numbers. To
 
 .. code-block:: bash
    
-   cw_get_uniprot_data cazy/cazyme.db --ec_filter "EC1.2.3.4,EC2.3.4.5"
+   cazy_webscraper get_uniprot_data cazy/cazyme.db --ec_filter "EC1.2.3.4,EC2.3.4.5"
 
 
 .. NOTE::
@@ -241,7 +241,7 @@ To retrieve PDB accessions for all CAZymes in GH, GT, CE1, CE5 and CE8, and whic
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --pdb --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
+   cazy_webscraper get_uniprot_data cazy/cazyme.db --pdb --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
 
 
 **Example 2:**
@@ -249,7 +249,7 @@ To retrieve EC numbers, PDB accessions and taxonomies for all CAZymes in GH and 
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --pdb --ec --classes GH --genera Aspegillus,Trichoderma --taxonomy
+   cazy_webscraper get_uniprot_data cazy/cazyme.db --pdb --ec --classes GH --genera Aspegillus,Trichoderma --taxonomy
 
 
 **Example 3:**
@@ -258,29 +258,29 @@ EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, we use the command:
 
 .. code-block:: bash
 
-   cw_get_uniprot_data cazy/cazyme.db --ec --sequences --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
+   cazy_webscraper get_uniprot_data cazy/cazyme.db --ec --sequences --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
 ------------------------------
 Providing a list of accessions
 ------------------------------
 
 Instead of retrieving protein data for all CAZymes matching a defined set of criteria, 
-``cw_get_uniprot_data`` can retrieve protein data a set of CAZymes defined by their 
+``cazy_webscraper get_uniprot_data`` can retrieve protein data a set of CAZymes defined by their 
 GenBank accession.
 
-The flag ``--genbank_accessions`` can be used to provide ``cw_get_uniprot_data`` a list of GenBank accessions 
+The flag ``--genbank_accessions`` can be used to provide ``cazy_webscraper get_uniprot_data`` a list of GenBank accessions 
 to identify the specific set of CAZymes to retrieve protein data for.
 
 The list of respective accessions are provided via a plain text file, with a unique protein accession of each line. The path to this file is 
-then passed to ``cw_get_uniprot_data`` via the ``--genbank_accessions`` flag.
+then passed to ``cazy_webscraper get_uniprot_data`` via the ``--genbank_accessions`` flag.
 
 .. WARNING::
    ``--genbank_accessions`` takes president over the filter flags.
 
-   When ``--genbank_accessions`` is used, ``cw_get_uniprot_data`` will 
+   When ``--genbank_accessions`` is used, ``cazy_webscraper get_uniprot_data`` will 
    **not** retrieve any CAZymes from the local database matching a set of criteria.
 
-   Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cw_get_uniprot_data`` will ignore 
+   Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cazy_webscraper get_uniprot_data`` will ignore 
    the ``--classes`` flag and only retrieve protein data for the proteins listed in the file provided via 
    the ``--genbank_accessions``.
 

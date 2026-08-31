@@ -2,6 +2,17 @@
 Interrogating the data using the API
 ====================================
 
+.. warning::
+   **Not yet available in version 3.**
+
+   This page documents the version 2 interface. The database query API has not yet been migrated to the
+   version 3 subcommand interface, so the ``cw_query_database`` command shown below is not currently
+   available from the single ``cazy_webscraper`` entry point. The pages for the subcommands
+   that *are* available in version 3 (``download_cazy``, ``get_ncbi_seqs``, ``get_ncbi_taxs``,
+   ``get_ncbi_genomes`` and ``get_uniprot_data``) have been updated.
+
+
+
 The data stored in the local CAZyme database can be interrogated using SQL. ``cazy_webscraper`` also 
 includes an API, which can be used to interrogate the data in the local CAZyme database and write out the retrieved data 
 in ``JSON`` and/or ``CSV`` format.

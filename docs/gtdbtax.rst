@@ -2,6 +2,17 @@
 Retrieving GTDB Taxonomic Classifications
 =========================================
 
+.. warning::
+   **Not yet available in version 3.**
+
+   This page documents the version 2 interface. Retrieval of GTDB taxonomic classifications has not yet been migrated to the
+   version 3 subcommand interface, so the ``cw_get_gtdb_taxs`` command shown below is not currently
+   available from the single ``cazy_webscraper`` entry point. The pages for the subcommands
+   that *are* available in version 3 (``download_cazy``, ``get_ncbi_seqs``, ``get_ncbi_taxs``,
+   ``get_ncbi_genomes`` and ``get_uniprot_data``) have been updated.
+
+
+
 ``cazy_webscraper`` can be used to retrieve the latest taxonomic classification from the `Genome Taxonomy Database (GTDB) <https://gtdb.ecogenomic.org/>`_ taxonomy database 
 for a set of proteins of interest in a local CAZyme database.
 

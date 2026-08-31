@@ -70,7 +70,7 @@ containing the GenBank accession the corresponding ID of its record in the local
 .. code-block:: python
     {"A0A1S6JHP8": {"gbk_acc": "AQS71285.1", "db_id": 1225219}
 
-This file can be used to skip the retrieval of UniProt IDs from UniProt (which is the first step performed by ``cw_get_uniprot_data``). To 
+This file can be used to skip the retrieval of UniProt IDs from UniProt (which is the first step performed by ``cazy_webscraper get_uniprot_data``). To 
 do this use the ``--skip_uniprot_accessions`` flag followed by the path to the corresponding ``uniprot_accessions_YYYY-MM-DD_HH-MM-SS.json`` file.
 
 
@@ -82,7 +82,7 @@ The second json file (``uniprot_data``) contains all data retrieved from UniProt
 CAZyme database that match the specified criteria. The data retrieved from UniProt was parsed into a Python dictionary 
 which is then dumped into the JSON file.
 
-This file is used for mannually checking the parsing method employed by ``cw_get_uniprot_data`` is working, as well as skipping the 
+This file is used for mannually checking the parsing method employed by ``cazy_webscraper get_uniprot_data`` is working, as well as skipping the 
 retrieval of the same dataset from UniProt (for example, if you wanted to recreate a specific CAZyme proteome dataset).
 
 To use the data cached in the ``uniprot_data`` file, using the ``--use_uniprot_cache`` flag, followed by the 
@@ -98,7 +98,7 @@ When retrieving protein sequences from GenBank, all cache files will be containe
 
  three cache file are produced:
 
-* ``cw_genbanks_seqs_<cache_time>.fasta`` contains the protein sequences downloaded from GenBank
+* ``cazy_webscraper get_ncbi_seqs <cache_time>.fasta`` contains the protein sequences downloaded from GenBank
 * ``failed_retrieve_ids`` contains the GenBank accessions containing the IDs of **all** proteins for whom no protein sequence was retrieved
 * ``failed_entrez_connection_accessions`` contains the GenBank accessions of proteins whom no protein sequence was retrieved owing to failure to connect to NCBI
 * ``invalid_ids`` contains GenBank protein version accessions that were retrieved from CAZy, but are no longer listed in NCBI

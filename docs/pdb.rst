@@ -2,6 +2,8 @@
 Retrieving structure files from PDB
 ===================================
 
+
+
 ``cazy_webscraper`` can be used to retrieve protein structure files for PDB accessions in a local CAZyme database from `RSCB PDB database <https://www.rcsb.org/>`_. The downloading of the structure files is handled by the ``BioPython`` module ``Bio.PDB``. 
 
 For specific information of the ``Bio.PDB`` module please see the 
@@ -12,7 +14,7 @@ For specific information of the ``Bio.PDB`` module please see the
         opretional outside peak times.
 
 .. note::
-    PDB structure files are retrieved for the PDB accessions that are *in* a local CAZyme database created using ``cazy_webscraper``. A freshly built CAZyme database only contains NCBI protein accessions, taxonomic kingdoms, source organisms, and CAZy family annotations. Therefore, the ``cw_get_uniprot_data`` command must be used to retrieve PDB accessions from the UniProt database **prior** to using the ``cw_get_pdb_structures`` command.
+    PDB structure files are retrieved for the PDB accessions that are *in* a local CAZyme database created using ``cazy_webscraper``. A freshly built CAZyme database only contains NCBI protein accessions, taxonomic kingdoms, source organisms, and CAZy family annotations. Therefore, the ``cazy_webscraper get_uniprot_data`` command must be used to retrieve PDB accessions from the UniProt database **prior** to using the ``cazy_webscraper get_pdb_structures`` command.
 
 -----------
 Quick Start
@@ -22,7 +24,17 @@ To download the protein structure file for all PDB accessions in a local CAZyme 
 
 .. code-block:: bash
 
-   cw_get_pdb_structures <path to local CAZyme db> <desired file formats>
+   cazy_webscraper get_pdb_structures <path to local CAZyme db> --file_formats <desired file formats>
+
+.. note::
+   As well as downloading the structure files, ``get_pdb_structures`` retrieves the experimental
+   method and resolution of each structure from RCSB and writes them into the ``Pdbs`` table of the
+   local CAZyme database, batch by batch as they are retrieved.
+
+   Use ``--skip_download`` to add only these data to the database and download no structure files.
+
+   Existing method and resolution values are not overwritten unless ``--update`` is used, so a
+   plain re-run only fills in what is missing.
 
 .. NOTE::
    The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
@@ -31,19 +43,18 @@ To download the protein structure file for all PDB accessions in a local CAZyme 
 Structure file formats
 ----------------------
 
-``cw_get_pdb_structures`` can retrieve protein structure files in a series of file formats. The options of file format are (as specified in the BioPython `documentation <https://biopython.org/docs/1.75/api/Bio.PDB.PDBList.html>`_):
+``cazy_webscraper get_pdb_structures`` can retrieve protein structure files in a series of file formats, listed after the ``--file_formats`` flag (the default is ``mmCif``). The options of file format are (as specified in the BioPython `documentation <https://biopython.org/docs/1.75/api/Bio.PDB.PDBList.html>`_):
 
 * mmCif (default, PDBx/mmCif file),
 * pdb (format PDB),
 * xml (PDBML/XML format),
-* mmtf (highly compressed),
 * bundle (PDB formatted archive for large structure}
 
-Any combination of file formats can be provided to ``cw_get_pdb_structures`` to download every file type for each PDB accession in the local CAZyme database. To list multiple file formats, separate each file format with a single space (' '). For example, to download the mmCif and xml files for every PDB accession in a local CAZyme database (located at ``cazy/cazyme_db.db``), use the following command:
+Any combination of file formats can be provided to ``cazy_webscraper get_pdb_structures`` to download every file type for each PDB accession in the local CAZyme database. To list multiple file formats, separate each file format with a single space (' '). For example, to download the mmCif and xml files for every PDB accession in a local CAZyme database (located at ``cazy/cazyme_db.db``), use the following command:
 
 .. code-block:: bash
     
-    cw_get_pdb_structures cazy/cazyme_db.db mmCif xml
+    cazy_webscraper get_pdb_structures cazy/cazyme_db.db --file_formats mmCif xml
 
 .. WARNING::
     The file formats are case sensitive. For example, make sure to use 'mmCif' not 'mmcif'.
@@ -110,7 +121,7 @@ The command-line options listed above can be used in combination to customise th
 
 The ``--classes``, ``--families``, ``--kingdoms``, ``--genera``, ``--species``, and ``--strains`` filteres are applied 
 in the exactly same for retrieving data from CAZy and UniProt, as retrieving data from PDB. Examples of using these flags 
-can be found in the ``cazy_webscraper`` and ``cw_get_uniprot_data`` tutorial in this documentation.
+can be found in the ``cazy_webscraper`` and ``cazy_webscraper get_uniprot_data`` tutorial in this documentation.
 
 .. NOTE::
     To retrieve protein structures for members of specific CAZy subfamilies, list the subfamilies after the ``--families`` 
@@ -121,4 +132,4 @@ can be found in the ``cazy_webscraper`` and ``cw_get_uniprot_data`` tutorial in 
 Structure file retrieval from PDB
 ---------------------------------
 
-The command for using ``cazy_webscraper`` for retrieval of PDB structure files from PDB is ``cw_get_pdb_structures``.
+The command for using ``cazy_webscraper`` for retrieval of PDB structure files from PDB is ``cazy_webscraper get_pdb_structures``.

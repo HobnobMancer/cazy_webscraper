@@ -15,7 +15,7 @@ To download the genomic assembly data for all proteins in a local CAZyme datbase
 
 .. code-block:: bash
 
-   cw_get_genomics <path to local CAZyme db> <user email address>
+   cazy_webscraper get_ncbi_genomes <path to local CAZyme db> <user email address>
 
 .. NOTE::
    The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
@@ -114,7 +114,7 @@ the broad group of proteins for which taxonomic data will be retrieved. Others f
 
 The ``--classes``, ``--families``, ``--kingdoms``, ``--genera``, ``--species``, and ``--strains`` filteres are applied 
 in the exactly same for retrieving data from CAZy, UniProt, and PDB. Examples of using these flags 
-can be found in the ``cazy_webscraper`` and ``cw_get_uniprot_data`` tutorial in this documentation.
+can be found in the ``cazy_webscraper`` and ``cazy_webscraper get_uniprot_data`` tutorial in this documentation.
 
 .. NOTE::
     To retrieve taxonomic information for members of specific CAZy subfamilies, list the subfamilies after the ``--families`` 
@@ -126,4 +126,4 @@ Retrieval of NCBI genomic assembly data
 -------------------------------------------
 
 The command for using ``cazy_webscraper`` for retrieving GenBank and RefSeq genomic assembly data
-from the NCBI Assembly database is ``cw_get_genomics``.
+from the NCBI Assembly database is ``cazy_webscraper get_ncbi_genomes``.

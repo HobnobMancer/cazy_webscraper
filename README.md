@@ -151,8 +151,15 @@ pip install .
 
 To download all of CAZy and save the database in the current directory with the default name (`cazy_webscraper_<date>_<time>.db`) use the following command:  
 ```bash
-cazy_webscraper download
+cazy_webscraper download_cazy user@email.com
 ```
+
+Your email address is required by NCBI Entrez, which is used to resolve the source organism of
+proteins that CAZy lists under more than one taxonomy. It is not stored by `cazy_webscraper`.
+
+> **Note on flag order:** `--version`, `--citation`, `-l/--log`, `--sql_echo` and `-v/--verbose`
+> belong to `cazy_webscraper` itself, so they must be given *before* the subcommand
+> (`cazy_webscraper -v get_ncbi_seqs ...`, not `cazy_webscraper get_ncbi_seqs ... -v`).
 
 ## Subcommand summary
 
@@ -162,15 +169,33 @@ To see all supported subcommands, please use:
 cazy_webscraper --help
 ```
 
-- `download` - Download data from CAZy and build a local SQLite database
+- `download_cazy` - Download data from CAZy and build a local SQLite database
 - `get_ncbi_seqs` - Download NCBI sequences and import the sequences into the local CAZyme database  
 - `get_ncbi_taxs` - Download the latest taxonomy data from NCBI and update these taxa in the local CAZyme database  
 - `get_ncbi_genomes` - Download the genomic assembly name, id and version accession from which a protein sequence was stored, and store these data in the local CAZyme database   
 - `get_uniprot_data` - Download UniProt ids, names, ec numbers, PDB accessions and GO terms from UniProt, and stored these data in the local CAZyme database
+- `get_pdb_structures` - Download protein structure files from RCSB PDB, and add the experimental method and resolution of each structure to the local CAZyme database
+
+### Implementation status
+
+| Subcommand | Status |
+| --- | --- |
+| `download_cazy` | Implemented |
+| `get_ncbi_seqs` | Implemented |
+| `get_ncbi_taxs` | Implemented |
+| `get_ncbi_genomes` | Implemented |
+| `get_uniprot_data` | Implemented |
+| `get_pdb_structures` | Implemented |
+| GTDB taxonomy retrieval | Not yet migrated to v3 |
+| Database query API | Not yet migrated to v3 |
+| Sequence extraction / BLAST db | Not yet migrated to v3 |
+
+The three items marked *not yet migrated* existed in version 2 and are being ported to the
+subcommand interface; they are not currently registered as `cazy_webscraper` subcommands.
 
 ## Creating a Local CAZyme Database
 
-The `download` subcommand is used to scrape CAZy and compile a local SQLite database.
+The `download_cazy` subcommand is used to scrape CAZy and compile a local SQLite database.
 
 ### Required Arguments
 
@@ -181,7 +206,7 @@ The `download` subcommand is used to scrape CAZy and compile a local SQLite data
 To see all command line flag, please use:
 
 ```bash
-cazy_webscraper download --help
+cazy_webscraper download_cazy --help
 ```
 
 #### Filtering Arguments
@@ -218,16 +243,16 @@ cazy_webscraper download --help
 
 ```bash
 # Basic usage - scrape entire CAZy database
-cazy_webscraper download user@email.com -o my_cazy_database.db
+cazy_webscraper download_cazy user@email.com -o my_cazy_database.db
 
 # Filter for bacteria and specific families
-cazy_webscraper download user@email.com -o my_cazy_database.db --families GH1,GH2,CE1 --kingdoms Bacteria
+cazy_webscraper download_cazy user@email.com -o my_cazy_database.db --families GH1,GH2,CE1 --kingdoms Bacteria
 
 # Filter by taxonomic groups
-cazy_webscraper download user@email.com -o my_cazy_database.db --kingdoms Bacteria --genera Escherichia
+cazy_webscraper download_cazy user@email.com -o my_cazy_database.db --kingdoms Bacteria --genera Escherichia
 
 # Use configuration file
-cazy_webscraper download user@email.com -o my_cazy_database.db --config my_config.yaml
+cazy_webscraper download_cazy user@email.com -o my_cazy_database.db --config my_config.yaml
 ```
 
 ### Combining configuration filters
@@ -333,6 +358,12 @@ CAZy does not list the source genomic assembly for proteins catalogued in its da
 • RefSeq genomic version accession
 • RefSeq genomic ID
 
+Each protein is linked to the specific assembly it came from by following NCBI's
+protein &rarr; nucleotide &rarr; assembly links, and then confirming the protein against that
+assembly's feature table. Both the GenBank (`GCA_`) and RefSeq (`GCF_`) accession of the assembly
+are recorded. Proteins that already have an assembly are skipped, so an interrupted run can be
+resumed simply by re-issuing the command.
+
 To download the genomic assembly data from NCBI for all proteins in a local CAZyme database:
 ```bash
 cazy_webscraper get_ncbi_genomes <path_to_cazyme_db> <email_address>
@@ -366,7 +397,7 @@ Additional protein data can be retrieved from UniProtKB for CAZymes in a local C
 
 To retrieve all these data for all proteins in a local CAZyme database, use the following command:
 ```bash
-cazy_webscraper get_ncbi_seqs <path_to_local_CAZyme_db> --ec --pdb --go
+cazy_webscraper get_uniprot_data <path_to_local_CAZyme_db> --ec --pdb --go
 ```
 
 #### Required Arguments
@@ -381,26 +412,54 @@ cazy_webscraper get_ncbi_seqs <path_to_local_CAZyme_db> --ec --pdb --go
 
 • **`--update`** - Enable overwriting sequences in the database if the retrieved sequence is different (default: False)
 
-### Retrieving protein structure files from PDB [Under construction]
+### Retrieving protein structure files from PDB
 
-`cazy_webscraper` can retrieve protein structure files for proteins catalogued in a local CAZyme database. Structure files can be retrieved for all proteins in the database or a subset of proteins, chosen by defining CAZy class, CAZy family, taxonomy (kingdom, genus, species and strain) filters, and EC number filters.
+Protein structure files can be retrieved from [RCSB PDB](https://www.rcsb.org/) for proteins in a local CAZyme database using `cazy_webscraper get_pdb_structures`. Structure files can be retrieved for all proteins in the database, or a subset chosen using the CAZy class, CAZy family, taxonomy (kingdom, genus, species and strain) and EC number filters.
 
-Retrieval of structure files from PDB is performed by the `BioPython` module `PDB` [Cock _et al._, 2009], which writes the downloaded structure files to the local disk. Therefore, the downloaded structure files are **not** stored in the local CAZyme database at the present.
+Alongside downloading the structure files, the subcommand retrieves the **experimental method** and **resolution** of each structure from RCSB and adds them to the `Pdbs` table of the local CAZyme database. The structure files themselves are written to disk (they are not stored in the database).
+
+Downloading of the structure files is performed by the `BioPython` module `PDB` [Cock _et al._, 2009]; the metadata is retrieved from the RCSB PDB GraphQL API, one request per batch of accessions rather than one per structure.
 
 > Cock, P. J. A, Antao, T., Chang, J. T., Chapman, B. A., Cox, C. J., Dalke, A. _et al._ (2009) 'Biopython: freely available Python tools for computaitonal molecular biology and bioinformatics', _Bioinformatics_, 25(11), pp. 1422-3.
 
-To retrieve structure files for all proteins in a local CAZyme database in `mmCif` and `pdb` format, use the following command:
+**PDB accessions must already be in the local database.** They are retrieved from UniProt, so run `cazy_webscraper get_uniprot_data <db> --pdb` before this subcommand.
+
+To retrieve structure files for all proteins in a local CAZyme database in `mmCif` format:
 ```bash
-...
+cazy_webscraper get_pdb_structures <path_to_cazyme_db>
 ```
 
-Protein structure files can be retrieved in a variety of formats, including:
+To retrieve more than one file format, and write the files to a chosen directory:
+```bash
+cazy_webscraper get_pdb_structures <path_to_cazyme_db> --file_formats mmCif pdb -o structure_files/
+```
 
-- mmCif (default, PDBx/mmCif file),
-- pdb (format PDB),
-- xml (PDBML/XML format),
-- mmtf (highly compressed),
-- bundle (PDB formatted archive for large structure}
+To add the experimental method and resolution to the database without downloading any structure files:
+```bash
+cazy_webscraper get_pdb_structures <path_to_cazyme_db> --skip_download
+```
+
+#### Required Arguments
+
+• **`database`** - Path to local CAZy database
+
+#### Optional Arguments
+
+• **`--file_formats`** - File format(s) to download. One or more of `mmCif` (default), `pdb`, `xml`, `bundle`. Note `bundle` is only published for very large structures
+
+• **`--skip_download`** - Do not download structure files; only retrieve the experimental method and resolution and add them to the database
+
+• **`-o OUTDIR, --outdir OUTDIR`** - Directory to write structure files to (default: current working directory)
+
+• **`--overwrite`** - Overwrite existing structure files with the same PDB accession (default: False)
+
+• **`--update`** - Overwrite the method and resolution already in the database when the values retrieved from PDB differ. Without this flag, existing values are left untouched and only missing ones are filled in (default: False)
+
+• **`-c CONFIG_FILE, --config CONFIG_FILE`** - Path to configuration file (default: None)
+
+• **`--genbank_accessions`** / **`--uniprot_accessions`** - Path to a text file of accessions, to restrict retrieval to the structures of those proteins
+
+> **Note:** PDB accessions are also added to the database by `get_uniprot_data --pdb`, which records UniProt's own method and resolution values. Because a plain run of `get_pdb_structures` does not overwrite existing values, use `--update` if you want RCSB's values (e.g. `X-RAY DIFFRACTION`) to replace UniProt's (e.g. `X-ray`).
 
 ### Retrieving GTDB Taxonomies [Under construction]
 

@@ -16,7 +16,7 @@ Welcome to cazy_webscraper's documentation!
 Build Information
 -----------------
 
-.. image:: https://img.shields.io/badge/Version-v1.0.2-yellowgreen
+.. image:: https://img.shields.io/badge/Version-v3.0.0-yellowgreen
    :target: https://github.com/HobnobMancer/cazy_webscraper
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.4300858.svg
    :target: https://doi.org/10.5281/zenodo.4300858
@@ -83,7 +83,7 @@ To download the entire CAZy dataset, and save the data set to the current workin
 
 .. code-block:: bash
 
-   cazy_webscraper download <user_email>
+   cazy_webscraper download_cazy <user_email>
 
 .. NOTE::
    The user email address is a requirement of NCBI. NCBI is queried to identify the currect source organism 
@@ -94,26 +94,40 @@ To download the entire CAZy dataset, and save the data set to the current workin
 Command summary
 ---------------
 
-Below are the list of subcommands (excluding required and optional arguments) included in ``cazy_webscraper``.
+Below are the subcommands (excluding required and optional arguments) included in ``cazy_webscraper``.
+
 .. list-table::
    :header-rows: 1
 
    * - Command
      - Description
-   * - ``download``
+   * - ``download_cazy``
      - Download CAZy data and create a local CAZyme database.
+   * - ``get_ncbi_seqs``
+     - Supplement an existing local CAZyme database with protein sequences from NCBI.
    * - ``get_ncbi_taxs``
      - Update an existing local CAZyme database with new taxonomic classifications from NCBI.
-   * - ``get_genbank_seqs``
-     - Supplement an existing local CAZyme database with protein sequences from NCBI GenBank.
+   * - ``get_ncbi_genomes``
+     - Supplement an existing local CAZyme database with genomic assembly data from NCBI.
    * - ``get_uniprot_data``
      - Supplement an existing local CAZyme database with data from UniProt.
-   * - ``get_pdb_structs``
-     - Downloading protein structure files from RCSB PDB for proteins in an existing local CAZyme database.
-   * - ``get_gtdb_taxs``
-     - Supplement an existing local CAZyme database with taxonomic data from GTDB.
-   * - ``extract_data``
-     - Query a local CAZyme database and output results in a variety of formats.
+   * - ``get_pdb_structures``
+     - Download protein structure files from RCSB PDB, and add the experimental method and
+       resolution of each structure to an existing local CAZyme database.
+
+``download_cazy`` is the one subcommand that *builds* a local CAZyme database; every ``get_*``
+subcommand adds data to a database that already exists.
+
+.. note::
+   ``--version``, ``--citation``, ``-l``/``--log``, ``--sql_echo`` and ``-v``/``--verbose`` belong
+   to ``cazy_webscraper`` itself and must be given **before** the subcommand, for example
+   ``cazy_webscraper -v get_ncbi_seqs ...``.
+
+.. warning::
+   Retrieval of GTDB taxonomic classifications, the database query API and extraction of
+   sequences from a local database existed in version 2 but have **not yet been migrated** to the
+   version 3 subcommand interface. Their documentation pages are retained below and marked
+   accordingly.
 
 -------------
 Documentation
@@ -131,8 +145,6 @@ For details and updates on development, please consult the `GitHub repository <h
    03ncbiTaxs
    uniprot
    uniprottutorial
-   genbank
-   genbanktutorial
    sequence
    sequencetutorial
    pdb
@@ -147,6 +159,8 @@ For details and updates on development, please consult the `GitHub repository <h
    cache
    integrate
    contributing
+   citation
+   license
    citation
    license
 

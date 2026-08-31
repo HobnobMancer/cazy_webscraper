@@ -2,6 +2,8 @@
 Tutorials on configuring ``cazy_webscraper`` to retrieve data from PDB
 ==========================================================================
 
+
+
 ``cazy_webscraper`` can be configured to retrieve protein structures files user specified sets of 
 CAZymes in a local CAZyme database. Many of the same configuration options 
 apply to the retrieval of protein data from CAZy, UniProt, GenBank and PDB.
@@ -17,13 +19,13 @@ This page runs through examples of how to combine the various 'filters' that can
 the retrieval of protein structured from PDB. These tutorials are designed for those with less experience using command-line tools.
 
 .. NOTE::
-  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve PDB data call it using ``cw_get_pdb_structures`` - this is the method used in this tutorial.  
+  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve PDB data call it using ``cazy_webscraper get_pdb_structures`` - this is the method used in this tutorial.  
   If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/expand/pdb/get_pdb_structures.py``.
   
 .. note::
-    PDB structure files are retrieved for the PDB accessions that are *in* a local CAZyme database created using ``cazy_webscraper``. A freshly built CAZyme database only contains NCBI protein accessions, taxonomic kingdoms, source organisms, and CAZy family annotations. Therefore, the ``cw_get_uniprot_data`` command must be used to retrieve PDB accessions from the UniProt database **prior** to using the ``cw_get_pdb_structures`` command.
+    PDB structure files are retrieved for the PDB accessions that are *in* a local CAZyme database created using ``cazy_webscraper``. A freshly built CAZyme database only contains NCBI protein accessions, taxonomic kingdoms, source organisms, and CAZy family annotations. Therefore, the ``cazy_webscraper get_uniprot_data`` command must be used to retrieve PDB accessions from the UniProt database **prior** to using the ``cazy_webscraper get_pdb_structures`` command.
 
-From this point on, we will be discussed the ``cw_get_pdb_structures``, which is the entry point for 
+From this point on, we will be discussed the ``cazy_webscraper get_pdb_structures``, which is the entry point for 
 retrieving data from PDB. We also presume you are comfortable configuring ``cazy_webscraper`` for the 
 scraping of data from CAZy.
 
@@ -31,7 +33,7 @@ scraping of data from CAZy.
 Configuration via the command line
 ----------------------------------
 
-``cw_get_pdb_structures`` has two required argument:
+``cazy_webscraper get_pdb_structures`` has two required argument:
 * The path to the local CAZyme database created using ``cazy_webscraper``
 * The structure file formats to retrieve the data from PDB in
 
@@ -42,11 +44,11 @@ The accepted structure file formats are:
 * mmtf (highly compressed),
 * bundle (PDB formatted archive for large structure}
 
-Any combination of file formats can be provided to ``cw_get_pdb_structures`` to download every file type for each PDB accession in the local CAZyme database. To list multiple file formats, separate each file format with a single space (' '). For example, to download the mmCif and xml files for every PDB accession in a local CAZyme database (located at ``cazy/cazyme_db.db``), use the following command:
+Any combination of file formats can be provided to ``cazy_webscraper get_pdb_structures`` to download every file type for each PDB accession in the local CAZyme database. To list multiple file formats, separate each file format with a single space (' '). For example, to download the mmCif and xml files for every PDB accession in a local CAZyme database (located at ``cazy/cazyme_db.db``), use the following command:
 
 .. code-block:: bash
     
-    cw_get_pdb_structures cazy/cazyme_db.db mmCif xml
+    cazy_webscraper get_pdb_structures cazy/cazyme_db.db mmCif xml
 
 .. WARNING::
     The file formats are case sensitive. For example, make sure to use 'mmCif' not 'mmcif'.
@@ -91,13 +93,13 @@ For example, if you want to retrieve protein data for all CAZymes from Glycoside
 
 .. code-block:: bash
 
-   cw_get_pdb_structures cazy/cazyme.db mmCif --classes GH,CE
+   cazy_webscraper get_pdb_structures cazy/cazyme.db mmCif --classes GH,CE
 
 OR
 
 .. code-block:: bash
 
-   cw_get_pdb_structures cazy/cazyme.db mmCif --classes Glycoside Hydrolases,Carbohydrate Esterases
+   cazy_webscraper get_pdb_structures cazy/cazyme.db mmCif --classes Glycoside Hydrolases,Carbohydrate Esterases
 
 Retrieving protein data for proteins from specific specific CAZy families is achieved using the ``--families`` flag. For 
 example, to retrieve protein data for all proteins in PL1, PL2 and PL3 in the local CAZyme database, in mmCif and PDB format, use the 
@@ -105,10 +107,10 @@ following command:
 
 .. code-block:: bash
 
-   cw_get_pdb_structures cazy/cazyme.db mmCif pdb --families PL1,PL2,PL3
+   cazy_webscraper get_pdb_structures cazy/cazyme.db mmCif pdb --families PL1,PL2,PL3
 
 .. WARNING::
-   ``cw_get_pdb_structures`` only accpets families written in the proper CAZy family syntax.
+   ``cazy_webscraper get_pdb_structures`` only accpets families written in the proper CAZy family syntax.
    GH1 is accepted.
    gh1 and GlycosideHydrolases1 are not accepted.
 
@@ -117,13 +119,13 @@ protein data for all CAZymes in PL1, PL2, PL3 and *all* of GH and CE both:
 
 .. code-block:: bash
 
-   cw_get_pdb_structures cazy/cazyme.db mmCif pdb --families PL1,PL2,PL3 --classes GH,CE
+   cazy_webscraper get_pdb_structures cazy/cazyme.db mmCif pdb --families PL1,PL2,PL3 --classes GH,CE
 
 **AND**
 
 .. code-block:: bash
 
-   cw_get_pdb_structures cazy/cazyme.db mmCif pdb --classes GH,CE --families PL1,PL2,PL3
+   cazy_webscraper get_pdb_structures cazy/cazyme.db mmCif pdb --classes GH,CE --families PL1,PL2,PL3
 
 are accepted.
 
@@ -141,7 +143,7 @@ For example, if you want to retrieve protein data for all CAZymes in a local CAZ
 
 .. code-block:: bash
 
-   cw_get_pdb_structures cazy/cazyme.db pdb xml --kingdoms bacteria,eukaryota
+   cazy_webscraper get_pdb_structures cazy/cazyme.db pdb xml --kingdoms bacteria,eukaryota
 
 .. warning::
    The kingdoms must be spelt the same way CAZy spells them, for example use 'eukaryot**a**' instead of 'eukaryot**e**'.
@@ -154,12 +156,12 @@ For example, if you want to retrieve protein data for all CAZymes in a local CAZ
 
 You can combine any combination of the optional flags, including combining the taxonomic filters. For example,
 you may wish to retrieve protein data for all CAZymes in a local CAZyme database that are derived from all viral species, Aspergillus species, Layia carnosa, Layia chrysanthemoides, Trichoderma reesei QM6a and 
-Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cw_get_pdb_structures`` command. The command 
+Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cazy_webscraper get_pdb_structures`` command. The command 
 we would use would be:
 
 .. code-block:: bash
 
-   cw_get_pdb_structures cazy/cazyme.db pdb xml --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
+   cazy_webscraper get_pdb_structures cazy/cazyme.db pdb xml --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
 
 .. note::
    The order that the flags are used and the order taxa  are listed does **not** matter, and separate multiple taxa names with a single comma 
@@ -176,7 +178,7 @@ we would use would be:
    ASPERGILLUS NIGER is **incorrect**
 
 .. warning::
-   When you specify a species ``cw_get_pdb_structures`` will retrieval CAZymes from *all* strains of the species.
+   When you specify a species ``cazy_webscraper get_pdb_structures`` will retrieval CAZymes from *all* strains of the species.
 
 
 -------------------------
@@ -192,7 +194,7 @@ wish to retrieve protein data for CAZymes annotated with specific EC numbers. To
 
 .. code-block:: bash
    
-   cw_get_pdb_structures cazy/cazyme.db pdb --ec_filter "EC1.2.3.4,EC2.3.4.5"
+   cazy_webscraper get_pdb_structures cazy/cazyme.db pdb --ec_filter "EC1.2.3.4,EC2.3.4.5"
 
 
 .. NOTE::
@@ -211,19 +213,19 @@ wish to retrieve protein data for CAZymes annotated with specific EC numbers. To
     EC number list in single or double quotation marks. Some terminals may misinterpret EC1.2.-.- as trying to invoke the options '.'
 
 .. NOTE::
-    ``cw_get_pdb_structures`` will retrieve the PDB structure files for all proteins in the local CAZyme 
+    ``cazy_webscraper get_pdb_structures`` will retrieve the PDB structure files for all proteins in the local CAZyme 
     database that are annotated with **at least one** of the given EC numbers. Therefore, if multiple 
     EC numbers are given this **does not mean** PDB structure files will only be retrieved for 
     CAZymes annotated for all provided EC numbers.
 
 ``--ec_filter`` is based upon EC number annotations stored within the local CAZyme database. For 
 example, if protein A is annotated with the EC1.2.3.4, but this annotation is not stored in the 
-local CAZyme database, using ``--ec_filter EC1.2.3.4`` will **not** cause ``cw_get_pdb_structures`` to retrieve
-data for protein A. This is because ``cw_get_pdb_structures`` does not know protein A is annotated with 
+local CAZyme database, using ``--ec_filter EC1.2.3.4`` will **not** cause ``cazy_webscraper get_pdb_structures`` to retrieve
+data for protein A. This is because ``cazy_webscraper get_pdb_structures`` does not know protein A is annotated with 
 EC1.2.3.4, because this annotation is not within its database.
 
 .. WARNING::
-    If ``--ec_filter`` is used along side ``--ec``, ``cw_get_pdb_structures`` will retrieve **all** EC number 
+    If ``--ec_filter`` is used along side ``--ec``, ``cazy_webscraper get_pdb_structures`` will retrieve **all** EC number 
     annotations from UniProt for all proteins in the local CAZyme database that are associated with 
     at least one of the EC numbers provided via ``--ec_filter`` within the CAZyme database.
 
@@ -243,7 +245,7 @@ To retrieve PDB structure file for all CAZymes in GH, GT, CE1, CE5 and CE8, and 
 
 .. code-block:: bash
 
-   cw_get_pdb_structures cazy/cazyme.db mmCif xml --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
+   cazy_webscraper get_pdb_structures cazy/cazyme.db mmCif xml --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
 
 
 **Example 2:**
@@ -251,7 +253,7 @@ To retrieve PDB structure files for all CAZymes in GH and which are derived from
 
 .. code-block:: bash
 
-   cw_get_pdb_structures cazy/cazyme.db bundle --classes GH --genera Aspegillus,Trichoderma
+   cazy_webscraper get_pdb_structures cazy/cazyme.db bundle --classes GH --genera Aspegillus,Trichoderma
 
 
 **Example 3:**
@@ -260,7 +262,7 @@ EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, and retrieve the files in pdb and xml for
 
 .. code-block:: bash
 
-   cw_get_pdb_structures cazy/cazyme.db xml pdb --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
+   cazy_webscraper get_pdb_structures cazy/cazyme.db xml pdb --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
 .. NOTE::
    The order the structure file formats are provided does **not** matter.
@@ -270,18 +272,18 @@ Providing a list of accessions
 ------------------------------
 
 Instead of retrieving protein structure files for all CAZymes matching a defined set of criteria, 
-``cw_get_pdb_structures`` can retrieve protein structure files for a set of CAZymes defined by their 
+``cazy_webscraper get_pdb_structures`` can retrieve protein structure files for a set of CAZymes defined by their 
 GenBank and/or UniProt accession.
 
-The flag ``--genbank_accessions`` can be used to provide ``cw_get_pdb_structures`` a list of GenBank accessions 
+The flag ``--genbank_accessions`` can be used to provide ``cazy_webscraper get_pdb_structures`` a list of GenBank accessions 
 to identify the specific set of CAZymes to retrieve protein structure files for.
 
-The flag ``--uniprot_accessions`` can be used to provide ``cw_get_pdb_structures`` a list of UniProt accessions 
+The flag ``--uniprot_accessions`` can be used to provide ``cazy_webscraper get_pdb_structures`` a list of UniProt accessions 
 to identify the specific set of CAZymes to retrieve protein structure files for.
 
 In both instances (for ``--genbank_accessions`` and ``--uniprot_accessions``) the list of respective accessions 
 are provided via a plain text file, with a unique protein accession of each line. The path to this file is 
-then passed to ``cw_get_pdb_structures`` via the respective ``--genbank_accessions`` and ``--uniprot_accessions`` flag.
+then passed to ``cazy_webscraper get_pdb_structures`` via the respective ``--genbank_accessions`` and ``--uniprot_accessions`` flag.
 
 ``--genbank_accessions`` and ``--uniprot_accessions`` can be used at the same time to define all 
 CAZymes of interest.
@@ -289,9 +291,9 @@ CAZymes of interest.
 .. WARNING::
    ``--genbank_accessions`` and ``--uniprot_accessions`` take president over the filter flags.
 
-   When either ``--genbank_accessions`` or ``--uniprot_accessions`` is used, ``cw_get_pdb_structures`` will 
+   When either ``--genbank_accessions`` or ``--uniprot_accessions`` is used, ``cazy_webscraper get_pdb_structures`` will 
    **not** retrieve any CAZymes from the local database matching a set of criteria.
 
-   Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cw_get_pdb_structures`` will ignore 
+   Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cazy_webscraper get_pdb_structures`` will ignore 
    the ``--classes`` flag and only retrieve PDB structure files for the proteins listed in the file provided via 
    the ``--genbank_accessions``.

@@ -23,7 +23,7 @@ use the following command structure:
 
 .. code-block:: console
 
-    cazy_webscraper get_genbank_seqs <path to local CAZyme db> <user email address>
+    cazy_webscraper get_ncbi_seqs <path to local CAZyme db> <user email address>
 
 
 --------------------
@@ -76,7 +76,7 @@ Utility arguments:
 GenBank sequence retrieval cache
 --------------------------------
 
-``cazy_webscraper get_genbank_seqs`` produces three cache files, which are written to the cache dir:
+``cazy_webscraper get_ncbi_seqs`` produces three cache files, which are written to the cache dir:
 1. ``no_seq_retrieved.txt`` which lists the GenBank accessions for which no sequence could be retrieved from GenBank
 2. ``seq_retrieved.txt`` which list GenBank accessions for which a sequence was retrieved from GenBank
 3. JSON file keyed by GenBank accessions and valued by the retrieved protein sequence
@@ -102,7 +102,7 @@ The ``--seq_update`` flag is used in the same way for retrieving protein sequenc
 Updating local sequences
 ------------------------
 
-When using ``--sequence`` flag, ``cazy_webscraper get_genbank_seqs`` will only add *new* protein sequences to the database, i.e.
+When using ``--sequence`` flag, ``cazy_webscraper get_ncbi_seqs`` will only add *new* protein sequences to the database, i.e.
 it will only add protein sequences to records that do not have a sequence. Therefore, if a protein
 already has a sequence in the local database, this sequence is **not** overwritten.
 
@@ -110,9 +110,9 @@ To update existing protein sequences in the local CAZyme database, use the ``--s
 
 .. code-block:: console
 
-    cazy_webscraper get_genbank_seqs my_databases/cazy_db.db --seq_update
+    cazy_webscraper get_ncbi_seqs my_databases/cazy_db.db --seq_update
 
-``cazy_webscraper get_genbank_seqs`` will overwrite existing protein sequences in the local database *if* a newer version 
+``cazy_webscraper get_ncbi_seqs`` will overwrite existing protein sequences in the local database *if* a newer version 
 of the sequence is retrieved from UniProt. This is checked by comparing the 'last modified date' of the 
 protein sequence in the local database against the sequence retrieved from UniProt.
 
@@ -127,21 +127,21 @@ For example, if you want to retrieve protein sequences for all CAZymes from Glyc
 
 .. code-block:: bash
 
-   cazy_webscraper get_genbank_seqs cazy/cazyme.db dummy.email@domain.co.uk --classes GH,CE
+   cazy_webscraper get_ncbi_seqs cazy/cazyme.db dummy.email@domain.co.uk --classes GH,CE
 
 To retrieve protein sequences for all proteins in PL1, PL2 and PL3 in the local CAZyme database use the 
 following command:
 
 .. code-block:: bash
 
-   cazy_webscraper get_genbank_seqs cazy/cazyme.db dummy.email@domain.co.uk --families PL1,PL2,PL3
+   cazy_webscraper get_ncbi_seqs cazy/cazyme.db dummy.email@domain.co.uk --families PL1,PL2,PL3
 
 As with scraping data from CAZy, the ``--classes`` and ``--families`` flags can be combined. To retrieve 
 protein sequences for all CAZymes in PL1, PL2, PL3 and *all* of GH and CE both:
 
 .. code-block:: bash
 
-   cazy_webscraper get_genbank_seqs cazy/cazyme.db dummy.email@domain.co.uk --families PL1,PL2,PL3 --classes GH,CE
+   cazy_webscraper get_ncbi_seqs cazy/cazyme.db dummy.email@domain.co.uk --families PL1,PL2,PL3 --classes GH,CE
 
 --------------------------
 Applying taxonomic filters
@@ -157,18 +157,18 @@ For example, if you want to retrieve protein sequences for all CAZymes in a loca
 
 .. code-block:: bash
 
-   cazy_webscraper get_genbank_seqs cazy/cazyme.db dummy.email@domain.co.uk \
+   cazy_webscraper get_ncbi_seqs cazy/cazyme.db dummy.email@domain.co.uk \
        --kingdoms bacteria,eukaryota
 
 
 You can combine any combination of the optional flags, including combining the taxonomic filters. For example,
 you may wish to retrieve protein sequences for all CAZymes in a local CAZyme database that are derived from all viral species, Aspergillus species, Layia carnosa, Layia chrysanthemoides, Trichoderma reesei QM6a and 
-Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cazy_webscraper get_genbank_seqs`` command. The command 
+Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cazy_webscraper get_ncbi_seqs`` command. The command 
 we would use would be:
 
 .. code-block:: bash
 
-   cazy_webscraper get_genbank_seqs cazy/cazyme.db dummy.email@domain.co.uk \
+   cazy_webscraper get_ncbi_seqs cazy/cazyme.db dummy.email@domain.co.uk \
        --kingdoms viruses \
        --genera Aspergillus \
        --species Layia carnosa,Layia chrysanthemoides \
@@ -200,7 +200,7 @@ wish to retrieve protein sequences for CAZymes annotated with specific EC number
 
 .. code-block:: bash
    
-   cazy_webscraper get_genbank_seqs cazy/cazyme.db dummy.email@domain.co.uk \
+   cazy_webscraper get_ncbi_seqs cazy/cazyme.db dummy.email@domain.co.uk \
        --ec_filter "EC1.2.3.4,EC2.3.4.5"
 
 Provide complete EC numbers. Both dashes ('-') and asterixes ('*') are accepted for missing digits in EC numbers. However,
@@ -234,7 +234,7 @@ To retrieve protein sequences for all CAZymes in GH, GT, CE1, CE5 and CE8, and w
 
 .. code-block:: bash
 
-   cazy_webscraper get_genbank_seqs cazy/cazyme.db dummy.email@domain.co.uk --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
+   cazy_webscraper get_ncbi_seqs cazy/cazyme.db dummy.email@domain.co.uk --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
 
 
 **Example 2:**
@@ -242,7 +242,7 @@ To protein sequences for all CAZymes in GH and which are derived from *Aspegillu
 
 .. code-block:: bash
 
-   cazy_webscraper get_genbank_seqs cazy/cazyme.db dummy.email@domain.co.uk -classes GH --genera Aspegillus,Trichoderma
+   cazy_webscraper get_ncbi_seqs cazy/cazyme.db dummy.email@domain.co.uk -classes GH --genera Aspegillus,Trichoderma
 
 
 **Example 3:**
@@ -251,7 +251,7 @@ EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, we use the command:
 
 .. code-block:: bash
 
-   cazy_webscraper get_genbank_seqs cazy/cazyme.db dummy.email@domain.co.uk --ec --sequences --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
+   cazy_webscraper get_ncbi_seqs cazy/cazyme.db dummy.email@domain.co.uk --ec --sequences --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
 
 ------------------------------
@@ -259,18 +259,18 @@ Providing a list of accessions
 ------------------------------
 
 Instead of retrieving protein sequences for all CAZymes matching a defined set of criteria, 
-``cazy_webscraper get_genbank_seqs`` can retrieve protein sequences a set of CAZymes defined by their 
+``cazy_webscraper get_ncbi_seqs`` can retrieve protein sequences a set of CAZymes defined by their 
 GenBank and/or UniProt accession.
 
-The flag ``--genbank_accessions`` can be used to provide ``cazy_webscraper get_genbank_seqs`` a list of GenBank accessions 
+The flag ``--genbank_accessions`` can be used to provide ``cazy_webscraper get_ncbi_seqs`` a list of GenBank accessions 
 to identify the specific set of CAZymes to retrieve protein sequences for.
 
-The flag ``--uniprot_accessions`` can be used to provide ``cazy_webscraper get_genbank_seqs`` a list of UniProt accessions 
+The flag ``--uniprot_accessions`` can be used to provide ``cazy_webscraper get_ncbi_seqs`` a list of UniProt accessions 
 to identify the specific set of CAZymes to retrieve protein sequences for.
 
 In both instances (for ``--genbank_accessions`` and ``--uniprot_accessions``) the list of respective accessions 
 are provided via a plain text file, with a unique protein accession of each line. The path to this file is 
-then passed to ``cazy_webscraper get_genbank_seqs`` via the respective ``--genbank_accessions`` and ``--uniprot_accessions`` flag.
+then passed to ``cazy_webscraper get_ncbi_seqs`` via the respective ``--genbank_accessions`` and ``--uniprot_accessions`` flag.
 
 ``--genbank_accessions`` and ``--uniprot_accessions`` can be used at the same time to define all 
 CAZymes of interest.
@@ -278,10 +278,10 @@ CAZymes of interest.
 .. WARNING::
    ``--genbank_accessions`` and ``--uniprot_accessions`` take president over the filter flags.
 
-   When either ``--genbank_accessions`` or ``--uniprot_accessions`` is used, ``cazy_webscraper get_genbank_seqs`` will 
+   When either ``--genbank_accessions`` or ``--uniprot_accessions`` is used, ``cazy_webscraper get_ncbi_seqs`` will 
    **not** retrieve any CAZymes from the local database matching a set of criteria.
 
-   Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cazy_webscraper get_genbank_seqs`` will ignore 
+   Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cazy_webscraper get_ncbi_seqs`` will ignore 
    the ``--classes`` flag and only retrieve protein sequences for the proteins listed in the file provided via 
    the ``--genbank_accessions``.
 
@@ -290,7 +290,7 @@ CAZymes of interest.
 Providing sequences from a file
 -------------------------------
 
-While ``cazy_webscraper get_genbank_seqs`` is retrieving protein sequences from NCBI, the retrieved protein sequences 
+While ``cazy_webscraper get_ncbi_seqs`` is retrieving protein sequences from NCBI, the retrieved protein sequences 
 are written to a FASTA file in the cache directory.
 
 To add sequences from a cached FASTA file (e.g. to continue a download that was previously interrupted) and/or 
@@ -298,11 +298,11 @@ add GenBank sequences from a previous download (e.g. by a colleage), use the ``-
 the path to the FASTA containing the protein sequences to be added to the database. The ID for 
 each sequence **must** be the NCBI protein version accession.
 
-``cazy_webscraper get_genbank_seqs`` also generates a JSON file of the cached sequences. To add sequences from the 
+``cazy_webscraper get_ncbi_seqs`` also generates a JSON file of the cached sequences. To add sequences from the 
 cached JSON file to the local CAZyme database, use the ``--seq_dict`` flag followed by the path to the 
 JSON file.
 
-By default ``cazy_webscraper get_genbank_seqs`` will add sequences retrieved from the FASTA and/or JSON file **and** will retrieve 
+By default ``cazy_webscraper get_ncbi_seqs`` will add sequences retrieved from the FASTA and/or JSON file **and** will retrieve 
 protein sequences from NCBI for proteins matching the provided criteria to define proteins of interest. 
 
 To add **only** the sequences from a FASTA and/or JSON file, and **not** download any sequences from NCBI, use 
