@@ -1,6 +1,6 @@
-==========================================
+============================================
 Extracting data from a local CAZyme database
-==========================================
+============================================
 
 The ``extract_data`` subcommand writes data held in a local CAZyme database out to files. It
 covers both tabular export (CSV, TSV, JSON, JSON Lines) and sequence export (FASTA files and BLAST

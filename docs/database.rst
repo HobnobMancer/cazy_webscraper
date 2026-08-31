@@ -25,7 +25,7 @@ Database Schema
 
 Below is the database ORM. It plots the relationships between elements in each table.
 
-.. image:: cazy_webscraper_v2.3+.svg
+.. image:: cazy_webscraper_version2.svg
    :scale: 100 %
    :alt: cazy_webscraper database schema
    :align: center
@@ -36,15 +36,16 @@ The database ORM (schema) can also be viewed `Here <https://hobnobmancer.github.
 Retrieve the schema of a local CAZyme database
 ----------------------------------------------
 
-The schema of a local CAZyme database can be retrieved using ``cazy_webscraper``:
-
-.. code-block:: bash
-    cw_get_db_schema <path to local CAZyme database>
+.. warning::
+   ``cw_get_db_schema`` is a version 2 command and has **not yet been migrated** to the version 3
+   subcommand interface, so it is not available from the ``cazy_webscraper`` entry point. Use
+   ``sqlite3`` as shown below. See :doc:`migration`.
 
 
 Alternatively, `sqlite3` can be used to retrieve the schema:
 
 .. code-block:: bash
+
     sqlite3 <path to local CAZyme database> .schema
 
 

@@ -52,7 +52,7 @@ Build Information
 ``cazy_webscraper``
 -------------------
 
-``cazy_webscraper`` is a Python3 package for the automated retrieval of Carbohydrate-Active enZyme (CAZyme) data from the `CAZy <http://wwww.cazy.org/>`_ database. This program is free to use under the MIT license, and we kindly request that, if you use this program or Python package, you cite it as indicated below.
+``cazy_webscraper`` is a Python3 package for the automated retrieval of Carbohydrate-Active enZyme (CAZyme) data from the `CAZy <http://www.cazy.org/>`_ database. This program is free to use under the MIT license, and we kindly request that, if you use this program or Python package, you cite it as indicated below.
 
 ``cazy_webscraper`` retrieves data from CAZy, writing it to a local SQLite3 file, typically taking 5-15 minutes to scrape the entirety of CAZy. 
 
@@ -129,6 +129,12 @@ subcommand adds data to a database that already exists.
    ``--version``, ``--citation``, ``-l``/``--log``, ``--sql_echo`` and ``-v``/``--verbose`` belong
    to ``cazy_webscraper`` itself and must be given **before** the subcommand, for example
    ``cazy_webscraper -v get_ncbi_seqs ...``.
+
+.. note::
+   The options shared by every subcommand -- the ``--classes``, ``--families``, ``--kingdoms``,
+   ``--genera``, ``--species``, ``--strains`` and ``--ec_filter`` filters, the accession list
+   files, the YAML configuration file and the common housekeeping flags -- are documented once in
+   :doc:`filters`. Each subcommand page covers only the options specific to that subcommand.
 
 .. warning::
    The version 2 ``cw_query_database`` and ``cw_extract_db_seqs`` commands are now the single

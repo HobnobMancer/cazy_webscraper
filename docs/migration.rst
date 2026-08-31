@@ -450,9 +450,8 @@ a version 2 database as well, since the command expects the version 2 schema des
 :ref:`database-compatibility`.
 
 .. note::
-   The :doc:`api` and :doc:`sequence` pages in this manual still describe the version 2
-   ``cw_query_database`` and ``cw_extract_db_seqs`` interfaces. Use the ``extract_data`` mapping
-   above to translate their examples until those pages are rewritten.
+   The version 2 ``api`` and ``sequence`` pages have been replaced by :doc:`extract`, which
+   documents the merged ``extract_data`` subcommand.
 
 
 -----------------------------

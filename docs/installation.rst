@@ -8,7 +8,7 @@ We support three ways to install ``cazy_webscraper``.
 
 * Using `bioconda <https://bioconda.github.io/>`_ **[Recommended]**
 * Using `pip/PyPI <https://pypi.python.org/pypi/cazy_webscraper>`_
-* Installation from source (`git clone <https://github.com/cazy-project/cazy_webscraper>`_)
+* Installation from source (`git clone <https://github.com/HobnobMancer/cazy_webscraper>`_)
 
 ------------
 Requirements
@@ -51,13 +51,13 @@ To install ``cazy_webscraper`` and all required packages using `pip <https://pyp
 Installing from source
 ----------------------
 
-``cazy_webscraper`` can be installed from the source code available at the `GitHub repository <https://github.com/cazy-project/cazy_webscraper>`_.
+``cazy_webscraper`` can be installed from the source code available at the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_.
 
 .. WARNING::
    The ``cazy_webscraper`` repository provides the development version of ``cazy_webscraper``. This is the version that is most recently updated, but it may not be the latest stable version. In particular, the development version may contain features that are not yet in a stable version, and it may contain bugs.
 
 .. TIP::
-   To obtain the most recent *stable* source code from the ``cazy_webscraper`` repository, download a release from the `releases page <https://github.com/cazy-project/cazy_webscraper/releases>`_ and extract the archive.
+   To obtain the most recent *stable* source code from the ``cazy_webscraper`` repository, download a release from the `releases page <https://github.com/HobnobMancer/cazy_webscraper/releases>`_ and extract the archive.
 
 .. ATTENTION::
    If you are using `conda`, you can use the ``Makefile`` in the ``cazy_webscraper`` repository to install ``cazy_webscraper`` from source, with the command ``make setup_env``.
@@ -66,7 +66,7 @@ Installing from source
 Obtaining ``cazy_webscraper`` source
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The **development** version of ``cazy_webscraper`` is available at the `GitHub repository <https://github.com/cazy-project/cazy_webscraper>`_ and can be downloaded in the following ways.
+The **development** version of ``cazy_webscraper`` is available at the `GitHub repository <https://github.com/HobnobMancer/cazy_webscraper>`_ and can be downloaded in the following ways.
 
 To clone the ``cazy_webscraper`` repository using ``git``, you can use the following command:
 

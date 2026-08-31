@@ -1,6 +1,6 @@
-==================================
+===================================
 Retrieving structure files from PDB
-==================================
+===================================
 
 The ``get_pdb_structures`` subcommand downloads protein structure files from
 `RCSB PDB <https://www.rcsb.org/>`_ for proteins in a local CAZyme database, and records the

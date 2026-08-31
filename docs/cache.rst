@@ -49,45 +49,21 @@ Cache files when retrieving data from CAZy
 Cache files when retrieving data from UniProt
 ---------------------------------------------
 
-The dataframes retrieved with each query to UniProt are cached.
+``get_uniprot_data`` writes two plain text files into the cache directory:
 
-In addition two JSON files are created:
-* ``uniprot_accessions_YYYY-MM-DD_HH-MM-SS.json``
-* ``uniprot_data_YYYY-MM-DD_HH-MM-SS.json``
+* ``uniprot_connection_errors_YYYY-MM-DD_HH-MM-SS.txt`` -- requests that failed with a connection
+  error
+* ``uniprot_failed_ids_YYYY-MM-DD_HH-MM-SS.txt`` -- accessions UniProt returned no usable record
+  for
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-UniProt accessions JSON file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Both are diagnostic: they tell you which proteins were missed so that you can re-run for just
+those, by passing the accessions to ``--genbank_accessions``.
 
-The first file (``uniprot_accessions``) contains the UniProt accessions/IDs for each GenBank accession retrieved 
-from the local CAZyme database that matches the provided criteria. These UniProt IDs are used to query 
-UniProt and retrieve protein data. UniProt cannot be batch queried by GenBank accessions to retrieve protein 
-data using ``bioservices``.
-
-The JSON file is keyed by the UniProt accession and is valued by a Python dictionary like structure, 
-containing the GenBank accession the corresponding ID of its record in the local CAZyme database. For example: 
-
-.. code-block:: python
-    {"A0A1S6JHP8": {"gbk_acc": "AQS71285.1", "db_id": 1225219}
-
-This file can be used to skip the retrieval of UniProt IDs from UniProt (which is the first step performed by ``cazy_webscraper get_uniprot_data``). To 
-do this use the ``--skip_uniprot_accessions`` flag followed by the path to the corresponding ``uniprot_accessions_YYYY-MM-DD_HH-MM-SS.json`` file.
-
-
-^^^^^^^^^^^^^^^^^^^^^^
-UniProt data JSON file
-^^^^^^^^^^^^^^^^^^^^^^
-
-The second json file (``uniprot_data``) contains all data retrieved from UniProt for all proteins in the local 
-CAZyme database that match the specified criteria. The data retrieved from UniProt was parsed into a Python dictionary 
-which is then dumped into the JSON file.
-
-This file is used for mannually checking the parsing method employed by ``cazy_webscraper get_uniprot_data`` is working, as well as skipping the 
-retrieval of the same dataset from UniProt (for example, if you wanted to recreate a specific CAZyme proteome dataset).
-
-To use the data cached in the ``uniprot_data`` file, using the ``--use_uniprot_cache`` flag, followed by the 
-path pointing to the corresponding file. Using this flag, skips the retrieval of protein data from UniProt, and only adds 
-data from the cache file into the local CAZyme database.
+.. note::
+   Version 2 additionally wrote ``uniprot_accessions_*.json`` and ``uniprot_data_*.json`` cache
+   files, which could be replayed with the ``--skip_uniprot_accessions`` and
+   ``--use_uniprot_cache`` flags. Version 3 writes neither file, and both flags have been removed.
+   See :doc:`migration`.
 
 ----------------------------------------------------------
 Cache files when retrieving protein sequences from GenBank
