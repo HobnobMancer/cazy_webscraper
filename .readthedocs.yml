@@ -4,6 +4,9 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
+  apt_packages:
+    # sphinx.ext.graphviz needs the `dot` binary to render the database ERD
+    - graphviz
 
 sphinx:
   configuration: docs/conf.py

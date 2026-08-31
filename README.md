@@ -326,9 +326,26 @@ Example configuration files, and an empty configuraiton file template are locate
 
 ## Database Schema
 
-This is the structure of the local SQLite3 database compiled by `cazy_webscraper` version >=2.3.0:
+The central table is `Proteins`, keyed on `protein_id`/`protein_accession`. Shared values — CAZy
+families, EC numbers, source organisms, genomes — are stored once and linked through association
+tables (`Proteins_CazyFamilies`, `Proteins_Ecs`, `Proteins_Pdbs`, `Proteins_GoTerms`,
+`Proteins_Pfams`, `Proteins_Genomes`).
 
-![database schema](assets/cazy_webscraper_v2.3+.svg "database schema")
+For the entity-relationship diagram, a table-by-table reference, and the full `CREATE TABLE`
+schema, see [the database page in the
+documentation](https://cazy-webscraper.readthedocs.io/en/latest/database.html).
+
+To inspect the schema of a database you already have:
+
+```bash
+sqlite3 <path to local CAZyme database> .schema
+```
+
+> [!WARNING]
+> The schema changed in version 3: version 2's `Genbanks` table became `Proteins`, and every
+> association table was renamed with it. A version 2 database cannot be used with version 3 — see
+> [Migrating from version 2](#migrating-from-version-2). The diagram in `assets/` is the version 2
+> schema and no longer reflects the database.
 
 
 ## Contributions

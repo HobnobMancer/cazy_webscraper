@@ -34,7 +34,12 @@ release = '2.0.0'
 # ones.
 extensions = [
     "sphinx_rtd_theme",
+    # renders the entity-relationship diagram on the database page
+    "sphinx.ext.graphviz",
 ]
+
+# render diagrams as SVG so they stay sharp and selectable
+graphviz_output_format = "svg"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
