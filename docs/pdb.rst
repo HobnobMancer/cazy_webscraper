@@ -1,135 +1,113 @@
-===================================
+==================================
 Retrieving structure files from PDB
-===================================
+==================================
 
+The ``get_pdb_structures`` subcommand downloads protein structure files from
+`RCSB PDB <https://www.rcsb.org/>`_ for proteins in a local CAZyme database, and records the
+experimental method and resolution of each structure in the database.
 
+.. note::
+   Structure files are written to disk. Only the experimental method and resolution are stored in
+   the local CAZyme database.
 
-``cazy_webscraper`` can be used to retrieve protein structure files for PDB accessions in a local CAZyme database from `RSCB PDB database <https://www.rcsb.org/>`_. The downloading of the structure files is handled by the ``BioPython`` module ``Bio.PDB``. 
+   ``get_pdb_structures`` works from PDB accessions already in your database, so run
+   ``get_uniprot_data --pdb`` first to populate them.
 
-For specific information of the ``Bio.PDB`` module please see the 
-`BioPython documentation <https://biopython.org/wiki/The_Biopython_Structural_Bioinformatics_FAQ>`_.
+-----------
+Quick start
+-----------
+
+Download an ``mmCif`` file for every protein in the database that has a PDB accession:
+
+.. code-block:: bash
+
+   cazy_webscraper get_pdb_structures cazy/cazyme.db
+
+To record structure metadata without downloading any files:
+
+.. code-block:: bash
+
+   cazy_webscraper get_pdb_structures cazy/cazyme.db --skip_download
+
+------------------------
+Structure file formats
+------------------------
+
+``--file_formats`` selects which formats to download. It accepts one or more of ``mmCif``, ``pdb``,
+``xml`` and ``bundle``, separated by spaces, and defaults to ``mmCif``.
+
+.. code-block:: bash
+
+   cazy_webscraper get_pdb_structures cazy/cazyme.db --file_formats pdb mmCif
+
+.. note::
+   ``bundle`` is only published for very large structures, so requesting it alone will retrieve
+   nothing for most proteins.
 
 .. warning::
-        If many PDB structure files are going to retrieved PDB (for example more than 100), it is expected practise to perform the
-        opretional outside peak times.
+   The ``mmtf`` format offered by version 2 is gone: RCSB PDB has retired MMTF, and it is not an
+   accepted value.
 
-.. note::
-    PDB structure files are retrieved for the PDB accessions that are *in* a local CAZyme database created using ``cazy_webscraper``. A freshly built CAZyme database only contains NCBI protein accessions, taxonomic kingdoms, source organisms, and CAZy family annotations. Therefore, the ``cazy_webscraper get_uniprot_data`` command must be used to retrieve PDB accessions from the UniProt database **prior** to using the ``cazy_webscraper get_pdb_structures`` command.
+-------------------
+Subcommand options
+-------------------
 
------------
-Quick Start
------------
+``database``
+  **Required.** Path to the local CAZyme database.
 
-To download the protein structure file for all PDB accessions in a local CAZyme database, use the following command structure:
+``--file_formats``
+  Structure file format(s) to download. Default: ``mmCif``.
+
+``--skip_download``
+  Do not download structure files. Only retrieve the experimental method and resolution of each
+  structure and add them to the local CAZyme database. Default: ``False``.
+
+``--update``
+  Overwrite the experimental method and resolution already stored in the database when the values
+  retrieved from PDB differ. Default: ``False``.
+
+``-o``, ``--outdir``
+  Directory to write structure files to. Default: the current working directory.
+
+``--overwrite``
+  Overwrite existing structure files. Default: ``False``.
+
+``-n``, ``--nodelete``
+  Keep the existing contents of the output directory. Default: ``False``.
+
+``--batch_size``
+  Number of records per batch request to PDB. Default: ``150``.
+
+``-t``, ``--timeout``
+  Seconds before a connection to PDB times out. Default: ``45``.
+
+For the filtering flags and the shared housekeeping options, see
+:doc:`Filtering and common options <filters>`. ``get_pdb_structures`` accepts both
+``--genbank_accessions`` and ``--uniprot_accessions``.
+
+-----------------
+Worked examples
+-----------------
+
+**Download two formats for bacterial CAZymes in selected classes:**
 
 .. code-block:: bash
 
-   cazy_webscraper get_pdb_structures <path to local CAZyme db> --file_formats <desired file formats>
+   cazy_webscraper get_pdb_structures cazy/cazyme.db --file_formats pdb mmCif \
+       --classes GH,CE --kingdoms bacteria --outdir structures/
 
-.. note::
-   As well as downloading the structure files, ``get_pdb_structures`` retrieves the experimental
-   method and resolution of each structure from RCSB and writes them into the ``Pdbs`` table of the
-   local CAZyme database, batch by batch as they are retrieved.
-
-   Use ``--skip_download`` to add only these data to the database and download no structure files.
-
-   Existing method and resolution values are not overwritten unless ``--update`` is used, so a
-   plain re-run only fills in what is missing.
-
-.. NOTE::
-   The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
-   
-----------------------
-Structure file formats
-----------------------
-
-``cazy_webscraper get_pdb_structures`` can retrieve protein structure files in a series of file formats, listed after the ``--file_formats`` flag (the default is ``mmCif``). The options of file format are (as specified in the BioPython `documentation <https://biopython.org/docs/1.75/api/Bio.PDB.PDBList.html>`_):
-
-* mmCif (default, PDBx/mmCif file),
-* pdb (format PDB),
-* xml (PDBML/XML format),
-* bundle (PDB formatted archive for large structure}
-
-Any combination of file formats can be provided to ``cazy_webscraper get_pdb_structures`` to download every file type for each PDB accession in the local CAZyme database. To list multiple file formats, separate each file format with a single space (' '). For example, to download the mmCif and xml files for every PDB accession in a local CAZyme database (located at ``cazy/cazyme_db.db``), use the following command:
+**Record metadata only for a functionally defined subset,** without downloading files:
 
 .. code-block:: bash
-    
-    cazy_webscraper get_pdb_structures cazy/cazyme_db.db --file_formats mmCif xml
 
-.. WARNING::
-    The file formats are case sensitive. For example, make sure to use 'mmCif' not 'mmcif'.
+   cazy_webscraper get_pdb_structures cazy/cazyme.db --skip_download \
+       --classes GH --ec_filter "3.2.1.23,3.2.1.37"
 
---------------------
-Command line options
---------------------
+**Refresh stored metadata for a named list of proteins:**
 
-``database`` - **REQUIRED** Path to a local CAZyme database to add UniProt data to.
+.. code-block:: bash
 
-``pdb`` - **REQUIRED** List of file formats to retrieve from PDB for each PDB accession.
+   cazy_webscraper get_pdb_structures cazy/cazyme.db --skip_download --update \
+       --uniprot_accessions my_proteins.txt
 
-``--batch_size`` - Size of an individual batch query of PDB accessions submitted to PDB. Default is 150.
-
-``--cache_dir`` - Path to cache dir to be used instead of default cache dir path.
-
-``--cazy_synonyms`` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
-
-``--config``, ``-c`` - Path to a configuration YAML file. Default: None.
-
-``--classes`` - list of classes to retrieve UniProt data for.
-
-``--ec_filter`` - List of EC numbers to limit the retrieval of structure files to proteins with at least one of the given EC numbers *in the local CAZyme database*.
-
-``--families`` - List of CAZy (sub)families to retrieve UniProt protein data for.
-
-``--genbank_accessions`` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
-
-``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
-
-``--kingdoms`` - List of taxonomy kingdoms to retrieve UniProt data for.
-
-``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
-
-``--nodelete``, ``-n`` - When called, content in the existing output  will **not** be deleted. Default: False (existing content is deleted).
-
-``--nodelete_cache`` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
-
-``--outdir``, ``-o`` - Define output directory to write out structure files. Default, write structure files to current working directory.
-
-``--overwrite`` - Overwrite existing structure files with the same PDB accession as files being downloaded. Default false, do not overwrite existing files.
-
-``--retries``, ``-r`` - Define the number of times to retry making a connection to PDB if the connection should fail. Default: 10.
-
-``--sql_echo`` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
-
-``--species`` - List of species (organsim scientific names) to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given species.
-
-``--strains`` - List of species strains to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given strains.
-
-``--timeout``, ``-t`` - Connection timout limit (seconds). Default: 45.
-
-``--uniprot_accessions`` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
-
-``--verbose``, ``-v`` - Enable verbose logging. This does **not** set the SQLite engine ``echo`` parameter to True. Default: False.
-
-
-
------------
-Basic Usage
------------
-
-The command-line options listed above can be used in combination to customise the retrieval of protein structure files from PDB for proteins of interest. Some options (e.g. ``--families`` and ``--classes``) define the broad group of proteins for which structure files are retrieved, others (e.g. ``--species``) are used to filter and fine-tune the protein dataset for which structure files are retrieved.
-
-The ``--classes``, ``--families``, ``--kingdoms``, ``--genera``, ``--species``, and ``--strains`` filteres are applied 
-in the exactly same for retrieving data from CAZy and UniProt, as retrieving data from PDB. Examples of using these flags 
-can be found in the ``cazy_webscraper`` and ``cazy_webscraper get_uniprot_data`` tutorial in this documentation.
-
-.. NOTE::
-    To retrieve protein structures for members of specific CAZy subfamilies, list the subfamilies after the ``--families`` 
-    flag.
-
-
----------------------------------
-Structure file retrieval from PDB
----------------------------------
-
-The command for using ``cazy_webscraper`` for retrieval of PDB structure files from PDB is ``cazy_webscraper get_pdb_structures``.
+See :ref:`filter-combining` for more on combining filters.

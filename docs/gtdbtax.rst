@@ -1,143 +1,87 @@
-=========================================
-Retrieving GTDB Taxonomic Classifications
-=========================================
+==========================================
+Retrieving GTDB taxonomic classifications
+==========================================
 
+The ``get_gtdb_taxs`` subcommand adds taxonomic classifications from the
+`Genome Taxonomy Database <https://gtdb.ecogenomic.org/>`_ to the genomes in a local CAZyme
+database.
 
-
-``cazy_webscraper`` can be used to retrieve the latest taxonomic classification from the `Genome Taxonomy Database (GTDB) <https://gtdb.ecogenomic.org/>`_ taxonomy database 
-for a set of proteins of interest in a local CAZyme database.
-
-.. Note::
-    As in the GTDB database, GTDB taxonomic classifications are retrieved and associated with genomes stored 
-    in the local CAZyme database. To retrieve GTDB taxonomic classifications the genomic data for the 
-    proteins of interest **must** be listed in the local CAZyme database.
+.. note::
+   GTDB classifies *genomes*, so ``get_gtdb_taxs`` needs genomic assembly accessions to be present
+   already. Run ``get_ncbi_genomes`` first.
 
 -----------
-Quick Start
+Quick start
 -----------
-
-To download the GTDB taxonomic classifications for all proteins in a local CAZyme datbase, use the following command structure:
 
 .. code-block:: bash
 
-   cazy_webscraper get_gtdb_taxs <path to local CAZyme db> --taxs <domains>
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db
 
-.. note::
-   In version 3 the domains are given with the ``--taxs`` flag rather than as a positional
-   argument, and default to both ``archaea`` and ``bacteria``. GTDB publishes one release file per
-   domain, so naming only the domain you need avoids downloading the other.
+By default this retrieves both the archaeal and bacterial GTDB releases.
 
-.. important::
-   GTDB classifies **genomes**, not proteins, so each classification is attached to a genomic
-   assembly in the local database. Run ``cazy_webscraper get_ncbi_genomes`` first — without
-   genomic data there is nothing for the GTDB lineages to attach to.
+------------------------
+Selecting GTDB domains
+------------------------
 
-   Lineages are recorded with the GTDB release they came from (e.g. ``v232``), and genomes that
-   already carry a classification are skipped unless ``--update`` is used.
+``--taxs`` chooses which GTDB domains to retrieve classifications from. It accepts ``archaea``,
+``bacteria`` or both, and defaults to both.
 
-.. NOTE::
-   The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
+.. code-block:: bash
 
-.. NOTE::
-    GTDB only provides data for bacteria and archaeal genomes.
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db --taxs bacteria
 
-   
--------------------------------------
-Storing the taxonomic classifications
--------------------------------------
+.. tip::
+   Each domain is published by GTDB as a separate release file, so naming only the domain you need
+   avoids downloading the other one. If your dataset is entirely bacterial, ``--taxs bacteria``
+   halves the download.
 
-The GTDB taxonomy classifications retrieved from the GTDB Taxonomy database are stored in the 
-``GtdbTaxs`` table in the local CAZyme database. 
+-------------------
+Subcommand options
+-------------------
 
-Each unique organism strain retrieved from GTDB is stored as a unique record in the ``GtdbTaxs`` table, which lists for each record the:
-* Superkingdom (referred to as the kingdom)
-* Phylum
-* Class (called tax_class in the database due to keyword clash with Python)
-* Order (called tax_order in the database due to keyword clash with SLQ)
-* Family
-* Genus
-* Species
-* Strain
-* Release - the GTDB release from which the lineage was retrieved
+``database``
+  **Required.** Path to the local CAZyme database.
 
-The child prteins for each taxonomy record in the ``GtdbTaxs`` table is identified by the 
-including a ``gtdb_tax_id`` from the ``GtdbTaxs`` table in the respecitve ``Genomes`` table records.
+``--taxs``
+  GTDB domains to retrieve. ``archaea``, ``bacteria``, or both. Default: both.
 
---------------------
-Command line options
---------------------
+``--update``
+  Re-check every genome and overwrite the GTDB classification already stored against it. Without
+  this flag, only genomes with no classification yet are looked up. Default: ``False``.
 
-``database`` - **REQUIRED** Path to a local CAZyme database to add UniProt data to.
+``-n``, ``--nodelete``
+  Keep the existing contents of the output directory. Default: ``False``.
 
-``taxs`` - **REQUIRED** Kingdoms to get lineages from. Accepts 'archaea' and/or 'bacteria'. Separate with a single space. Order does not matter.
-Determines which datafiles are retrieved from GTDB.
+``-t``, ``--timeout``
+  Seconds before a connection to GTDB times out. Default: ``45``.
 
-``--archaea_file`` - Path to GTDB archaea data file. Default: None, download latest dataset from GTDB.
+For the filtering flags and the shared housekeeping options, see
+:doc:`Filtering and common options <filters>`. ``get_gtdb_taxs`` accepts both
+``--genbank_accessions`` and ``--uniprot_accessions``; classifications are retrieved for the
+genomes of the proteins listed.
 
-``--bacteria_file`` - Path to GTDB bacteria data file. Default: None, download latest dataset from GTDB.
+-----------------
+Worked examples
+-----------------
 
-.. NOTE::
-    The filenames of provided GTDB data files must match the filename format used by GTDB, to allow 
-    ``cazy_webscraper`` to retrieve the release number of the dataset.
+**Retrieve bacterial classifications for two CAZy classes:**
 
-``--cache_dir`` - Path to cache dir to be used instead of default cache dir path.
+.. code-block:: bash
 
-``--cazy_synonyms`` - Path to a JSON file containing accepted CAZy class synonsyms if the default are not sufficient.
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db --taxs bacteria --classes GH,CE
 
-``--config``, ``-c`` - Path to a configuration YAML file. Default: None.
+**Refresh every stored classification:**
 
-``--classes`` - list of classes to retrieve UniProt data for.
+.. code-block:: bash
 
-``--ec_filter`` - List of EC numbers to limit the retrieval of structure files to proteins with at least one of the given EC numbers *in the local CAZyme database*.
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db --update
 
-``--families`` - List of CAZy (sub)families to retrieve UniProt protein data for.
+**Classify the genomes behind a named list of proteins:**
 
-``--genbank_accessions`` - Path to text file containing a list of GenBank accessions to retrieve protein data for. A unique accession per line.
+.. code-block:: bash
 
-``--genera`` - List of genera to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given genera.
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db --taxs bacteria \
+       --genbank_accessions my_proteins.txt
 
-``--kingdoms`` - List of taxonomy kingdoms to retrieve UniProt data for.
-
-``--log``, ``-l`` - Target path to write out a log file. If not called, no log file is written. Default: None (no log file is written out).
-
-``--nodelete_cache`` - When called, content in the existing cache dir will **not** be deleted. Default: False (existing content is deleted).
-
-``--retries``, ``-r`` - Define the number of times to retry making a connection to GTDB if the connection should fail. Default: 10.
-
-``--sql_echo`` - Set SQLite engine echo parameter to True, causing SQLite to print log messages. Default: False.
-
-``--species`` - List of species (organsim scientific names) to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given species.
-
-``--strains`` - List of species strains to restrict the retrieval of protein to data from UniProt to proteins belonging to one of the given strains.
-
-``--uniprot_accessions`` - Path to text file containing a list of UniProt accessions to retrieve protein data for. A unique accession per line.
-
-``--update_genome_lineage_gbk`` - Update Genome GTDB lineage. Default: only add lineages to Genomes without a lineage.
-
-``--verbose``, ``-v`` - Enable verbose logging. This does **not** set the SQLite engine ``echo`` parameter to True. Default: False.
-
-
-
------------
-Basic Usage
------------
-
-The command-line options listed above can be used in combination to customise the retrieval of the GTDB 
-taxonomic classifications for proteins of interest. Some options (e.g. ``--families`` and ``--classes``) define 
-the broad group of proteins for which taxonomic data will be retrieved. Others filters (e.g. ``--species``) are used to filter and fine-tune the protein dataset for which data is retrieved.
-
-The ``--classes``, ``--families``, ``--kingdoms``, ``--genera``, ``--species``, and ``--strains`` filteres are applied 
-in the exactly same for retrieving data from CAZy, UniProt, and PDB. Examples of using these flags 
-can be found in the ``cazy_webscraper`` and ``cazy_webscraper get_uniprot_data`` tutorial in this documentation.
-
-.. NOTE::
-    To retrieve taxonomic information for members of specific CAZy subfamilies, list the subfamilies after the ``--families`` 
-    flag.
-
-
--------------------------------------------
-Retrieval of GTDB taxonomic classifications
--------------------------------------------
-
-The command for using ``cazy_webscraper`` for retrieving taxonomic classifications 
-from the GTDB Taxonomy database is ``cazy_webscraper get_gtdb_taxs``.
+See :ref:`filter-combining` for more on combining filters.

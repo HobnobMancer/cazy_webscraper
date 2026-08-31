@@ -9,8 +9,6 @@ The ``get_uniprot_data`` subcommand supplements an existing local CAZyme databas
    ``get_uniprot_data`` only adds data to proteins already in the local CAZyme database. It never
    adds new proteins. Build the database with ``download_cazy`` first.
 
-.. _uniprot-quick-start:
-
 -----------
 Quick start
 -----------
@@ -36,13 +34,9 @@ accessions and sequences are each opted into with a flag:
    quiet periods where you can. Very large single retrievals (say, over 1,000,000 proteins, or all
    of GH) can cause UniProt to terminate the connection for sustained high bandwidth use.
 
-.. include:: _shared/global_args.rst
-
-.. _uniprot-what-retrieved:
-
---------------------------
+---------------------
 What can be retrieved
---------------------------
+---------------------
 
 Each of these flags turns on one category of data. None are on by default.
 
@@ -61,14 +55,27 @@ Each of these flags turns on one category of data. None are on by default.
    * - ``-s``, ``--sequence``
      - Protein amino acid sequences, stored with UniProt's 'last modified' date
 
-Two further flags change *how* the retrieval behaves:
+.. note::
+   ``--ec`` retrieves **all** EC annotations for every protein matching your filters. It is not
+   restricted by ``--ec_filter``, which selects *which proteins* to process rather than which
+   annotations to keep. Used together, ``--ec_filter`` picks the protein set and ``--ec`` then
+   retrieves every EC number those proteins have.
+
+-------------------------
+Subcommand options
+-------------------------
+
+``database``
+  **Required.** Path to the local CAZyme database to add UniProt data to.
 
 ``--swissprot``
   Restrict retrieval to proteins in SwissProt, the reviewed subset of UniProt KB.
+  Default: ``False``.
 
 ``--update``
   Overwrite existing values in the local database when the retrieved value differs. Without it,
   ``get_uniprot_data`` only fills in blanks: a protein that already has a sequence keeps it.
+  Default: ``False``.
 
   .. code-block:: bash
 
@@ -77,28 +84,16 @@ Two further flags change *how* the retrieval behaves:
   For sequences, "differs" is decided by comparing the local 'last modified' date against the one
   retrieved from UniProt, so an update only happens when UniProt genuinely has a newer record.
 
-.. note::
-   ``--ec`` retrieves **all** EC annotations for every protein matching your filters. It is not
-   restricted by ``--ec_filter``, which selects *which proteins* to process rather than which
-   annotations to keep. Used together, ``--ec_filter`` picks the protein set and ``--ec`` then
-   retrieves every EC number those proteins have.
-
---------------------------
-Command-line options
---------------------------
-
-``database``
-  **Required.** Path to the local CAZyme database to add UniProt data to.
-
 ``--batch_size``
-  Size of each batch query submitted to the `UniProt REST API
-  <https://www.uniprot.org/help/programmatic_access>`_. Default: ``1000``.
+  Number of records per batch query submitted to the `UniProt REST API
+  <https://www.uniprot.org/help/programmatic_access>`_. Default: ``150``.
 
-.. include:: _shared/common_args.rst
+For the filtering flags and the shared housekeeping options, see
+:doc:`Filtering and common options <filters>`.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 UniProt batch size limits
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 UniProt applies its own limits to ID mapping job submissions, which constrain how large
 ``--batch_size`` can usefully be:
@@ -112,30 +107,11 @@ Limit	  Details
 10,000	  Total number of "mapped to" ids allowed with filtering
 ========= =====================================================================================
 
-.. _uniprot-selecting:
-
------------------------------
-Selecting which proteins
------------------------------
-
-The filters below decide *which* proteins in the local database have UniProt data retrieved for
-them. They are applied identically across every ``cazy_webscraper`` subcommand.
-
-.. include:: _shared/taxonomic_filters.rst
-
-.. include:: _shared/ec_filter.rst
-
-.. include:: _shared/accession_lists.rst
-
-.. _uniprot-examples:
-
 -----------------
 Worked examples
 -----------------
 
-**Retrieve PDB accessions for bacterial CAZymes in selected classes and families.**
-``--classes`` and ``--families`` combine additively, so this covers all of GH and CE *plus* the
-three named CE families:
+**Retrieve PDB accessions for bacterial CAZymes in selected classes and families:**
 
 .. code-block:: bash
 
@@ -150,9 +126,8 @@ run, which is cheaper than repeating the query per data type:
    cazy_webscraper get_uniprot_data cazy/cazyme.db --ec --go \
        --classes GH --genera Aspergillus,Trichoderma
 
-**Retrieve sequences for a functionally defined subset.** Here ``--ec_filter`` narrows the protein
-set using EC annotations already in the database, and ``--update`` refreshes sequences that are
-already stored:
+**Refresh sequences for a functionally defined subset.** ``--ec_filter`` narrows the protein set
+using EC annotations already in the database, and ``--update`` refreshes sequences already stored:
 
 .. code-block:: bash
 
@@ -160,21 +135,11 @@ already stored:
        --classes GH,CE,CBM --kingdoms bacteria \
        --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
-.. _uniprot-yaml:
+**Retrieve reviewed data only, for a named list of proteins:**
 
--------------------------------
-Configuration using a YAML file
--------------------------------
+.. code-block:: bash
 
-.. include:: _shared/yaml_config.rst
+   cazy_webscraper get_uniprot_data cazy/cazyme.db --ec --swissprot \
+       --genbank_accessions my_proteins.txt
 
-The ``ec`` tag is used by ``get_uniprot_data`` as an equivalent to ``--ec_filter``.
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Synonyms for CAZy classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Several synonyms are accepted for each CAZy class: both ``GH`` and ``Glycoside-Hydrolases`` resolve
-to ``Glycoside Hydrolases (GHs)``, the name CAZy itself records. The accepted alternatives are
-defined in ``cazy_dictionary.json`` in the ``cazy_webscraper`` repository. To use your own set,
-pass a JSON file with ``--cazy_synonyms``.
+See :ref:`filter-combining` for more on combining filters.
