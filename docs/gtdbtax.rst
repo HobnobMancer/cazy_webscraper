@@ -2,15 +2,6 @@
 Retrieving GTDB Taxonomic Classifications
 =========================================
 
-.. warning::
-   **Not yet available in version 3.**
-
-   This page documents the version 2 interface. Retrieval of GTDB taxonomic classifications has not yet been migrated to the
-   version 3 subcommand interface, so the ``cw_get_gtdb_taxs`` command shown below is not currently
-   available from the single ``cazy_webscraper`` entry point. The pages for the subcommands
-   that *are* available in version 3 (``download_cazy``, ``get_ncbi_seqs``, ``get_ncbi_taxs``,
-   ``get_ncbi_genomes`` and ``get_uniprot_data``) have been updated.
-
 
 
 ``cazy_webscraper`` can be used to retrieve the latest taxonomic classification from the `Genome Taxonomy Database (GTDB) <https://gtdb.ecogenomic.org/>`_ taxonomy database 
@@ -29,7 +20,20 @@ To download the GTDB taxonomic classifications for all proteins in a local CAZym
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs <path to local CAZyme db> <kingdoms>
+   cazy_webscraper get_gtdb_taxs <path to local CAZyme db> --taxs <domains>
+
+.. note::
+   In version 3 the domains are given with the ``--taxs`` flag rather than as a positional
+   argument, and default to both ``archaea`` and ``bacteria``. GTDB publishes one release file per
+   domain, so naming only the domain you need avoids downloading the other.
+
+.. important::
+   GTDB classifies **genomes**, not proteins, so each classification is attached to a genomic
+   assembly in the local database. Run ``cazy_webscraper get_ncbi_genomes`` first — without
+   genomic data there is nothing for the GTDB lineages to attach to.
+
+   Lineages are recorded with the GTDB release they came from (e.g. ``v232``), and genomes that
+   already carry a classification are skipped unless ``--update`` is used.
 
 .. NOTE::
    The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
@@ -124,7 +128,7 @@ the broad group of proteins for which taxonomic data will be retrieved. Others f
 
 The ``--classes``, ``--families``, ``--kingdoms``, ``--genera``, ``--species``, and ``--strains`` filteres are applied 
 in the exactly same for retrieving data from CAZy, UniProt, and PDB. Examples of using these flags 
-can be found in the ``cazy_webscraper`` and ``cw_get_uniprot_data`` tutorial in this documentation.
+can be found in the ``cazy_webscraper`` and ``cazy_webscraper get_uniprot_data`` tutorial in this documentation.
 
 .. NOTE::
     To retrieve taxonomic information for members of specific CAZy subfamilies, list the subfamilies after the ``--families`` 
@@ -136,4 +140,4 @@ Retrieval of GTDB taxonomic classifications
 -------------------------------------------
 
 The command for using ``cazy_webscraper`` for retrieving taxonomic classifications 
-from the GTDB Taxonomy database is ``cw_get_gtdb_taxs``.
+from the GTDB Taxonomy database is ``cazy_webscraper get_gtdb_taxs``.

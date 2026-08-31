@@ -114,6 +114,8 @@ Below are the subcommands (excluding required and optional arguments) included i
    * - ``get_pdb_structures``
      - Download protein structure files from RCSB PDB, and add the experimental method and
        resolution of each structure to an existing local CAZyme database.
+   * - ``get_gtdb_taxs``
+     - Add GTDB taxonomic classifications for the genomes in an existing local CAZyme database.
 
 ``download_cazy`` is the one subcommand that *builds* a local CAZyme database; every ``get_*``
 subcommand adds data to a database that already exists.
@@ -124,10 +126,9 @@ subcommand adds data to a database that already exists.
    ``cazy_webscraper -v get_ncbi_seqs ...``.
 
 .. warning::
-   Retrieval of GTDB taxonomic classifications, the database query API and extraction of
-   sequences from a local database existed in version 2 but have **not yet been migrated** to the
-   version 3 subcommand interface. Their documentation pages are retained below and marked
-   accordingly.
+   The database query API and extraction of sequences from a local database existed in version 2
+   but have **not yet been migrated** to the version 3 subcommand interface. Their documentation
+   pages are retained below and marked accordingly.
 
 -------------
 Documentation

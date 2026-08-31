@@ -2,15 +2,6 @@
 Tutorials on configuring ``cazy_webscraper`` to retrieve GTDB taxonomic classifications
 =======================================================================================
 
-.. warning::
-   **Not yet available in version 3.**
-
-   This page documents the version 2 interface. Retrieval of GTDB taxonomic classifications has not yet been migrated to the
-   version 3 subcommand interface, so the ``cw_get_gtdb_taxs`` command shown below is not currently
-   available from the single ``cazy_webscraper`` entry point. The pages for the subcommands
-   that *are* available in version 3 (``download_cazy``, ``get_ncbi_seqs``, ``get_ncbi_taxs``,
-   ``get_ncbi_genomes`` and ``get_uniprot_data``) have been updated.
-
 
 
 ``cazy_webscraper`` can be configured to retrieve the latest taxonomic classifications from the 
@@ -33,10 +24,10 @@ This page runs through examples of how to combine the various 'filters' that can
 the retrieval of taxonomic classifications from GTDB. These tutorials are designed for those with less experience using command-line tools.
 
 .. NOTE::
-  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cw_get_gtdb_taxs`` - this is the method used in this tutorial.  
+  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cazy_webscraper get_gtdb_taxs`` - this is the method used in this tutorial.  
   If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/expand/genbank/taxonomy/get_ncbi_taxs.py``.
 
-From this point on, we will be discussed the ``cw_get_gtdb_taxs``, which is the entry point for 
+From this point on, we will be discussed the ``cazy_webscraper get_gtdb_taxs``, which is the entry point for 
 retrieving data from GTDB Taxonomy. We also presume you are comfortable configuring ``cazy_webscraper`` for the 
 scraping of data from CAZy.
 
@@ -44,13 +35,13 @@ scraping of data from CAZy.
 Configuration via the command line
 ----------------------------------
 
-``cw_get_gtdb_taxs`` has two required arguments:
+``cazy_webscraper get_gtdb_taxs`` has two required arguments:
 * The path to the local CAZyme database created using ``cazy_webscraper``
 * Source kingdoms. Accepts 'archaea' and/or 'bacteria'
 
 .. code-block:: bash
     
-    cw_get_gtdb_taxs cazy/cazyme_db.db archaea bacteria
+    cazy_webscraper get_gtdb_taxs cazy/cazyme_db.db archaea bacteria
 
 When no optional arguments are provided, the default behaviour is invoked. The default behaviour is to: 
 Retrieve the latest taxonomic classification from GTDB for all proteins in the local CAZyme database which do 
@@ -61,7 +52,7 @@ Selecting source kingdoms
 -------------------------
 
 GTDB catalogues the taxonomic lineages of archaea and bacterial species. Defining the source taxonomic kingdom(s) 
-(the second positional argument for ``cw_get_gtdb_taxs``) determines which datafiles are retrieved from GTDB, 
+(the second positional argument for ``cazy_webscraper get_gtdb_taxs``) determines which datafiles are retrieved from GTDB, 
 and thus which taxonomic lineages are added to the local CAZyme database. This is separate to the 
 ``--kingdoms`` filter which is used to define CAZymes of interest by the taxonomic classification retrieved 
 from CAZy.
@@ -70,20 +61,20 @@ To add only archaeal lineages retrieved from GTDB use only ``archaea``:
 
 .. code-block:: bash
     
-    cw_get_gtdb_taxs cazy/cazyme_db.db archaea
+    cazy_webscraper get_gtdb_taxs cazy/cazyme_db.db archaea
    
 To add only bacterial lineages to the local CAZyme database, using only ``bacteria``:
 
 .. code-block:: bash
     
-    cw_get_gtdb_taxs cazy/cazyme_db.db bacteria
+    cazy_webscraper get_gtdb_taxs cazy/cazyme_db.db bacteria
 
 To add both archaeal and bacterial lineages from GTDB to the local CAZyme database using both ``archaea`` and 
 ``bacteria`` (in any order), separated with a singel space:
 
 .. code-block:: bash
     
-    cw_get_gtdb_taxs cazy/cazyme_db.db bacteria archaea
+    cazy_webscraper get_gtdb_taxs cazy/cazyme_db.db bacteria archaea
 
 
 -----------------------------------------
@@ -123,13 +114,13 @@ For example, if you want to retrieve protein data for all CAZymes from Glycoside
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH,CE
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH,CE
 
 OR
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes Glycoside Hydrolases,Carbohydrate Esterases
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes Glycoside Hydrolases,Carbohydrate Esterases
 
 Retrieving protein data for proteins from specific specific CAZy families is achieved using the ``--families`` flag. For 
 example, to retrieve protein data for all proteins in PL1, PL2 and PL3 in the local CAZyme database, use the 
@@ -137,10 +128,10 @@ following command:
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --families PL1,PL2,PL3
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db archaea bacteria --families PL1,PL2,PL3
 
 .. WARNING::
-   ``cw_get_gtdb_taxs`` only accpets families written in the proper CAZy family syntax.
+   ``cazy_webscraper get_gtdb_taxs`` only accpets families written in the proper CAZy family syntax.
    GH1 is accepted.
    gh1 and GlycosideHydrolases1 are not accepted.
 
@@ -149,13 +140,13 @@ protein data for all CAZymes in PL1, PL2, PL3 and *all* of GH and CE both:
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --families PL1,PL2,PL3 --classes GH,CE
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db archaea bacteria --families PL1,PL2,PL3 --classes GH,CE
 
 **AND**
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH,CE --families PL1,PL2,PL3
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH,CE --families PL1,PL2,PL3
 
 are accepted.
 
@@ -173,7 +164,7 @@ For example, if you want to retrieve data for all CAZymes in a local CAZyme data
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --kingdoms bacteria,eukaryota
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db archaea bacteria --kingdoms bacteria,eukaryota
 
 .. warning::
    The kingdoms must be spelt the same way CAZy spells them, for example use 'eukaryot**a**' instead of 'eukaryot**e**'.
@@ -186,12 +177,12 @@ For example, if you want to retrieve data for all CAZymes in a local CAZyme data
 
 You can combine any combination of the optional flags, including combining the taxonomic filters. For example,
 you may wish to retrieve taxonomic data for all CAZymes in a local CAZyme database that are derived from all viral species, Aspergillus species, Layia carnosa, Layia chrysanthemoides, Trichoderma reesei QM6a and 
-Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cw_get_gtdb_taxs`` command. The command 
+Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cazy_webscraper get_gtdb_taxs`` command. The command 
 we would use would be:
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db archaea bacteria --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
 
 .. note::
    The order that the flags are used and the order taxa  are listed does **not** matter, and separate multiple taxa names with a single comma 
@@ -208,7 +199,7 @@ we would use would be:
    ASPERGILLUS NIGER is **incorrect**
 
 .. warning::
-   When you specify a species ``cw_get_gtdb_taxs`` will retrieve taxonomic data from *all* strains of the species.
+   When you specify a species ``cazy_webscraper get_gtdb_taxs`` will retrieve taxonomic data from *all* strains of the species.
 
 
 -------------------------
@@ -224,7 +215,7 @@ wish to retrieve protein data for CAZymes annotated with specific EC numbers. To
 
 .. code-block:: bash
    
-   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --ec_filter "EC1.2.3.4,EC2.3.4.5"
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db archaea bacteria --ec_filter "EC1.2.3.4,EC2.3.4.5"
 
 
 .. NOTE::
@@ -243,19 +234,19 @@ wish to retrieve protein data for CAZymes annotated with specific EC numbers. To
     EC number list in single or double quotation marks. Some terminals may misinterpret EC1.2.-.- as trying to invoke the options '.'
 
 .. NOTE::
-    ``cw_get_gtdb_taxs`` will retrieve the GTDB taxonomic classification for all proteins in the local CAZyme 
+    ``cazy_webscraper get_gtdb_taxs`` will retrieve the GTDB taxonomic classification for all proteins in the local CAZyme 
     database that are annotated with **at least one** of the given EC numbers. Therefore, if multiple 
     EC numbers are given this **does not mean** taxonomic data will only be retrieved for 
     CAZymes annotated for all provided EC numbers.
 
 ``--ec_filter`` is based upon EC number annotations stored within the local CAZyme database. For 
 example, if protein A is annotated with the EC1.2.3.4, but this annotation is not stored in the 
-local CAZyme database, using ``--ec_filter EC1.2.3.4`` will **not** cause ``cw_get_gtdb_taxs`` to retrieve
-data for protein A. This is because ``cw_get_gtdb_taxs`` does not know protein A is annotated with 
+local CAZyme database, using ``--ec_filter EC1.2.3.4`` will **not** cause ``cazy_webscraper get_gtdb_taxs`` to retrieve
+data for protein A. This is because ``cazy_webscraper get_gtdb_taxs`` does not know protein A is annotated with 
 EC1.2.3.4, because this annotation is not within its database.
 
 .. WARNING::
-    If ``--ec_filter`` is used along side ``--ec``, ``cw_get_gtdb_taxs`` will retrieve **all** EC number 
+    If ``--ec_filter`` is used along side ``--ec``, ``cazy_webscraper get_gtdb_taxs`` will retrieve **all** EC number 
     annotations from UniProt for all proteins in the local CAZyme database that are associated with 
     at least one of the EC numbers provided via ``--ec_filter`` within the CAZyme database.
 
@@ -275,7 +266,7 @@ To add taxonomic data for all CAZymes in GH, GT, CE1, CE5 and CE8, and which are
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
 
 
 **Example 2:**
@@ -283,7 +274,7 @@ To add taxonomic data for all CAZymes in GH and which are derived from *Aspegill
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH --genera Aspegillus,Trichoderma
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH --genera Aspegillus,Trichoderma
 
 
 **Example 3:**
@@ -292,7 +283,7 @@ EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, we use the command:
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db archaea bacteria --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
 **Example 4:**
 To add bacterial taxonomic classifications for all CAZymes in GH,CE and CBM which are derived from baceterial species and are annotated with at least one of 
@@ -300,7 +291,7 @@ EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, we use the command:
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db bacteria --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db bacteria --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
 
 ------------------------------
@@ -308,18 +299,18 @@ Providing a list of accessions
 ------------------------------
 
 Instead of retrieving taxonomic data for all CAZymes matching a defined set of criteria, 
-``cw_get_gtdb_taxs`` can retrieve taxonomic data for a set of CAZymes defined by their 
+``cazy_webscraper get_gtdb_taxs`` can retrieve taxonomic data for a set of CAZymes defined by their 
 GenBank and/or UniProt accession.
 
-The flag ``--genbank_accessions`` can be used to provide ``cw_get_gtdb_taxs`` a list of GenBank accessions 
+The flag ``--genbank_accessions`` can be used to provide ``cazy_webscraper get_gtdb_taxs`` a list of GenBank accessions 
 to identify the specific set of CAZymes to retrieve taxonomic data for.
 
-The flag ``--uniprot_accessions`` can be used to provide ``cw_get_gtdb_taxs`` a list of UniProt accessions 
+The flag ``--uniprot_accessions`` can be used to provide ``cazy_webscraper get_gtdb_taxs`` a list of UniProt accessions 
 to identify the specific set of CAZymes to retrieve taxonomic data for.
 
 In both instances (for ``--genbank_accessions`` and ``--uniprot_accessions``) the list of respective accessions 
 are provided via a plain text file, with a unique protein accession of each line. The path to this file is 
-then passed to ``cw_get_gtdb_taxs`` via the respective ``--genbank_accessions`` and ``--uniprot_accessions`` flag.
+then passed to ``cazy_webscraper get_gtdb_taxs`` via the respective ``--genbank_accessions`` and ``--uniprot_accessions`` flag.
 
 ``--genbank_accessions`` and ``--uniprot_accessions`` can be used at the same time to define all 
 CAZymes of interest.
@@ -327,10 +318,10 @@ CAZymes of interest.
 .. WARNING::
    ``--genbank_accessions`` and ``--uniprot_accessions`` take president over the filter flags.
 
-   When either ``--genbank_accessions`` or ``--uniprot_accessions`` is used, ``cw_get_gtdb_taxs`` will 
+   When either ``--genbank_accessions`` or ``--uniprot_accessions`` is used, ``cazy_webscraper get_gtdb_taxs`` will 
    **not** retrieve any CAZymes from the local database matching a set of criteria.
 
-   Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cw_get_gtdb_taxs`` will ignore 
+   Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cazy_webscraper get_gtdb_taxs`` will ignore 
    the ``--classes`` flag and only taxonomic classifications for the proteins listed in the file provided via 
    the ``--genbank_accessions``.
 
@@ -361,13 +352,13 @@ the ``--bacteria_file`` flag followed by the path point to the target data file.
 Updating genomic classifications
 --------------------------------
 
-By default ``cw_get_gtdb_taxs`` only adds links to GTDB lineages to genomes in the local CAZyme 
+By default ``cazy_webscraper get_gtdb_taxs`` only adds links to GTDB lineages to genomes in the local CAZyme 
 database that are not already linked to a GTDB lineage. To update which GTDB lineage genomes in the local 
 CAZyme database are linked to add the ``--update_genome_lineage`` flag.
 
 .. code-block:: bash
 
-   cw_get_gtdb_taxs cazy/cazyme.db bacteria \
+   cazy_webscraper get_gtdb_taxs cazy/cazyme.db bacteria \
       --classes GH,CE,CBM \
       --kingdoms bacteria \
       --update_genome_lineage

@@ -175,6 +175,7 @@ cazy_webscraper --help
 - `get_ncbi_genomes` - Download the genomic assembly name, id and version accession from which a protein sequence was stored, and store these data in the local CAZyme database   
 - `get_uniprot_data` - Download UniProt ids, names, ec numbers, PDB accessions and GO terms from UniProt, and stored these data in the local CAZyme database
 - `get_pdb_structures` - Download protein structure files from RCSB PDB, and add the experimental method and resolution of each structure to the local CAZyme database
+- `get_gtdb_taxs` - Download taxonomic classifications from GTDB for the genomes in the local CAZyme database
 
 ### Implementation status
 
@@ -186,11 +187,11 @@ cazy_webscraper --help
 | `get_ncbi_genomes` | Implemented |
 | `get_uniprot_data` | Implemented |
 | `get_pdb_structures` | Implemented |
-| GTDB taxonomy retrieval | Not yet migrated to v3 |
+| `get_gtdb_taxs` | Implemented |
 | Database query API | Not yet migrated to v3 |
 | Sequence extraction / BLAST db | Not yet migrated to v3 |
 
-The three items marked *not yet migrated* existed in version 2 and are being ported to the
+The two items marked *not yet migrated* existed in version 2 and are being ported to the
 subcommand interface; they are not currently registered as `cazy_webscraper` subcommands.
 
 ## Creating a Local CAZyme Database
@@ -461,31 +462,40 @@ cazy_webscraper get_pdb_structures <path_to_cazyme_db> --skip_download
 
 > **Note:** PDB accessions are also added to the database by `get_uniprot_data --pdb`, which records UniProt's own method and resolution values. Because a plain run of `get_pdb_structures` does not overwrite existing values, use `--update` if you want RCSB's values (e.g. `X-RAY DIFFRACTION`) to replace UniProt's (e.g. `X-ray`).
 
-### Retrieving GTDB Taxonomies [Under construction]
+### Retrieving GTDB Taxonomies
 
-`cazy_webscraper` can be used to retrieve the latest taxonomic classification from the [Genome Taxonomy Database (GTDB)](https://gtdb.ecogenomic.org/) taxonomy database for a set of proteins of interest in a local CAZyme database.
+Taxonomic classifications can be retrieved from the [Genome Taxonomy Database (GTDB)](https://gtdb.ecogenomic.org/) using `cazy_webscraper get_gtdb_taxs`, and are added to the `GtdbTaxs` table of the local CAZyme database.
 
-**Note:**
-    As in the GTDB database, GTDB taxonomic classifications are retrieved and associated with genomes stored 
-    in the local CAZyme database. To retrieve GTDB taxonomic classifications the genomic data for the 
-    proteins of interest **must** be listed in the local CAZyme database.
+**GTDB classifies genomes, not proteins.** Each classification is therefore attached to a genomic assembly in the local database, and reaches a protein through the assembly it came from. This means the genomic data must be retrieved first:
 
-GTDB catalogues archaeal and bacterial lineages. Either archaeal and/or bacterial GTDB lineages can be added to the local CAZyme database.
+```bash
+cazy_webscraper get_ncbi_genomes <path_to_cazyme_db> <email_address>
+cazy_webscraper get_gtdb_taxs <path_to_cazyme_db>
+```
 
-The complete lineage data is retrieved from GTDB. Whereas CAZy lists only the kingdom, genus, species and strain, `cazy_webscraper` retrieves the full taxonomic lineage from GTDB and stores the complete lineage in the `GtdbTaxs` table in the local CAZyme database. This include:
-- Kingdom
-- Phylum
-- Class (stored as `tax_class` in the local CAZyme database due to keyword classes in Python)
-- Order(stored as `tax_order` in the local CAZyme database due to keyword classes in SQL)
-- Family
-- Genus
-- Species
-- Strain
-- Release (the GTDB release from which the lineage was retrieved)
+GTDB publishes one taxonomy file per domain. Both are downloaded by default; restrict this with `--taxs` to avoid downloading the one you do not need (the bacterial file is ~10 MB compressed and several hundred thousand rows):
 
-...
+```bash
+cazy_webscraper get_gtdb_taxs <path_to_cazyme_db> --taxs bacteria
+```
 
---------------------------
+The release files are streamed and parsed line by line, keeping only the genomes in your database, and the release version (e.g. `v232`) is recorded against each lineage. Genomes that already have a classification are skipped, so an interrupted run can be resumed by re-issuing the command.
+
+#### Required Arguments
+
+• **`database`** - Path to local CAZy database
+
+#### Optional Arguments
+
+• **`--taxs`** - GTDB domains to retrieve classifications from: `archaea`, `bacteria`, or both (default: both)
+
+• **`--update`** - Re-check every genome and overwrite the classification already stored against it. Without this flag, only genomes that have no classification yet are looked up (default: False)
+
+• **`-c CONFIG_FILE, --config CONFIG_FILE`** - Path to configuration file (default: None)
+
+• **`--genbank_accessions`** / **`--uniprot_accessions`** - Path to a text file of accessions; classifications are retrieved for the genomes of those proteins
+
+• **`--nodelete_cache`** - Keep the downloaded GTDB release file in the cache directory instead of deleting it after parsing (default: False)
 
 ## Extract data from the local CAZyme database
 
