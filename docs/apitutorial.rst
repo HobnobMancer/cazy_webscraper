@@ -2,15 +2,6 @@
 Tutorial on interrogating the data using the API
 ================================================
 
-.. warning::
-   **Not yet available in version 3.**
-
-   This page documents the version 2 interface. The database query API has not yet been migrated to the
-   version 3 subcommand interface, so the ``cw_query_database`` command shown below is not currently
-   available from the single ``cazy_webscraper`` entry point. The pages for the subcommands
-   that *are* available in version 3 (``download_cazy``, ``get_ncbi_seqs``, ``get_ncbi_taxs``,
-   ``get_ncbi_genomes`` and ``get_uniprot_data``) have been updated.
-
 
 
 ``cazy_webscraper`` includes an API that can be used to interrogate the data in the local CAZyme database and write out the retrieved data 
@@ -29,10 +20,10 @@ This page runs through examples of how to combine the various 'filters' that can
 the retrieval of protein data from the local CAZyme database. These tutorials are designed for those with less experience using command-line tools.
 
 .. NOTE::
-  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cw_query_database`` - this is the method used in this tutorial.  
-  If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/api/cw_query_database.py``.
+  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cazy_webscraper extract_data`` - this is the method used in this tutorial.  
+  If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/api/cazy_webscraper extract_data.py``.
 
-From this point on, we will be discusseing the ``cw_query_database`` command, which is used by ``cazy_webscraper`` for 
+From this point on, we will be discusseing the ``cazy_webscraper extract_data`` command, which is used by ``cazy_webscraper`` for 
 retrieving protein data from the local CAZyme database. We also presume you are comfortable configuring ``cazy_webscraper`` for the 
 scraping of data from CAZy.
 
@@ -41,11 +32,11 @@ scraping of data from CAZy.
 Configuration via the command line
 ----------------------------------
 
-``cw_query_database`` requires two arguments:
+``cazy_webscraper extract_data`` requires two arguments:
 * The path to the local CAZyme database created using ``cazy_webscraper``
 * The file formats to write out the output
 
-Therefore, ``cw_query_database`` can be enabled using a simple command structure:
+Therefore, ``cazy_webscraper extract_data`` can be enabled using a simple command structure:
 
 .. code-block:: bash
 
@@ -59,7 +50,7 @@ For example, if our database was stored in ``cazy/cazyme.db`` and we want to wri
   cazy_webscraper cazy/cazyme.db csv
 
 .. NOTE::
-   Make sure ``cw_query_database`` is pointed directly at the database file.
+   Make sure ``cazy_webscraper extract_data`` is pointed directly at the database file.
 
 When no optional arguments are provided, the default behaviour is invoked. The default behaviour is to: 
 retrieve only the GenBank accessions of **all** CAZymes in the local CAZyme CAZyme db
@@ -69,14 +60,14 @@ retrieve only the GenBank accessions of **all** CAZymes in the local CAZyme CAZy
 Accepted file formats
 ---------------------
 
-``cw_query_database`` can write the output to a csv or json file.
+``cazy_webscraper extract_data`` can write the output to a csv or json file.
 
-These are provided as the second arguments to ``cw_query_database``. To write out both a csv and json 
+These are provided as the second arguments to ``cazy_webscraper extract_data``. To write out both a csv and json 
 file use both ``csv`` and ``json`` after the path to the local CAZyme database, separted with a single space.
 
 .. code-block:: bash
 
-    cw_query_database <path to local CAZyme db> csv json
+    cazy_webscraper extract_data <path to local CAZyme db> csv json
 
 .. NOTE::
     The order ``csv`` and ``json`` are written does not matter.
@@ -89,7 +80,7 @@ file use both ``csv`` and ``json`` after the path to the local CAZyme database, 
 Options configurable at the command line 
 -----------------------------------------
 
-The following behaviours of the ``cw_query_database`` can be configured at the command-line in the terminal:  
+The following behaviours of the ``cazy_webscraper extract_data`` can be configured at the command-line in the terminal:  
 
 * Limit the retrieval of protein data to CAZymes in the local databaes from specific CAZy classes, CAZy families, kingdoms, genuera, species, strains and/or EC numbers
 * Including any combination of the following in the output, along side the GenBank accessions:
@@ -116,35 +107,35 @@ The following behaviours of the ``cw_query_database`` can be configured at the c
 Choosing an output directory
 ----------------------------
 
-By default, ``cw_query_database`` writes all output files to the current working directory.
+By default, ``cazy_webscraper extract_data`` writes all output files to the current working directory.
 
-To specify an alternative output directory, using the ``--output_dir``/``-o`` flag, followed by the path to the target output directory. ``cw_query_database`` will build all necessary parent and child output directories.
+To specify an alternative output directory, using the ``--output_dir``/``-o`` flag, followed by the path to the target output directory. ``cazy_webscraper extract_data`` will build all necessary parent and child output directories.
 
 For example, to write the output to the directory ``my_cazy_data`` use the following command:
 
 .. code-block:: bash
-  cw_query_database cazy/cazyme.db json csv --output_dir my_cazy_data
+  cazy_webscraper extract_data cazy/cazyme.db json csv --output_dir my_cazy_data
   
-If the output directory already exists, ``cw_query_database`` will raise an error warning the output directory already exists and close. This is to prevent accidently writing data to the wrong location.
+If the output directory already exists, ``cazy_webscraper extract_data`` will raise an error warning the output directory already exists and close. This is to prevent accidently writing data to the wrong location.
 
-To force ``cw_query_database`` to write the data to an existing output directory, add the ``--force``/``-f`` flag.
-
-.. code-block:: bash
-  cw_query_database cazy/cazyme.db json csv --output_dir my_cazy_data --force
-
-By default ``cw_query_database`` will delete all content already present in the existing output directory. To retain the data in the existing output directory, add the ``--nodelete``/``-n`` flag.
+To force ``cazy_webscraper extract_data`` to write the data to an existing output directory, add the ``--force``/``-f`` flag.
 
 .. code-block:: bash
-  cw_query_database cazy/cazyme.db json csv --output_dir my_cazy_data -- force --nodelete
+  cazy_webscraper extract_data cazy/cazyme.db json csv --output_dir my_cazy_data --force
+
+By default ``cazy_webscraper extract_data`` will delete all content already present in the existing output directory. To retain the data in the existing output directory, add the ``--nodelete``/``-n`` flag.
+
+.. code-block:: bash
+  cazy_webscraper extract_data cazy/cazyme.db json csv --output_dir my_cazy_data -- force --nodelete
   
 .. note::
-  The ``--force`` and ``--nodelete`` flags are only applied when the ``--output_dir`` flag is used. ``cw_query_database`` will **not** delete content in the current working directory when writing to the current working directory when the ``--output_dir`` flag is **not** used.
+  The ``--force`` and ``--nodelete`` flags are only applied when the ``--output_dir`` flag is used. ``cazy_webscraper extract_data`` will **not** delete content in the current working directory when writing to the current working directory when the ``--output_dir`` flag is **not** used.
   
 ------------------------
 Overwrite existing files
 ------------------------
 
-``cw_query_database`` automatically compiles the names of the output files. 
+``cazy_webscraper extract_data`` automatically compiles the names of the output files. 
 
 The file names of all output files are composed of the name of the local CAZyme database, followed by the names of the data retrieved from the local CAZyme database. For example, retrieving the following data from the local CAZyme database called ``cazy_database.db``:
 * CAZy family annotation
@@ -154,7 +145,7 @@ The file names of all output files are composed of the name of the local CAZyme 
 Will produce the following file name: ``cazy_database_gbkAcc_fams_subfams_ec_pdb``.  
 
 .. note::
-  ``_gbkAcc`` is always included in the file name because GenBank accessions are always retrieved and written to the output by ``cw_query_database``.
+  ``_gbkAcc`` is always included in the file name because GenBank accessions are always retrieved and written to the output by ``cazy_webscraper extract_data``.
 
 Both the `json` and `csv` files are given the same name, the files only differ in their file extension.
 
@@ -165,12 +156,12 @@ An optional prefix can be applied to all output file names using the ``-p``/``--
 
 This will produce output files with the file name ``engineering_candidates_cazy_database_fams_subfams_ec_pdb``.
 
-If files matching the file names compiled by ``cw_query_database`` already existing at the target output location, ``cw_query_database`` will raise a warning that output files already existing and terminate. This is to prevent accidently overwriting data files.
+If files matching the file names compiled by ``cazy_webscraper extract_data`` already existing at the target output location, ``cazy_webscraper extract_data`` will raise a warning that output files already existing and terminate. This is to prevent accidently overwriting data files.
 
 To overwrite existing datafiles add the ``--overwrite`` flag to the command. For example, the following command will retrieve all GenBank accessions stored in the local CAZyme database located at ``cazy/cazyme.db`` and write out the GenBank accessions to a file called ``all_gbk_acc_cazyme_gbkAcc.csv`` to ``my_cazy_data``, and will not delete content in the existing output directory and will overwrite the existing output file ``my_cazy_data/all_gbk_acc_cazyme_gbkAcc.csv``.
 
 .. code-block:: bash
-  cw_query_database cazy/cazyme.db csv \
+  cazy_webscraper extract_data cazy/cazyme.db csv \
   --output_dir my_cazy_data \
   --prefix all_gbk_accs_
   -- force \
@@ -195,13 +186,13 @@ For example, if you want to retrieve protein data for all CAZymes from Glycoside
 
 .. code-block:: bash
 
-   cw_query_database cazy/cazyme.db csv --classes GH,CE
+   cazy_webscraper extract_data cazy/cazyme.db csv --classes GH,CE
 
 OR
 
 .. code-block:: bash
 
-   cw_query_database cazy/cazyme.db csv --classes Glycoside Hydrolases,Carbohydrate Esterases
+   cazy_webscraper extract_data cazy/cazyme.db csv --classes Glycoside Hydrolases,Carbohydrate Esterases
 
 Retrieving protein data for proteins from specific specific CAZy families is achieved using the ``--families`` flag. For 
 example, to retrieve protein data for all proteins in PL1, PL2 and PL3 in the local CAZyme database, and write the 
@@ -209,10 +200,10 @@ data to csv and json files, use the following command:
 
 .. code-block:: bash
 
-   cw_query_database cazy/cazyme.db json csv --families PL1,PL2,PL3
+   cazy_webscraper extract_data cazy/cazyme.db json csv --families PL1,PL2,PL3
 
 .. WARNING::
-   ``cw_query_database`` only accpets families written in the proper CAZy family syntax.
+   ``cazy_webscraper extract_data`` only accpets families written in the proper CAZy family syntax.
    GH1 is accepted.
    gh1 and GlycosideHydrolases1 are not accepted.
 
@@ -221,13 +212,13 @@ protein data for all CAZymes in PL1, PL2, PL3 and *all* of GH and CE both, and w
 
 .. code-block:: bash
 
-   cw_query_database cazy/cazyme.db json --families PL1,PL2,PL3 --classes GH,CE
+   cazy_webscraper extract_data cazy/cazyme.db json --families PL1,PL2,PL3 --classes GH,CE
 
 **AND**
 
 .. code-block:: bash
 
-   cw_query_database cazy/cazyme.db json --classes GH,CE --families PL1,PL2,PL3
+   cazy_webscraper extract_data cazy/cazyme.db json --classes GH,CE --families PL1,PL2,PL3
 
 are accepted.
 
@@ -245,7 +236,7 @@ For example, if you want to retrieve protein data for all CAZymes in a local CAZ
 
 .. code-block:: bash
 
-   cw_query_database cazy/cazyme.db csv --kingdoms bacteria,eukaryota
+   cazy_webscraper extract_data cazy/cazyme.db csv --kingdoms bacteria,eukaryota
 
 .. warning::
    The kingdoms must be spelt the same way CAZy spells them, for example use 'eukaryot**a**' instead of 'eukaryot**e**'.
@@ -258,12 +249,12 @@ For example, if you want to retrieve protein data for all CAZymes in a local CAZ
 
 You can combine any combination of the optional flags, including combining the taxonomic filters. For example,
 you may wish to retrieve protein data for all CAZymes in a local CAZyme database that are derived from all viral species, Aspergillus species, Layia carnosa, Layia chrysanthemoides, Trichoderma reesei QM6a and 
-Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cw_query_database`` command. The command 
+Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cazy_webscraper extract_data`` command. The command 
 we would use would be:
 
 .. code-block:: bash
 
-   cw_query_database cazy/cazyme.db csv --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
+   cazy_webscraper extract_data cazy/cazyme.db csv --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
 
 .. note::
    The order that the flags are used and the order taxa  are listed does **not** matter, and separate multiple taxa names with a single comma 
@@ -280,7 +271,7 @@ we would use would be:
    ASPERGILLUS NIGER is **incorrect**
 
 .. warning::
-   When you specify a species ``cw_query_database`` will retrieval CAZymes from *all* strains of the species.
+   When you specify a species ``cazy_webscraper extract_data`` will retrieval CAZymes from *all* strains of the species.
 
 
 -------------------------
@@ -296,7 +287,7 @@ wish to retrieve protein data for CAZymes annotated with specific EC numbers. To
 
 .. code-block:: bash
    
-   cw_query_database cazy/cazyme.db csv --ec_filter "EC1.2.3.4,EC2.3.4.5"
+   cazy_webscraper extract_data cazy/cazyme.db csv --ec_filter "EC1.2.3.4,EC2.3.4.5"
 
 
 .. NOTE::
@@ -347,7 +338,7 @@ To retrieve protein data for all CAZymes in GH, GT, CE1, CE5 and CE8, and which 
 
 .. code-block:: bash
 
-   cw_query_database cazy/cazyme.db csv --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
+   cazy_webscraper extract_data cazy/cazyme.db csv --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
 
 
 **Example 2:**
@@ -355,7 +346,7 @@ To protein data for all CAZymes in GH and which are derived from *Aspegillus* an
 
 .. code-block:: bash
 
-   cw_query_database cazy/cazyme.db csv -classes GH --genera Aspegillus,Trichoderma
+   cazy_webscraper extract_data cazy/cazyme.db csv -classes GH --genera Aspegillus,Trichoderma
 
 
 **Example 3:**
@@ -364,14 +355,14 @@ EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, we use the command:
 
 .. code-block:: bash
 
-   cw_query_database cazy/cazyme.db csv --ec --sequences --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
+   cazy_webscraper extract_data cazy/cazyme.db csv --ec --sequences --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
 
 ----------------------
 Customising the output
 ----------------------
 
-By defauly ``cw_query_database`` only includes the GenBank accessions of the CAZymes matching the provided 
+By defauly ``cazy_webscraper extract_data`` only includes the GenBank accessions of the CAZymes matching the provided 
 criteria in the final output. Any combination of the following can also be included in the output:
 * CAZy class
 * CAZy family
@@ -419,7 +410,7 @@ scientific names of the source organisms we use the command:
 
 .. code-block:: bash
 
-   cw_query_database cazy/cazyme.db csv --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria --include family organism
+   cazy_webscraper extract_data cazy/cazyme.db csv --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria --include family organism
 
 
 **Example 2:**
@@ -428,7 +419,7 @@ in the output we use the command:
 
 .. code-block:: bash
 
-   cw_query_database cazy/cazyme.db csv --include class ec pdb --classes GH --genera Aspegillus,Trichoderma
+   cazy_webscraper extract_data cazy/cazyme.db csv --include class ec pdb --classes GH --genera Aspegillus,Trichoderma
 
 
 **Example 3:**
@@ -437,7 +428,7 @@ EC3.2.1.23, EC3.2.1.37 and EC3.2.1.85, and include the EC number annotations, CA
 
 .. code-block:: bash
 
-   cw_query_database cazy/cazyme.db csv \
+   cazy_webscraper extract_data cazy/cazyme.db csv \
       --ec --sequences \
       --classes GH,CE,CBM \
       --kingdoms bacteria \

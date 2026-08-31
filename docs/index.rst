@@ -130,9 +130,8 @@ subcommand adds data to a database that already exists.
 
 .. warning::
    The version 2 ``cw_query_database`` and ``cw_extract_db_seqs`` commands are now the single
-   ``extract_data`` subcommand. The :doc:`api` and :doc:`sequence` pages below still describe the
-   version 2 interface; see :doc:`migration` for the mapping. ``cw_get_db_schema`` has **not yet
-   been migrated**.
+   ``extract_data`` subcommand; see :doc:`migration` for the mapping. ``cw_get_db_schema`` has
+   **not yet been migrated**.
 
 --------------------------
 Upgrading from version 2

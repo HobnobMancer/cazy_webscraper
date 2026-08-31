@@ -2,15 +2,6 @@
 Tutorials on configuring the extraction of protein sequences
 ============================================================
 
-.. warning::
-   **Not yet available in version 3.**
-
-   This page documents the version 2 interface. Extraction of sequences from a local database has not yet been migrated to the
-   version 3 subcommand interface, so the ``cw_extract_db_seqs`` command shown below is not currently
-   available from the single ``cazy_webscraper`` entry point. The pages for the subcommands
-   that *are* available in version 3 (``download_cazy``, ``get_ncbi_seqs``, ``get_ncbi_taxs``,
-   ``get_ncbi_genomes`` and ``get_uniprot_data``) have been updated.
-
 
 
 ``cazy_webscraper`` can be configured to extract GenBank and/or UniProt protein sequences for user specified sets of proteins from 
@@ -23,10 +14,10 @@ This page runs through examples of how to combine the various 'filters' that can
 the extraction of protein sequences. These tutorials are designed for those with less experience using command-line tools.
 
 .. NOTE::
-  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cw_extract_db_seqs`` - this is the method used in this tutorial.  
+  If you installed ``cazy_webscraper`` using ``bioconda`` or ``pip`` to invoke ``cazy_webscraper`` to retrieve UniProt data call it using ``cazy_webscraper extract_data`` - this is the method used in this tutorial.  
   If you installed ``cazy_webscraper`` from source then you will need to invoke ``cazy_webscraper`` from the root of the repo using the command ``python3 cazy_webscraper/expand/extract/extract_sequences.py``.
 
-From this point on, we will be discussed the ``cw_extract_db_seqs``, which is the entry point for 
+From this point on, we will be discussed the ``cazy_webscraper extract_data``, which is the entry point for 
 extract protein sequences from the local CAZyme database. We also presume you are comfortable configuring ``cazy_webscraper`` for the 
 scraping of data from CAZy.
 
@@ -35,7 +26,7 @@ scraping of data from CAZy.
 Configuration via the command line
 ----------------------------------
 
-``cw_extract_db_seqs`` has at 2 required arguments:
+``cazy_webscraper extract_data`` has at 2 required arguments:
 
 1. The path to the local CAZyme databases created using ``cazy_webscraper``
 2. The names of the database from which the proteins were sourced
@@ -57,17 +48,17 @@ Protein sequences previously retrieved from GenBank **and/or** UniProt can be ex
 .. TIP::
     The order the databases (i.e. 'genbank' and 'uniprot') does not matter, and they are **not** casesensitive.
 
-``cw_extract_db_seqs`` can be enabled using a simple command structure:
+``cazy_webscraper extract_data`` can be enabled using a simple command structure:
 
 .. code-block:: bash
 
-  cw_extract_db_seqs <path to the local CAZyme db> genbank uniprot
+  cazy_webscraper extract_data <path to the local CAZyme db> genbank uniprot
 
 For example, if our database was stored in ``cazy/cazyme.db``, we would used:
 
 .. code-block:: bash
    
-  cw_extract_db_seqs cazy/cazyme.db genbank uniprot
+  cazy_webscraper extract_data cazy/cazyme.db genbank uniprot
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -85,7 +76,7 @@ all necessary parent directories. For example:
 
 .. code-block:: bash
 
-    cw_extract_db_seqs cazy/cazyme_database.db genbank --fasta_file cazy/protein_sequences/all_genbanks.FASTA
+    cazy_webscraper extract_data cazy/cazyme_database.db genbank --fasta_file cazy/protein_sequences/all_genbanks.FASTA
 
 To write out each extracted sequence **to its own FASTA file** use the ``--fasta_dir`` flag, followed by the 
 path to the target directory. ``cazy_webscraper`` will build 
@@ -93,7 +84,7 @@ all necessary parent directories. For example:
 
 .. code-block:: bash
 
-    cw_extract_db_seqs cazy/cazyme_database.db genbank --fasta_dir cazy/protein_sequences
+    cazy_webscraper extract_data cazy/cazyme_database.db genbank --fasta_dir cazy/protein_sequences
 
 To build a BLAST database of the extracted protein squences, use the ``--blastdb`` or ``-b`` flag, followed by the path 
 of where to write out the database, including the database name. ``cazy_webscraper`` will build 
@@ -101,14 +92,14 @@ all necessary parent directories. For example:
 
 .. code-block:: bash
 
-    cw_extract_db_seqs cazy/cazyme_database.db genbank --blastdb cazy/protein_sequences/all_genbanks_blast_db.db
+    cazy_webscraper extract_data cazy/cazyme_database.db genbank --blastdb cazy/protein_sequences/all_genbanks_blast_db.db
 
 Any combination of ``--fasta_file``, ``--fasta_dir`` and ``--blastdb`` can be used to produce multiple outputs. For example, 
 to generate a single FASTA file of all extracted UniProt protein sequences **and** write the extracted sequences to a BLAST database:  
 
 .. code-block:: bash
 
-    cw_extract_db_seqs cazy/cazyme_database.db genbank \
+    cazy_webscraper extract_data cazy/cazyme_database.db genbank \
         --fasta_file cazy/protein_sequences/all_genbanks.FASTA \
         --blastdb cazy/protein_sequences/all_genbanks_blast_db.db
 
@@ -120,7 +111,7 @@ to generate a single FASTA file of all extracted UniProt protein sequences **and
 FASTA file formats
 ------------------
 
-The FASTA files generated by ``cw_extract_db_seqs`` have a very simple protein ID line. The line always and only contains:
+The FASTA files generated by ``cazy_webscraper extract_data`` have a very simple protein ID line. The line always and only contains:
 * The GenBank or UniProt accession
 * The name of the source database: 'GenBank' or 'UniProt'
 
@@ -146,7 +137,7 @@ For example, a protein sequence from GenBank which is extracted from a local CAZ
 Options configurable at the command line 
 -----------------------------------------
 
-The following behaviours of the ``cw_extract_db_seqs`` can be configured at the command-line in the terminal to 
+The following behaviours of the ``cazy_webscraper extract_data`` can be configured at the command-line in the terminal to 
 limit the extraction of protein sequences to CAZymes in the local databaes from specific:
 
 * CAZy classes
@@ -178,13 +169,13 @@ For example, if you want to extract protein sequences for all CAZymes from Glyco
 
 .. code-block:: bash
 
-   cw_extract_db_seqs cazy/cazyme.db genbank --classes GH,CE
+   cazy_webscraper extract_data cazy/cazyme.db genbank --classes GH,CE
 
 OR
 
 .. code-block:: bash
 
-   cw_extract_db_seqs cazy/cazyme.db genbank --classes 'Glycoside Hydrolases','Carbohydrate Esterases'
+   cazy_webscraper extract_data cazy/cazyme.db genbank --classes 'Glycoside Hydrolases','Carbohydrate Esterases'
 
 .. WARNING::
     When including spaces in a parameter value, such as 'Glycoside Hydrolases' single or double quotation marks must be written around the value.
@@ -195,10 +186,10 @@ following command:
 
 .. code-block:: bash
 
-   cw_extract_db_seqs cazy/cazyme.db genbank --families PL1,PL2,PL3
+   cazy_webscraper extract_data cazy/cazyme.db genbank --families PL1,PL2,PL3
 
 .. WARNING::
-   ``cw_extract_db_seqs`` only accpets families written in the proper CAZy family syntax.
+   ``cazy_webscraper extract_data`` only accpets families written in the proper CAZy family syntax.
    GH1 is accepted.
    gh1 and GlycosideHydrolases1 are not accepted.
 
@@ -207,13 +198,13 @@ for all CAZymes in PL1, PL2, PL3 and *all* of GH and CE both:
 
 .. code-block:: bash
 
-   cw_extract_db_seqs cazy/cazyme.db uniprot --families PL1,PL2,PL3 --classes GH,CE
+   cazy_webscraper extract_data cazy/cazyme.db uniprot --families PL1,PL2,PL3 --classes GH,CE
 
 **AND**
 
 .. code-block:: bash
 
-   cw_extract_db_seqs cazy/cazyme.db uniprot --classes GH,CE --families PL1,PL2,PL3
+   cazy_webscraper extract_data cazy/cazyme.db uniprot --classes GH,CE --families PL1,PL2,PL3
 
 are accepted.
 
@@ -231,7 +222,7 @@ For example, if you want to extract GenBank protein sequences for all CAZymes in
 
 .. code-block:: bash
 
-   cw_extract_db_seqs cazy/cazyme.db genbank --kingdoms bacteria,eukaryota
+   cazy_webscraper extract_data cazy/cazyme.db genbank --kingdoms bacteria,eukaryota
 
 .. warning::
    The kingdoms must be spelt the same way CAZy spells them, for example use 'eukaryot**a**' instead of 'eukaryot**e**'.
@@ -244,12 +235,12 @@ For example, if you want to extract GenBank protein sequences for all CAZymes in
 
 You can combine any combination of the optional flags, including combining the taxonomic filters. For example,
 you may wish to extract GenBank and UniProt protein sequences for all CAZymes in a local CAZyme database that are derived from all viral species, Aspergillus species, Layia carnosa, Layia chrysanthemoides, Trichoderma reesei QM6a and 
-Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cw_extract_db_seqs`` command. The command 
+Trichoderma reesei QM9414. To do this we would combine the respective flags for a single ``cazy_webscraper extract_data`` command. The command 
 we would use would be:
 
 .. code-block:: bash
 
-   cw_extract_db_seqs cazy/cazyme.db genbank uniprot --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
+   cazy_webscraper extract_data cazy/cazyme.db genbank uniprot --kingdoms viruses --genera Aspergillus --species Layia carnosa,Layia chrysanthemoides --strains Trichoderma reesei QM6a,Trichoderma reesei QM9414
 
 .. note::
    The order that the flags are used and the order taxa  are listed does **not** matter, and separate multiple taxa names with a single comma 
@@ -266,7 +257,7 @@ we would use would be:
    ASPERGILLUS NIGER is **incorrect**
 
 .. warning::
-   When you specify a species ``cw_extract_db_seqs`` will retrieval CAZymes from *all* strains of the species.
+   When you specify a species ``cazy_webscraper extract_data`` will retrieval CAZymes from *all* strains of the species.
 
 
 -------------------------
@@ -282,7 +273,7 @@ wish to extract protein sequences for CAZymes annotated with specific EC numbers
 
 .. code-block:: bash
    
-   cw_extract_db_seqs cazy/cazyme.db genbank --ec_filter "EC1.2.3.4,EC2.3.4.5"
+   cazy_webscraper extract_data cazy/cazyme.db genbank --ec_filter "EC1.2.3.4,EC2.3.4.5"
 
 
 .. NOTE::
@@ -337,7 +328,7 @@ To extract GenBank protein sequences for CAZymes:
 
 .. code-block:: bash
 
-   cw_extract_db_seqs cazy/cazyme.db genbank --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
+   cazy_webscraper extract_data cazy/cazyme.db genbank --classes GH,CE --families CE1,CE5,CE8 --kingdoms bacteria
 
 
 **Example 2:**
@@ -346,7 +337,7 @@ To extract GenBank protein sequences for CAZymes:
 * From *Aspegillus* and *Trichoderma* species
 .. code-block:: bash
 
-   cw_extract_db_seqs cazy/cazyme.db genbank --classes GH --genera Aspegillus,Trichoderma
+   cazy_webscraper extract_data cazy/cazyme.db genbank --classes GH --genera Aspegillus,Trichoderma
 
 
 **Example 3:**
@@ -357,25 +348,25 @@ To extract GenBank and UniProt protein sequences for CAZymes:
 
 .. code-block:: bash
 
-   cw_extract_db_seqs cazy/cazyme.db genbank uniprot --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
+   cazy_webscraper extract_data cazy/cazyme.db genbank uniprot --classes GH,CE,CBM --kingdoms bacteria --ec_filter "3.2.1.23,3.2.1.37,3.2.1.85"
 
 ------------------------------
 Providing a list of accessions
 ------------------------------
 
 Instead of extracting protein sequences for all CAZymes matching a defined set of criteria, 
-``cw_extract_db_seqs`` can extract protein sequences a set of CAZymes defined by their 
+``cazy_webscraper extract_data`` can extract protein sequences a set of CAZymes defined by their 
 GenBank and/or UniProt accession.
 
-The flag ``--genbank_accessions`` can be used to provide ``cw_extract_db_seqs`` a list of GenBank accessions 
+The flag ``--genbank_accessions`` can be used to provide ``cazy_webscraper extract_data`` a list of GenBank accessions 
 to identify the specific set of CAZymes to extract protein sequences for.
 
-The flag ``--uniprot_accessions`` can be used to provide ``cw_extract_db_seqs`` a list of UniProt accessions 
+The flag ``--uniprot_accessions`` can be used to provide ``cazy_webscraper extract_data`` a list of UniProt accessions 
 to identify the specific set of CAZymes to extract protein sequences for.
 
 In both instances (for ``--genbank_accessions`` and ``--uniprot_accessions``) the list of respective accessions 
 are provided via a plain text file, with a unique protein accession of each line. The path to this file is 
-then passed to ``cw_extract_db_seqs`` via the respective ``--genbank_accessions`` and ``--uniprot_accessions`` flag.
+then passed to ``cazy_webscraper extract_data`` via the respective ``--genbank_accessions`` and ``--uniprot_accessions`` flag.
 
 ``--genbank_accessions`` and ``--uniprot_accessions`` can be used at the same time to define all 
 CAZymes of interest.
@@ -388,9 +379,9 @@ retrieve the GenBank protein sequence for the specified CAZymes of interest.
 .. WARNING::
    ``--genbank_accessions`` and ``--uniprot_accessions`` take president over the filter flags.
 
-   When either ``--genbank_accessions`` or ``--uniprot_accessions`` is used, ``cw_extract_db_seqs`` will 
+   When either ``--genbank_accessions`` or ``--uniprot_accessions`` is used, ``cazy_webscraper extract_data`` will 
    **not** retrieve any CAZymes from the local database matching a set of criteria.
 
-   Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cw_extract_db_seqs`` will ignore 
+   Therefore, if ``--genbank_accessions`` and ``--classes`` are used, ``cazy_webscraper extract_data`` will ignore 
    the ``--classes`` flag and only extract protein squences for the proteins listed in the file provided via 
    the ``--genbank_accessions``.

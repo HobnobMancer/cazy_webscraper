@@ -2,15 +2,6 @@
 Extract protein squences from the local database
 ================================================
 
-.. warning::
-   **Not yet available in version 3.**
-
-   This page documents the version 2 interface. Extraction of sequences from a local database has not yet been migrated to the
-   version 3 subcommand interface, so the ``cw_extract_db_seqs`` command shown below is not currently
-   available from the single ``cazy_webscraper`` entry point. The pages for the subcommands
-   that *are* available in version 3 (``download_cazy``, ``get_ncbi_seqs``, ``get_ncbi_taxs``,
-   ``get_ncbi_genomes`` and ``get_uniprot_data``) have been updated.
-
 
 
 ``cazy_webscraper`` can be used to extract protein sequences stored in the local CAZyme database.
@@ -30,7 +21,7 @@ To extract all protein sequences previously retrieved from GenBank and UniProt, 
 
 .. code-block:: bash
 
-   cw_extract_db_seqs <path to local CAZyme db> genbank uniprot
+   cazy_webscraper extract_data <path to local CAZyme db> genbank uniprot
 
 .. NOTE::
    The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
@@ -74,7 +65,7 @@ Command line options
 
 ``--ec_filter`` - Limist retrieval of protein data to proteins annotated with a provided list of EC numbers. Separate the EC numbers bu single commas without spaces. Recommend to wrap the entire str in quotation marks, for example:
 .. code-block:: bash
-    cw_get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
+    cazy_webscraper get_uniprot_data my_cazyme_db/cazyme_db.db --ec_filter 'EC1.2.3.4,EC2.3.1.-'
 
 ``--force``, ``-f`` - Force overwriting exsiting files and writing to existing output directory.
 
@@ -112,7 +103,7 @@ others (e.g. ``--species``) are used to filter and fine-tune the protein dataset
 
 The ``--classes``, ``--families``, ``--kingdoms``, ``--genera``, ``--species``, and ``--strains`` filteres are applied 
 in the exactly same for retrieving data from CAZy and UniProt. Examples of using these flags 
-can be found in the ``cazy_webscraper`` and ``cw_get_uniprot_data`` tutorial in this documentation.
+can be found in the ``cazy_webscraper`` and ``cazy_webscraper get_uniprot_data`` tutorial in this documentation.
 
 .. NOTE::
     To extract protein sequences for members of specific CAZy subfamilies, list the subfamilies after the ``--families`` 

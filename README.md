@@ -562,22 +562,62 @@ The release files are streamed and parsed line by line, keeping only the genomes
 
 ## Extract data from the local CAZyme database
 
-### The `cazy_webscraper` API [Under construction]
+### Querying the database directly
 
 The SQLite3 database compiled by `cazy_webscraper` can be interrogated in the native interface (i.e. queries written in SQL can be used to interrogate the database). This can be achieved via the command-line or via an SQL database browser (such as [DB Browser for SQLite](https://sqlitebrowser.org/)).
 
-`cazy_webscraper` also provides its own API (Application Programming Interface) for interrogating the local CAZyme database: `cw_query_database`. The API faciliates the intergration of the dataset in the local CAZyme database into downstream bioinformatic pipelines, _and_ provides a method of interrograting the dataset for those who do not use SQL.
+### Extracting data with `extract_data`
 
-### Extracting protein sequences from the local CAZyme database and building a BLAST database [Under construction]
+For those who do not use SQL, or who want the dataset in a form downstream bioinformatic pipelines can consume, `cazy_webscraper extract_data` writes the contents of a local CAZyme database out to files. It replaces two version 2 commands: `cw_query_database` (CSV/JSON) and `cw_extract_db_seqs` (FASTA/BLAST). Which outputs you get is chosen with `--file_types`:
 
-Protein sequences from GenBank and UniProt that are stored in the local CAZyme database can be extracted using `cazy_webscraper`, and written to any combination of:
-- 1 FASTA file per unique protein
-- A single FASTA file containing all extracted seqences
-- A BLAST database
+| `--file_types` | Output |
+| --- | --- |
+| `csv` | One row per protein, columns chosen with `--include` |
+| `json` | One object per protein, keyed by protein accession |
+| `fasta` | A single FASTA file containing every extracted sequence |
+| `fasta_dir` | A directory containing one FASTA file per protein |
+| `blastdb` | A BLAST protein database (requires `makeblastdb` from BLAST+ on your `PATH`) |
 
-**FASTA file format:** Protein sequences extracted from a local CAZyme database are written out with the GenBank/UniProt accession as the protein ID, and the name of the source database ('GenBank' or 'UniProt') as the description.
+The same filtering arguments used by the `get_*` subcommands (`--classes`, `--families`, `--kingdoms`, `--genera`, `--species`, `--strains`, `--ec_filter`, `-c/--config`) select which proteins are exported, as do `--genbank_accessions` / `--uniprot_accessions`.
 
-To extract all protein seqeunces from the local CAZyme database using the following command structure:
+To write a CSV of every protein with its CAZy family, taxonomy and EC annotations:
+```bash
+cazy_webscraper extract_data <path_to_cazyme_db> --file_types csv --include class family kingdom organism ec
+```
+
+To extract all protein sequences to a single FASTA file and build a BLAST database:
+```bash
+cazy_webscraper extract_data <path_to_cazyme_db> --file_types fasta blastdb
+```
+
+To extract UniProt sequences rather than GenBank ones, for one CAZy family only:
+```bash
+cazy_webscraper extract_data <path_to_cazyme_db> --file_types fasta --source uniprot --families GH13
+```
+
+**FASTA file format:** sequences are written with the GenBank/UniProt accession as the protein ID and the name of the source database (`GenBank` or `UniProt`) as the description.
+
+**Output naming:** files are named after the database (`<prefix>_<database name>.<ext>`) and written to `--output_dir` (default: the current working directory). Existing files are never silently replaced — the run stops and lists them unless `--overwrite` is given, or use `--prefix` to write under a different name.
+
+#### Required Arguments
+
+• **`database`** - Path to local CAZy database
+
+#### Optional Arguments
+
+• **`--file_types`** - One or more of `csv` (default), `json`, `fasta`, `fasta_dir`, `blastdb`
+
+• **`--include`** - Columns to add to the csv/json output: `class`, `family`, `subfamily`, `kingdom`, `genus`, `organism`, `ec`, `pdb`, `uniprot_acc`, `uniprot_name`, `genbank_seq`, `uniprot_seq`
+
+• **`--source`** - Which sequences to write to the fasta/blastdb outputs: `genbank` (default) and/or `uniprot`
+
+• **`-o OUTPUT_DIR, --output_dir OUTPUT_DIR`** - Directory to write output files to (default: current working directory)
+
+• **`--prefix`** - String to prefix every output file name with
+
+• **`--overwrite`** - Overwrite existing output files (default: False)
+
+• **`--batch_size`** - Number of proteins assembled and written at a time (default: 1000). Data is streamed out in batches, so exporting a whole database does not hold it all in memory
 
 -------------------------------------------
 

@@ -2,15 +2,6 @@
 Interrogating the data using the API
 ====================================
 
-.. warning::
-   **Not yet available in version 3.**
-
-   This page documents the version 2 interface. The database query API has not yet been migrated to the
-   version 3 subcommand interface, so the ``cw_query_database`` command shown below is not currently
-   available from the single ``cazy_webscraper`` entry point. The pages for the subcommands
-   that *are* available in version 3 (``download_cazy``, ``get_ncbi_seqs``, ``get_ncbi_taxs``,
-   ``get_ncbi_genomes`` and ``get_uniprot_data``) have been updated.
-
 
 
 The data stored in the local CAZyme database can be interrogated using SQL. ``cazy_webscraper`` also 
@@ -30,7 +21,7 @@ structure:
 
 .. code-block:: bash
 
-   cw_query_database <path to local CAZyme db> <desired file formats>
+   cazy_webscraper extract_data <path to local CAZyme db> <desired file formats>
 
 .. NOTE::
    The ``cw`` prefix on command is an abbreviation of ``cazy_webscraper``.
@@ -39,14 +30,14 @@ structure:
 Accepted file formats
 ---------------------
 
-``cw_query_database`` can write the output to a csv or json file.
+``cazy_webscraper extract_data`` can write the output to a csv or json file.
 
-These are provided as the second arguments to ``cw_query_database``. To write out both a csv and json 
+These are provided as the second arguments to ``cazy_webscraper extract_data``. To write out both a csv and json 
 file use both ``csv`` and ``json`` after the path to the local CAZyme database, separted with a single space.
 
 .. code-block:: bash
 
-    cw_query_database <path to local CAZyme db> csv json
+    cazy_webscraper extract_data <path to local CAZyme db> csv json
 
 .. NOTE::
     The order ``csv`` and ``json`` are written does not matter.
@@ -132,7 +123,7 @@ The command-line options listed above can be used in combination to customise th
 
 The ``--classes``, ``--families``, ``--kingdoms``, ``--genera``, ``--species``, and ``--strains`` filteres are applied 
 in the exactly same for retrieving data from CAZy, UniProt, GenBank, and PDB as for the extraction of data via the API. Examples of using these flags 
-can be found in the ``cazy_webscraper`` and ``cw_query_database`` tutorial in this documentation.
+can be found in the ``cazy_webscraper`` and ``cazy_webscraper extract_data`` tutorial in this documentation.
 
 .. NOTE::
     To retrieve fata for members of specific CAZy subfamilies, list the subfamilies after the ``--families`` 
