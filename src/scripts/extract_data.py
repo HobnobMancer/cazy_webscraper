@@ -49,7 +49,7 @@ from saintBioutils.utilities.file_io import make_output_directory
 
 from src.export import check_existing_outputs, compile_output_path
 from src.export.sequences import build_blast_db, write_sequences
-from src.export.tabular import write_csv, write_json
+from src.export.tabular import write_csv, write_json, write_jsonl, write_tsv
 from src.sql.interface.connect import connect_existing_db
 from src.sql.interface.get_data.get_extract_data import (
     iter_protein_records,
@@ -99,7 +99,9 @@ def main(args: Namespace, time_stamp: str, start_time):
     output_stem = compile_output_path(args)
     output_paths = {
         "csv": Path(f"{output_stem}.csv"),
+        "tsv": Path(f"{output_stem}.tsv"),
         "json": Path(f"{output_stem}.json"),
+        "jsonl": Path(f"{output_stem}.jsonl"),
         "fasta": Path(f"{output_stem}.fasta"),
         "blastdb": Path(f"{output_stem}_blastdb.fasta"),
     }
@@ -146,12 +148,26 @@ def main(args: Namespace, time_stamp: str, start_time):
         )
         logger.warning("Wrote %s rows to %s", rows, output_paths["csv"])
 
+    if "tsv" in file_types:
+        rows = write_tsv(
+            iter_protein_records(accessions, args.database, include, args.batch_size),
+            output_paths["tsv"], include,
+        )
+        logger.warning("Wrote %s rows to %s", rows, output_paths["tsv"])
+
     if "json" in file_types:
         records = write_json(
             iter_protein_records(accessions, args.database, include, args.batch_size),
             output_paths["json"], include,
         )
         logger.warning("Wrote %s records to %s", records, output_paths["json"])
+
+    if "jsonl" in file_types:
+        records = write_jsonl(
+            iter_protein_records(accessions, args.database, include, args.batch_size),
+            output_paths["jsonl"], include,
+        )
+        logger.warning("Wrote %s records to %s", records, output_paths["jsonl"])
 
     # sequence outputs
     if file_types & SEQUENCE_FILE_TYPES:

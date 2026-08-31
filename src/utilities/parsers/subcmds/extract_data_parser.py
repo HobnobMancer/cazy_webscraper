@@ -42,7 +42,7 @@ def build_parser(
 ) -> None:
     parser = subps.add_parser(
         "extract_data",
-        description="Extract data from a local CAZyme database to CSV, JSON, FASTA or a BLAST database",
+        description="Extract data from a local CAZyme database to CSV, TSV, JSON, JSON Lines, FASTA or a BLAST database",
         help="Write data held in the local CAZyme database out to files",
         formatter_class=ArgumentDefaultsHelpFormatter
     )
@@ -113,12 +113,13 @@ def build_parser(
     data_group.add_argument(
         "--file_types",
         nargs="+",
-        choices=["csv", "json", "fasta", "fasta_dir", "blastdb"],
+        choices=["csv", "tsv", "json", "jsonl", "fasta", "fasta_dir", "blastdb"],
         default=["csv"],
         help=(
-            "Output file type(s) to write. 'fasta' writes one multi-record file, 'fasta_dir' "
-            "writes one file per protein, and 'blastdb' builds a BLAST protein database "
-            "(requires makeblastdb from BLAST+ on your PATH)"
+            "Output file type(s) to write. 'jsonl' writes one JSON object per line "
+            "(JSON Lines) rather than a single JSON document. 'fasta' writes one "
+            "multi-record file, 'fasta_dir' writes one file per protein, and 'blastdb' "
+            "builds a BLAST protein database (requires makeblastdb from BLAST+ on your PATH)"
         ),
     )
     data_group.add_argument(
@@ -126,7 +127,7 @@ def build_parser(
         nargs="+",
         choices=[
             "class", "family", "subfamily", "kingdom", "genus", "organism",
-            "ec", "pdb", "uniprot_acc", "uniprot_name", "genbank_seq", "uniprot_seq",
+            "ec", "pdb", "pfam", "uniprot_acc", "uniprot_name", "genbank_seq", "uniprot_seq",
         ],
         default=None,
         help=(

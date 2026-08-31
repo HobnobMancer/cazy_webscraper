@@ -62,6 +62,7 @@ COLUMN_ORDER = (
     "organism",
     "ec",
     "pdb",
+    "pfam",
     "uniprot_acc",
     "uniprot_name",
     "genbank_seq",
@@ -69,7 +70,7 @@ COLUMN_ORDER = (
 )
 
 # fields that hold a set of values rather than a single one
-MULTI_VALUE_FIELDS = {"class", "family", "subfamily", "ec", "pdb"}
+MULTI_VALUE_FIELDS = {"class", "family", "subfamily", "ec", "pdb", "pfam"}
 
 
 def build_column_names(include: set[str]) -> list[str]:
@@ -86,19 +87,18 @@ def _flatten(value):
     return str(value)
 
 
-def write_csv(record_batches, output_path: Path, include: set[str]) -> int:
-    """Write protein records to CSV, a batch at a time.
-
-    Returns the number of rows written.
-    """
+def _write_delimited(
+    record_batches, output_path: Path, include: set[str], delimiter: str, desc: str
+) -> int:
+    """Shared implementation for the CSV and TSV writers, which differ only in delimiter."""
     columns = build_column_names(include)
     rows_written = 0
 
     with open(output_path, "w", newline="") as fh:
-        writer = csv.writer(fh)
+        writer = csv.writer(fh, delimiter=delimiter)
         writer.writerow(columns)
 
-        for batch in tqdm(record_batches, desc="Writing CSV"):
+        for batch in tqdm(record_batches, desc=desc):
             for accession in sorted(batch):
                 record = batch[accession]
                 writer.writerow(
@@ -107,6 +107,22 @@ def write_csv(record_batches, output_path: Path, include: set[str]) -> int:
                 rows_written += 1
 
     return rows_written
+
+
+def write_csv(record_batches, output_path: Path, include: set[str]) -> int:
+    """Write protein records to CSV, a batch at a time.
+
+    Returns the number of rows written.
+    """
+    return _write_delimited(record_batches, output_path, include, ",", "Writing CSV")
+
+
+def write_tsv(record_batches, output_path: Path, include: set[str]) -> int:
+    """Write protein records to TSV, a batch at a time.
+
+    Returns the number of rows written.
+    """
+    return _write_delimited(record_batches, output_path, include, "\t", "Writing TSV")
 
 
 def write_json(record_batches, output_path: Path, include: set[str]) -> int:
@@ -124,19 +140,7 @@ def write_json(record_batches, output_path: Path, include: set[str]) -> int:
 
         for batch in tqdm(record_batches, desc="Writing JSON"):
             for accession in sorted(batch):
-                record = batch[accession]
-
-                serialisable = {}
-                for name in COLUMN_ORDER:
-                    if name not in include:
-                        continue
-                    value = record.get(name)
-                    # sets are not JSON serialisable
-                    serialisable[name] = (
-                        sorted(str(v) for v in value)
-                        if isinstance(value, (set, frozenset))
-                        else value
-                    )
+                serialisable = _build_serialisable(batch[accession], include)
 
                 if records_written:
                     fh.write(",\n")
@@ -144,5 +148,45 @@ def write_json(record_batches, output_path: Path, include: set[str]) -> int:
                 records_written += 1
 
         fh.write("\n}\n")
+
+    return records_written
+
+
+def _build_serialisable(record: dict, include: set[str]) -> dict:
+    """Build a JSON-serialisable dict for one protein record, in COLUMN_ORDER."""
+    serialisable = {}
+    for name in COLUMN_ORDER:
+        if name not in include:
+            continue
+        value = record.get(name)
+        # sets are not JSON serialisable
+        serialisable[name] = (
+            sorted(str(v) for v in value)
+            if isinstance(value, (set, frozenset))
+            else value
+        )
+    return serialisable
+
+
+def write_jsonl(record_batches, output_path: Path, include: set[str]) -> int:
+    """Write protein records to JSON Lines, one JSON object per line, a batch at a time.
+
+    Unlike write_json, each line is a complete, independently parseable JSON document
+    (with the accession included as a "protein_accession" field rather than as the object's
+    key), which suits streaming/line-oriented tools better than one large JSON document does.
+
+    Returns the number of records written.
+    """
+    records_written = 0
+
+    with open(output_path, "w") as fh:
+        for batch in tqdm(record_batches, desc="Writing JSON Lines"):
+            for accession in sorted(batch):
+                serialisable = {"protein_accession": accession}
+                serialisable.update(_build_serialisable(batch[accession], include))
+
+                fh.write(json.dumps(serialisable))
+                fh.write("\n")
+                records_written += 1
 
     return records_written

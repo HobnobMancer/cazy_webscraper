@@ -61,6 +61,7 @@ INCLUDE_CHOICES = (
     "organism",
     "ec",
     "pdb",
+    "pfam",
     "uniprot_acc",
     "uniprot_name",
     "genbank_seq",
@@ -149,6 +150,16 @@ def _assemble_batch(conn, accessions: list[str], include: set[str]) -> dict[str,
             WHERE P.protein_accession IN ({placeholders})""")
         for accession, record in records.items():
             record["pdb"] = pdbs.get(accession, set())
+
+    if "pfam" in include:
+        pfams = _fetch_many_to_many(conn, accessions, """
+            SELECT P.protein_accession, F.accession
+            FROM Proteins P
+            JOIN Proteins_Pfams PF ON P.protein_id = PF.protein_id
+            JOIN Pfams F ON PF.pfam_id = F.pfam_id
+            WHERE P.protein_accession IN ({placeholders})""")
+        for accession, record in records.items():
+            record["pfam"] = pfams.get(accession, set())
 
     if {"uniprot_acc", "uniprot_name", "uniprot_seq"} & include:
         for accession, uniprot_acc, name, sequence in conn.execute(

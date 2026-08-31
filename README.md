@@ -88,7 +88,7 @@ The separate `cw_*` scripts are now subcommands of one `cazy_webscraper` command
 | `cw_get_db_schema` | Not yet migrated |
 
 The two version 2 commands for getting data back *out* of a database were merged into
-`extract_data`, selected with `--file_types csv|json|fasta|fasta_dir|blastdb`.
+`extract_data`, selected with `--file_types csv|tsv|json|jsonl|fasta|fasta_dir|blastdb`.
 
 `--version`, `--citation`, `-l`/`--log`, `--sql_echo` and `-v`/`--verbose` belong to
 `cazy_webscraper` itself, so they go **before** the subcommand:
@@ -149,7 +149,7 @@ that already exists; `extract_data` writes data back out to files.
 | `get_pdb_structures` | Download PDB structure files; add each structure's method and resolution | Implemented |
 | `get_pfams` | Add Pfam domain annotations from InterPro | Implemented |
 | `get_gtdb_taxs` | Add GTDB taxonomic classifications for the genomes in the database | Implemented |
-| `extract_data` | Write data out to CSV, JSON, FASTA or a BLAST database | Implemented |
+| `extract_data` | Write data out to CSV, TSV, JSON, JSON Lines, FASTA or a BLAST database | Implemented |
 | Database schema printing | Print the schema of a local database | Not yet migrated to v3 |
 
 **Every flag a subcommand takes is listed by its own help**, which is generated from the code and
@@ -260,7 +260,9 @@ cazy_webscraper get_gtdb_taxs cazy.db --taxs bacteria
 | `--file_types` | Output |
 | --- | --- |
 | `csv` | One row per protein; columns chosen with `--include` |
+| `tsv` | Same as `csv`, tab separated |
 | `json` | One object per protein, keyed by protein accession |
+| `jsonl` | JSON Lines - one self-contained JSON object per line, one per protein |
 | `fasta` | A single FASTA file of all extracted sequences |
 | `fasta_dir` | One FASTA file per protein |
 | `blastdb` | A BLAST protein database (needs `makeblastdb` from BLAST+ on your `PATH`) |
@@ -277,8 +279,8 @@ cazy_webscraper extract_data cazy.db --file_types fasta --source uniprot --famil
 ```
 
 `--include` accepts `class`, `family`, `subfamily`, `kingdom`, `genus`, `organism`, `ec`, `pdb`,
-`uniprot_acc`, `uniprot_name`, `genbank_seq` and `uniprot_seq`. Sequences are written with the
-accession as the ID and the source database (`GenBank` or `UniProt`) as the description.
+`pfam`, `uniprot_acc`, `uniprot_name`, `genbank_seq` and `uniprot_seq`. Sequences are written with
+the accession as the ID and the source database (`GenBank` or `UniProt`) as the description.
 
 Output files are named `<prefix>_<database name>.<ext>` and written to `--output_dir` (default: the
 working directory). Existing files are never silently replaced - the run stops and lists them
