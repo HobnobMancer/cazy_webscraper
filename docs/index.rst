@@ -158,27 +158,20 @@ For details and updates on development, please consult the `GitHub repository <h
    installation
    quickstart
    migration
+   filters
    01scrapeCazy
    02genbankSeqs
    03ncbiTaxs
-   uniprot
-   sequence
-   sequencetutorial
-   pdb
-   pdbtutorial
-   pfam
    genomes
-   genomestutorial
+   uniprot
+   pfam
+   pdb
    gtdbtax
-   gtdbtaxtutorial
-   api
-   apitutorial
+   extract
    database
    cache
    integrate
    contributing
-   citation
-   license
    citation
    license
 
