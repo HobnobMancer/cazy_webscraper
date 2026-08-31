@@ -1,2 +1,0 @@
-,genbank_accession,class,family,subfamily,kingdom,genus,source_organism,genbank_sequence,genbank_sequence_date,uniprot_accession,uniprot_name,ec_number,pdb_accession,uniprot_sequence,uniprot_sequence_date
-0,1,2,3,4,5,6,7,8,9,10,11,EC number annotations,PDB accessions,Protein Aa seq from UniProt,Date the seq was last modified in UniProt

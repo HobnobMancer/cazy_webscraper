@@ -1,3 +1,0 @@
-test_acc
-gbk_acc
-fake_acc
