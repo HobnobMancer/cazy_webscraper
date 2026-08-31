@@ -240,6 +240,34 @@ def drop_temp_go_protein_table(conn: sqlite3.Connection) -> None:
     cursor.close()
 
 
+def create_temp_pfam_protein_table(conn: sqlite3.Connection) -> None:
+    """Create temporary table for Pfam-protein match data"""
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS TEMP_PFAM_PROTEIN (
+            protein_id INTEGER,
+            pfam_id INTEGER,
+            interpro_accession VARCHAR(50),
+            match_start INTEGER,
+            match_end INTEGER
+        )
+    """)
+
+    conn.commit()
+    cursor.close()
+
+
+def drop_temp_pfam_protein_table(conn: sqlite3.Connection) -> None:
+    """Drop temporary table for Pfam-protein match data"""
+    cursor = conn.cursor()
+
+    cursor.execute("DROP TABLE IF EXISTS TEMP_PFAM_PROTEIN")
+
+    conn.commit()
+    cursor.close()
+
+
 def create_temp_pdb_structure_table(conn: sqlite3.Connection) -> None:
     """Create the temp table PDB entry metadata is dumped into as it is retrieved.
 

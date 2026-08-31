@@ -147,6 +147,7 @@ that already exists; `extract_data` writes data back out to files.
 | `get_ncbi_genomes` | Add the genomic assembly each protein came from | Implemented |
 | `get_uniprot_data` | Add UniProt accessions, names, EC numbers, PDB accessions and GO terms | Implemented |
 | `get_pdb_structures` | Download PDB structure files; add each structure's method and resolution | Implemented |
+| `get_pfams` | Add Pfam domain annotations from InterPro | Implemented |
 | `get_gtdb_taxs` | Add GTDB taxonomic classifications for the genomes in the database | Implemented |
 | `extract_data` | Write data out to CSV, JSON, FASTA or a BLAST database | Implemented |
 | Database schema printing | Print the schema of a local database | Not yet migrated to v3 |
@@ -172,7 +173,7 @@ interest. Without them a subcommand acts on the whole database.
 | `-c`, `--config` | A YAML configuration file (see below) | all |
 | `--ec_filter` | Proteins annotated with the given EC numbers | all except `download_cazy` |
 | `--genbank_accessions` | A text file of GenBank accessions, one per line | all except `download_cazy` |
-| `--uniprot_accessions` | A text file of UniProt accessions, one per line | `get_ncbi_taxs`, `get_pdb_structures`, `get_gtdb_taxs`, `extract_data` |
+| `--uniprot_accessions` | A text file of UniProt accessions, one per line | `get_ncbi_taxs`, `get_pdb_structures`, `get_pfams`, `get_gtdb_taxs`, `extract_data` |
 
 `download_cazy` has no EC or accession filters because it builds the database from CAZy, before
 there are any EC annotations or accessions in it to filter against.
@@ -233,6 +234,14 @@ cazy_webscraper get_pdb_structures cazy.db --file_formats mmCif pdb -o structure
 
 # add each structure's experimental method and resolution, downloading no files
 cazy_webscraper get_pdb_structures cazy.db --skip_download
+```
+
+### Pfam domains
+
+Pfam matches are looked up by UniProt accession, so run `get_uniprot_data` first.
+
+```bash
+cazy_webscraper get_pfams cazy.db
 ```
 
 ### GTDB taxonomy

@@ -35,6 +35,12 @@ from. Every association table was renamed to match (``Genbanks_CazyFamilies`` be
 association tables ``Proteins_GoTerms`` and ``Proteins_Pfams``), and the version 2 ``UniprotTaxs``
 table is no longer written.
 
+``Proteins_Pfams`` is populated by the ``get_pfams`` subcommand (see :doc:`pfam`), and unlike the
+other ``Proteins_*`` association tables carries a row per Pfam domain *match location* rather than
+per protein-family pair, since a protein can match the same Pfam family more than once at
+different positions - it has its own primary key plus ``match_start``/``match_end`` and
+``interpro_accession`` columns alongside the usual ``protein_id``/``pfam_id`` pair.
+
 .. danger::
    **Pointing version 3 at a version 2 database fails silently.**
 

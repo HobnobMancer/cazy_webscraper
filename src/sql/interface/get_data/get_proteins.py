@@ -41,9 +41,12 @@
 """Funcs for retrieving GenBank accessions of interest, matching user filter criteria"""
 
 
+import logging
 import sqlite3
 
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 # The Proteins table is aliased as P, and the class/family/taxonomy/EC joins below are
@@ -149,6 +152,51 @@ def get_ncbi_prot_accessions(
     conn.close()
 
     return seq_acc_to_retrieve
+
+
+def get_uniprot_accessions(
+    class_filters: set[str],
+    family_filters: set[str],
+    kingdom_filters: set[str],
+    taxonomy_filter_dict: dict[str, set[str]],
+    ec_filters: set[str],
+    db_path: Path,
+    protein_accessions: list[str] = None,
+    additional_filter: str = None,
+) -> list[tuple[int, str]]:
+    """Retrieve (protein_id, uniprot_accession) pairs for proteins matching the user's criteria.
+
+    Only proteins that already have UniProt data in the local db are returned, since Pfam
+    retrieval from InterPro is keyed by UniProt accession, not GenBank accession - run
+    get_uniprot_data first to populate these.
+
+    If protein_accessions is given, the selection is further restricted to those proteins
+    (used by the --genbank_accessions/--uniprot_accessions options).
+    """
+    query = "SELECT DISTINCT P.protein_id, Uniprots.uniprot_accession" + PROTEIN_FILTER_JOINS + """
+    JOIN Uniprots ON P.uniprot_id = Uniprots.uniprot_id
+    """
+
+    clause, params = build_protein_filters(
+        class_filters, family_filters, kingdom_filters, taxonomy_filter_dict, ec_filters
+    )
+    query += clause
+
+    if protein_accessions is not None:
+        placeholders = ','.join('?' for _ in protein_accessions)
+        query += f" AND P.protein_accession IN ({placeholders})"
+        params.extend(protein_accessions)
+
+    if additional_filter:
+        query += f" AND ({additional_filter})"
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(query, params)
+    uniprot_pairs = [(row[0], row[1]) for row in cursor]
+    conn.close()
+
+    return uniprot_pairs
 
 
 def get_ncbi_acc_for_uniprot_acc(uniprot_accs: list[str], db: Path) -> set[str]:

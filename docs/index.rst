@@ -114,6 +114,8 @@ Below are the subcommands (excluding required and optional arguments) included i
    * - ``get_pdb_structures``
      - Download protein structure files from RCSB PDB, and add the experimental method and
        resolution of each structure to an existing local CAZyme database.
+   * - ``get_pfams``
+     - Supplement an existing local CAZyme database with Pfam domain annotations from InterPro.
    * - ``get_gtdb_taxs``
      - Add GTDB taxonomic classifications for the genomes in an existing local CAZyme database.
    * - ``extract_data``
@@ -165,6 +167,7 @@ For details and updates on development, please consult the `GitHub repository <h
    sequencetutorial
    pdb
    pdbtutorial
+   pfam
    genomes
    genomestutorial
    gtdbtax

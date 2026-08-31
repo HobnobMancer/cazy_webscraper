@@ -188,14 +188,6 @@ proteins_pdbs = Table(
     PrimaryKeyConstraint("protein_id", "pdb_id"),
 )
 
-proteins_pfams = Table(
-    "Proteins_Pfams",
-    Base.metadata,
-    Column("protein_id", Integer, ForeignKey("Proteins.protein_id")),
-    Column("pfam_id", Integer, ForeignKey("Pfams.pfam_id")),
-    PrimaryKeyConstraint("protein_id", "pfam_id"),
-)
-
 proteins_gos = Table(
     "Proteins_GoTerms",
     Base.metadata,
@@ -255,9 +247,8 @@ class Protein(Base):
         back_populates="protein",
         lazy="dynamic",
     )
-    pfams = relationship(
-        "Pfam",
-        secondary=proteins_pfams,
+    pfam_matches = relationship(
+        "ProteinPfam",
         back_populates="protein",
         lazy="dynamic",
     )
@@ -604,10 +595,9 @@ class Pfam(Base):
 
     Index('pfam_idx', accession)
 
-    protein = relationship(
-        "Protein",
-        secondary=proteins_pfams,
-        back_populates="pfams",
+    protein_matches = relationship(
+        "ProteinPfam",
+        back_populates="pfam",
         lazy="dynamic",
     )
 
@@ -616,6 +606,35 @@ class Pfam(Base):
 
     def __repr__(self):
         return f"<Class Pfam accession={self.accession}, id={self.pfam_id}>"
+
+
+class ProteinPfam(Base):
+    """Represents one Pfam domain match on a protein, as returned by the InterPro API.
+
+    A protein can have multiple matches to the same Pfam family at different sequence
+    positions, so this is an association object with its own primary key rather than a
+    plain many-to-many linker table like the other Proteins_* tables.
+    """
+    __tablename__ = "Proteins_Pfams"
+    __table_args__ = (
+        UniqueConstraint("protein_id", "pfam_id", "match_start", "match_end"),
+    )
+
+    protein_pfam_id = Column(Integer, primary_key=True)
+    protein_id = Column(Integer, ForeignKey("Proteins.protein_id"))
+    pfam_id = Column(Integer, ForeignKey("Pfams.pfam_id"))
+    interpro_accession = Column(String)
+    match_start = Column(Integer)
+    match_end = Column(Integer)
+
+    protein = relationship("Protein", back_populates="pfam_matches")
+    pfam = relationship("Pfam", back_populates="protein_matches")
+
+    def __str__(self):
+        return f"-ProteinPfam protein_id={self.protein_id}, pfam_id={self.pfam_id}, match_start={self.match_start}, match_end={self.match_end}-"
+
+    def __repr__(self):
+        return f"<Class ProteinPfam protein_id={self.protein_id}, pfam_id={self.pfam_id}>"
 
 
 class Log(Base):

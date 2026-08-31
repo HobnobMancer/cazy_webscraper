@@ -47,6 +47,7 @@ from src.utilities.parsers.subcmds import (
     ncbi_genome_parser,
     uniprot_parser,
     pdb_parser,
+    pfam_parser,
     gtdb_parser,
     extract_data_parser
 )
@@ -109,6 +110,7 @@ def build_parser(argv: Optional[List] = None) -> Namespace:
     ncbi_genome_parser.build_parser(subparsers)
     uniprot_parser.build_parser(subparsers)
     pdb_parser.build_parser(subparsers)
+    pfam_parser.build_parser(subparsers)
     gtdb_parser.build_parser(subparsers)
     extract_data_parser.build_parser(subparsers)
 
