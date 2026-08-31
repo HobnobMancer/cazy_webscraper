@@ -116,6 +116,9 @@ Below are the subcommands (excluding required and optional arguments) included i
        resolution of each structure to an existing local CAZyme database.
    * - ``get_gtdb_taxs``
      - Add GTDB taxonomic classifications for the genomes in an existing local CAZyme database.
+   * - ``extract_data``
+     - Write data held in an existing local CAZyme database out to CSV, JSON, FASTA or a BLAST
+       database.
 
 ``download_cazy`` is the one subcommand that *builds* a local CAZyme database; every ``get_*``
 subcommand adds data to a database that already exists.
@@ -126,9 +129,21 @@ subcommand adds data to a database that already exists.
    ``cazy_webscraper -v get_ncbi_seqs ...``.
 
 .. warning::
-   The database query API and extraction of sequences from a local database existed in version 2
-   but have **not yet been migrated** to the version 3 subcommand interface. Their documentation
-   pages are retained below and marked accordingly.
+   The version 2 ``cw_query_database`` and ``cw_extract_db_seqs`` commands are now the single
+   ``extract_data`` subcommand. The :doc:`api` and :doc:`sequence` pages below still describe the
+   version 2 interface; see :doc:`migration` for the mapping. ``cw_get_db_schema`` has **not yet
+   been migrated**.
+
+--------------------------
+Upgrading from version 2
+--------------------------
+
+Version 3 replaces the ten separate ``cw_*`` commands of version 2 with subcommands of a single
+``cazy_webscraper`` command, and changes the schema of the local CAZyme database. A CAZyme database
+built with version 2 **cannot be used with version 3** and must be rebuilt.
+
+See :doc:`migration` for the full command mapping, the renamed arguments, and a migration
+checklist.
 
 -------------
 Documentation
@@ -141,6 +156,7 @@ For details and updates on development, please consult the `GitHub repository <h
    
    installation
    quickstart
+   migration
    01scrapeCazy
    02genbankSeqs
    03ncbiTaxs

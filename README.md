@@ -65,7 +65,7 @@ For full details see our publication in [Microbial Genomics](https://www.microbi
 - **[Pfam](https://www.ebi.ac.uk/interpro/):**
     - Pfam family annotations, which includes non-CAZyme domain annotations
  
-**Easily extract sequences from a local CAZyme database:** Use the `extract` subcommand to extract sequence data to a FASTA or BLAST database. 
+**Easily extract sequences from a local CAZyme database:** Use the `extract_data` subcommand to extract sequence data to a FASTA or BLAST database. 
 
 ## New in version 3.0.0
 
@@ -73,6 +73,67 @@ For full details see our publication in [Microbial Genomics](https://www.microbi
 * Significantly faster and less memory demanding.
 * Intergation of [GO (GeneOntology) terms](https://www.geneontology.org/)
 * Integration of Pfam family and domain annotations (WIP)
+
+## Migrating from version 2
+
+Version 3 changes two things that affect every version 2 user. The
+[migration guide](https://cazy-webscraper.readthedocs.io/en/latest/migration.html) covers both in
+full, along with the renamed arguments for each subcommand; this is the short version.
+
+**1. One command instead of ten.** The separate `cw_*` scripts are now subcommands:
+
+| Version 2 | Version 3 |
+| --- | --- |
+| `cazy_webscraper <email>` | `cazy_webscraper download_cazy <email>` |
+| `cw_get_genbank_seqs <db> <email>` | `cazy_webscraper get_ncbi_seqs <db> <email>` |
+| `cw_get_ncbi_taxs <db> <email>` | `cazy_webscraper get_ncbi_taxs <db> <email>` |
+| `cw_get_genomics <db> <email>` | `cazy_webscraper get_ncbi_genomes <db> <email>` |
+| `cw_get_uniprot_data <db>` | `cazy_webscraper get_uniprot_data <db>` |
+| `cw_get_pdb_structures <db> <formats>` | `cazy_webscraper get_pdb_structures <db> --file_formats <formats>` |
+| `cw_get_gtdb_taxs <db> <taxs>` | `cazy_webscraper get_gtdb_taxs <db> --taxs <taxs>` |
+| `cw_query_database <db> <file_types>` | `cazy_webscraper extract_data <db> --file_types csv json` |
+| `cw_extract_db_seqs <db> <source>` | `cazy_webscraper extract_data <db> --file_types fasta --source <source>` |
+| `cw_get_db_schema` | Not yet migrated |
+
+The two version 2 commands for getting data back *out* of a database were merged: the CSV/JSON
+output of `cw_query_database` and the FASTA/BLAST output of `cw_extract_db_seqs` are both
+`extract_data` now, selected with `--file_types csv|json|fasta|fasta_dir|blastdb`.
+
+Note that `--version`, `--citation`, `-l`/`--log`, `--sql_echo` and `-v`/`--verbose` now belong to
+`cazy_webscraper` itself and must come *before* the subcommand:
+
+```bash
+# version 2
+cw_get_ncbi_taxs cazy.db user@example.com --verbose --log run.log
+
+# version 3
+cazy_webscraper -v -l run.log get_ncbi_taxs cazy.db user@example.com
+```
+
+Most other arguments keep their names. The main exception is that version 2's assorted update flags
+(`--seq_update`, `--update_taxs`, `--update_name`, `--update_genome_lineage`, ...) have each
+collapsed into a single `--update` per subcommand.
+
+**2. Databases built with version 2 must be rebuilt.** The central `Genbanks` table is now
+`Proteins` (with `protein_accession` in place of `genbank_accession`), the association tables were
+renamed to match, and `GoTerms` and `Pfams` tables were added.
+
+> [!WARNING]
+> Pointing version 3 at a version 2 database **fails silently**. The database is opened with
+> SQLAlchemy's `create_all`, which adds the missing tables rather than checking the schema, so the
+> command succeeds and creates empty `Proteins`, `GoTerms` and `Pfams` tables next to your existing
+> `Genbanks` tables. Your version 2 data is left intact but orphaned, and every subcommand then
+> reports that it retrieved data for no proteins. There is no error message.
+
+There is no automated conversion tool. Archive the old database and rebuild:
+
+```bash
+mv cazy_webscraper_2024-01-01_12-00-00.db cazy_webscraper_v2_archive.db
+cazy_webscraper download_cazy user@example.com -o cazy_webscraper_v3.db
+```
+
+Then re-run whichever `get_*` subcommands you had used to supplement it. Rebuilding is worth doing
+anyway, since it picks up the CAZy annotations that have changed since the old database was built.
 
 ## Documentation
 
@@ -87,6 +148,7 @@ For a full description of the operation and examples of use, please see our pape
 ## Table of Contents
 <!-- TOC -->
 - [`cazy_webscraper`](#cazy_webscraper)
+- [Migrating from version 2](#migrating-from-version-2)
 - [Documentation](#documentation)
 - [Citation](#citation)
 - [Installation](#installation)
@@ -176,6 +238,7 @@ cazy_webscraper --help
 - `get_uniprot_data` - Download UniProt ids, names, ec numbers, PDB accessions and GO terms from UniProt, and stored these data in the local CAZyme database
 - `get_pdb_structures` - Download protein structure files from RCSB PDB, and add the experimental method and resolution of each structure to the local CAZyme database
 - `get_gtdb_taxs` - Download taxonomic classifications from GTDB for the genomes in the local CAZyme database
+- `extract_data` - Write data held in the local CAZyme database out to CSV, JSON, FASTA or a BLAST database
 
 ### Implementation status
 
@@ -188,11 +251,11 @@ cazy_webscraper --help
 | `get_uniprot_data` | Implemented |
 | `get_pdb_structures` | Implemented |
 | `get_gtdb_taxs` | Implemented |
-| Database query API | Not yet migrated to v3 |
-| Sequence extraction / BLAST db | Not yet migrated to v3 |
+| `extract_data` | Implemented (replaces the v2 database query API and sequence extraction) |
+| Database schema printing (`cw_get_db_schema`) | Not yet migrated to v3 |
 
-The two items marked *not yet migrated* existed in version 2 and are being ported to the
-subcommand interface; they are not currently registered as `cazy_webscraper` subcommands.
+The item marked *not yet migrated* existed in version 2 and is being ported to the subcommand
+interface; it is not currently registered as a `cazy_webscraper` subcommand.
 
 ## Creating a Local CAZyme Database
 
