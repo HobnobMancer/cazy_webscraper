@@ -63,7 +63,7 @@ def main(args: Namespace, time_stamp: str, start_time):
     ) = get_expansion_configuration(args)
 
     with sql_orm.Session(bind=connection) as session:
-        retrieved_data = "NCBI genomic accessions"
+        retrieved_data = "UniProt protein data"
         log_scrape_in_db(
             time_stamp,
             config_dict,

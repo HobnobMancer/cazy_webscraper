@@ -43,6 +43,11 @@
 
 import sqlite3
 
+from src.sql.interface.get_data.get_proteins import (
+    PROTEIN_FILTER_JOINS,
+    build_protein_filters,
+)
+
 from tqdm import tqdm
 
 
@@ -170,3 +175,55 @@ def get_genomes(gbk_dict, args, connection):
             selected_genomes.update(genome_dict[genome_db_id]['ref_genomes'])
 
     return genome_dict, selected_genomes
+
+
+def get_selected_genomes(
+    class_filters: set,
+    family_filters: set,
+    kingdom_filters: set,
+    taxonomy_filter_dict: dict,
+    ec_filters: set,
+    db_path,
+    protein_accessions: list = None,
+    only_missing_gtdb: bool = False,
+) -> dict:
+    """Retrieve the genomes of proteins matching the user's filter criteria.
+
+    A genome carries both a GenBank (GCA_) and a RefSeq (GCF_) accession, and GTDB indexes its
+    lineages under whichever of the two it built the entry from, so both are returned and the
+    caller matches on either.
+
+    Returns {assembly_accession: genome_id}, with an entry for each accession a genome has.
+    """
+    query = "SELECT DISTINCT G.genome_id, G.gbk_version_accession, G.refseq_version_accession" \
+        + PROTEIN_FILTER_JOINS + """
+    JOIN Proteins_Genomes PG ON P.protein_id = PG.protein_id
+    JOIN Genomes G ON PG.genome_id = G.genome_id
+    """
+
+    clause, params = build_protein_filters(
+        class_filters, family_filters, kingdom_filters, taxonomy_filter_dict, ec_filters
+    )
+    query += clause
+
+    if protein_accessions is not None:
+        placeholders = ','.join('?' for _ in protein_accessions)
+        query += f" AND P.protein_accession IN ({placeholders})"
+        params.extend(protein_accessions)
+
+    if only_missing_gtdb:
+        query += " AND G.gtdb_tax_id IS NULL"
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(query, params)
+
+    accession_to_genome_id = {}
+    for genome_id, gbk_accession, refseq_accession in cursor:
+        for accession in (gbk_accession, refseq_accession):
+            if accession:
+                accession_to_genome_id[accession] = genome_id
+
+    conn.close()
+
+    return accession_to_genome_id
