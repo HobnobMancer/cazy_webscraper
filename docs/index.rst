@@ -165,15 +165,15 @@ For details and updates on development, please consult the `GitHub repository <h
    quickstart
    migration
    filters
-   01scrapeCazy
-   02genbankSeqs
-   03ncbiTaxs
-   genomes
-   uniprot
-   pfam
-   pdb
-   gtdbtax
-   extract
+   download_cazy
+   get_ncbi_seqs
+   get_ncbi_taxs
+   get_ncbi_genomes
+   get_uniprot_data
+   get_pfams
+   get_pdb_structures
+   get_gtdb_taxs
+   extract_data
    database
    cache
    integrate

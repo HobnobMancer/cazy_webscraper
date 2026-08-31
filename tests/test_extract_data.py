@@ -11,12 +11,10 @@
 # ehobbs@ebi.ac.uk
 #
 # The MIT License
-"""Unit tests for the extract_data additions: `--include pfam` in
-src.sql.interface.get_data.get_extract_data, and the tsv/jsonl writers (plus the refactored
-csv/json writers they share code with) in src.export.tabular.
+"""Unit tests for the extract_data subcommand: src.sql.interface.get_data.get_extract_data
+(the `--include` assembly logic) and src.export.tabular (the csv/tsv/json/jsonl writers).
 
-Self-contained: builds its own v3-schema db per test via tmp_path, independent of the
-(v2-only, unrelated) fixtures in tests/conftest.py.
+Uses the shared `db_path` fixture from tests/conftest.py for a fresh, empty v3-schema db.
 """
 
 
@@ -26,16 +24,13 @@ import sqlite3
 import pytest
 
 from src.export.tabular import write_csv, write_json, write_jsonl, write_tsv
-from src.sql import sql_orm
-from src.sql.interface.get_data.get_extract_data import iter_protein_records
+from src.sql.interface.get_data.get_extract_data import iter_protein_records, iter_sequences
 
 
 @pytest.fixture
-def db_path(tmp_path):
-    path = tmp_path / "test.db"
-    sql_orm.get_db_connection(path, False, new=True)
-
-    conn = sqlite3.connect(path)
+def pfam_extract_db(db_path):
+    """db_path, populated with one protein carrying two Pfam matches."""
+    conn = sqlite3.connect(db_path)
     cur = conn.cursor()
     cur.execute("INSERT INTO Uniprots (uniprot_accession) VALUES ('P00734')")
     uniprot_id = cur.lastrowid
@@ -59,19 +54,19 @@ def db_path(tmp_path):
     conn.commit()
     conn.close()
 
-    return path
+    return db_path
 
 
 class TestPfamInclude:
-    def test_pfam_accessions_are_included_when_requested(self, db_path):
-        batches = list(iter_protein_records(["TEST_ACC"], db_path, {"pfam"}))
+    def test_pfam_accessions_are_included_when_requested(self, pfam_extract_db):
+        batches = list(iter_protein_records(["TEST_ACC"], pfam_extract_db, {"pfam"}))
 
         assert len(batches) == 1
         record = batches[0]["TEST_ACC"]
         assert record["pfam"] == {"PF00051", "PF00089"}
 
-    def test_pfam_is_absent_from_the_record_when_not_requested(self, db_path):
-        batches = list(iter_protein_records(["TEST_ACC"], db_path, {"class"}))
+    def test_pfam_is_absent_from_the_record_when_not_requested(self, pfam_extract_db):
+        batches = list(iter_protein_records(["TEST_ACC"], pfam_extract_db, {"class"}))
 
         assert "pfam" not in batches[0]["TEST_ACC"]
 
@@ -84,6 +79,112 @@ class TestPfamInclude:
         batches = list(iter_protein_records(["NO_PFAM"], db_path, {"pfam"}))
 
         assert batches[0]["NO_PFAM"]["pfam"] == set()
+
+
+@pytest.fixture
+def full_extract_db(db_path):
+    """db_path, populated with one protein carrying class/family/tax/ec/pdb/uniprot data."""
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+
+    cur.execute("INSERT INTO Kingdoms (kingdom) VALUES ('Bacteria')")
+    kingdom_id = cur.lastrowid
+    cur.execute(
+        "INSERT INTO Taxs (genus, species, kingdom_id) VALUES ('Escherichia', 'coli', ?)",
+        (kingdom_id,),
+    )
+    taxonomy_id = cur.lastrowid
+
+    cur.execute(
+        "INSERT INTO Uniprots (uniprot_accession, name, sequence) VALUES ('P00734', 'Prothrombin', 'MAAA')"
+    )
+    uniprot_id = cur.lastrowid
+
+    cur.execute(
+        "INSERT INTO Proteins (protein_accession, source, sequence, taxonomy_id, uniprot_id) "
+        "VALUES ('TEST_ACC', 'ncbi', 'MGGG', ?, ?)",
+        (taxonomy_id, uniprot_id),
+    )
+    protein_id = cur.lastrowid
+
+    cur.execute("INSERT INTO CazyFamilies (family, subfamily) VALUES ('GH13', '_1')")
+    family_id = cur.lastrowid
+    cur.execute(
+        "INSERT INTO Proteins_CazyFamilies (protein_id, family_id) VALUES (?, ?)",
+        (protein_id, family_id),
+    )
+
+    cur.execute("INSERT INTO Ecs (ec_number) VALUES ('3.2.1.1')")
+    ec_id = cur.lastrowid
+    cur.execute("INSERT INTO Proteins_Ecs (protein_id, ec_id) VALUES (?, ?)", (protein_id, ec_id))
+
+    cur.execute("INSERT INTO Pdbs (pdb_accession, method, resolution) VALUES ('1ABC', 'X-ray', 1.5)")
+    pdb_id = cur.lastrowid
+    cur.execute("INSERT INTO Proteins_Pdbs (protein_id, pdb_id) VALUES (?, ?)", (protein_id, pdb_id))
+
+    conn.commit()
+    conn.close()
+    return db_path
+
+
+class TestOtherIncludeFields:
+    def test_class_family_subfamily(self, full_extract_db):
+        record = list(iter_protein_records(["TEST_ACC"], full_extract_db, {"class", "family", "subfamily"}))[0]["TEST_ACC"]
+
+        assert record["class"] == {"GH"}
+        assert record["family"] == {"GH13"}
+        assert record["subfamily"] == {"_1"}
+
+    def test_kingdom_genus_organism(self, full_extract_db):
+        record = list(iter_protein_records(["TEST_ACC"], full_extract_db, {"kingdom", "genus", "organism"}))[0]["TEST_ACC"]
+
+        assert record["kingdom"] == "Bacteria"
+        assert record["genus"] == "Escherichia"
+        assert record["organism"] == "Escherichia coli"
+
+    def test_ec(self, full_extract_db):
+        record = list(iter_protein_records(["TEST_ACC"], full_extract_db, {"ec"}))[0]["TEST_ACC"]
+        assert record["ec"] == {"3.2.1.1"}
+
+    def test_pdb(self, full_extract_db):
+        record = list(iter_protein_records(["TEST_ACC"], full_extract_db, {"pdb"}))[0]["TEST_ACC"]
+        assert record["pdb"] == {"1ABC"}
+
+    def test_uniprot_acc_and_name(self, full_extract_db):
+        record = list(iter_protein_records(["TEST_ACC"], full_extract_db, {"uniprot_acc", "uniprot_name"}))[0]["TEST_ACC"]
+        assert record["uniprot_acc"] == "P00734"
+        assert record["uniprot_name"] == "Prothrombin"
+
+    def test_genbank_and_uniprot_sequences(self, full_extract_db):
+        record = list(iter_protein_records(["TEST_ACC"], full_extract_db, {"genbank_seq", "uniprot_seq"}))[0]["TEST_ACC"]
+        assert record["genbank_seq"] == "MGGG"
+        assert record["uniprot_seq"] == "MAAA"
+
+    def test_only_requested_fields_are_populated(self, full_extract_db):
+        record = list(iter_protein_records(["TEST_ACC"], full_extract_db, {"ec"}))[0]["TEST_ACC"]
+        assert set(record) == {"ec"}
+
+
+class TestIterSequences:
+    def test_genbank_source_yields_ncbi_sequence(self, full_extract_db):
+        results = list(iter_sequences(["TEST_ACC"], full_extract_db, {"genbank"}))
+        assert results == [("TEST_ACC", "GenBank", "MGGG")]
+
+    def test_uniprot_source_yields_uniprot_sequence_keyed_by_uniprot_accession(self, full_extract_db):
+        results = list(iter_sequences(["TEST_ACC"], full_extract_db, {"uniprot"}))
+        assert results == [("P00734", "UniProt", "MAAA")]
+
+    def test_both_sources_together(self, full_extract_db):
+        results = list(iter_sequences(["TEST_ACC"], full_extract_db, {"genbank", "uniprot"}))
+        assert set(results) == {("TEST_ACC", "GenBank", "MGGG"), ("P00734", "UniProt", "MAAA")}
+
+    def test_protein_with_no_sequence_yields_nothing(self, db_path):
+        conn = sqlite3.connect(db_path)
+        conn.execute("INSERT INTO Proteins (protein_accession, source) VALUES ('NO_SEQ', 'ncbi')")
+        conn.commit()
+        conn.close()
+
+        assert list(iter_sequences(["NO_SEQ"], db_path, {"genbank"})) == []
 
 
 # --- writer tests: pure functions, no db needed ---
