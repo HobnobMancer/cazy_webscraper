@@ -119,8 +119,8 @@ Below are the subcommands (excluding required and optional arguments) included i
    * - ``get_gtdb_taxs``
      - Add GTDB taxonomic classifications for the genomes in an existing local CAZyme database.
    * - ``extract_data``
-     - Write data held in an existing local CAZyme database out to CSV, JSON, FASTA or a BLAST
-       database.
+     - Write data held in an existing local CAZyme database out to CSV, TSV, JSON, JSON Lines,
+       FASTA or a BLAST database.
 
 ``download_cazy`` is the one subcommand that *builds* a local CAZyme database; every ``get_*``
 subcommand adds data to a database that already exists.
@@ -162,7 +162,6 @@ For details and updates on development, please consult the `GitHub repository <h
    02genbankSeqs
    03ncbiTaxs
    uniprot
-   uniprottutorial
    sequence
    sequencetutorial
    pdb

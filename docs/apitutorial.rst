@@ -60,20 +60,21 @@ retrieve only the GenBank accessions of **all** CAZymes in the local CAZyme CAZy
 Accepted file formats
 ---------------------
 
-``cazy_webscraper extract_data`` can write the output to a csv or json file.
+``cazy_webscraper extract_data`` can write the output as ``csv``, ``tsv``, ``json`` or ``jsonl``
+(JSON Lines - one JSON object per line, rather than a single JSON document).
 
-These are provided as the second arguments to ``cazy_webscraper extract_data``. To write out both a csv and json 
-file use both ``csv`` and ``json`` after the path to the local CAZyme database, separted with a single space.
+These are given after the ``--file_types`` flag. To write out both a csv and json file use both
+``csv`` and ``json`` after ``--file_types``, separated with a single space.
 
 .. code-block:: bash
 
-    cazy_webscraper extract_data <path to local CAZyme db> csv json
+    cazy_webscraper extract_data <path to local CAZyme db> --file_types csv json
 
 .. NOTE::
-    The order ``csv`` and ``json`` are written does not matter.
+    The order file types are listed in does not matter.
 
 .. WARNING::
-    Both ``csv`` and ``json`` are case sensitive.
+    File type names are case sensitive.
 
 
 -----------------------------------------
@@ -389,6 +390,7 @@ To include additional data in the output use the ``--include`` flag followed by 
 * 'uniprot_name' - Include the protein name retrieved from UniProt
 * 'ec' - Include the EC number annotations
 * 'pdb' - Include the PDB accessions
+* 'pfam' - Include the Pfam domain accessions
 * 'genbank_seq' - Include the GenBank protein sequence
 * 'uniprot_seq' - Include the Uniprot protein sequence
 
