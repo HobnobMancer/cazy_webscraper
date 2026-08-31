@@ -33,6 +33,7 @@
 
 import sqlite3
 import logging
+import time
 
 
 from argparse import Namespace
@@ -47,7 +48,11 @@ from src.sql.interface.add_data.add_uniprot_data import (
     merge_temp_ec_relationships, merge_temp_pdb_relationships, merge_temp_go_relationships
 )
 from src.sql.interface.get_data.get_proteins import get_ncbi_acc_to_id
+from src.sql.interface.connect import get_sqlite3_connection
 from src.sql.interface.temp_tables import (
+    create_temp_ec_protein_table,
+    create_temp_pdb_protein_table,
+    create_temp_go_protein_table,
     drop_temp_ec_protein_table,
     drop_temp_pdb_protein_table,
     drop_temp_go_protein_table
@@ -100,36 +105,64 @@ class UniProtKB:
     """
     def __init__(self, retries: int = 3):
         self.retries = retries
+        self.service = UniProtService()
+
+    def _map_batch(self, batch: list[str], fr: str) -> tuple[list[dict], list[str]]:
+        """Submit one UniProt ID mapping job for a batch of ids using the given 'from' id type.
+
+        bioservices swallows all connection-level errors itself and surfaces a connection
+        failure to us in one of two ways depending on which step failed: mapping() returns a
+        falsy value if the job submission itself failed, or raises TypeError if the job was
+        submitted but checking on its status failed (confirmed against the live API/bioservices
+        source - in neither case does a raw requests exception ever reach this code). Both are
+        connection failures and warrant a retry, not just the TypeError case.
+
+        Returns a tuple of (raw "results" entries, failed ids).
+        """
+        mappings = None
+        attempt = 0
+        while not mappings and attempt <= self.retries:
+            try:
+                mappings = self.service.mapping(
+                    fr=fr,
+                    to="UniProtKB",
+                    query=",".join(batch),  # str of ids, separated by commas
+                    progress=False
+                )
+            except TypeError:
+                # raised by bioservices if the job was submitted but its status check failed
+                mappings = None
+
+            if not mappings:
+                if attempt == self.retries:
+                    break
+                logger.warning("Could not connect to UniProt KB, retrying (%d/%d)", attempt + 1, self.retries)
+                time.sleep(10)
+                attempt += 1
+
+        if mappings:
+            return mappings.get("results", []), mappings.get("failedIds", [])
+        return [], batch  # return all ids as failed if no mappings
 
     def get_uniprot_records(self, batch: list[str], swissprot_only: bool, get_ecs: bool, get_pdbs: bool, get_gos: bool) -> tuple[list, list[str]]:
         """Map NCBI protein accessions to UniProt IDs.
 
+        Accessions are first mapped as classic GenBank/EMBL/DDBJ CDS ids. UniProt indexes
+        RefSeq accessions (e.g. NP_/XP_/WP_ prefixed) under a separate id type, so anything
+        that fails the first pass is retried as a RefSeq id before being treated as a genuine
+        miss - confirmed against the live API that EMBL-GenBank-DDBJ_CDS alone never matches
+        RefSeq accessions, even when the record exists in UniProt under RefSeq_Protein.
+
         Returns a tuple with (parsed_records, failed_ids)
         """
-        mappings = None
-        success = False
-        attempt = 0
-        while not success and attempt <= self.retries:
-            try:
-                mappings = UniProtService().mapping(
-                    fr="EMBL-GenBank-DDBJ_CDS",
-                    to="UniProtKB",
-                    query=",".join(batch),  # str of ids, separated by commas
-                )
-                success = True
-            except TypeError:
-                # raised by bioservices
-                if attempt == self.retries:
-                    break
-                logger.warning("Could not connect to UniProt KB, retrying (%d/%d)", attempt + 1, self.retries)
-                attempt += 1
+        results, failed_ids = self._map_batch(batch, "EMBL-GenBank-DDBJ_CDS")
 
-        if mappings:
-            failed_ids = mappings.get("failedIds", [])
-            results = self.parse_mappings(mappings.get("results", []), swissprot_only, get_ecs, get_pdbs, get_gos)
-            return results, failed_ids
-        else:
-            return [], batch  # return all ids as failed if no mappings
+        if failed_ids:
+            refseq_results, failed_ids = self._map_batch(failed_ids, "RefSeq_Protein")
+            results += refseq_results
+
+        parsed_records = self.parse_mappings(results, swissprot_only, get_ecs, get_pdbs, get_gos)
+        return parsed_records, failed_ids
 
     def parse_mappings(
         self,
@@ -169,7 +202,7 @@ class UniProtKB:
                     if comment.get("commentType") == "CATALYTIC ACTIVITY":
                         ec_nums.add(comment.get("reaction", {}).get("ecNumber"))
 
-            swissprot = True if (record.get("entryType")).lower() == "uniprotkb reviewed (swissprot)" else False
+            swissprot = True if (record.get("entryType")).lower() == "uniprotkb reviewed (swiss-prot)" else False
             if swissprot_only and not swissprot:
                 continue  # skip non-swissprot entries
 
@@ -248,6 +281,18 @@ def get_uniprot_data(
         "batches processed": 0,
         "failed batches": 0
     }
+    # create these up front rather than relying on the add_* helpers to create them
+    # lazily: if no batch yields any EC/PDB/GO the merge step below would otherwise hit a
+    # table that was never created
+    setup_conn = get_sqlite3_connection(args.database)
+    if args.ec:
+        create_temp_ec_protein_table(setup_conn)
+    if args.pdb:
+        create_temp_pdb_protein_table(setup_conn)
+    if args.go:
+        create_temp_go_protein_table(setup_conn)
+    setup_conn.close()
+
     connection_err_cache = open(cache_dir / f"uniprot_connection_errors_{time_stamp}.txt", "w")
     failed_ids_cache = open(cache_dir / f"uniprot_failed_ids_{time_stamp}.txt", "w")
     uniprotkb_service = UniProtKB(args.retries)
@@ -305,9 +350,15 @@ def get_uniprot_data(
     if args.go:
         merge_temp_go_relationships(args.database)
 
-    drop_temp_ec_protein_table(args.database)
-    drop_temp_pdb_protein_table(args.database)
-    drop_temp_go_protein_table(args.database)
+    # the drop_temp_* helpers take an open connection, not a db path
+    cleanup_conn = get_sqlite3_connection(args.database)
+    if args.ec:
+        drop_temp_ec_protein_table(cleanup_conn)
+    if args.pdb:
+        drop_temp_pdb_protein_table(cleanup_conn)
+    if args.go:
+        drop_temp_go_protein_table(cleanup_conn)
+    cleanup_conn.close()
 
     connection_err_cache.close()
     failed_ids_cache.close()

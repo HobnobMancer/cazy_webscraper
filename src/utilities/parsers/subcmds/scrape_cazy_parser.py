@@ -41,7 +41,7 @@ def build_parser(
     subps: _SubParsersAction, parents: Optional[List[ArgumentParser]] = None
 ) -> None:
     parser = subps.add_parser(
-        "download",
+        "download_cazy",
         description="Scrapes the CAZy database",
         help="Download data from CAZy and build a local SQLite database",
         formatter_class=ArgumentDefaultsHelpFormatter

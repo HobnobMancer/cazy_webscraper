@@ -43,69 +43,57 @@
 """Retrieve PDB accessions matching user criteria from the local CAZyme db"""
 
 
-from cazy_webscraper.sql.sql_interface.get_data import get_proteins, get_table_dicts
+import sqlite3
+
+from pathlib import Path
+
+from src.sql.interface.get_data.get_proteins import (
+    PROTEIN_FILTER_JOINS,
+    build_protein_filters,
+)
 
 
 def get_pdb_accessions(
-    class_filters,
-    family_filters,
-    taxonomy_filters,
-    kingdom_filters,
-    ec_filters,
-    gbk_table_dict,
-    connection,
-):
-    """Retrieve PDB accessions matching user criteria from the local CAZyme db
-    
-    :param class_filters: set of CAZy classes to retrieve data for
-    :param family_filters: set of CAZy families to retrieve data for
-    :param taxonomy_filters: dict of taxonom filters to limit the retrieval of data to
-    :param kingdom_filters: set of tax kingdoms to limit the retrieval of data to
-    :param ec_filters: set of EC numbers to limit the retrieval of data to
-    :param gbk_table_dict: dict, of GenBank accessions and db IDs for GenBank records
-    :param connection: open sqlalchemy connection to an SQLite db engine
-    
-    Return list of PDB accessions
+    class_filters: set[str],
+    family_filters: set[str],
+    kingdom_filters: set[str],
+    taxonomy_filter_dict: dict[str, set[str]],
+    ec_filters: set[str],
+    db_path: Path,
+    protein_accessions: list[str] = None,
+) -> list[str]:
+    """Retrieve PDB accessions for proteins matching the user's criteria.
+
+    Uses the same filter clause as the protein queries, joined through to the PDB tables, so
+    the whole selection is done in one query rather than by loading the Proteins, Pdbs and
+    Proteins_Pdbs tables into memory as dicts (the v2 approach).
+
+    If protein_accessions is given, the selection is further restricted to the PDB accessions
+    of those proteins (used by the --genbank_accessions/--uniprot_accessions options).
+
+    Returns a sorted list of unique parent PDB accessions (any ``[chain]`` annotation removed).
+    """
+    query = "SELECT DISTINCT Pdbs.pdb_accession" + PROTEIN_FILTER_JOINS + """
+    JOIN Proteins_Pdbs ON P.protein_id = Proteins_Pdbs.protein_id
+    JOIN Pdbs ON Proteins_Pdbs.pdb_id = Pdbs.pdb_id
     """
 
-    # retrieve the GenBank accessions of Gbk records matching the user criteria
-    selected_gbks = get_proteins.get_genbank_accessions(
-        class_filters,
-        family_filters,
-        taxonomy_filters,
-        kingdom_filters,
-        ec_filters,
-        connection,
+    clause, params = build_protein_filters(
+        class_filters, family_filters, kingdom_filters, taxonomy_filter_dict, ec_filters
     )
-    
-    # retrieve all PDB accessions for each GenBank accession retrieved for the local CAZyme db
+    query += clause
 
-    pdb_table_dict = get_table_dicts.get_pdb_table_dict(connection)  # used to retrieve PDB accs
-    # {pdb_accession: pdb_db_id}
-    # convert to be keyed by pdb_db_id and valued by pdb_accession
-    pdb_id_acc_dict = {}
-    for pdb_acc in pdb_table_dict:
-        pdb_id_acc_dict[pdb_table_dict[pdb_acc]] = pdb_acc
+    if protein_accessions is not None:
+        placeholders = ','.join('?' for _ in protein_accessions)
+        query += f" AND P.protein_accession IN ({placeholders})"
+        params.extend(protein_accessions)
 
-    gbk_pdb_table_dict = get_table_dicts.get_gbk_pdb_table_dict(connection)
-    # {gbk_db_id: {pdb_db_id}}
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(query, params)
+    # CAZy/UniProt list some structures with a chain suffix, e.g. 1ABC[A]; the structure file
+    # is per-entry, so the chain annotation is dropped and duplicates collapsed
+    accessions = {row[0].split("[")[0] for row in cursor if row[0]}
+    conn.close()
 
-    pdb_accessions = set()
-
-    for gbk_accession in selected_gbks:
-        gbk_id = gbk_table_dict[gbk_accession]['gbk_id']
-
-        try:
-            pdb_ids = gbk_pdb_table_dict[gbk_id]
-
-            for pdb_id in pdb_ids:
-                # convert pdb_db_id to pdb_accession
-                pdb_acc = pdb_id_acc_dict[pdb_id]
-                # remove chain annotation if present
-                parent_pdb = pdb_acc.split("[")[0]
-                pdb_accessions.add(parent_pdb)
-        
-        except KeyError:
-            continue
-
-    return list(pdb_accessions)
+    return sorted(accessions)

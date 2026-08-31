@@ -42,10 +42,9 @@ logger = logging.getLogger(__name__)
 
 
 def sanity_check_inputs(args: argparse.Namespace) -> None:
-    if args.genbank_accessions and args.file_only:
-        error_message = """::ARGUMENT ERROR:: Cannot provide a list of protein accessions and disable seq retrieval.
-        args.genbank_accessions and args.file_only were both used, but the latter disables retrieval
-        of protein seqs from NCBI. Terminating program.
-        """
-        logger.error(termcolour(error_message, "red"))
-        sys.exit(22)
+    """Validate the cmd-line args for get_ncbi_seqs.
+
+    The v2 --file_only check was removed here: v3 always persists sequences to the local
+    db as they are retrieved, so there is no longer a flag that disables retrieval.
+    """
+    return None

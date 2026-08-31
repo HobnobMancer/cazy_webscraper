@@ -163,13 +163,14 @@ def add_pdbs(records: list, conn: sqlite3.Connection, batch_size: int = 500) -> 
             if pdb_acc not in db_pdbs:
                 pdbs_to_add.append((pdb_acc, method, resolution))
             elif resolution != db_pdbs[pdb_acc]:
-                pdbs_to_update.append((pdb_acc, method, resolution))
+                # ordered to match the UPDATE's placeholders below, not the INSERT's
+                pdbs_to_update.append((method, resolution, pdb_acc))
 
     cursor = conn.cursor()
     for i in range(0, len(pdbs_to_update), batch_size):
         batch = pdbs_to_update[i:i + batch_size]
         cursor.executemany(
-            "UPDATE PDBs SET resolution = ? WHERE pdb_accession = ?",
+            "UPDATE PDBs SET method = ?, resolution = ? WHERE pdb_accession = ?",
             batch
         )
     conn.commit()
@@ -294,9 +295,9 @@ def merge_temp_pdb_relationships(db_path: str) -> int:
 
 
 def merge_temp_go_relationships(db_path: str) -> int:
-    """Merge GO-protein relationships from TEMP_GO_PROTEIN into Proteins_GOs
+    """Merge GO-protein relationships from TEMP_GO_PROTEIN into Proteins_GoTerms
 
-    Only inserts relationships that don't already exist in Proteins_GOs.
+    Only inserts relationships that don't already exist in Proteins_GoTerms.
 
     :param db_path: path to the database
     :return: number of new relationships added

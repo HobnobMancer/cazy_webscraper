@@ -40,6 +40,7 @@
 
 import logging
 import os
+import sqlite3
 import sys
 
 from pathlib import Path
@@ -48,6 +49,23 @@ from saintBioutils.utilities.file_io import make_output_directory
 
 from src.sql import sql_orm
 from src import closing_message
+
+
+def get_sqlite3_connection(db_path) -> sqlite3.Connection:
+    """Open a raw sqlite3 connection tuned for this tool's bulk-write workload.
+
+    journal_mode=WAL is persisted in the db file itself once set, so any one connection
+    setting it is enough for it to apply to every later connection on that file. synchronous
+    is per-connection though, so it's set here every time. NORMAL is the level SQLite's own
+    docs recommend pairing with WAL: it skips the fsync after each commit (the main source of
+    per-commit overhead) while remaining safe against application crashes; only an OS crash or
+    power loss could lose the last few committed transactions, which is an acceptable trade for
+    a tool whose data can simply be re-fetched from CAZy/NCBI on the next run.
+    """
+    conn = sqlite3.connect(db_path)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    return conn
 
 
 def connect_existing_db(args, time_stamp, start_time):

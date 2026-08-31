@@ -53,7 +53,7 @@ with Path("README.md").open("r") as long_description_handle:
 
 setuptools.setup(
     name="cazy_webscraper",
-    version="2.3.0.3",
+    version="3.0.0.0",
     # Metadata
     author="Emma E. M. Hobbs",
     author_email="ehobbs@ebi.ac.uk",
@@ -79,7 +79,9 @@ setuptools.setup(
         ]
     },
     install_requires=[
-        "biopython",
+        # 1.85 is the first release whose Bio.PDB.PDBList defaults to https rather than the
+        # retired ftp://ftp.wwpdb.org, which silently downloads nothing
+        "biopython>=1.85",
         "bioservices>=1.11.0",
         "mechanicalsoup",
         "pandas",

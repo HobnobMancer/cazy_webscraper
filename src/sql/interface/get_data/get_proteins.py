@@ -46,18 +46,9 @@ import sqlite3
 from pathlib import Path
 
 
-def get_ncbi_prot_accessions(
-    class_filters: set[str],
-    family_filters: set[str],
-    kingdom_filters: set[str],
-    taxonomy_filter_dict: dict[str, set[str]],
-    ec_filters: set[str],
-    db_path: Path,
-    additional_join: str = None,
-    additional_filter: str = None
-) -> list[str]:
-    query = """
-    SELECT P.protein_accession
+# The Proteins table is aliased as P, and the class/family/taxonomy/EC joins below are
+# shared by every "which proteins match the user's filters" query, so they live in one place.
+PROTEIN_FILTER_JOINS = """
     FROM Proteins P
     LEFT JOIN Proteins_CazyFamilies ON P.protein_id = Proteins_CazyFamilies.protein_id
     LEFT JOIN CazyFamilies ON Proteins_CazyFamilies.family_id = CazyFamilies.family_id
@@ -65,14 +56,23 @@ def get_ncbi_prot_accessions(
     LEFT JOIN Kingdoms ON Taxs.kingdom_id = Kingdoms.kingdom_id
     LEFT JOIN Proteins_Ecs ON P.protein_id = Proteins_Ecs.protein_id
     LEFT JOIN ECs ON Proteins_Ecs.ec_id = ECs.ec_id
+"""
+
+
+def build_protein_filters(
+    class_filters: set[str],
+    family_filters: set[str],
+    kingdom_filters: set[str],
+    taxonomy_filter_dict: dict[str, set[str]],
+    ec_filters: set[str],
+) -> tuple[str, list]:
+    """Build the shared WHERE clause restricting proteins to the user's filter criteria.
+
+    Returns the SQL fragment (starting with the WHERE) and its bound parameters.
     """
-
-    if additional_join:
-        query += f" {additional_join}"
-
-    query += " WHERE P.source = 'ncbi'"
-
+    query = " WHERE P.source = 'ncbi'"
     params = []
+
     if class_filters:
         query += " AND (" + " OR ".join("CazyFamilies.family LIKE ?" for _ in class_filters) + ")"
         params.extend(f'{cls}%' for cls in class_filters)
@@ -107,6 +107,38 @@ def get_ncbi_prot_accessions(
         query += " AND (" + " OR ".join("ECs.ec_number = ?" for _ in ec_filters) + ")"
         params.extend(ec_filters)
 
+    return query, params
+
+
+def get_ncbi_prot_accessions(
+    class_filters: set[str],
+    family_filters: set[str],
+    kingdom_filters: set[str],
+    taxonomy_filter_dict: dict[str, set[str]],
+    ec_filters: set[str],
+    db_path: Path,
+    additional_join: str = None,
+    additional_filter: str = None
+) -> list[str]:
+    query = """
+    SELECT P.protein_accession
+    FROM Proteins P
+    LEFT JOIN Proteins_CazyFamilies ON P.protein_id = Proteins_CazyFamilies.protein_id
+    LEFT JOIN CazyFamilies ON Proteins_CazyFamilies.family_id = CazyFamilies.family_id
+    LEFT JOIN Taxs ON P.taxonomy_id = Taxs.taxonomy_id
+    LEFT JOIN Kingdoms ON Taxs.kingdom_id = Kingdoms.kingdom_id
+    LEFT JOIN Proteins_Ecs ON P.protein_id = Proteins_Ecs.protein_id
+    LEFT JOIN ECs ON Proteins_Ecs.ec_id = ECs.ec_id
+    """
+
+    if additional_join:
+        query += f" {additional_join}"
+
+    clause, params = build_protein_filters(
+        class_filters, family_filters, kingdom_filters, taxonomy_filter_dict, ec_filters
+    )
+    query += clause
+
     if additional_filter:
         query += f" AND ({additional_filter})"
 
@@ -126,7 +158,7 @@ def get_ncbi_acc_for_uniprot_acc(uniprot_accs: list[str], db: Path) -> set[str]:
     placeholders = ','.join('?' for _ in uniprot_accs)
     query = f"""SELECT protein_accession
         FROM Proteins
-        LEFT JOIN Uniprots ON Proteins.uniprot_id = Uniprots.protein_id
+        LEFT JOIN Uniprots ON Proteins.uniprot_id = Uniprots.uniprot_id
         WHERE Uniprots.uniprot_accession IN ({placeholders})"""
     cur.execute(query, tuple(uniprot_accs))
     for row in cur:

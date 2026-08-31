@@ -70,10 +70,8 @@ def main(args: Namespace, time_stamp: str, start_time):
             "skip_ncbi_tax is True\n"
             "The latest taxa from NCBI for proteins with multipe tax in CAZy will not be retrieved\n."
             "The first taxonomy retrieved from CAZy will be used instead.\n"
-            "The latest taxonomic data can be retrieved later using any of the three options:\n"
-            "(i) cw_get_ncbi_taxs\n"
-            "(ii) cw_get_genomics + cw_get_gtdb_taxs\n"
-            "(iii) cw_get_uniprot_data with --taxonomy/-t"
+            "The latest taxonomic data can be retrieved later using:\n"
+            "cazy_webscraper get_ncbi_taxs <database> <email>"
         )
     else:
         Entrez.email = args.email

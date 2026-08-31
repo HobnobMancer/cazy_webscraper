@@ -82,13 +82,20 @@ def main(args: Namespace, time_stamp: str, start_time):
         )
 
     if args.genbank_accessions or args.uniprot_accessions:
-        ncbi_acc_to_retrieve = []
+        # collect into a set so the two sources are de-duplicated against each other,
+        # then flatten to a sorted list for batching (get_chunks_list slices its input)
+        accessions = set()
         if args.genbank_accessions:
-            ncbi_acc_to_retrieve.append(get_acc_from_file(args.genbank_accessions, args.database))
+            accessions.update(get_acc_from_file(args.genbank_accessions, args.database))
         if args.uniprot_accessions:
-            uniprot_acc_to_retrieve = get_acc_from_file(args.genbank_accessions, args.database, table="UniProt")
+            uniprot_acc_to_retrieve = get_acc_from_file(
+                args.uniprot_accessions, args.database, table="UniProt"
+            )
             # get ncbi acc for the uniprots
-            ncbi_acc_to_retrieve.append(get_ncbi_acc_for_uniprot_acc(uniprot_acc_to_retrieve, args.database))
+            accessions.update(
+                get_ncbi_acc_for_uniprot_acc(uniprot_acc_to_retrieve, args.database)
+            )
+        ncbi_acc_to_retrieve = sorted(accessions)
     elif args.update:
         ncbi_acc_to_retrieve = get_ncbi_prot_accessions(
             class_filters,
@@ -109,6 +116,10 @@ def main(args: Namespace, time_stamp: str, start_time):
             additional_filter="P.ncbi_tax_id IS NULL"
         )
 
-    get_ncbi_taxa(ncbi_acc_to_retrieve, cache_dir, args)
+    if ncbi_acc_to_retrieve:
+        logger.warning("Retrieving taxonomy data for %s proteins", len(ncbi_acc_to_retrieve))
+        get_ncbi_taxa(ncbi_acc_to_retrieve, cache_dir, args)
+    else:
+        logger.warning("No proteins to retrieve taxonomy data for")
 
     return("get_ncbi_taxs")

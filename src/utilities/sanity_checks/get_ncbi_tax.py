@@ -42,9 +42,9 @@ logger = logging.getLogger(__name__)
 
 
 def sanity_check_inputs(args: argparse.Namespace) -> None:
-    if (args.genbank_accessions or args.uniprot_accessions) and args.file_only:
-        error_message = """::ARGUMENT ERROR:: Cannot provide a list of protein accessions (GenBank and/or UniProt) 
-        and disable retrieval dating from NCBI (using the --file_only flag).
-        """
-        logger.error(termcolour(error_message, "red"))
-        sys.exit(22)
+    """Validate the cmd-line args for get_ncbi_taxs.
+
+    The v2 --file_only check was removed here: v3 always persists taxonomy data to the
+    local db as it is retrieved, so there is no longer a flag that disables retrieval.
+    """
+    return None

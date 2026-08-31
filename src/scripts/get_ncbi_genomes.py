@@ -104,8 +104,9 @@ def main(args: Namespace, time_stamp: str, start_time):
             taxonomy_filter_dict,
             ec_filters,
             args.database,
+            # the base query in get_ncbi_prot_accessions aliases Proteins as P
             additional_join="""
-            LEFT JOIN Proteins_Genomes PG ON Proteins.protein_id = PG.protein_id
+            LEFT JOIN Proteins_Genomes PG ON P.protein_id = PG.protein_id
             LEFT JOIN Genomes G ON PG.genome_id = G.genome_id
             """,
             additional_filter="G.genome_id IS NULL"

@@ -110,6 +110,10 @@ def persist_genome_data(args: Namespace, batch_size: int = 1000) -> dict:
 def _process_genome_batch(conn: sqlite3.Connection, offset: int, batch_size: int, update: bool) -> dict:
     """Process a batch of genomes from TEMP_GENOME table.
 
+    Each temp row is one NCBI assembly carrying both its GenBank (GCA_) and RefSeq (GCF_)
+    accession, so a single Genomes row is written per assembly with both accession columns
+    populated, rather than one row per accession flavour.
+
     Args:
         conn: Database connection
         offset: Starting offset for the batch
@@ -122,9 +126,8 @@ def _process_genome_batch(conn: sqlite3.Connection, offset: int, batch_size: int
     cursor = conn.cursor()
     batch_stats = {'genomes_added': 0, 'genomes_updated': 0, 'protein_relationships_added': 0}
 
-    # Get batch of temp genomes
     cursor.execute("""
-        SELECT ncbi_genome_id, assembly_accession, assembly_name 
+        SELECT ncbi_genome_id, gbk_accession, refseq_accession, assembly_name
         FROM TEMP_GENOME
         LIMIT ? OFFSET ?
     """, (batch_size, offset))
@@ -133,93 +136,68 @@ def _process_genome_batch(conn: sqlite3.Connection, offset: int, batch_size: int
     if not temp_genomes:
         return batch_stats
 
-    # Get existing genome data for this batch
-    ncbi_ids = [row[0] for row in temp_genomes]
-    placeholders = ','.join('?' * len(ncbi_ids))
+    # look up any assembly we already hold, by either of its accessions
+    accessions = [row[1] for row in temp_genomes if row[1]] + [row[2] for row in temp_genomes if row[2]]
+    existing_by_accession = {}
+    if accessions:
+        placeholders = ','.join('?' * len(accessions))
+        cursor.execute(f"""
+            SELECT genome_id, assembly_name, gbk_version_accession, refseq_version_accession
+            FROM Genomes
+            WHERE gbk_version_accession IN ({placeholders})
+               OR refseq_version_accession IN ({placeholders})
+        """, accessions + accessions)
 
-    cursor.execute(f"""
-        SELECT genome_id, assembly_name, gbk_ncbi_id, refseq_ncbi_id,
-               gbk_version_accession, refseq_version_accession
-        FROM Genomes
-        WHERE gbk_ncbi_id IN ({placeholders}) OR refseq_ncbi_id IN ({placeholders})
-    """, ncbi_ids + ncbi_ids)
-
-    existing_genomes = cursor.fetchall()
-
-    # Create lookup dictionaries
-    gbk_ncbi_to_genome = {}
-    refseq_ncbi_to_genome = {}
-
-    for row in existing_genomes:
-        genome_id, assembly_name, gbk_ncbi_id, refseq_ncbi_id, gbk_acc, refseq_acc = row
-        if gbk_ncbi_id:
-            gbk_ncbi_to_genome[gbk_ncbi_id] = {
+        for genome_id, assembly_name, gbk_acc, refseq_acc in cursor.fetchall():
+            record = {
                 'genome_id': genome_id,
                 'assembly_name': assembly_name,
-                'gbk_version_accession': gbk_acc
+                'gbk_version_accession': gbk_acc,
+                'refseq_version_accession': refseq_acc,
             }
-        if refseq_ncbi_id:
-            refseq_ncbi_to_genome[refseq_ncbi_id] = {
-                'genome_id': genome_id,
-                'assembly_name': assembly_name,
-                'refseq_version_accession': refseq_acc
-            }
+            if gbk_acc:
+                existing_by_accession[gbk_acc] = record
+            if refseq_acc:
+                existing_by_accession[refseq_acc] = record
 
-    # Process each genome in the batch
     genomes_to_add = []
-    genomes_to_update_gbk = []
-    genomes_to_update_refseq = []
+    genomes_to_update = []
 
-    for ncbi_genome_id, assembly_accession, assembly_name in temp_genomes:
-        is_refseq = assembly_accession.startswith("GCF_")
+    for ncbi_genome_id, gbk_accession, refseq_accession, assembly_name in temp_genomes:
+        existing = existing_by_accession.get(gbk_accession) or existing_by_accession.get(refseq_accession)
 
-        if is_refseq:
-            if ncbi_genome_id in refseq_ncbi_to_genome:
-                existing = refseq_ncbi_to_genome[ncbi_genome_id]
-                if (update and 
-                    (existing['assembly_name'] != assembly_name or 
-                     existing['refseq_version_accession'] != assembly_accession)):
-                    genomes_to_update_refseq.append((
-                        assembly_name, assembly_accession, existing['genome_id']
-                    ))
-            else:
-                genomes_to_add.append((assembly_name, None, None, assembly_accession, ncbi_genome_id))
-        else:
-            if ncbi_genome_id in gbk_ncbi_to_genome:
-                existing = gbk_ncbi_to_genome[ncbi_genome_id]
-                if (update and 
-                    (existing['assembly_name'] != assembly_name or 
-                     existing['gbk_version_accession'] != assembly_accession)):
-                    genomes_to_update_gbk.append((
-                        assembly_name, assembly_accession, existing['genome_id']
-                    ))
-            else:
-                genomes_to_add.append((assembly_name, assembly_accession, ncbi_genome_id, None, None))
+        if existing is None:
+            genomes_to_add.append((
+                assembly_name,
+                gbk_accession,
+                ncbi_genome_id if gbk_accession else None,
+                refseq_accession,
+                ncbi_genome_id if refseq_accession else None,
+            ))
+        elif update and (
+            existing['assembly_name'] != assembly_name
+            or existing['gbk_version_accession'] != gbk_accession
+            or existing['refseq_version_accession'] != refseq_accession
+        ):
+            genomes_to_update.append((
+                assembly_name, gbk_accession, refseq_accession, existing['genome_id']
+            ))
 
-    # Execute batch operations
     if genomes_to_add:
         cursor.executemany("""
-            INSERT INTO Genomes (assembly_name, gbk_version_accession, gbk_ncbi_id, 
-                               refseq_version_accession, refseq_ncbi_id)
+            INSERT INTO Genomes (assembly_name, gbk_version_accession, gbk_ncbi_id,
+                                 refseq_version_accession, refseq_ncbi_id)
             VALUES (?, ?, ?, ?, ?)
         """, genomes_to_add)
         batch_stats['genomes_added'] = len(genomes_to_add)
 
-    if genomes_to_update_gbk:
+    if genomes_to_update:
         cursor.executemany("""
-            UPDATE Genomes 
-            SET assembly_name = ?, gbk_version_accession = ?
+            UPDATE Genomes
+            SET assembly_name = ?, gbk_version_accession = ?, refseq_version_accession = ?
             WHERE genome_id = ?
-        """, genomes_to_update_gbk)
-        batch_stats['genomes_updated'] += len(genomes_to_update_gbk)
-
-    if genomes_to_update_refseq:
-        cursor.executemany("""
-            UPDATE Genomes 
-            SET assembly_name = ?, refseq_version_accession = ?
-            WHERE genome_id = ?
-        """, genomes_to_update_refseq)
-        batch_stats['genomes_updated'] += len(genomes_to_update_refseq)
+        """, genomes_to_update)
+        batch_stats['genomes_updated'] = len(genomes_to_update)
 
     return batch_stats
 
@@ -251,12 +229,15 @@ def _update_temp_protein_genome_ids(conn: sqlite3.Connection, batch_size: int) -
     while offset < total_to_update:
         # Update a batch of records
         cursor.execute("""
-            UPDATE TEMP_GENOME2PROTEIN 
+            UPDATE TEMP_GENOME2PROTEIN
             SET genome_id = (
-                SELECT g.genome_id 
-                FROM Genomes g 
-                JOIN TEMP_GENOME tg ON g.assembly_name = tg.assembly_name
-                WHERE tg.assembly_accession = TEMP_GENOME2PROTEIN.assembly_accession
+                SELECT g.genome_id
+                FROM TEMP_GENOME tg
+                JOIN Genomes g ON (
+                    (tg.gbk_accession IS NOT NULL AND g.gbk_version_accession = tg.gbk_accession)
+                    OR (tg.refseq_accession IS NOT NULL AND g.refseq_version_accession = tg.refseq_accession)
+                )
+                WHERE tg.ncbi_genome_id = TEMP_GENOME2PROTEIN.ncbi_genome_id
             )
             WHERE ROWID IN (
                 SELECT ROWID FROM TEMP_GENOME2PROTEIN 
